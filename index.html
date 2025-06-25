@@ -162,11 +162,17 @@
             try {
                  const chatHistory = [{ role: "user", parts: [{ text: fullPrompt }] }];
                  const payload = { contents: chatHistory };
-                 const apiKey = "AIzaSyA2kInA66mxn_ETJb5wI4FPdJRWW3EpW6w"; // The API key is handled by the environment, no need to add it here.
+                 // IMPORTANT: Leave the API Key empty. The execution environment will securely handle it.
+                 // Do NOT paste your own key here for security reasons.
+                 const apiKey = "";
                  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                  const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                  const result = await response.json();
+
+                 if (result.error) {
+                    throw new Error(result.error.message);
+                 }
 
                  if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts) {
                      geminiResponseContainer.innerText = result.candidates[0].content.parts[0].text;
@@ -175,7 +181,7 @@
                  }
             } catch (error) {
                 console.error("Error calling Gemini API:", error);
-                geminiResponseContainer.innerText = "Sorry, something went wrong. Please try again later.";
+                geminiResponseContainer.innerText = `Sorry, an error occurred. The AI feature may not work on external sites like GitHub Pages due to security policies. Please try the 'Preview' button.`;
             } finally {
                 geminiResponseContainer.classList.remove('hidden');
                 askBtnText.classList.remove('hidden');
