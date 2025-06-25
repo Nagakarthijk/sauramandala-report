@@ -11,15 +11,14 @@
             font-family: 'Inter', sans-serif;
             background-color: #f1f5f9; /* slate-100 */
         }
-        .hero-section {
-            background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.7)), url('https://placehold.co/1200x800/334155/f59e0b?text=Impact') no-repeat center center;
-            background-size: cover;
-        }
-        .card {
+        .card, .animated-section {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUpFadeIn 0.6s ease-out forwards;
         }
         .card:hover {
-            transform: translateY(-8px);
+            transform: translateY(-8px) scale(1.02);
             box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
         }
         .modal-overlay {
@@ -35,6 +34,16 @@
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(30px) scale(0.95); }
             to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes slideUpFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         .loader {
             border: 4px solid #f3f3f3;
@@ -58,19 +67,26 @@
         .answer-btn.incorrect {
             background-color: #ef4444 !important; color: white; border-color: #dc2626;
         }
+        .quick-fact {
+            display: none;
+        }
+        .quick-fact.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
     </style>
 </head>
 <body>
 
     <!-- Main Landing Page Content -->
     <main class="container mx-auto px-4 py-8 md:py-16">
-        <div class="text-center">
+        <div class="text-center animated-section">
             <h1 class="text-4xl md:text-5xl font-bold text-slate-900">Sauramandala Foundation</h1>
             <p class="mt-4 text-lg text-slate-600">Explore our 2023-24 journey of impact and perseverance.</p>
         </div>
 
         <!-- Gemini API Feature -->
-        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg text-left mt-12 max-w-3xl mx-auto">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg text-left mt-12 max-w-3xl mx-auto animated-section" style="animation-delay: 100ms;">
             <h2 class="text-2xl font-bold text-slate-800 mb-4 flex items-center">
                 <span class="text-amber-500 mr-2">✨</span> Instantly Ask About Our Work
             </h2>
@@ -85,10 +101,19 @@
             <div id="gemini-response" class="mt-4 text-slate-700 bg-slate-50 p-4 rounded-lg border border-slate-200 hidden"></div>
         </div>
 
+        <!-- Quick Facts Section -->
+        <div class="max-w-3xl mx-auto mt-16 text-center animated-section" style="animation-delay: 200ms;">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Impact at a Glance</h2>
+            <div id="quick-facts-container" class="bg-amber-100 border-2 border-amber-200 p-6 rounded-2xl relative h-28 flex items-center justify-center">
+                <!-- Quick facts will be injected by JS -->
+            </div>
+        </div>
+
+
         <!-- Navigation Cards -->
         <div class="mt-16 grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <!-- Card 1: Interactive Quiz -->
-            <div id="launch-quiz-btn" class="card bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer">
+            <div id="launch-quiz-btn" class="card bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer" style="animation-delay: 300ms;">
                 <img src="https://placehold.co/600x350/0f172a/f59e0b?text=Quiz" alt="Interactive Quiz" class="w-full h-48 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x350/0f172a/ffffff?text=Image+Not+Found';">
                 <div class="p-6">
                     <h3 class="text-2xl font-bold text-slate-800">Test Your Knowledge</h3>
@@ -96,7 +121,7 @@
                 </div>
             </div>
             <!-- Card 2: Full Report PDF -->
-            <a href="https://www.sauramandala.org/wp-content/uploads/2024/06/SMF-AR-2023-24-1_compressed.pdf" target="_blank" class="card bg-white rounded-2xl shadow-lg overflow-hidden">
+            <a href="https://www.sauramandala.org/wp-content/uploads/2024/06/SMF-AR-2023-24-1_compressed.pdf" target="_blank" class="card bg-white rounded-2xl shadow-lg overflow-hidden" style="animation-delay: 400ms;">
                 <img src="https://placehold.co/600x350/334155/f59e0b?text=Report" alt="Full Annual Report" class="w-full h-48 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x350/334155/ffffff?text=Image+Not+Found';">
                 <div class="p-6">
                     <h3 class="text-2xl font-bold text-slate-800">Read the Full Report</h3>
@@ -112,21 +137,14 @@
             <button id="close-quiz-btn" class="absolute top-4 right-4 text-slate-500 hover:text-slate-800">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-            
-            <!-- Quiz content will be injected here -->
-            <div id="quiz-content-area">
-                <!-- This will be populated by JS -->
-            </div>
+            <div id="quiz-content-area"><!-- Quiz content will be injected here --></div>
         </div>
     </div>
 
 
     <script>
         // --- CONTEXT & DATA ---
-        // This variable acts as the "brain" for the AI. All answers are based on this text.
         const annualReportContext = `SAURAMANDALA FOUNDATION Annual Report 2023-24. From the Desk: The last few years in Meghalaya...gave us the confidence to take our approach and mission to other geographies...of northeast India. Vision: Improve Human Development Indicators in Remote, Vulnerable and Disconnected Communities. Mission: To establish a learning layer that promotes iterative problem-statement-based approaches to ground-up societal problem-solving. Centre for Accelerated Development (CFAD): A 3-stage approach: 1. Gain insights and build social capital. 2. Aggregate NGO partners to Co-design and facilitate implementation. 3. Evidence generation and policy advocacy. Our goal is to build this ecosystem with people from remote and vulnerable communities. OUR TEAM: THE ENGINES OF CFAD. Horizontal Engine (SMF core team) and Vertical Engine (Projects & Project teams). CHIEF MINISTER'S YOUTH CENTRES (CMYC): Open learning spaces across rural Meghalaya for youth to develop innovation and problem-solving skills. Anyone can be a learner. Impact: 22 Functional Centres, 1791 Registered learners (65:35 Female:Male ratio), 76 Projects completed in the NOOK component, 19 Nano-grants awarded. Story of Preety Nongrum: from community librarian to Innovation Fellow and award-winning jewellery maker. Story of Jennifer Nongsiej: balanced roles in Nook and as an Ultimate Frisbee coach. Next for CMYC: Scale up to 64 Block Level Youth Centres (BLYCs). PRIME-SAURAMANDALA RURAL ENTREPRENEURSHIP FELLOWSHIP (PSREF): Aims to help entrepreneurs in remote areas. Hashtag: #noruralentrepreneurleftbehind. Impact: 145 Entrepreneurs actively engaged, 420+ potential entrepreneurs met, 12 field units. Story of Pecindha K Sangma: A winemaker who successfully obtained a licence. Story of Kong Ailinda Sayoo: A weaver of Eri Silk Jainsem. THE FORGOTTEN FOLKLORE PROJECT (TFFP): Aims to bring local stories to life for children in Meghalaya. Created 45 contextual storybooks in Khasi, Jaintia, and Garo. Vision is to facilitate Early Childhood Care and Education. Over 42,000+ reads on the Storyweaver platform. STRENGTHENING OUR IMPACT THROUGH THE/NUDGE ACCELERATOR: Selected for The/Nudge Institute's $A/6$ Accelerator Program in 2023. Became part of the Pragati Program, a CSR initiative by Meta. FINANCIALS 2023-24: Total Funds Raised: 4.55 cr. from Government. Allocation: 50% Human Resources, 21.4% Program Implementation. Vision 2028: Co-design to scale, Developing Organizations, Establish an Ecosystem in 4 states.`;
-        
-        // Data for the interactive quiz
         const quizData = [
             { question: "What is the primary vision of the Sauramandala Foundation?", image: "https://placehold.co/600x300/1e293b/f59e0b?text=Our+Vision", answers: [ { text: "To focus only on urban development", correct: false }, { text: "Improve Human Development in remote communities", correct: true }, { text: "To provide financial aid to all entrepreneurs", correct: false }, { text: "To build schools in every village", correct: false } ], explanation: "Our vision is to 'Improve Human Development Indicators in Remote, Vulnerable and Disconnected Communities', tackling challenges where they are most severe." },
             { question: "How many functional Chief Minister's Youth Centres (CMYCs) were operational?", image: "https://placehold.co/600x300/475569/f59e0b?text=CMYCs", answers: [ { text: "10", correct: false }, { text: "50", correct: false }, { text: "22", correct: true }, { text: "100", correct: false } ], explanation: "We successfully operated 22 functional centres across Meghalaya, providing open learning spaces for youth and fostering innovation." },
@@ -134,6 +152,23 @@
             { question: "What is the hashtag for the Rural Entrepreneurship Fellowship?", image: "https://placehold.co/600x300/334155/f59e0b?text=Rural+Entrepreneurs", answers: [ { text: "#ruralfirst", correct: false }, { text: "#supportlocal", correct: false }, { text: "#meghalayaentrepreneurs", correct: false }, { text: "#noruralentrepreneurleftbehind", correct: true } ], explanation: "The fellowship operates under the ethos of #noruralentrepreneurleftbehind, ensuring equitable access to resources and opportunities for growth." },
             { question: "What does the 'A' in CFAD stand for?", image: "https://placehold.co/600x300/52525b/f59e0b?text=CFAD", answers: [ { text: "Accelerated", correct: true }, { text: "Agricultural", correct: false }, { text: "Artistic", correct: false }, { text: "Aid", correct: false }, ], explanation: "CFAD stands for Centre for Accelerated Development, our approach to fast-track social and economic change through collaborative action." }
         ];
+        const quickFacts = [
+            { icon: '👥', text: 'Engaged with over <strong class="font-bold">1,791</strong> learners across our youth centres.' },
+            { icon: '📚', text: 'Created <strong class="font-bold">45</strong> unique storybooks preserving local folklore.' },
+            { icon: '💼', text: 'Actively supported <strong class="font-bold">145</strong> rural entrepreneurs on their journey.' },
+            { icon: '💡', text: 'Awarded <strong class="font-bold">19</strong> nano-grants to businesses born from our CMYCs.' }
+        ];
+
+        // --- QUICK FACTS LOGIC ---
+        const quickFactsContainer = document.getElementById('quick-facts-container');
+        let currentFactIndex = 0;
+        function showNextFact() {
+            const fact = quickFacts[currentFactIndex];
+            quickFactsContainer.innerHTML = `<div class="quick-fact active text-xl"><span class="mr-2">${fact.icon}</span>${fact.text}</div>`;
+            currentFactIndex = (currentFactIndex + 1) % quickFacts.length;
+        }
+        showNextFact();
+        setInterval(showNextFact, 4000);
 
         // --- GEMINI API HANDLER ---
         const geminiPromptInput = document.getElementById('gemini-prompt');
@@ -141,7 +176,6 @@
         const geminiResponseContainer = document.getElementById('gemini-response');
         const askBtnText = document.getElementById('ask-btn-text');
         const askLoader = document.getElementById('ask-loader');
-
         geminiAskBtn.addEventListener('click', handleAskGemini);
 
         async function handleAskGemini() {
@@ -151,29 +185,45 @@
                 geminiResponseContainer.classList.remove('hidden');
                 return;
             }
-
             askBtnText.classList.add('hidden');
             askLoader.classList.remove('hidden');
             geminiAskBtn.disabled = true;
             geminiResponseContainer.classList.add('hidden');
+            
+            // =========================================================================
+            //  IMPORTANT: PASTE YOUR GEMINI API KEY HERE
+            // =========================================================================
+            const apiKey = "AIzaSyA2kInA66mxn_ETJb5wI4FPdJRWW3EpW6w";
+            // =========================================================================
+
+            if (apiKey === "YOUR_GEMINI_API_KEY_GOES_HERE") {
+                geminiResponseContainer.innerText = "API Key not found. Please add your key to the index.html file.";
+                geminiResponseContainer.classList.remove('hidden');
+                askBtnText.classList.remove('hidden');
+                askLoader.classList.add('hidden');
+                geminiAskBtn.disabled = false;
+                return;
+            }
 
             const fullPrompt = `Based on the following context from the Sauramandala Foundation's 2023-24 annual report, answer the user's question. Be friendly and concise. Context: "${annualReportContext}"\n\nQuestion: "${userPrompt}"`;
-            
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
             try {
                  const chatHistory = [{ role: "user", parts: [{ text: fullPrompt }] }];
                  const payload = { contents: chatHistory };
-                 // IMPORTANT: Leave the API Key empty. The execution environment will securely handle it.
-                 // Do NOT paste your own key here for security reasons.
-                 const apiKey = "";
-                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                 const response = await fetch(apiUrl, { 
+                     method: 'POST', 
+                     headers: { 'Content-Type': 'application/json' }, 
+                     body: JSON.stringify(payload) 
+                 });
 
-                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                 const result = await response.json();
-
-                 if (result.error) {
-                    throw new Error(result.error.message);
+                 if (!response.ok) {
+                    const errorResult = await response.json();
+                    throw new Error(errorResult.error.message || `API Error: ${response.statusText}`);
                  }
 
+                 const result = await response.json();
+                 
                  if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts) {
                      geminiResponseContainer.innerText = result.candidates[0].content.parts[0].text;
                  } else {
@@ -181,7 +231,7 @@
                  }
             } catch (error) {
                 console.error("Error calling Gemini API:", error);
-                geminiResponseContainer.innerText = `Sorry, an error occurred. The AI feature may not work on external sites like GitHub Pages due to security policies. Please try the 'Preview' button.`;
+                geminiResponseContainer.innerText = `Sorry, an error occurred: ${error.message}`;
             } finally {
                 geminiResponseContainer.classList.remove('hidden');
                 askBtnText.classList.remove('hidden');
@@ -195,18 +245,10 @@
         const launchQuizBtn = document.getElementById('launch-quiz-btn');
         const closeQuizBtn = document.getElementById('close-quiz-btn');
         const quizContentArea = document.getElementById('quiz-content-area');
-
         let currentQuestionIndex = 0;
         let score = 0;
-
-        launchQuizBtn.addEventListener('click', () => {
-            quizModal.classList.remove('hidden');
-            startQuiz();
-        });
-
-        closeQuizBtn.addEventListener('click', () => {
-            quizModal.classList.add('hidden');
-        });
+        launchQuizBtn.addEventListener('click', () => { quizModal.classList.remove('hidden'); startQuiz(); });
+        closeQuizBtn.addEventListener('click', () => { quizModal.classList.add('hidden'); });
         
         function startQuiz() {
             currentQuestionIndex = 0;
@@ -217,105 +259,56 @@
         function showQuizScreen(screenType) {
             quizContentArea.innerHTML = '';
             let screenHtml = '';
-
             if (screenType === 'start') {
-                screenHtml = `
-                    <div class="text-center">
-                        <h1 class="text-3xl font-bold text-slate-800 mb-2">Test Your Knowledge!</h1>
-                        <p class="text-slate-600 mb-8">Take this short quiz to see what you know about our work in 2023-24.</p>
-                        <button id="quiz-start-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg text-lg">Start Quiz</button>
-                    </div>`;
+                screenHtml = `<div class="text-center"><h1 class="text-3xl font-bold text-slate-800 mb-2">Test Your Knowledge!</h1><p class="text-slate-600 mb-8">Take this short quiz to see what you know about our work in 2023-24.</p><button id="quiz-start-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg text-lg">Start Quiz</button></div>`;
                 quizContentArea.innerHTML = screenHtml;
                 document.getElementById('quiz-start-btn').addEventListener('click', () => showQuizScreen('question'));
-            
             } else if (screenType === 'question') {
-                const questionData = quizData[currentQuestionIndex];
-                const progressPercentage = ((currentQuestionIndex + 1) / quizData.length) * 100;
-
-                screenHtml = `
-                    <div class="w-full bg-slate-200 rounded-full h-2.5 mb-4">
-                        <div class="bg-amber-500 h-2.5 rounded-full" style="width: ${progressPercentage}%"></div>
-                    </div>
-                    <p class="text-center text-sm text-slate-500 mb-4">Question ${currentQuestionIndex + 1} of ${quizData.length}</p>
-                    <img src="${questionData.image}" alt="Quiz visual" class="rounded-lg mb-6 w-full h-48 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x300/1e293b/ffffff?text=Image+Not+Found';">
-                    <h2 class="text-xl md:text-2xl font-semibold text-slate-800 mt-2 mb-6 text-center">${questionData.question}</h2>
-                    <div id="answer-buttons" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        ${questionData.answers.map(answer => `<button class="answer-btn w-full bg-slate-100 text-slate-800 font-semibold py-3 px-4 rounded-lg border-2 border-slate-200" data-correct="${answer.correct}">${answer.text}</button>`).join('')}
-                    </div>
-                    <div id="explanation-container" class="hidden mt-6">
-                         <div class="bg-slate-50 border-l-4 p-4 rounded-r-lg">
-                            <h4 id="explanation-title" class="font-bold text-slate-800"></h4>
-                            <p id="explanation-text" class="text-slate-600 mt-1"></p>
-                        </div>
-                    </div>
-                    <button id="quiz-next-btn" class="w-full mt-8 bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-6 rounded-lg hidden">Next Question</button>`;
+                const q = quizData[currentQuestionIndex];
+                const p = ((currentQuestionIndex + 1) / quizData.length) * 100;
+                screenHtml = `<div class="w-full bg-slate-200 rounded-full h-2.5 mb-4"><div class="bg-amber-500 h-2.5 rounded-full" style="width: ${p}%"></div></div><p class="text-center text-sm text-slate-500 mb-4">Question ${currentQuestionIndex + 1} of ${quizData.length}</p><img src="${q.image}" alt="Quiz visual" class="rounded-lg mb-6 w-full h-48 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x350/1e293b/ffffff?text=Image+Not+Found';"><h2 class="text-xl md:text-2xl font-semibold text-slate-800 mt-2 mb-6 text-center">${q.question}</h2><div id="answer-buttons" class="grid grid-cols-1 md:grid-cols-2 gap-4">${q.answers.map(a => `<button class="answer-btn w-full bg-slate-100 text-slate-800 font-semibold py-3 px-4 rounded-lg border-2 border-slate-200" data-correct="${a.correct}">${a.text}</button>`).join('')}</div><div id="explanation-container" class="hidden mt-6"><div class="bg-slate-50 border-l-4 p-4 rounded-r-lg"><h4 id="explanation-title" class="font-bold text-slate-800"></h4><p id="explanation-text" class="text-slate-600 mt-1"></p></div></div><button id="quiz-next-btn" class="w-full mt-8 bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-6 rounded-lg hidden">Next Question</button>`;
                 quizContentArea.innerHTML = screenHtml;
-                
-                document.querySelectorAll('.answer-btn').forEach(btn => btn.addEventListener('click', selectAnswer));
+                document.querySelectorAll('.answer-btn').forEach(b => b.addEventListener('click', selectAnswer));
                 document.getElementById('quiz-next-btn').addEventListener('click', setNextQuestion);
-
             } else if (screenType === 'result') {
-                let resultTitle, resultMessage;
-                if(score === 5) {
-                    resultTitle = "Sauramandala Expert!";
-                    resultMessage = "Incredible! You know our work inside and out.";
-                } else if (score >= 3) {
-                    resultTitle = "Community Champion!";
-                    resultMessage = "Great job! You have a solid grasp of our main projects.";
-                } else {
-                    resultTitle = "Curious Explorer!";
-                    resultMessage = "Thanks for playing! You've learned a bit about us.";
-                }
-
-                screenHtml = `
-                    <div class="text-center">
-                        <h1 class="text-3xl font-bold text-slate-800 mb-2">${resultTitle}</h1>
-                        <p class="text-slate-600 mb-4">${resultMessage}</p>
-                        <p class="text-xl text-slate-600 mb-2">Your Score:</p>
-                        <p class="text-5xl font-bold text-amber-500 mb-8">${score} / ${quizData.length}</p>
-                        <button id="quiz-restart-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg">Try Again</button>
-                    </div>`;
+                let title, msg;
+                if(score === 5){title="Sauramandala Expert!";msg="Incredible! You know our work inside and out."}else if(score>=3){title="Community Champion!";msg="Great job! You have a solid grasp of our main projects."}else{title="Curious Explorer!";msg="Thanks for playing! You've learned a bit about us."}
+                screenHtml = `<div class="text-center"><h1 class="text-3xl font-bold text-slate-800 mb-2">${title}</h1><p class="text-slate-600 mb-4">${msg}</p><p class="text-xl text-slate-600 mb-2">Your Score:</p><p class="text-5xl font-bold text-amber-500 mb-8">${score} / ${quizData.length}</p><div class="flex items-center justify-center gap-4 mb-6"><button id="share-twitter" class="font-semibold text-slate-800 hover:text-amber-600 flex items-center gap-2"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>Share</button><button id="copy-link" class="font-semibold text-slate-800 hover:text-amber-600 flex items-center gap-2"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>Copy Link</button></div><button id="quiz-restart-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg">Try Again</button></div>`;
                 quizContentArea.innerHTML = screenHtml;
                 document.getElementById('quiz-restart-btn').addEventListener('click', startQuiz);
+                document.getElementById('share-twitter').addEventListener('click', () => {
+                    const text = `I scored ${score} out of ${quizData.length} on the Sauramandala Foundation's annual report quiz! Test your knowledge:`;
+                    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`;
+                    window.open(url, '_blank');
+                });
+                document.getElementById('copy-link').addEventListener('click', (e) => {
+                    const el = document.createElement('textarea');
+                    el.value = window.location.href;
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(el);
+                    e.target.closest('button').innerHTML = '<svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Link Copied!';
+                });
             }
         }
         
         function selectAnswer(e) {
             const selectedBtn = e.target;
             const isCorrect = selectedBtn.dataset.correct === 'true';
-            const explanationContainer = document.getElementById('explanation-container');
-            const explanationTitle = document.getElementById('explanation-title');
-            const explanationText = document.getElementById('explanation-text');
-
-            explanationText.innerText = quizData[currentQuestionIndex].explanation;
-            explanationContainer.classList.remove('hidden');
-
-            if (isCorrect) {
-                score++;
-                selectedBtn.classList.add('correct');
-                explanationTitle.innerText = "Correct!";
-                explanationContainer.firstElementChild.classList.add('border-green-500');
-            } else {
-                selectedBtn.classList.add('incorrect');
-                explanationTitle.innerText = "Not Quite...";
-                 explanationContainer.firstElementChild.classList.add('border-red-500');
-            }
-
-            document.querySelectorAll('.answer-btn').forEach(button => {
-                if (button.dataset.correct === 'true') button.classList.add('correct');
-                button.disabled = true;
-            });
-            
+            const expContainer = document.getElementById('explanation-container');
+            const expTitle = document.getElementById('explanation-title');
+            const expText = document.getElementById('explanation-text');
+            expText.innerText = quizData[currentQuestionIndex].explanation;
+            expContainer.classList.remove('hidden');
+            if(isCorrect){score++;selectedBtn.classList.add('correct');expTitle.innerText="Correct!";expContainer.firstElementChild.classList.add('border-green-500')}else{selectedBtn.classList.add('incorrect');expTitle.innerText="Not Quite...";expContainer.firstElementChild.classList.add('border-red-500')}
+            document.querySelectorAll('.answer-btn').forEach(b=>{if(b.dataset.correct==='true')b.classList.add('correct');b.disabled=true});
             document.getElementById('quiz-next-btn').classList.remove('hidden');
         }
 
         function setNextQuestion() {
             currentQuestionIndex++;
-            if (currentQuestionIndex < quizData.length) {
-                showQuizScreen('question');
-            } else {
-                showQuizScreen('result');
-            }
+            if(currentQuestionIndex < quizData.length){showQuizScreen('question')}else{showQuizScreen('result')}
         }
     </script>
 </body>
