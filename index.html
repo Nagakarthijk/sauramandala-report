@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sauramandala Foundation - Interactive Annual Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .hero-section {
+            background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.7)), url('https://placehold.co/1200x800/334155/f59e0b?text=Impact') no-repeat center center;
+            background-size: cover;
+        }
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        .modal-overlay {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .quiz-container {
+            animation: slideUp 0.4s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #f59e0b;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .answer-btn:hover:not(:disabled) {
+            transform: scale(1.02);
+            background-color: #fde68a;
+        }
+        .answer-btn.correct {
+            background-color: #22c55e !important; color: white; border-color: #16a34a;
+        }
+        .answer-btn.incorrect {
+            background-color: #ef4444 !important; color: white; border-color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Landing Page Content -->
+    <main class="container mx-auto px-4 py-8 md:py-16">
+        <div class="text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-900">Sauramandala Foundation</h1>
+            <p class="mt-4 text-lg text-slate-600">Explore our 2023-24 journey of impact and perseverance.</p>
+        </div>
+
+        <!-- Gemini API Feature -->
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg text-left mt-12 max-w-3xl mx-auto">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4 flex items-center">
+                <span class="text-amber-500 mr-2">✨</span> Instantly Ask About Our Work
+            </h2>
+            <p class="text-slate-600 mb-6">Use our AI assistant to get answers about our projects, impact, or vision directly from the 2023-24 annual report.</p>
+            <div class="flex flex-col sm:flex-row gap-2">
+                <input type="text" id="gemini-prompt" class="flex-grow border border-slate-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-amber-400 focus:outline-none" placeholder="e.g., Tell me about the CMYCs">
+                <button id="gemini-ask-btn" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center text-lg">
+                    <span id="ask-btn-text">Ask</span>
+                    <div id="ask-loader" class="loader hidden"></div>
+                </button>
+            </div>
+            <div id="gemini-response" class="mt-4 text-slate-700 bg-slate-50 p-4 rounded-lg border border-slate-200 hidden"></div>
+        </div>
+
+        <!-- Navigation Cards -->
+        <div class="mt-16 grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <!-- Card 1: Interactive Quiz -->
+            <div id="launch-quiz-btn" class="card bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer">
+                <img src="https://placehold.co/600x350/0f172a/f59e0b?text=Quiz" alt="Interactive Quiz" class="w-full h-48 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x350/0f172a/ffffff?text=Image+Not+Found';">
+                <div class="p-6">
+                    <h3 class="text-2xl font-bold text-slate-800">Test Your Knowledge</h3>
+                    <p class="mt-2 text-slate-600">Take a short, interactive quiz to learn key highlights from our annual report.</p>
+                </div>
+            </div>
+            <!-- Card 2: Full Report PDF -->
+            <a href="https://www.sauramandala.org/wp-content/uploads/2024/06/SMF-AR-2023-24-1_compressed.pdf" target="_blank" class="card bg-white rounded-2xl shadow-lg overflow-hidden">
+                <img src="https://placehold.co/600x350/334155/f59e0b?text=Report" alt="Full Annual Report" class="w-full h-48 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x350/334155/ffffff?text=Image+Not+Found';">
+                <div class="p-6">
+                    <h3 class="text-2xl font-bold text-slate-800">Read the Full Report</h3>
+                    <p class="mt-2 text-slate-600">Dive deep into the details, financials, and stories in the complete PDF version.</p>
+                </div>
+            </a>
+        </div>
+    </main>
+
+    <!-- Quiz Modal -->
+    <div id="quiz-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
+        <div class="quiz-container w-full max-w-2xl bg-white rounded-2xl shadow-xl p-6 md:p-8 relative">
+            <button id="close-quiz-btn" class="absolute top-4 right-4 text-slate-500 hover:text-slate-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            
+            <!-- Quiz content will be injected here -->
+            <div id="quiz-content-area">
+                <!-- This will be populated by JS -->
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- CONTEXT & DATA ---
+        // This variable acts as the "brain" for the AI. All answers are based on this text.
+        const annualReportContext = `SAURAMANDALA FOUNDATION Annual Report 2023-24. From the Desk: The last few years in Meghalaya...gave us the confidence to take our approach and mission to other geographies...of northeast India. Vision: Improve Human Development Indicators in Remote, Vulnerable and Disconnected Communities. Mission: To establish a learning layer that promotes iterative problem-statement-based approaches to ground-up societal problem-solving. Centre for Accelerated Development (CFAD): A 3-stage approach: 1. Gain insights and build social capital. 2. Aggregate NGO partners to Co-design and facilitate implementation. 3. Evidence generation and policy advocacy. Our goal is to build this ecosystem with people from remote and vulnerable communities. OUR TEAM: THE ENGINES OF CFAD. Horizontal Engine (SMF core team) and Vertical Engine (Projects & Project teams). CHIEF MINISTER'S YOUTH CENTRES (CMYC): Open learning spaces across rural Meghalaya for youth to develop innovation and problem-solving skills. Anyone can be a learner. Impact: 22 Functional Centres, 1791 Registered learners (65:35 Female:Male ratio), 76 Projects completed in the NOOK component, 19 Nano-grants awarded. Story of Preety Nongrum: from community librarian to Innovation Fellow and award-winning jewellery maker. Story of Jennifer Nongsiej: balanced roles in Nook and as an Ultimate Frisbee coach. Next for CMYC: Scale up to 64 Block Level Youth Centres (BLYCs). PRIME-SAURAMANDALA RURAL ENTREPRENEURSHIP FELLOWSHIP (PSREF): Aims to help entrepreneurs in remote areas. Hashtag: #noruralentrepreneurleftbehind. Impact: 145 Entrepreneurs actively engaged, 420+ potential entrepreneurs met, 12 field units. Story of Pecindha K Sangma: A winemaker who successfully obtained a licence. Story of Kong Ailinda Sayoo: A weaver of Eri Silk Jainsem. THE FORGOTTEN FOLKLORE PROJECT (TFFP): Aims to bring local stories to life for children in Meghalaya. Created 45 contextual storybooks in Khasi, Jaintia, and Garo. Vision is to facilitate Early Childhood Care and Education. Over 42,000+ reads on the Storyweaver platform. STRENGTHENING OUR IMPACT THROUGH THE/NUDGE ACCELERATOR: Selected for The/Nudge Institute's $A/6$ Accelerator Program in 2023. Became part of the Pragati Program, a CSR initiative by Meta. FINANCIALS 2023-24: Total Funds Raised: 4.55 cr. from Government. Allocation: 50% Human Resources, 21.4% Program Implementation. Vision 2028: Co-design to scale, Developing Organizations, Establish an Ecosystem in 4 states.`;
+        
+        // Data for the interactive quiz
+        const quizData = [
+            { question: "What is the primary vision of the Sauramandala Foundation?", image: "https://placehold.co/600x300/1e293b/f59e0b?text=Our+Vision", answers: [ { text: "To focus only on urban development", correct: false }, { text: "Improve Human Development in remote communities", correct: true }, { text: "To provide financial aid to all entrepreneurs", correct: false }, { text: "To build schools in every village", correct: false } ], explanation: "Our vision is to 'Improve Human Development Indicators in Remote, Vulnerable and Disconnected Communities', tackling challenges where they are most severe." },
+            { question: "How many functional Chief Minister's Youth Centres (CMYCs) were operational?", image: "https://placehold.co/600x300/475569/f59e0b?text=CMYCs", answers: [ { text: "10", correct: false }, { text: "50", correct: false }, { text: "22", correct: true }, { text: "100", correct: false } ], explanation: "We successfully operated 22 functional centres across Meghalaya, providing open learning spaces for youth and fostering innovation." },
+            { question: "The Forgotten Folklore Project (TFFP) achieved over 42,000 reads on which platform?", image: "https://placehold.co/600x300/0f172a/f59e0b?text=Forgotten+Folklore", answers: [ { text: "Storyweaver", correct: true }, { text: "Kindle", correct: false }, { text: "Google Books", correct: false }, { text: "Local Libraries", correct: false } ], explanation: "TFFP's 45 contextual storybooks were published on the Storyweaver platform, reaching over 42,000+ reads and preserving local culture." },
+            { question: "What is the hashtag for the Rural Entrepreneurship Fellowship?", image: "https://placehold.co/600x300/334155/f59e0b?text=Rural+Entrepreneurs", answers: [ { text: "#ruralfirst", correct: false }, { text: "#supportlocal", correct: false }, { text: "#meghalayaentrepreneurs", correct: false }, { text: "#noruralentrepreneurleftbehind", correct: true } ], explanation: "The fellowship operates under the ethos of #noruralentrepreneurleftbehind, ensuring equitable access to resources and opportunities for growth." },
+            { question: "What does the 'A' in CFAD stand for?", image: "https://placehold.co/600x300/52525b/f59e0b?text=CFAD", answers: [ { text: "Accelerated", correct: true }, { text: "Agricultural", correct: false }, { text: "Artistic", correct: false }, { text: "Aid", correct: false }, ], explanation: "CFAD stands for Centre for Accelerated Development, our approach to fast-track social and economic change through collaborative action." }
+        ];
+
+        // --- GEMINI API HANDLER ---
+        const geminiPromptInput = document.getElementById('gemini-prompt');
+        const geminiAskBtn = document.getElementById('gemini-ask-btn');
+        const geminiResponseContainer = document.getElementById('gemini-response');
+        const askBtnText = document.getElementById('ask-btn-text');
+        const askLoader = document.getElementById('ask-loader');
+
+        geminiAskBtn.addEventListener('click', handleAskGemini);
+
+        async function handleAskGemini() {
+            const userPrompt = geminiPromptInput.value;
+            if (!userPrompt) {
+                geminiResponseContainer.innerText = "Please enter a question.";
+                geminiResponseContainer.classList.remove('hidden');
+                return;
+            }
+
+            askBtnText.classList.add('hidden');
+            askLoader.classList.remove('hidden');
+            geminiAskBtn.disabled = true;
+            geminiResponseContainer.classList.add('hidden');
+
+            const fullPrompt = `Based on the following context from the Sauramandala Foundation's 2023-24 annual report, answer the user's question. Be friendly and concise. Context: "${annualReportContext}"\n\nQuestion: "${userPrompt}"`;
+            
+            try {
+                 const chatHistory = [{ role: "user", parts: [{ text: fullPrompt }] }];
+                 const payload = { contents: chatHistory };
+                 const apiKey = ""; // The API key is handled by the environment, no need to add it here.
+                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                 const result = await response.json();
+
+                 if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts) {
+                     geminiResponseContainer.innerText = result.candidates[0].content.parts[0].text;
+                 } else {
+                     geminiResponseContainer.innerText = "Sorry, I couldn't find an answer to that. Please try asking another way.";
+                 }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                geminiResponseContainer.innerText = "Sorry, something went wrong. Please try again later.";
+            } finally {
+                geminiResponseContainer.classList.remove('hidden');
+                askBtnText.classList.remove('hidden');
+                askLoader.classList.add('hidden');
+                geminiAskBtn.disabled = false;
+            }
+        }
+
+        // --- QUIZ MODAL LOGIC ---
+        const quizModal = document.getElementById('quiz-modal');
+        const launchQuizBtn = document.getElementById('launch-quiz-btn');
+        const closeQuizBtn = document.getElementById('close-quiz-btn');
+        const quizContentArea = document.getElementById('quiz-content-area');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        launchQuizBtn.addEventListener('click', () => {
+            quizModal.classList.remove('hidden');
+            startQuiz();
+        });
+
+        closeQuizBtn.addEventListener('click', () => {
+            quizModal.classList.add('hidden');
+        });
+        
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            showQuizScreen('start');
+        }
+        
+        function showQuizScreen(screenType) {
+            quizContentArea.innerHTML = '';
+            let screenHtml = '';
+
+            if (screenType === 'start') {
+                screenHtml = `
+                    <div class="text-center">
+                        <h1 class="text-3xl font-bold text-slate-800 mb-2">Test Your Knowledge!</h1>
+                        <p class="text-slate-600 mb-8">Take this short quiz to see what you know about our work in 2023-24.</p>
+                        <button id="quiz-start-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg text-lg">Start Quiz</button>
+                    </div>`;
+                quizContentArea.innerHTML = screenHtml;
+                document.getElementById('quiz-start-btn').addEventListener('click', () => showQuizScreen('question'));
+            
+            } else if (screenType === 'question') {
+                const questionData = quizData[currentQuestionIndex];
+                const progressPercentage = ((currentQuestionIndex + 1) / quizData.length) * 100;
+
+                screenHtml = `
+                    <div class="w-full bg-slate-200 rounded-full h-2.5 mb-4">
+                        <div class="bg-amber-500 h-2.5 rounded-full" style="width: ${progressPercentage}%"></div>
+                    </div>
+                    <p class="text-center text-sm text-slate-500 mb-4">Question ${currentQuestionIndex + 1} of ${quizData.length}</p>
+                    <img src="${questionData.image}" alt="Quiz visual" class="rounded-lg mb-6 w-full h-48 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x300/1e293b/ffffff?text=Image+Not+Found';">
+                    <h2 class="text-xl md:text-2xl font-semibold text-slate-800 mt-2 mb-6 text-center">${questionData.question}</h2>
+                    <div id="answer-buttons" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${questionData.answers.map(answer => `<button class="answer-btn w-full bg-slate-100 text-slate-800 font-semibold py-3 px-4 rounded-lg border-2 border-slate-200" data-correct="${answer.correct}">${answer.text}</button>`).join('')}
+                    </div>
+                    <div id="explanation-container" class="hidden mt-6">
+                         <div class="bg-slate-50 border-l-4 p-4 rounded-r-lg">
+                            <h4 id="explanation-title" class="font-bold text-slate-800"></h4>
+                            <p id="explanation-text" class="text-slate-600 mt-1"></p>
+                        </div>
+                    </div>
+                    <button id="quiz-next-btn" class="w-full mt-8 bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-6 rounded-lg hidden">Next Question</button>`;
+                quizContentArea.innerHTML = screenHtml;
+                
+                document.querySelectorAll('.answer-btn').forEach(btn => btn.addEventListener('click', selectAnswer));
+                document.getElementById('quiz-next-btn').addEventListener('click', setNextQuestion);
+
+            } else if (screenType === 'result') {
+                let resultTitle, resultMessage;
+                if(score === 5) {
+                    resultTitle = "Sauramandala Expert!";
+                    resultMessage = "Incredible! You know our work inside and out.";
+                } else if (score >= 3) {
+                    resultTitle = "Community Champion!";
+                    resultMessage = "Great job! You have a solid grasp of our main projects.";
+                } else {
+                    resultTitle = "Curious Explorer!";
+                    resultMessage = "Thanks for playing! You've learned a bit about us.";
+                }
+
+                screenHtml = `
+                    <div class="text-center">
+                        <h1 class="text-3xl font-bold text-slate-800 mb-2">${resultTitle}</h1>
+                        <p class="text-slate-600 mb-4">${resultMessage}</p>
+                        <p class="text-xl text-slate-600 mb-2">Your Score:</p>
+                        <p class="text-5xl font-bold text-amber-500 mb-8">${score} / ${quizData.length}</p>
+                        <button id="quiz-restart-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg">Try Again</button>
+                    </div>`;
+                quizContentArea.innerHTML = screenHtml;
+                document.getElementById('quiz-restart-btn').addEventListener('click', startQuiz);
+            }
+        }
+        
+        function selectAnswer(e) {
+            const selectedBtn = e.target;
+            const isCorrect = selectedBtn.dataset.correct === 'true';
+            const explanationContainer = document.getElementById('explanation-container');
+            const explanationTitle = document.getElementById('explanation-title');
+            const explanationText = document.getElementById('explanation-text');
+
+            explanationText.innerText = quizData[currentQuestionIndex].explanation;
+            explanationContainer.classList.remove('hidden');
+
+            if (isCorrect) {
+                score++;
+                selectedBtn.classList.add('correct');
+                explanationTitle.innerText = "Correct!";
+                explanationContainer.firstElementChild.classList.add('border-green-500');
+            } else {
+                selectedBtn.classList.add('incorrect');
+                explanationTitle.innerText = "Not Quite...";
+                 explanationContainer.firstElementChild.classList.add('border-red-500');
+            }
+
+            document.querySelectorAll('.answer-btn').forEach(button => {
+                if (button.dataset.correct === 'true') button.classList.add('correct');
+                button.disabled = true;
+            });
+            
+            document.getElementById('quiz-next-btn').classList.remove('hidden');
+        }
+
+        function setNextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData.length) {
+                showQuizScreen('question');
+            } else {
+                showQuizScreen('result');
+            }
+        }
+    </script>
+</body>
+</html>
