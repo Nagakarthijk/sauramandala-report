@@ -162,7 +162,7 @@
             try {
                  const chatHistory = [{ role: "user", parts: [{ text: fullPrompt }] }];
                  const payload = { contents: chatHistory };
-                 const apiKey = ""; // The API key is handled by the environment, no need to add it here.
+                 const apiKey = "AIzaSyA2kInA66mxn_ETJb5wI4FPdJRWW3EpW6w"; // The API key is handled by the environment, no need to add it here.
                  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                  const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
