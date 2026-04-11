@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile — Workledger</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+  <script src="tl-data.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #fafaf9; }
+    .timeline-item { animation: fadeIn .35s ease-out; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .tab-active { border-bottom: 2px solid #1c1917; color: #1c1917; font-weight: 700; }
+    .tab-inactive { color: #78716c; border-bottom: 2px solid transparent; }
+    .support-panel { display: none; }
+    .support-panel.open { display: block; animation: fadeIn .3s ease-out; }
+    .add-panel { display: none; }
+    .add-panel.open { display: block; animation: fadeIn .3s ease-out; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <div id="nav-placeholder"></div>
+
+  <!-- Not found fallback -->
+  <div id="not-found" class="hidden max-w-md mx-auto px-4 py-24 text-center">
+    <p class="text-4xl mb-4">🔍</p>
+    <h2 class="text-xl font-bold text-stone-900 mb-2">Profile not found</h2>
+    <p class="text-stone-500 text-sm mb-6">This profile doesn't exist or the link is broken.</p>
+    <a href="trust-ledger.html" class="text-stone-700 underline text-sm">← Browse all profiles</a>
+  </div>
+
+  <!-- Main Profile -->
+  <div id="profile-main" class="hidden max-w-xl mx-auto px-4 py-8">
+
+    <!-- Header -->
+    <div class="flex items-start gap-4 mb-6">
+      <div id="avatar" class="w-16 h-16 rounded-2xl bg-stone-200 flex items-center justify-center font-black text-stone-600 text-xl shrink-0"></div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <h1 id="profile-name" class="text-2xl font-black text-stone-900"></h1>
+            <p id="profile-location" class="text-sm text-stone-500 mt-0.5"></p>
+          </div>
+          <span id="profile-category" class="text-xs font-bold px-2.5 py-1 rounded-full shrink-0"></span>
+        </div>
+        <p id="profile-bio" class="text-sm text-stone-600 mt-2 leading-relaxed"></p>
+        <p id="profile-lastactive" class="text-xs text-stone-400 mt-1"></p>
+      </div>
+    </div>
+
+    <!-- Currently Working On -->
+    <div class="bg-stone-900 text-white rounded-2xl p-5 mb-5">
+      <p class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">Currently working on</p>
+      <p id="profile-work" class="text-sm leading-relaxed text-stone-100"></p>
+    </div>
+
+    <!-- Support Section -->
+    <div class="bg-white border border-stone-200 rounded-2xl p-5 mb-5">
+      <div class="flex items-start justify-between mb-3">
+        <div>
+          <p class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Support this work</p>
+          <p class="text-xs text-stone-500">Money goes directly to them via UPI. We don't touch it.</p>
+        </div>
+        <button onclick="toggleSupport()" id="support-btn"
+          class="bg-stone-900 hover:bg-stone-800 text-white font-bold text-sm px-4 py-2 rounded-xl transition-all shrink-0">
+          Support →
+        </button>
+      </div>
+
+      <!-- Goal progress -->
+      <div id="goal-section" class="hidden mb-4">
+        <div class="flex justify-between text-xs text-stone-500 mb-1">
+          <span id="goal-received"></span>
+          <span id="goal-target"></span>
+        </div>
+        <div class="w-full bg-stone-100 rounded-full h-2">
+          <div id="goal-bar" class="bg-emerald-500 h-2 rounded-full transition-all"></div>
+        </div>
+        <p id="goal-pct" class="text-xs text-stone-400 mt-1"></p>
+      </div>
+
+      <!-- UPI reveal panel -->
+      <div id="support-panel" class="support-panel">
+        <div class="bg-stone-50 rounded-xl p-4 border border-stone-100">
+          <p class="text-xs font-semibold text-stone-500 mb-2">Pay directly to their UPI</p>
+          <div class="flex items-center gap-3">
+            <code id="upi-display" class="text-base font-bold text-stone-900 flex-1"></code>
+            <button onclick="copyUPI()" class="text-xs border border-stone-200 px-3 py-1.5 rounded-lg text-stone-600 hover:bg-stone-100 transition-all font-medium">Copy</button>
+          </div>
+          <p class="text-xs text-stone-400 mt-3 leading-relaxed">Open any UPI app (GPay, PhonePe, Paytm, BHIM) → Send money → Paste this UPI ID → Pay any amount.</p>
+
+          <!-- Claim submission -->
+          <div class="mt-4 pt-4 border-t border-stone-100">
+            <p class="text-xs font-semibold text-stone-600 mb-2">After paying — submit a claim (optional)</p>
+            <div class="space-y-2">
+              <input id="claim-name" type="text" placeholder="Your name (leave blank to be anonymous)"
+                class="w-full border border-stone-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-stone-400 focus:outline-none" />
+              <input id="claim-amount" type="number" placeholder="Amount paid (₹)"
+                class="w-full border border-stone-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-stone-400 focus:outline-none" />
+              <input id="claim-utr" type="text" placeholder="UTR / Transaction ID (optional)"
+                class="w-full border border-stone-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-stone-400 focus:outline-none" />
+              <button onclick="submitClaim()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-2 rounded-lg transition-all">
+                Submit Claim
+              </button>
+              <p id="claim-msg" class="text-xs text-center hidden"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Tiles -->
+    <div class="grid grid-cols-3 gap-3 mb-6">
+      <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-center">
+        <div id="sum-received" class="text-lg font-black text-emerald-700"></div>
+        <div class="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider mt-0.5">Reported received</div>
+      </div>
+      <div class="bg-rose-50 border border-rose-100 rounded-2xl p-4 text-center">
+        <div id="sum-spent" class="text-lg font-black text-rose-600"></div>
+        <div class="text-[10px] text-rose-500 font-semibold uppercase tracking-wider mt-0.5">Reported spent</div>
+      </div>
+      <div class="bg-stone-50 border border-stone-200 rounded-2xl p-4 text-center">
+        <div id="sum-balance" class="text-lg font-black text-stone-800"></div>
+        <div class="text-[10px] text-stone-500 font-semibold uppercase tracking-wider mt-0.5">Balance</div>
+      </div>
+    </div>
+
+    <!-- Timeline Tabs -->
+    <div class="flex border-b border-stone-200 mb-5 gap-4 overflow-x-auto">
+      <button id="tab-all"       onclick="switchTab('all')"     class="tab-active    text-sm py-2.5 shrink-0 transition-all">All activity</button>
+      <button id="tab-ledger"    onclick="switchTab('ledger')"  class="tab-inactive  text-sm py-2.5 shrink-0 transition-all">Ledger</button>
+      <button id="tab-updates"   onclick="switchTab('updates')" class="tab-inactive  text-sm py-2.5 shrink-0 transition-all">Updates</button>
+      <button id="tab-claims"    onclick="switchTab('claims')"  class="tab-inactive  text-sm py-2.5 shrink-0 transition-all">Claims</button>
+      <button id="tab-comments"  onclick="switchTab('comments')" class="tab-inactive text-sm py-2.5 shrink-0 transition-all">Comments</button>
+    </div>
+
+    <!-- Add entry (owner-style, no auth for demo) -->
+    <div class="mb-4">
+      <div class="flex gap-2 flex-wrap">
+        <button onclick="toggleAdd('received')" class="text-xs px-3 py-1.5 rounded-full border border-emerald-200 text-emerald-700 bg-emerald-50 font-semibold hover:bg-emerald-100 transition-all">+ Report received</button>
+        <button onclick="toggleAdd('spent')"    class="text-xs px-3 py-1.5 rounded-full border border-rose-200   text-rose-600   bg-rose-50   font-semibold hover:bg-rose-100    transition-all">+ Report spent</button>
+        <button onclick="toggleAdd('update')"   class="text-xs px-3 py-1.5 rounded-full border border-blue-200   text-blue-600   bg-blue-50   font-semibold hover:bg-blue-100    transition-all">+ Post update</button>
+      </div>
+
+      <!-- Add forms -->
+      <div id="add-received" class="add-panel mt-3 bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+        <p class="text-xs font-bold text-emerald-700 mb-2">Report support received</p>
+        <input id="ar-amount" type="number" placeholder="Amount (₹)" class="w-full border border-emerald-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+        <input id="ar-note"   type="text"   placeholder="Note — e.g. 'Support from a reader via UPI'" class="w-full border border-emerald-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+        <div class="flex gap-2">
+          <button onclick="submitLedger('RECEIVED')" class="flex-1 bg-emerald-600 text-white font-semibold text-xs py-2 rounded-lg hover:bg-emerald-700 transition-all">Add entry</button>
+          <button onclick="closeAdd('received')" class="border border-stone-200 text-stone-600 text-xs px-3 py-2 rounded-lg hover:bg-stone-100 transition-all">Cancel</button>
+        </div>
+      </div>
+
+      <div id="add-spent" class="add-panel mt-3 bg-rose-50 border border-rose-100 rounded-xl p-4">
+        <p class="text-xs font-bold text-rose-600 mb-2">Report how you spent it</p>
+        <input id="as-amount" type="number" placeholder="Amount (₹)" class="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-1 focus:ring-rose-400" />
+        <input id="as-note"   type="text"   placeholder="Note — e.g. 'Bought 4 storage bins from local supplier'" class="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-1 focus:ring-rose-400" />
+        <div class="flex gap-2">
+          <button onclick="submitLedger('SPENT')" class="flex-1 bg-rose-600 text-white font-semibold text-xs py-2 rounded-lg hover:bg-rose-700 transition-all">Add entry</button>
+          <button onclick="closeAdd('spent')" class="border border-stone-200 text-stone-600 text-xs px-3 py-2 rounded-lg hover:bg-stone-100 transition-all">Cancel</button>
+        </div>
+      </div>
+
+      <div id="add-update" class="add-panel mt-3 bg-blue-50 border border-blue-100 rounded-xl p-4">
+        <p class="text-xs font-bold text-blue-700 mb-2">Share an update</p>
+        <textarea id="au-text" rows="3" placeholder="What happened? What did you do? What changed?" class="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-1 focus:ring-blue-400 resize-none"></textarea>
+        <div class="flex gap-2">
+          <button onclick="submitUpdate()" class="flex-1 bg-blue-600 text-white font-semibold text-xs py-2 rounded-lg hover:bg-blue-700 transition-all">Post update</button>
+          <button onclick="closeAdd('update')" class="border border-stone-200 text-stone-600 text-xs px-3 py-2 rounded-lg hover:bg-stone-100 transition-all">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline Feed -->
+    <div id="timeline" class="space-y-3"></div>
+    <div id="timeline-empty" class="hidden text-center py-8 text-stone-400 text-sm">No entries yet.</div>
+
+    <!-- Comments Section -->
+    <div id="comments-panel" class="mt-8 pt-6 border-t border-stone-100">
+      <h3 class="font-bold text-stone-800 mb-4">Community</h3>
+      <div id="comments-list" class="space-y-3 mb-4"></div>
+      <div class="bg-stone-50 rounded-xl p-4 border border-stone-100">
+        <textarea id="new-comment" rows="2" placeholder="Leave a comment..."
+          class="w-full bg-transparent text-sm text-stone-700 resize-none focus:outline-none mb-2 placeholder:text-stone-400"></textarea>
+        <div class="flex gap-2">
+          <button onclick="submitComment(false)" class="flex-1 bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs py-2 rounded-lg transition-all">Post comment</button>
+          <button onclick="submitComment(true)"  class="flex-1 border border-stone-200 text-stone-600 font-semibold text-xs py-2 rounded-lg hover:bg-stone-100 transition-all">Flag issue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Back link -->
+    <div class="mt-10 pt-6 border-t border-stone-100 text-center">
+      <a href="trust-ledger.html" class="text-stone-400 text-xs hover:text-stone-600 transition-colors">← Back to all profiles</a>
+    </div>
+  </div>
+
+  <script>
+    TL.init();
+    document.getElementById('nav-placeholder').innerHTML = TL.navHTML('');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const slug = urlParams.get('slug');
+    const profile = slug ? TL.getProfileBySlug(slug) : null;
+
+    if (!profile) {
+      document.getElementById('not-found').classList.remove('hidden');
+    } else {
+      document.title = `${profile.name} — Workledger`;
+      document.getElementById('profile-main').classList.remove('hidden');
+      renderProfile();
+    }
+
+    function renderProfile() {
+      // Header
+      document.getElementById('avatar').textContent = TL.initials(profile.name);
+      document.getElementById('profile-name').textContent = profile.name;
+      document.getElementById('profile-location').textContent = '📍 ' + profile.locationText;
+      document.getElementById('profile-bio').textContent = profile.bio;
+      document.getElementById('profile-work').textContent = profile.currentWork;
+      document.getElementById('profile-lastactive').textContent = 'Last active ' + TL.relativeTime(profile.lastActiveAt);
+      const catEl = document.getElementById('profile-category');
+      catEl.textContent = TL.categoryLabel(profile.category);
+      catEl.className = `text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ${TL.categoryColor(profile.category)}`;
+
+      // UPI
+      document.getElementById('upi-display').textContent = profile.upiId;
+
+      // Summary
+      const stats = TL.getProfileStats(profile.id);
+      document.getElementById('sum-received').textContent = TL.formatINR(stats.received);
+      document.getElementById('sum-spent').textContent    = TL.formatINR(stats.spent);
+      document.getElementById('sum-balance').textContent  = TL.formatINR(stats.balance);
+
+      // Goal progress
+      if (profile.goalAmount) {
+        const pct = Math.min(100, Math.round(stats.received / profile.goalAmount * 100));
+        document.getElementById('goal-section').classList.remove('hidden');
+        document.getElementById('goal-received').textContent = `${TL.formatINR(stats.received)} reported received`;
+        document.getElementById('goal-target').textContent   = `Goal: ${TL.formatINR(profile.goalAmount)}`;
+        document.getElementById('goal-bar').style.width      = pct + '%';
+        document.getElementById('goal-pct').textContent      = `${pct}% of goal`;
+      }
+
+      renderTimeline('all');
+    }
+
+    // ── Support panel ──
+    function toggleSupport() {
+      const panel = document.getElementById('support-panel');
+      const btn   = document.getElementById('support-btn');
+      if (panel.classList.contains('open')) {
+        panel.classList.remove('open');
+        btn.textContent = 'Support →';
+      } else {
+        panel.classList.add('open');
+        btn.textContent = 'Close ✕';
+      }
+    }
+
+    function copyUPI() {
+      navigator.clipboard.writeText(profile.upiId).then(() => alert('UPI ID copied!')).catch(() => alert('Copy manually: ' + profile.upiId));
+    }
+
+    function submitClaim() {
+      const amount = parseInt(document.getElementById('claim-amount').value);
+      const name   = document.getElementById('claim-name').value.trim();
+      const utr    = document.getElementById('claim-utr').value.trim();
+      const msgEl  = document.getElementById('claim-msg');
+
+      if (!amount || amount < 1) { showClaimMsg('Enter a valid amount.', 'text-rose-500'); return; }
+
+      TL.addClaim({
+        id: TL.generateId('C'),
+        profileId: profile.id,
+        amount, utr: utr || null,
+        name: name || null, anonymous: !name,
+        status: 'UNVERIFIED',
+        createdAt: new Date().toISOString()
+      });
+
+      document.getElementById('claim-amount').value = '';
+      document.getElementById('claim-name').value   = '';
+      document.getElementById('claim-utr').value    = '';
+      showClaimMsg('Claim submitted. Thank you!', 'text-emerald-600');
+      renderTimeline(currentTab);
+    }
+
+    function showClaimMsg(msg, cls) {
+      const el = document.getElementById('claim-msg');
+      el.textContent = msg;
+      el.className = `text-xs text-center ${cls}`;
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 3000);
+    }
+
+    // ── Add entry panels ──
+    let currentTab = 'all';
+
+    function toggleAdd(type) {
+      ['received','spent','update'].forEach(t => {
+        if (t !== type) closeAdd(t);
+      });
+      const el = document.getElementById('add-' + type);
+      el.classList.toggle('open');
+    }
+    function closeAdd(type) { document.getElementById('add-' + type).classList.remove('open'); }
+
+    function submitLedger(type) {
+      const isRec = type === 'RECEIVED';
+      const amount = parseInt(document.getElementById(isRec ? 'ar-amount' : 'as-amount').value);
+      const note   = document.getElementById(isRec ? 'ar-note'   : 'as-note').value.trim();
+      if (!amount || !note) { alert('Please fill in amount and note.'); return; }
+      TL.addLedger({ id: TL.generateId('L'), profileId: profile.id, type, amount, note, createdAt: new Date().toISOString() });
+      document.getElementById(isRec ? 'ar-amount' : 'as-amount').value = '';
+      document.getElementById(isRec ? 'ar-note'   : 'as-note').value   = '';
+      closeAdd(isRec ? 'received' : 'spent');
+      // Refresh stats
+      const stats = TL.getProfileStats(profile.id);
+      document.getElementById('sum-received').textContent = TL.formatINR(stats.received);
+      document.getElementById('sum-spent').textContent    = TL.formatINR(stats.spent);
+      document.getElementById('sum-balance').textContent  = TL.formatINR(stats.balance);
+      renderTimeline(currentTab);
+    }
+
+    function submitUpdate() {
+      const text = document.getElementById('au-text').value.trim();
+      if (!text) { alert('Please write something.'); return; }
+      TL.addUpdate({ id: TL.generateId('U'), profileId: profile.id, text, createdAt: new Date().toISOString() });
+      document.getElementById('au-text').value = '';
+      closeAdd('update');
+      renderTimeline(currentTab);
+    }
+
+    function submitComment(isFlag) {
+      const text = document.getElementById('new-comment').value.trim();
+      if (!text) return;
+      TL.addComment({ id: TL.generateId('CM'), profileId: profile.id, type: isFlag ? 'FLAG' : 'COMMENT', text, createdAt: new Date().toISOString() });
+      document.getElementById('new-comment').value = '';
+      renderComments();
+    }
+
+    // ── Tabs ──
+    function switchTab(tab) {
+      currentTab = tab;
+      ['all','ledger','updates','claims','comments'].forEach(t => {
+        const el = document.getElementById('tab-' + t);
+        el.className = (t === tab ? 'tab-active' : 'tab-inactive') + ' text-sm py-2.5 shrink-0 transition-all';
+      });
+      if (tab === 'comments') {
+        document.getElementById('timeline').classList.add('hidden');
+        document.getElementById('timeline-empty').classList.add('hidden');
+        document.getElementById('comments-panel').classList.remove('hidden');
+        renderComments();
+      } else {
+        document.getElementById('timeline').classList.remove('hidden');
+        document.getElementById('comments-panel').classList.add('hidden');
+        renderTimeline(tab);
+      }
+    }
+
+    // ── Render Timeline ──
+    function renderTimeline(tab) {
+      const ledger  = TL.getLedgerForProfile(profile.id);
+      const updates = TL.getUpdatesForProfile(profile.id);
+      const claims  = TL.getClaimsForProfile(profile.id);
+
+      let items = [];
+      if (tab === 'all' || tab === 'ledger')  items = items.concat(ledger.map(e  => ({...e, _type:'ledger'})));
+      if (tab === 'all' || tab === 'updates') items = items.concat(updates.map(u => ({...u, _type:'update'})));
+      if (tab === 'all' || tab === 'claims')  items = items.concat(claims.map(c  => ({...c, _type:'claim'})));
+      items.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      const feed  = document.getElementById('timeline');
+      const empty = document.getElementById('timeline-empty');
+
+      if (items.length === 0) { feed.innerHTML = ''; empty.classList.remove('hidden'); return; }
+      empty.classList.add('hidden');
+
+      feed.innerHTML = items.map(item => {
+        if (item._type === 'ledger') {
+          const isRec = item.type === 'RECEIVED';
+          return `
+            <div class="timeline-item flex gap-3">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5 ${isRec ? 'bg-emerald-100' : 'bg-rose-100'}">
+                ${isRec ? '↑' : '↓'}
+              </div>
+              <div class="flex-1 bg-white border border-stone-100 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs font-bold ${isRec ? 'text-emerald-600' : 'text-rose-500'}">
+                    ${isRec ? 'Reported received' : 'Reported spent'} · ${TL.formatINR(item.amount)}
+                  </span>
+                  <span class="text-[10px] text-stone-400">${TL.relativeTime(item.createdAt)}</span>
+                </div>
+                <p class="text-sm text-stone-700">${item.note}</p>
+              </div>
+            </div>`;
+        }
+        if (item._type === 'update') {
+          return `
+            <div class="timeline-item flex gap-3">
+              <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm shrink-0 mt-0.5">📝</div>
+              <div class="flex-1 bg-white border border-stone-100 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs font-bold text-blue-600">Shared update</span>
+                  <span class="text-[10px] text-stone-400">${TL.relativeTime(item.createdAt)}</span>
+                </div>
+                <p class="text-sm text-stone-700 leading-relaxed">${item.text}</p>
+              </div>
+            </div>`;
+        }
+        if (item._type === 'claim') {
+          const statusMap = {
+            CONFIRMED:  { label:'Confirmed',  cls:'bg-emerald-100 text-emerald-700' },
+            UNVERIFIED: { label:'Unverified', cls:'bg-amber-100 text-amber-700' },
+            DISPUTED:   { label:'Disputed',   cls:'bg-rose-100 text-rose-600' }
+          };
+          const st = statusMap[item.status] || statusMap.UNVERIFIED;
+          const who = item.anonymous ? 'Anonymous' : (item.name || 'Someone');
+          return `
+            <div class="timeline-item flex gap-3">
+              <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-sm shrink-0 mt-0.5">👤</div>
+              <div class="flex-1 bg-white border border-stone-100 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-1">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-stone-700">Claim: ${who} paid ${TL.formatINR(item.amount)}</span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${st.cls}">${st.label}</span>
+                  </div>
+                  <span class="text-[10px] text-stone-400">${TL.relativeTime(item.createdAt)}</span>
+                </div>
+                ${item.utr ? `<p class="text-xs text-stone-400 mt-1">UTR: ${item.utr}</p>` : ''}
+                <div class="flex gap-2 mt-2">
+                  <button onclick="TL.updateClaimStatus('${item.id}','CONFIRMED'); renderTimeline(currentTab)" class="text-[10px] px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-semibold hover:bg-emerald-100 transition-all">Confirm</button>
+                  <button onclick="TL.updateClaimStatus('${item.id}','DISPUTED'); renderTimeline(currentTab)"  class="text-[10px] px-2 py-1 rounded-lg bg-rose-50   text-rose-600   font-semibold hover:bg-rose-100    transition-all">Dispute</button>
+                </div>
+              </div>
+            </div>`;
+        }
+        return '';
+      }).join('');
+    }
+
+    function renderComments() {
+      const comments = TL.getCommentsForProfile(profile.id);
+      const list = document.getElementById('comments-list');
+      if (comments.length === 0) { list.innerHTML = '<p class="text-sm text-stone-400">No comments yet.</p>'; return; }
+      list.innerHTML = comments.map(c => `
+        <div class="flex gap-3 ${c.type === 'FLAG' ? 'opacity-70' : ''}">
+          <div class="w-7 h-7 rounded-full bg-stone-200 flex items-center justify-center text-xs font-bold text-stone-500 shrink-0">${c.type === 'FLAG' ? '⚑' : '💬'}</div>
+          <div class="flex-1">
+            <p class="text-sm text-stone-700 leading-relaxed">${c.text}</p>
+            <div class="flex items-center gap-2 mt-1">
+              ${c.type === 'FLAG' ? '<span class="text-[10px] text-rose-500 font-semibold">Flagged concern</span>' : ''}
+              <span class="text-[10px] text-stone-400">${TL.relativeTime(c.createdAt)}</span>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+
+    renderTimeline('all');
+    renderComments();
+  </script>
+</body>
+</html>
