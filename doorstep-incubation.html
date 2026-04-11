@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doorstep Incubation Protocol — Sauramandala Foundation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+  <script src="dip-network.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .gradient-hero { background: linear-gradient(135deg, #0f172a 0%, #1a2f52 50%, #0f172a 100%); }
+    .pulse-dot { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .stage-card { transition: transform .2s, box-shadow .2s; }
+    .stage-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -8px rgba(0,0,0,.15); }
+    .cta-card { transition: transform .25s, box-shadow .25s; }
+    .cta-card:hover { transform: translateY(-6px); box-shadow: 0 20px 30px -10px rgba(0,0,0,.15); }
+  </style>
+</head>
+<body class="bg-slate-100">
+
+  <div id="nav-placeholder"></div>
+
+  <!-- Hero -->
+  <section class="gradient-hero text-white py-24 px-4">
+    <div class="container mx-auto max-w-4xl text-center">
+      <div class="inline-flex items-center gap-2 bg-amber-500/20 border border-amber-500/30 rounded-full px-4 py-1.5 text-amber-300 text-sm font-medium mb-8">
+        <span class="w-2 h-2 bg-amber-400 rounded-full pulse-dot"></span>
+        Open Protocol · v0.1.0 · Live
+      </div>
+      <h1 class="text-5xl md:text-7xl font-black mb-6 leading-none tracking-tight">
+        Doorstep<br><span class="text-amber-400">Incubation</span><br>Protocol
+      </h1>
+      <p class="text-xl text-slate-300 max-w-2xl mx-auto mb-3 leading-relaxed">
+        An open, AI-augmented network that brings business incubation to the entrepreneur — at their home, farm, or workshop.
+      </p>
+      <p class="text-slate-500 text-sm mb-12">
+        Powered by Sauramandala Foundation · PSREF Programme · #noruralentrepreneurleftbehind
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="field-agent.html" class="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold py-4 px-8 rounded-2xl text-lg transition-all shadow-lg shadow-amber-500/20">
+          🚶 Start as Field Agent
+        </a>
+        <a href="entrepreneur-directory.html" class="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-8 rounded-2xl text-lg border border-white/20 transition-all">
+          👥 Browse Entrepreneurs
+        </a>
+        <a href="ai-match.html" class="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-8 rounded-2xl text-lg border border-white/20 transition-all">
+          🤖 AI Matchmaker
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Network Stats -->
+  <section class="bg-slate-800 text-white py-8 px-4">
+    <div class="container mx-auto max-w-4xl">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div class="py-2">
+          <div id="stat-entrepreneurs" class="text-4xl font-black text-amber-400">—</div>
+          <div class="text-slate-400 text-xs mt-1 uppercase tracking-wider">Entrepreneurs</div>
+        </div>
+        <div class="py-2">
+          <div id="stat-vendors" class="text-4xl font-black text-amber-400">—</div>
+          <div class="text-slate-400 text-xs mt-1 uppercase tracking-wider">Vendors</div>
+        </div>
+        <div class="py-2">
+          <div id="stat-matches" class="text-4xl font-black text-amber-400">—</div>
+          <div class="text-slate-400 text-xs mt-1 uppercase tracking-wider">Matches Made</div>
+        </div>
+        <div class="py-2">
+          <div id="stat-incubation" class="text-4xl font-black text-amber-400">—</div>
+          <div class="text-slate-400 text-xs mt-1 uppercase tracking-wider">In Incubation</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Protocol Stages -->
+  <section class="py-20 px-4">
+    <div class="container mx-auto max-w-5xl">
+      <div class="text-center mb-14">
+        <h2 class="text-3xl md:text-4xl font-bold text-slate-900">How the Protocol Works</h2>
+        <p class="text-slate-500 mt-3 max-w-xl mx-auto">Five stages. Human agents and AI in every loop. Every step documented and auditable.</p>
+      </div>
+
+      <div class="grid md:grid-cols-5 gap-4">
+        <!-- Stage 1 -->
+        <div class="stage-card bg-white rounded-2xl p-5 shadow-sm border border-slate-100 text-center">
+          <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-2xl">🚶</div>
+          <div class="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">Stage 1</div>
+          <h3 class="font-bold text-slate-800 text-sm mb-2">Discover</h3>
+          <p class="text-xs text-slate-500 leading-relaxed">Field agent meets entrepreneur at their location</p>
+          <div class="mt-3 text-xs text-slate-400 bg-amber-50 rounded-lg p-1.5 font-medium">👤 Human Agent</div>
+        </div>
+
+        <!-- Stage 2 -->
+        <div class="stage-card bg-white rounded-2xl p-5 shadow-sm border border-slate-100 text-center">
+          <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-2xl">🔍</div>
+          <div class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Stage 2</div>
+          <h3 class="font-bold text-slate-800 text-sm mb-2">Diagnose</h3>
+          <p class="text-xs text-slate-500 leading-relaxed">AI analyses problems, finds root causes</p>
+          <div class="mt-3 text-xs text-slate-400 bg-blue-50 rounded-lg p-1.5 font-medium">🤖 AI + 👤 Review</div>
+        </div>
+
+        <!-- Stage 3 -->
+        <div class="stage-card bg-white rounded-2xl p-5 shadow-sm border border-slate-100 text-center">
+          <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-2xl">🔗</div>
+          <div class="text-[10px] font-bold text-purple-600 uppercase tracking-widest mb-1">Stage 3</div>
+          <h3 class="font-bold text-slate-800 text-sm mb-2">Match</h3>
+          <p class="text-xs text-slate-500 leading-relaxed">AI recommends vendors. Human approves.</p>
+          <div class="mt-3 text-xs text-slate-400 bg-purple-50 rounded-lg p-1.5 font-medium">🤖 AI + ✅ Approved</div>
+        </div>
+
+        <!-- Stage 4 -->
+        <div class="stage-card bg-white rounded-2xl p-5 shadow-sm border border-slate-100 text-center">
+          <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-2xl">🌱</div>
+          <div class="text-[10px] font-bold text-green-600 uppercase tracking-widest mb-1">Stage 4</div>
+          <h3 class="font-bold text-slate-800 text-sm mb-2">Incubate</h3>
+          <p class="text-xs text-slate-500 leading-relaxed">Vendor engages entrepreneur. Agent facilitates.</p>
+          <div class="mt-3 text-xs text-slate-400 bg-green-50 rounded-lg p-1.5 font-medium">🏪 Vendor + 👤 Agent</div>
+        </div>
+
+        <!-- Stage 5 -->
+        <div class="stage-card bg-white rounded-2xl p-5 shadow-sm border border-slate-100 text-center">
+          <div class="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-2xl">📊</div>
+          <div class="text-[10px] font-bold text-teal-600 uppercase tracking-widest mb-1">Stage 5</div>
+          <h3 class="font-bold text-slate-800 text-sm mb-2">Evaluate</h3>
+          <p class="text-xs text-slate-500 leading-relaxed">Track outcomes. Protocol learns and improves.</p>
+          <div class="mt-3 text-xs text-slate-400 bg-teal-50 rounded-lg p-1.5 font-medium">📝 Evidence Log</div>
+        </div>
+      </div>
+
+      <!-- Connector line (decorative, desktop only) -->
+      <div class="hidden md:flex items-center justify-between px-8 -mt-2 mb-4 relative">
+        <div class="absolute left-8 right-8 top-1/2 border-t-2 border-dashed border-amber-200"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Network Architecture -->
+  <section class="bg-slate-900 text-white py-20 px-4">
+    <div class="container mx-auto max-w-5xl">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold">Open Network Architecture</h2>
+        <p class="text-slate-400 mt-3">Inspired by Beckn Protocol. Built for rural India.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+
+        <!-- Seekers -->
+        <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700">
+          <div class="text-amber-400 font-bold uppercase tracking-widest text-[10px] mb-4">SEEKERS</div>
+          <h3 class="text-xl font-bold mb-3">Entrepreneurs</h3>
+          <p class="text-slate-400 text-sm mb-5 leading-relaxed">Rural business owners with specific problems. They don't need to travel. The protocol comes to them.</p>
+          <div class="space-y-2.5">
+            <div class="flex items-center gap-3 text-sm text-slate-300"><span class="text-base">🧵</span>Weavers & Artisans</div>
+            <div class="flex items-center gap-3 text-sm text-slate-300"><span class="text-base">🌾</span>Farmers & Growers</div>
+            <div class="flex items-center gap-3 text-sm text-slate-300"><span class="text-base">🍶</span>Food Processors & Brewers</div>
+            <div class="flex items-center gap-3 text-sm text-slate-300"><span class="text-base">🛠️</span>Service Providers</div>
+          </div>
+        </div>
+
+        <!-- AI Orchestration -->
+        <div class="bg-amber-500 rounded-2xl p-6 text-slate-900">
+          <div class="font-bold uppercase tracking-widest text-[10px] text-amber-900 mb-4">AI ORCHESTRATION</div>
+          <h3 class="text-xl font-bold mb-3">AI + Human Agents</h3>
+          <p class="text-sm mb-5 text-amber-900 leading-relaxed">Gemini AI diagnoses and plans. Humans stay in control at every checkpoint. AI accelerates; humans decide.</p>
+          <div class="bg-amber-400/50 rounded-xl p-4 space-y-2.5">
+            <div class="flex items-center gap-2 text-sm font-semibold">🔍 Problem Diagnosis</div>
+            <div class="flex items-center gap-2 text-sm font-semibold">🔗 Vendor Matching</div>
+            <div class="flex items-center gap-2 text-sm font-semibold">📋 Incubation Planning</div>
+            <div class="flex items-center gap-2 text-sm font-semibold">✅ Human Checkpoints</div>
+            <div class="flex items-center gap-2 text-sm font-semibold">📊 Outcome Tracking</div>
+          </div>
+        </div>
+
+        <!-- Providers -->
+        <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700">
+          <div class="text-amber-400 font-bold uppercase tracking-widest text-[10px] mb-4">PROVIDERS</div>
+          <h3 class="text-xl font-bold mb-3">Vendor Network</h3>
+          <p class="text-slate-400 text-sm mb-5 leading-relaxed">Any service, platform, API, or resource that can solve a business problem. Open — any vendor can join.</p>
+          <div class="space-y-2.5">
+            <div class="flex items-center gap-3 text-sm"><span class="w-2 h-2 bg-blue-400 rounded-full shrink-0"></span><span class="text-slate-300">Platform (Meesho, GoCoop, Dukaan)</span></div>
+            <div class="flex items-center gap-3 text-sm"><span class="w-2 h-2 bg-purple-400 rounded-full shrink-0"></span><span class="text-slate-300">API (Razorpay, Shiprocket)</span></div>
+            <div class="flex items-center gap-3 text-sm"><span class="w-2 h-2 bg-green-400 rounded-full shrink-0"></span><span class="text-slate-300">In-Person (Consultants, Trainers)</span></div>
+            <div class="flex items-center gap-3 text-sm"><span class="w-2 h-2 bg-orange-400 rounded-full shrink-0"></span><span class="text-slate-300">Government (KVIC, NABARD, FSSAI)</span></div>
+            <div class="flex items-center gap-3 text-sm"><span class="w-2 h-2 bg-teal-400 rounded-full shrink-0"></span><span class="text-slate-300">Financial (MFIs, SHGs, Credit)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 CTA Entry Points -->
+  <section class="py-20 px-4">
+    <div class="container mx-auto max-w-5xl">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold text-slate-900">Three Ways to Use the Protocol</h2>
+        <p class="text-slate-500 mt-3">Whether you're in the field or at a desk, there's a tool for you.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+
+        <a href="field-agent.html" class="cta-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100 block group">
+          <div class="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-amber-200 transition-colors text-3xl">🚶</div>
+          <div class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">For Field Agents</div>
+          <h3 class="text-xl font-bold text-slate-800 mb-2">Field Agent App</h3>
+          <p class="text-slate-500 text-sm leading-relaxed mb-4">Meet entrepreneurs at their doorstep. Capture their profile, business problems, and needs in a guided 4-step form.</p>
+          <div class="text-amber-600 font-semibold text-sm flex items-center gap-1">Start capturing →</div>
+        </a>
+
+        <a href="entrepreneur-directory.html" class="cta-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100 block group">
+          <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-200 transition-colors text-3xl">👥</div>
+          <div class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">For Coordinators</div>
+          <h3 class="text-xl font-bold text-slate-800 mb-2">Entrepreneur Directory</h3>
+          <p class="text-slate-500 text-sm leading-relaxed mb-4">Browse all entrepreneurs in the network. Filter by sector, problem type, or status. See the full vendor network.</p>
+          <div class="text-blue-600 font-semibold text-sm flex items-center gap-1">Browse network →</div>
+        </a>
+
+        <a href="ai-match.html" class="cta-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100 block group">
+          <div class="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-purple-200 transition-colors text-3xl">🤖</div>
+          <div class="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1">For Matchmakers</div>
+          <h3 class="text-xl font-bold text-slate-800 mb-2">AI Matchmaker</h3>
+          <p class="text-slate-500 text-sm leading-relaxed mb-4">Select an entrepreneur and let AI diagnose their problems, recommend vendors, and generate a step-by-step incubation plan.</p>
+          <div class="text-purple-600 font-semibold text-sm flex items-center gap-1">Run a match →</div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Protocol Principles -->
+  <section class="bg-amber-50 border-y border-amber-100 py-16 px-4">
+    <div class="container mx-auto max-w-4xl">
+      <h2 class="text-2xl font-bold text-slate-900 mb-10 text-center">Protocol Principles</h2>
+      <div class="grid sm:grid-cols-2 gap-6">
+        <div class="flex gap-4">
+          <span class="text-3xl shrink-0">🏠</span>
+          <div>
+            <h4 class="font-bold text-slate-800 mb-1">Doorstep First</h4>
+            <p class="text-slate-600 text-sm leading-relaxed">The protocol must work for an entrepreneur with no internet, no smartphone, no travel. The field agent bridges every gap.</p>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <span class="text-3xl shrink-0">✅</span>
+          <div>
+            <h4 class="font-bold text-slate-800 mb-1">Human-in-the-Loop Always</h4>
+            <p class="text-slate-600 text-sm leading-relaxed">AI suggests; humans decide. No vendor connection is made without a human reviewing and approving it.</p>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <span class="text-3xl shrink-0">🌐</span>
+          <div>
+            <h4 class="font-bold text-slate-800 mb-1">Open Network</h4>
+            <p class="text-slate-600 text-sm leading-relaxed">Any vendor can join. Any trained field agent can use the protocol. No gatekeeping, no exclusivity.</p>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <span class="text-3xl shrink-0">💪</span>
+          <div>
+            <h4 class="font-bold text-slate-800 mb-1">Dignity by Default</h4>
+            <p class="text-slate-600 text-sm leading-relaxed">Entrepreneurs are not beneficiaries. They are entrepreneurs. The protocol and its agents treat them as capable adults building businesses.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Entrepreneur Spotlight -->
+  <section class="py-20 px-4">
+    <div class="container mx-auto max-w-5xl">
+      <div class="flex items-center justify-between mb-8">
+        <h2 class="text-2xl font-bold text-slate-900">Entrepreneurs in the Network</h2>
+        <a href="entrepreneur-directory.html" class="text-sm text-amber-600 font-semibold hover:text-amber-700">View all →</a>
+      </div>
+      <div id="spotlight-grid" class="grid md:grid-cols-3 gap-4">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-400 py-12 px-4">
+    <div class="container mx-auto max-w-4xl text-center">
+      <div class="flex items-center justify-center gap-3 mb-4">
+        <span class="bg-amber-500 text-slate-900 font-black px-2.5 py-1 rounded-lg text-sm">DIP</span>
+        <span class="text-white font-semibold text-lg">Doorstep Incubation Protocol</span>
+        <span class="text-slate-600 text-sm">v0.1.0</span>
+      </div>
+      <p class="text-sm mb-4">An open protocol by <a href="index.html" class="text-amber-400 hover:text-amber-300 transition-colors">Sauramandala Foundation</a> · #noruralentrepreneurleftbehind</p>
+      <div class="flex items-center justify-center gap-6 text-xs">
+        <a href="PROTOCOL.md" class="text-slate-500 hover:text-slate-300 transition-colors">Protocol Doc</a>
+        <span class="text-slate-700">·</span>
+        <a href="field-agent.html" class="text-slate-500 hover:text-slate-300 transition-colors">Field Agent</a>
+        <span class="text-slate-700">·</span>
+        <a href="entrepreneur-directory.html" class="text-slate-500 hover:text-slate-300 transition-colors">Directory</a>
+        <span class="text-slate-700">·</span>
+        <a href="ai-match.html" class="text-slate-500 hover:text-slate-300 transition-colors">AI Match</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    DIP.init();
+
+    // Nav
+    document.getElementById('nav-placeholder').innerHTML = DIP.navHTML('protocol');
+
+    // Stats
+    const stats = DIP.getStats();
+    document.getElementById('stat-entrepreneurs').textContent = stats.totalEntrepreneurs;
+    document.getElementById('stat-vendors').textContent = stats.totalVendors;
+    document.getElementById('stat-matches').textContent = stats.totalMatches;
+    document.getElementById('stat-incubation').textContent = stats.inIncubation;
+
+    // Spotlight: first 3 entrepreneurs
+    const entrepreneurs = DIP.getEntrepreneurs().slice(0, 3);
+    const grid = document.getElementById('spotlight-grid');
+    grid.innerHTML = entrepreneurs.map(e => {
+      const badge = DIP.statusBadge(e.status);
+      return `
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+          <div class="flex items-start justify-between mb-3">
+            <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-lg font-bold text-amber-700 shrink-0">
+              ${e.name.charAt(0)}
+            </div>
+            <span class="text-xs font-semibold px-2 py-1 rounded-full border ${badge.color}">${badge.label}</span>
+          </div>
+          <h3 class="font-bold text-slate-800 text-sm">${e.name}</h3>
+          <p class="text-xs text-slate-500 mt-0.5">${e.business}</p>
+          <p class="text-xs text-slate-400 mt-1">📍 ${e.location}</p>
+          <div class="mt-3 flex flex-wrap gap-1">
+            ${e.problems.slice(0,2).map(p => `<span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">${p}</span>`).join('')}
+          </div>
+          <a href="ai-match.html?id=${e.id}" class="mt-4 text-xs text-amber-600 font-semibold hover:text-amber-700 flex items-center gap-1">Request AI Match →</a>
+        </div>`;
+    }).join('');
+  </script>
+</body>
+</html>

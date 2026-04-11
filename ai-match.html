@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Matchmaker — Doorstep Incubation Protocol</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <script src="dip-network.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .tab-active { background:#f59e0b; color:#1e293b; }
+    .loader-dot { animation: bounce 1.2s infinite; }
+    .loader-dot:nth-child(2) { animation-delay:.2s; }
+    .loader-dot:nth-child(3) { animation-delay:.4s; }
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-8px)} }
+    .result-section { animation: slideUp .4s ease-out; }
+    @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    .vendor-match-card { animation: slideUp .4s ease-out; }
+    .checkpoint-item { animation: slideUp .5s ease-out; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+  <div id="nav-placeholder"></div>
+
+  <main class="container mx-auto px-4 py-10 max-w-4xl">
+
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-slate-900">AI Matchmaker</h1>
+      <p class="text-slate-500 mt-1">Select an entrepreneur or describe a problem. AI diagnoses, matches vendors, and writes the incubation plan.</p>
+    </div>
+
+    <!-- Input Section -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+
+      <!-- Tabs -->
+      <div class="flex border-b border-slate-100">
+        <button id="tab-select" onclick="switchInputTab('select')"
+          class="flex-1 py-3.5 text-sm font-semibold text-slate-900 bg-amber-50 border-b-2 border-amber-500 transition-all">
+          From Entrepreneur Profile
+        </button>
+        <button id="tab-freeform" onclick="switchInputTab('freeform')"
+          class="flex-1 py-3.5 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-all">
+          Describe a Problem
+        </button>
+      </div>
+
+      <!-- Tab 1: Select Entrepreneur -->
+      <div id="panel-select" class="p-6">
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Select Entrepreneur</label>
+        <select id="entrepreneur-select"
+          class="w-full border border-slate-200 rounded-xl p-3 text-slate-800 focus:ring-2 focus:ring-amber-400 focus:outline-none mb-4">
+          <option value="">— Choose an entrepreneur —</option>
+        </select>
+
+        <!-- Profile Preview -->
+        <div id="profile-preview" class="hidden bg-slate-50 rounded-xl p-4 mb-4">
+          <div class="flex items-start gap-3 mb-3">
+            <div id="preview-avatar" class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center font-bold text-amber-700 shrink-0"></div>
+            <div>
+              <h3 id="preview-name" class="font-bold text-slate-800"></h3>
+              <p id="preview-meta" class="text-xs text-slate-500"></p>
+            </div>
+          </div>
+          <div id="preview-problems" class="space-y-1"></div>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 text-xs text-amber-700 mb-4">
+          <strong>Human checkpoint:</strong> Review the entrepreneur's profile before running the AI match. Confirm the problems are accurately captured.
+        </div>
+
+        <button onclick="runMatch()" id="run-btn-select"
+          class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2">
+          <span>🤖</span> Run AI Match
+        </button>
+      </div>
+
+      <!-- Tab 2: Freeform -->
+      <div id="panel-freeform" class="p-6 hidden">
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Describe the Entrepreneur's Situation</label>
+        <textarea id="freeform-input" rows="5"
+          placeholder="e.g. A 35-year-old woman in Ri Bhoi District, Meghalaya who makes artisanal jams from wild forest fruits. She has orders from cafes in Shillong but cannot fulfil them because she has no FSSAI licence and her packaging is too basic for retail shelves. She has a smartphone and a bank account but limited internet access."
+          class="w-full border border-slate-200 rounded-xl p-3 text-slate-800 focus:ring-2 focus:ring-amber-400 focus:outline-none resize-none mb-4"></textarea>
+
+        <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 text-xs text-amber-700 mb-4">
+          <strong>Tip:</strong> Include sector, location, specific problems, and what resources they have. The more detail, the better the match.
+        </div>
+
+        <button onclick="runMatchFreeform()" id="run-btn-freeform"
+          class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2">
+          <span>🤖</span> Run AI Match
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="hidden bg-white rounded-2xl p-10 shadow-sm border border-slate-100 text-center mb-8">
+      <div class="flex justify-center gap-2 mb-6">
+        <div class="loader-dot w-3 h-3 bg-amber-500 rounded-full"></div>
+        <div class="loader-dot w-3 h-3 bg-amber-500 rounded-full"></div>
+        <div class="loader-dot w-3 h-3 bg-amber-500 rounded-full"></div>
+      </div>
+      <h3 class="font-bold text-slate-800 text-lg mb-2">AI Agent Working...</h3>
+      <div id="loading-steps" class="space-y-1.5 text-sm text-slate-500 max-w-xs mx-auto">
+        <p id="ls-1" class="text-amber-600 font-medium">🔍 Reading entrepreneur profile...</p>
+        <p id="ls-2" class="text-slate-400">🧠 Diagnosing root problems...</p>
+        <p id="ls-3" class="text-slate-400">🔗 Scanning vendor network...</p>
+        <p id="ls-4" class="text-slate-400">📋 Writing incubation plan...</p>
+        <p id="ls-5" class="text-slate-400">✅ Identifying human checkpoints...</p>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="results-area" class="hidden space-y-6">
+
+      <!-- Diagnosis -->
+      <div class="result-section bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="bg-blue-50 border-b border-blue-100 p-4 flex items-center gap-3">
+          <span class="text-xl">🔍</span>
+          <h2 class="font-bold text-slate-900">Problem Diagnosis</h2>
+          <span class="ml-auto text-xs text-blue-500 font-medium">AI Analysis</span>
+        </div>
+        <div id="result-diagnosis" class="p-5 text-sm text-slate-700 leading-relaxed"></div>
+      </div>
+
+      <!-- Vendor Matches -->
+      <div class="result-section">
+        <div class="flex items-center gap-3 mb-4">
+          <h2 class="font-bold text-slate-900 text-lg">🔗 Vendor Recommendations</h2>
+          <span class="text-xs bg-amber-100 text-amber-700 font-semibold px-2.5 py-1 rounded-full" id="match-count"></span>
+        </div>
+        <div id="result-vendors" class="space-y-4"></div>
+      </div>
+
+      <!-- Incubation Plan -->
+      <div class="result-section bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="bg-green-50 border-b border-green-100 p-4 flex items-center gap-3">
+          <span class="text-xl">📋</span>
+          <h2 class="font-bold text-slate-900">Incubation Plan</h2>
+          <span class="ml-auto text-xs text-green-600 font-medium">AI Generated</span>
+        </div>
+        <div id="result-plan" class="p-5 text-sm text-slate-700 leading-relaxed"></div>
+      </div>
+
+      <!-- Human Checkpoints -->
+      <div class="result-section bg-amber-50 border border-amber-200 rounded-2xl p-5">
+        <h2 class="font-bold text-slate-900 mb-4 flex items-center gap-2"><span class="text-xl">✅</span> Human Checkpoints</h2>
+        <p class="text-xs text-amber-700 mb-4">These are the moments where a human agent must review and confirm before proceeding. AI does not act without approval.</p>
+        <div id="result-checkpoints" class="space-y-3"></div>
+      </div>
+
+      <!-- Save & Actions -->
+      <div class="result-section bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+        <h3 class="font-bold text-slate-800 mb-4">Save & Share This Match</h3>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button onclick="saveMatch()" id="save-btn"
+            class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition-all">
+            💾 Save Match to Network
+          </button>
+          <button onclick="copyPlan()"
+            class="flex-1 border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-all">
+            📋 Copy Plan
+          </button>
+          <button onclick="startNew()"
+            class="flex-1 border border-slate-200 text-slate-600 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-all">
+            🔄 New Match
+          </button>
+        </div>
+        <div id="saved-confirm" class="hidden mt-3 text-sm text-green-600 font-semibold text-center bg-green-50 rounded-xl p-2">Match saved to the network ✓</div>
+      </div>
+    </div>
+
+    <!-- Saved Matches -->
+    <div id="saved-matches-section" class="mt-12">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-slate-900">Saved Matches</h2>
+        <span id="saved-count" class="text-xs text-slate-400"></span>
+      </div>
+      <div id="saved-matches-list"></div>
+    </div>
+
+  </main>
+
+  <script>
+    DIP.init();
+    document.getElementById('nav-placeholder').innerHTML = DIP.navHTML('match');
+
+    // ── Populate Entrepreneur Dropdown ──
+    const entrepreneurs = DIP.getEntrepreneurs();
+    const sel = document.getElementById('entrepreneur-select');
+    entrepreneurs.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.id;
+      opt.textContent = `${e.name} — ${e.business} (${e.location})`;
+      sel.appendChild(opt);
+    });
+
+    // Pre-select from URL param
+    const urlParams = new URLSearchParams(window.location.search);
+    const preselect = urlParams.get('id');
+    if (preselect) {
+      sel.value = preselect;
+      showPreview(preselect);
+    }
+
+    sel.addEventListener('change', () => showPreview(sel.value));
+
+    function showPreview(id) {
+      const e = entrepreneurs.find(x => x.id === id);
+      if (!e) { document.getElementById('profile-preview').classList.add('hidden'); return; }
+      document.getElementById('preview-avatar').textContent = e.name.charAt(0);
+      document.getElementById('preview-name').textContent = e.name;
+      document.getElementById('preview-meta').textContent = `${e.business} · ${e.location}`;
+      document.getElementById('preview-problems').innerHTML =
+        e.problems.map(p => `<p class="text-xs text-slate-600 flex items-start gap-1.5"><span class="text-red-400 shrink-0">•</span>${p}</p>`).join('');
+      document.getElementById('profile-preview').classList.remove('hidden');
+    }
+
+    // ── Input Tab Switch ──
+    function switchInputTab(tab) {
+      const isSel = tab === 'select';
+      document.getElementById('panel-select').classList.toggle('hidden', !isSel);
+      document.getElementById('panel-freeform').classList.toggle('hidden', isSel);
+      document.getElementById('tab-select').className = `flex-1 py-3.5 text-sm font-semibold transition-all ${isSel ? 'text-slate-900 bg-amber-50 border-b-2 border-amber-500' : 'text-slate-500 hover:text-slate-700'}`;
+      document.getElementById('tab-freeform').className = `flex-1 py-3.5 text-sm font-semibold transition-all ${!isSel ? 'text-slate-900 bg-amber-50 border-b-2 border-amber-500' : 'text-slate-500 hover:text-slate-700'}`;
+    }
+
+    // ── State ──
+    let currentResult = null;
+    let currentEntrepreneurId = null;
+
+    // ── Build AI Prompt ──
+    function buildPrompt(context) {
+      const vendors = DIP.getVendors();
+      const vendorList = vendors.map(v =>
+        `[${v.id}] ${v.name} (${v.type}): ${v.description}. Connect: ${v.connect}. Tags: ${v.tags.join(', ')}.`
+      ).join('\n');
+
+      return `You are the AI orchestrator of the Doorstep Incubation Protocol (DIP) — an open network for rural entrepreneurship incubation in northeast India. Your job is to:
+1. Diagnose the entrepreneur's business problems
+2. Recommend the best vendors from the network
+3. Write a concrete incubation plan
+4. Define human checkpoint moments
+
+ENTREPRENEUR CONTEXT:
+${context}
+
+VENDOR NETWORK (15 available vendors):
+${vendorList}
+
+Respond in this EXACT JSON format (no markdown, no code blocks, just valid JSON):
+{
+  "diagnosis": "2-4 sentences diagnosing the root causes of their problems. Be specific and insightful, not generic.",
+  "vendors": [
+    {
+      "id": "V001",
+      "name": "Vendor Name",
+      "priority": 1,
+      "reasoning": "1-2 sentences on WHY this vendor fits their specific situation."
+    }
+  ],
+  "incubationPlan": "A numbered step-by-step incubation plan (5-8 steps). Each step should be concrete and time-bound. Format as: 1. [Week X] Action. 2. [Week X] Action.",
+  "checkpoints": [
+    "Checkpoint 1: specific human action required before AI proceeds",
+    "Checkpoint 2: ...",
+    "Checkpoint 3: ..."
+  ]
+}
+
+Rules:
+- Recommend 3-5 vendors maximum, ordered by priority (1 = most important)
+- Only recommend vendors that genuinely help with their specific problems
+- Consider their resources (phone, bank account, internet access) when recommending
+- Incubation plan must be realistic for a rural entrepreneur
+- Checkpoints must be specific human decisions, not vague
+- Prioritise vendors that are free or low-cost first`;
+    }
+
+    // ── Run Match from Profile ──
+    async function runMatch() {
+      const id = document.getElementById('entrepreneur-select').value;
+      if (!id) { alert('Please select an entrepreneur.'); return; }
+      const e = entrepreneurs.find(x => x.id === id);
+      if (!e) return;
+
+      currentEntrepreneurId = id;
+      const context = `
+Name: ${e.name}
+Age: ${e.age}, Gender: ${e.gender}
+Location: ${e.location}
+Sector: ${DIP.sectorLabel(e.sector)}
+Business: ${e.business}
+Story: ${e.story}
+Problems: ${e.problems.join('; ')}
+Needs (tagged): ${(e.needs || []).join(', ')}
+Resources: Phone=${e.resources?.phone}, Bank Account=${e.resources?.bankAccount}, Internet=${e.resources?.internet}`;
+
+      await executeMatch(context, e.name);
+    }
+
+    // ── Run Match from Freeform ──
+    async function runMatchFreeform() {
+      const text = document.getElementById('freeform-input').value.trim();
+      if (!text) { alert('Please describe the entrepreneur\'s situation.'); return; }
+      currentEntrepreneurId = null;
+      await executeMatch(text, 'Entrepreneur');
+    }
+
+    // ── Execute Match ──
+    async function executeMatch(context, name) {
+      // Show loading
+      document.getElementById('results-area').classList.add('hidden');
+      document.getElementById('loading-state').classList.remove('hidden');
+      document.getElementById('saved-confirm').classList.add('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Animate loading steps
+      const steps = ['ls-1','ls-2','ls-3','ls-4','ls-5'];
+      let si = 0;
+      const stepInterval = setInterval(() => {
+        if (si > 0) document.getElementById(steps[si-1]).className = 'text-green-500 font-medium';
+        if (si < steps.length) document.getElementById(steps[si]).className = 'text-amber-600 font-medium';
+        si++;
+        if (si > steps.length) clearInterval(stepInterval);
+      }, 1200);
+
+      try {
+        const prompt = buildPrompt(context);
+        const raw = await DIP.callGemini(prompt);
+
+        clearInterval(stepInterval);
+        steps.forEach(s => document.getElementById(s).className = 'text-green-500 font-medium');
+
+        // Parse JSON
+        let parsed;
+        try {
+          // Strip any accidental markdown fences
+          const clean = raw.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+          parsed = JSON.parse(clean);
+        } catch(e) {
+          // Fallback: treat entire response as diagnosis
+          parsed = {
+            diagnosis: raw,
+            vendors: [],
+            incubationPlan: 'Unable to parse structured plan. See diagnosis above.',
+            checkpoints: ['Review AI response manually', 'Confirm vendor selection with coordinator']
+          };
+        }
+
+        currentResult = { parsed, context, name, entrepreneurId: currentEntrepreneurId };
+
+        setTimeout(() => {
+          document.getElementById('loading-state').classList.add('hidden');
+          renderResults(parsed, name);
+          document.getElementById('results-area').classList.remove('hidden');
+          window.scrollTo({ top: document.getElementById('results-area').offsetTop - 80, behavior: 'smooth' });
+        }, 500);
+
+      } catch(err) {
+        clearInterval(stepInterval);
+        document.getElementById('loading-state').classList.add('hidden');
+        alert(`Error: ${err.message}`);
+      }
+    }
+
+    // ── Render Results ──
+    function renderResults(data, name) {
+      // Diagnosis
+      document.getElementById('result-diagnosis').innerHTML =
+        `<p>${data.diagnosis.replace(/\n/g, '</p><p class="mt-2">')}</p>`;
+
+      // Vendors
+      const allVendors = DIP.getVendors();
+      document.getElementById('match-count').textContent = `${(data.vendors || []).length} vendors matched`;
+      document.getElementById('result-vendors').innerHTML = (data.vendors || []).map((v, i) => {
+        const vendorData = allVendors.find(av => av.id === v.id);
+        const badge = vendorData ? DIP.vendorTypeBadge(vendorData.type) : { label: 'Vendor', color: 'bg-slate-100 text-slate-600' };
+        return `
+          <div class="vendor-match-card bg-white rounded-2xl p-5 shadow-sm border border-slate-100" style="animation-delay:${i * 0.1}s">
+            <div class="flex items-start gap-3 mb-3">
+              <div class="w-8 h-8 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center font-black text-sm shrink-0">${i+1}</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="font-bold text-slate-800">${v.name}</h3>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badge.color}">${badge.label}</span>
+                </div>
+                ${vendorData ? `<p class="text-xs text-slate-500 mt-0.5">${vendorData.description}</p>` : ''}
+              </div>
+            </div>
+            <div class="bg-blue-50 rounded-xl p-3 mb-3">
+              <p class="text-xs font-semibold text-blue-700 mb-1">Why this match:</p>
+              <p class="text-xs text-slate-700">${v.reasoning}</p>
+            </div>
+            ${vendorData ? `<div class="bg-slate-50 rounded-lg p-2.5 text-xs text-slate-600"><span class="font-semibold text-slate-700">Connect: </span>${vendorData.connect}</div>` : ''}
+          </div>`;
+      }).join('');
+
+      // Incubation Plan
+      const planLines = (data.incubationPlan || '').split('\n').filter(l => l.trim());
+      document.getElementById('result-plan').innerHTML = planLines.map(line => {
+        if (/^\d+\./.test(line.trim())) {
+          return `<div class="flex gap-3 mb-3">
+            <span class="w-6 h-6 rounded-full bg-green-100 text-green-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">${line.trim().match(/^(\d+)/)[1]}</span>
+            <p class="text-slate-700">${line.trim().replace(/^\d+\.\s*/, '')}</p>
+          </div>`;
+        }
+        return `<p class="text-slate-600 mb-2">${line}</p>`;
+      }).join('');
+
+      // Checkpoints
+      document.getElementById('result-checkpoints').innerHTML = (data.checkpoints || []).map((cp, i) => `
+        <div class="checkpoint-item flex items-start gap-3 bg-white rounded-xl p-3.5">
+          <div class="w-6 h-6 rounded-full bg-amber-200 text-amber-800 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">${i+1}</div>
+          <p class="text-sm text-slate-700">${cp}</p>
+        </div>`).join('');
+    }
+
+    // ── Save Match ──
+    function saveMatch() {
+      if (!currentResult) return;
+      const match = {
+        id: DIP.generateId('M'),
+        entrepreneurId: currentResult.entrepreneurId,
+        entrepreneurName: currentResult.name,
+        problemStatement: currentResult.context.slice(0, 300),
+        aiDiagnosis: currentResult.parsed.diagnosis,
+        vendorMatches: currentResult.parsed.vendors || [],
+        incubationPlan: currentResult.parsed.incubationPlan,
+        humanCheckpoints: currentResult.parsed.checkpoints || [],
+        createdAt: new Date().toISOString(),
+        createdBy: DIP.getAgentName() || 'Coordinator',
+        status: 'proposed'
+      };
+      DIP.addMatch(match);
+      if (currentResult.entrepreneurId) {
+        DIP.updateEntrepreneurStatus(currentResult.entrepreneurId, 'matched');
+      }
+      document.getElementById('saved-confirm').classList.remove('hidden');
+      document.getElementById('save-btn').textContent = '✓ Saved';
+      document.getElementById('save-btn').disabled = true;
+      renderSavedMatches();
+    }
+
+    // ── Copy Plan ──
+    function copyPlan() {
+      if (!currentResult) return;
+      const { parsed, name } = currentResult;
+      const text = `DOORSTEP INCUBATION PROTOCOL — Match for ${name}\n\nDIAGNOSIS:\n${parsed.diagnosis}\n\nVENDOR RECOMMENDATIONS:\n${(parsed.vendors||[]).map((v,i) => `${i+1}. ${v.name}: ${v.reasoning}`).join('\n')}\n\nINCUBATION PLAN:\n${parsed.incubationPlan}\n\nHUMAN CHECKPOINTS:\n${(parsed.checkpoints||[]).map((c,i) => `${i+1}. ${c}`).join('\n')}\n\nGenerated by DIP AI Matchmaker — sauramandala.org`;
+      navigator.clipboard.writeText(text).then(() => alert('Plan copied to clipboard!')).catch(() => alert('Copy failed. Please copy manually.'));
+    }
+
+    function startNew() {
+      currentResult = null;
+      currentEntrepreneurId = null;
+      document.getElementById('results-area').classList.add('hidden');
+      document.getElementById('entrepreneur-select').value = '';
+      document.getElementById('profile-preview').classList.add('hidden');
+      document.getElementById('freeform-input').value = '';
+      document.getElementById('save-btn').textContent = '💾 Save Match to Network';
+      document.getElementById('save-btn').disabled = false;
+      document.getElementById('saved-confirm').classList.add('hidden');
+      // Reset loading steps
+      ['ls-1','ls-2','ls-3','ls-4','ls-5'].forEach((s, i) => {
+        document.getElementById(s).className = i === 0 ? 'text-amber-600 font-medium' : 'text-slate-400';
+      });
+      document.getElementById('ls-1').textContent = '🔍 Reading entrepreneur profile...';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ── Saved Matches ──
+    function renderSavedMatches() {
+      const matches = DIP.getMatches();
+      const container = document.getElementById('saved-matches-list');
+      document.getElementById('saved-count').textContent = `${matches.length} saved`;
+
+      if (matches.length === 0) {
+        container.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-slate-400 border border-slate-100">
+          <p class="text-3xl mb-2">📂</p><p class="text-sm">No saved matches yet. Run a match above and save it.</p>
+        </div>`;
+        return;
+      }
+
+      container.innerHTML = matches.slice().reverse().map(m => {
+        const date = new Date(m.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+        return `
+          <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-3">
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <h3 class="font-bold text-slate-800">${m.entrepreneurName}</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Matched on ${date} by ${m.createdBy}</p>
+              </div>
+              <span class="text-xs bg-amber-100 text-amber-700 font-semibold px-2.5 py-1 rounded-full">${m.vendorMatches.length} vendors</span>
+            </div>
+            <div class="bg-slate-50 rounded-lg p-3 mb-3">
+              <p class="text-xs font-semibold text-slate-500 mb-1">Diagnosis summary</p>
+              <p class="text-xs text-slate-600">${m.aiDiagnosis.slice(0, 180)}${m.aiDiagnosis.length > 180 ? '...' : ''}</p>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              ${m.vendorMatches.map(v => `<span class="text-[10px] bg-blue-100 text-blue-700 font-medium px-2.5 py-1 rounded-full">${v.name}</span>`).join('')}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    renderSavedMatches();
+  </script>
+</body>
+</html>
