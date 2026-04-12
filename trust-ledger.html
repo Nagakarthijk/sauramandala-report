@@ -8,194 +8,192 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
   <script src="tl-data.js"></script>
   <style>
-    body { font-family: 'Inter', sans-serif; background: #fafaf9; }
-    .profile-card { transition: transform .2s, box-shadow .2s; }
-    .profile-card:hover { transform: translateY(-4px); box-shadow: 0 16px 30px -8px rgba(0,0,0,.12); }
-    .fade-in { animation: fadeIn .4s ease-out; }
-    @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-    .filter-btn.active { background:#1c1917; color:white; border-color:#1c1917; }
+    body { font-family:'Inter',sans-serif; background:#f7f7f5; }
+    .card { transition: transform .18s, box-shadow .18s; }
+    .card:hover { transform:translateY(-3px); box-shadow:0 12px 28px -6px rgba(0,0,0,.1); }
+    .fade { animation: fade .35s ease-out; }
+    @keyframes fade { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .filter-btn.on { background:#1c1917; color:#fff; border-color:#1c1917; }
   </style>
 </head>
 <body class="min-h-screen">
-
-  <div id="nav-placeholder"></div>
+  <div id="nav-ph"></div>
 
   <!-- Hero -->
-  <section class="max-w-2xl mx-auto px-4 pt-16 pb-12 text-center">
+  <div class="max-w-2xl mx-auto px-4 pt-14 pb-10 text-center">
+    <div class="inline-block bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full mb-5">
+      Open · Self-declared · No middlemen
+    </div>
     <h1 class="text-4xl md:text-5xl font-black text-stone-900 leading-tight mb-4">
       Show your work.<br>Build trust.
     </h1>
-    <p class="text-stone-500 text-lg max-w-md mx-auto leading-relaxed mb-8">
-      A public profile where you report support received, how you used it, and let anyone support your work directly via UPI.
+    <p class="text-stone-500 text-base max-w-sm mx-auto leading-relaxed mb-8">
+      A public profile where you report support received, how you spent it, and let anyone support you directly via UPI.
     </p>
     <div class="flex flex-col sm:flex-row gap-3 justify-center">
-      <a href="tl-create.html" class="bg-stone-900 hover:bg-stone-800 text-white font-bold py-3.5 px-8 rounded-2xl text-base transition-all">
+      <a href="tl-create.html" class="bg-stone-900 hover:bg-stone-700 text-white font-bold py-3.5 px-7 rounded-2xl text-sm transition-all shadow-sm">
         Create your profile →
       </a>
-      <a href="#explore" class="border border-stone-200 text-stone-700 font-semibold py-3.5 px-8 rounded-2xl text-base hover:bg-stone-100 transition-all">
-        Browse profiles
+      <a href="#explore" class="border border-stone-200 bg-white text-stone-700 font-semibold py-3.5 px-7 rounded-2xl text-sm hover:bg-stone-50 transition-all">
+        Browse profiles ↓
       </a>
     </div>
-
-    <!-- 3 principles -->
-    <div class="mt-12 grid grid-cols-3 gap-4 text-left">
-      <div class="bg-white rounded-2xl p-4 border border-stone-100">
-        <div class="text-xl mb-2">🔍</div>
-        <p class="text-xs font-bold text-stone-700 mb-1">Public by default</p>
-        <p class="text-xs text-stone-500 leading-relaxed">Anyone can see what you reported received and spent.</p>
+    <!-- Principles -->
+    <div class="mt-10 grid grid-cols-3 gap-3 text-left">
+      <div class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm">
+        <div class="text-lg mb-2">🔍</div>
+        <p class="text-xs font-bold text-stone-800 mb-1">Transparent</p>
+        <p class="text-xs text-stone-500 leading-relaxed">Every rupee reported — received and spent — is public.</p>
       </div>
-      <div class="bg-white rounded-2xl p-4 border border-stone-100">
-        <div class="text-xl mb-2">📲</div>
-        <p class="text-xs font-bold text-stone-700 mb-1">Direct UPI support</p>
-        <p class="text-xs text-stone-500 leading-relaxed">Money goes straight to you. We hold nothing.</p>
+      <div class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm">
+        <div class="text-lg mb-2">📲</div>
+        <p class="text-xs font-bold text-stone-800 mb-1">Direct UPI</p>
+        <p class="text-xs text-stone-500 leading-relaxed">Money flows straight to them. We hold nothing.</p>
       </div>
-      <div class="bg-white rounded-2xl p-4 border border-stone-100">
-        <div class="text-xl mb-2">🤝</div>
-        <p class="text-xs font-bold text-stone-700 mb-1">Self-declared</p>
-        <p class="text-xs text-stone-500 leading-relaxed">You report. Community watches. No platform verification.</p>
+      <div class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm">
+        <div class="text-lg mb-2">🤝</div>
+        <p class="text-xs font-bold text-stone-800 mb-1">Community trust</p>
+        <p class="text-xs text-stone-500 leading-relaxed">You report. The community watches. No platform verification.</p>
       </div>
     </div>
-  </section>
+  </div>
 
-  <!-- Stats bar -->
-  <div class="bg-stone-900 text-white py-5 px-4">
-    <div class="max-w-2xl mx-auto flex justify-around text-center">
-      <div><div id="stat-profiles" class="text-2xl font-black text-amber-400">—</div><div class="text-xs text-stone-400 mt-0.5">Profiles</div></div>
-      <div><div id="stat-received" class="text-2xl font-black text-emerald-400">—</div><div class="text-xs text-stone-400 mt-0.5">Total Reported Received</div></div>
-      <div><div id="stat-spent" class="text-2xl font-black text-rose-400">—</div><div class="text-xs text-stone-400 mt-0.5">Total Reported Spent</div></div>
+  <!-- Stats -->
+  <div class="bg-stone-900 py-5 px-4">
+    <div class="max-w-2xl mx-auto grid grid-cols-3 gap-4 text-center">
+      <div>
+        <div id="s-profiles" class="text-2xl font-black text-white">—</div>
+        <div class="text-xs text-stone-500 mt-0.5">Profiles</div>
+      </div>
+      <div>
+        <div id="s-recv" class="text-2xl font-black text-emerald-400">—</div>
+        <div class="text-xs text-stone-500 mt-0.5">Reported received</div>
+      </div>
+      <div>
+        <div id="s-spent" class="text-2xl font-black text-rose-400">—</div>
+        <div class="text-xs text-stone-500 mt-0.5">Reported spent</div>
+      </div>
     </div>
   </div>
 
   <!-- Explore -->
-  <section id="explore" class="max-w-2xl mx-auto px-4 py-12">
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="text-xl font-bold text-stone-900">People doing work</h2>
-      <span id="profile-count" class="text-sm text-stone-400"></span>
+  <div id="explore" class="max-w-2xl mx-auto px-4 py-10">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-bold text-stone-900">People doing work</h2>
+      <span id="count" class="text-xs text-stone-400"></span>
     </div>
-
-    <!-- Search + filters -->
-    <div class="space-y-3 mb-6">
-      <input id="search-input" type="text" placeholder="Search by name, work, or location..."
-        oninput="filterProfiles()"
-        class="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-stone-400 focus:outline-none bg-white" />
-      <div class="flex gap-2 flex-wrap">
-        <button class="filter-btn active text-xs px-3 py-1.5 rounded-full border font-semibold transition-all" onclick="setFilter('', this)">All</button>
-        <button class="filter-btn text-xs px-3 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-semibold transition-all" onclick="setFilter('environment', this)">Environment</button>
-        <button class="filter-btn text-xs px-3 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-semibold transition-all" onclick="setFilter('education', this)">Education</button>
-        <button class="filter-btn text-xs px-3 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-semibold transition-all" onclick="setFilter('journalism', this)">Journalism</button>
-        <button class="filter-btn text-xs px-3 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-semibold transition-all" onclick="setFilter('craft', this)">Craft & Art</button>
-      </div>
+    <!-- Search -->
+    <input id="q" type="text" placeholder="Search name, work, location..."
+      oninput="filter()" autocomplete="off"
+      class="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm bg-white focus:ring-2 focus:ring-stone-300 focus:outline-none mb-3 shadow-sm"/>
+    <!-- Filters -->
+    <div class="flex gap-2 flex-wrap mb-6">
+      <button class="filter-btn on text-xs px-3 py-1.5 rounded-full border font-semibold transition-all" onclick="setCat('',this)">All</button>
+      <button class="filter-btn text-xs px-3 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-semibold transition-all" onclick="setCat('environment',this)">🌿 Environment</button>
+      <button class="filter-btn text-xs px-3 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-semibold transition-all" onclick="setCat('education',this)">📚 Education</button>
+      <button class="filter-btn text-xs px-3 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-semibold transition-all" onclick="setCat('journalism',this)">📰 Journalism</button>
+      <button class="filter-btn text-xs px-3 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-semibold transition-all" onclick="setCat('craft',this)">🎨 Craft</button>
     </div>
-
-    <!-- Profile grid -->
-    <div id="profile-grid" class="space-y-4"></div>
-    <div id="empty-state" class="hidden text-center py-16 text-stone-400">
+    <div id="grid" class="space-y-3"></div>
+    <div id="empty" class="hidden text-center py-14">
       <p class="text-3xl mb-3">🔍</p>
       <p class="font-semibold text-stone-600 mb-1">No profiles found</p>
-      <p class="text-sm">Try different search terms or <a href="tl-create.html" class="underline text-stone-700">create a profile</a>.</p>
+      <p class="text-sm text-stone-400">Try other terms or <a href="tl-create.html" class="underline">create a profile</a>.</p>
     </div>
-  </section>
+  </div>
 
   <!-- Bottom CTA -->
-  <section class="bg-stone-900 text-white py-16 px-4 text-center">
-    <div class="max-w-md mx-auto">
-      <h2 class="text-2xl font-bold mb-3">Doing real work?</h2>
+  <div class="bg-stone-900 py-14 px-4 text-center">
+    <div class="max-w-sm mx-auto">
+      <h2 class="text-2xl font-bold text-white mb-3">Doing real work?</h2>
       <p class="text-stone-400 text-sm mb-6 leading-relaxed">Create a public profile. Report what you receive. Show how you use it. Let people support you directly.</p>
-      <a href="tl-create.html" class="inline-block bg-white text-stone-900 font-bold py-3 px-8 rounded-2xl text-sm transition-all hover:bg-stone-100">
+      <a href="tl-create.html" class="inline-block bg-white text-stone-900 font-bold py-3.5 px-8 rounded-2xl text-sm hover:bg-stone-100 transition-all">
         Create your profile — it's free
       </a>
-      <p class="text-stone-600 text-xs mt-4">No verification. No fees. No middlemen.</p>
+      <p class="text-stone-600 text-xs mt-4">No verification. No fees. No lock-in.</p>
     </div>
-  </section>
+  </div>
 
   <script>
     TL.init();
-    document.getElementById('nav-placeholder').innerHTML = TL.navHTML('explore');
+    document.getElementById('nav-ph').innerHTML = TL.navHTML('explore');
 
-    // Stats
-    const allProfiles = TL.getProfiles();
-    const allLedger   = TL.getLedger();
-    const totalReceived = allLedger.filter(e => e.type === 'RECEIVED').reduce((s,e) => s+e.amount, 0);
-    const totalSpent    = allLedger.filter(e => e.type === 'SPENT').reduce((s,e) => s+e.amount, 0);
-    document.getElementById('stat-profiles').textContent  = allProfiles.length;
-    document.getElementById('stat-received').textContent  = TL.formatINR(totalReceived);
-    document.getElementById('stat-spent').textContent     = TL.formatINR(totalSpent);
+    const profiles = TL.getProfiles();
+    const ledger   = TL.getLedger();
+    const totRecv  = ledger.filter(e=>e.type==='RECEIVED').reduce((s,e)=>s+e.amount,0);
+    const totSpent = ledger.filter(e=>e.type==='SPENT').reduce((s,e)=>s+e.amount,0);
+    document.getElementById('s-profiles').textContent = profiles.length;
+    document.getElementById('s-recv').textContent     = TL.formatINR(totRecv);
+    document.getElementById('s-spent').textContent    = TL.formatINR(totSpent);
 
-    let currentFilter = '';
-
-    function setFilter(cat, btn) {
-      currentFilter = cat;
+    let cat = '';
+    function setCat(c, btn) {
+      cat = c;
       document.querySelectorAll('.filter-btn').forEach(b => {
-        b.classList.remove('active');
-        b.classList.add('border-stone-200', 'bg-white', 'text-stone-600');
-        b.classList.remove('border-transparent');
+        b.classList.remove('on');
+        b.classList.add('border-stone-200','bg-white','text-stone-600');
       });
-      btn.classList.add('active');
-      btn.classList.remove('border-stone-200', 'bg-white', 'text-stone-600');
-      filterProfiles();
+      btn.classList.add('on');
+      btn.classList.remove('border-stone-200','bg-white','text-stone-600');
+      filter();
     }
 
-    function filterProfiles() {
-      const q = document.getElementById('search-input').value.toLowerCase();
-      const filtered = allProfiles.filter(p => {
+    function filter() {
+      const q   = document.getElementById('q').value.toLowerCase();
+      const out = profiles.filter(p => {
         if (!p.discoverable) return false;
-        const matchCat = !currentFilter || p.category === currentFilter;
-        const matchQ   = !q || [p.name, p.bio, p.currentWork, p.locationText].join(' ').toLowerCase().includes(q);
-        return matchCat && matchQ;
+        const mCat = !cat || p.category === cat;
+        const mQ   = !q   || [p.name, p.bio, p.currentWork, p.locationText].join(' ').toLowerCase().includes(q);
+        return mCat && mQ;
       });
-      renderProfiles(filtered);
+      render(out);
     }
 
-    function renderProfiles(list) {
-      const grid  = document.getElementById('profile-grid');
-      const empty = document.getElementById('empty-state');
-      document.getElementById('profile-count').textContent = `${list.length} profile${list.length !== 1 ? 's' : ''}`;
-
-      if (list.length === 0) { grid.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    function render(list) {
+      const grid  = document.getElementById('grid');
+      const empty = document.getElementById('empty');
+      document.getElementById('count').textContent = list.length + ' profile' + (list.length!==1?'s':'');
+      if (!list.length) { grid.innerHTML=''; empty.classList.remove('hidden'); return; }
       empty.classList.add('hidden');
 
       grid.innerHTML = list.map(p => {
-        const stats = TL.getProfileStats(p.id);
-        const pct   = p.goalAmount ? Math.min(100, Math.round(stats.received / p.goalAmount * 100)) : null;
-        const catColor = TL.categoryColor(p.category);
-        const lastActive = TL.relativeTime(p.lastActiveAt);
+        const st    = TL.getProfileStats(p.id);
+        const pct   = p.goalAmount ? Math.min(100, Math.round(st.received/p.goalAmount*100)) : null;
+        const cc    = TL.categoryColor(p.category);
+        const owned = TL.isOwner(p);
+        const photo = p.photoUrl
+          ? `<img src="${p.photoUrl}" class="w-12 h-12 rounded-2xl object-cover shrink-0" />`
+          : `<div class="w-12 h-12 rounded-2xl bg-stone-200 flex items-center justify-center font-black text-stone-500 text-sm shrink-0">${TL.initials(p.name)}</div>`;
 
-        return `
-          <a href="tl-profile.html?slug=${p.slug}" class="profile-card fade-in bg-white rounded-2xl border border-stone-100 p-5 block">
-            <div class="flex items-start gap-4">
-              <div class="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center font-black text-stone-600 text-sm shrink-0">
-                ${TL.initials(p.name)}
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 class="font-bold text-stone-900">${p.name}</h3>
-                    <p class="text-xs text-stone-400 mt-0.5">📍 ${p.locationText} · Active ${lastActive}</p>
-                  </div>
-                  <span class="text-[10px] font-bold px-2 py-1 rounded-full shrink-0 ${catColor}">${TL.categoryLabel(p.category)}</span>
+        return `<a href="tl-profile.html?slug=${p.slug}" class="card fade bg-white rounded-2xl border border-stone-100 p-4 shadow-sm block">
+          <div class="flex gap-3">
+            ${photo}
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-2 mb-1">
+                <div>
+                  <span class="font-bold text-stone-900 text-sm">${p.name}</span>
+                  ${owned ? '<span class="ml-1.5 text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full uppercase tracking-wider">yours</span>' : ''}
                 </div>
-                <p class="text-sm text-stone-600 mt-2 leading-relaxed line-clamp-2">${p.currentWork}</p>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${cc}">${TL.categoryLabel(p.category)}</span>
               </div>
+              <p class="text-xs text-stone-400 mb-2">📍 ${p.locationText} · ${TL.relativeTime(p.lastActiveAt)}</p>
+              <p class="text-xs text-stone-600 leading-relaxed line-clamp-2">${p.currentWork}</p>
             </div>
-
-            <div class="mt-4 flex items-center gap-4">
-              <div class="flex gap-4 text-xs flex-1">
-                <span class="text-emerald-600 font-semibold">↑ ${TL.formatINR(stats.received)} received</span>
-                <span class="text-rose-500 font-semibold">↓ ${TL.formatINR(stats.spent)} spent</span>
-              </div>
-              ${pct !== null ? `
-              <div class="flex items-center gap-2 shrink-0">
-                <div class="w-20 bg-stone-100 rounded-full h-1.5">
-                  <div class="bg-emerald-500 h-1.5 rounded-full" style="width:${pct}%"></div>
-                </div>
-                <span class="text-[10px] text-stone-400 font-medium">${pct}%</span>
-              </div>` : ''}
-            </div>
-          </a>`;
+          </div>
+          <div class="mt-3 flex items-center gap-3">
+            <span class="text-xs font-semibold text-emerald-600">↑ ${TL.formatINR(st.received)}</span>
+            <span class="text-xs font-semibold text-rose-500">↓ ${TL.formatINR(st.spent)}</span>
+            ${pct!==null ? `
+            <div class="flex items-center gap-1.5 ml-auto">
+              <div class="w-16 bg-stone-100 rounded-full h-1.5"><div class="bg-emerald-500 h-1.5 rounded-full" style="width:${pct}%"></div></div>
+              <span class="text-[10px] text-stone-400">${pct}%</span>
+            </div>` : ''}
+          </div>
+        </a>`;
       }).join('');
     }
 
-    filterProfiles();
+    filter();
   </script>
 </body>
 </html>

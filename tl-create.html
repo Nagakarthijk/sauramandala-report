@@ -12,7 +12,14 @@
     .step-panel { display: none; }
     .step-panel.active { display: block; animation: fadeIn .3s ease-out; }
     @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-    .preview-card { background: white; border: 1px solid #e7e5e4; border-radius: 1rem; padding: 1.25rem; }
+    .img-preview { max-height: 160px; width: 100%; object-fit: cover; border-radius: .75rem; }
+    .upload-zone {
+      border: 2px dashed #d6d3d1; border-radius: .75rem; padding: 1rem;
+      text-align: center; cursor: pointer; transition: border-color .2s;
+      background: #fafaf9;
+    }
+    .upload-zone:hover { border-color: #78716c; }
+    .upload-zone input[type="file"] { display: none; }
   </style>
 </head>
 <body class="min-h-screen">
@@ -35,12 +42,27 @@
       <span id="step-indicator" class="text-xs text-stone-400 font-medium shrink-0">Step 1 of 3</span>
     </div>
 
-    <!-- Step 1: Identity -->
+    <!-- Step 1: Identity + Photo -->
     <div id="step-1" class="step-panel active">
       <div class="bg-white border border-stone-100 rounded-2xl p-6">
         <h2 class="font-bold text-stone-900 mb-1">Who are you?</h2>
         <p class="text-stone-500 text-xs mb-5">This is public — use your real name if you're comfortable.</p>
         <div class="space-y-4">
+
+          <!-- Photo upload -->
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-2">Profile photo (optional)</label>
+            <div class="upload-zone" onclick="document.getElementById('f-photo').click()">
+              <div id="photo-placeholder">
+                <div class="text-2xl mb-1">📷</div>
+                <p class="text-xs text-stone-500">Tap to upload a photo</p>
+                <p class="text-[10px] text-stone-400 mt-0.5">JPG, PNG · max 3MB</p>
+              </div>
+              <img id="f-photo-preview" class="img-preview hidden" />
+              <input type="file" id="f-photo" accept="image/*" />
+            </div>
+          </div>
+
           <div>
             <label class="block text-xs font-semibold text-stone-700 mb-1.5">Your name *</label>
             <input id="f-name" type="text" placeholder="e.g. Divya Menon"
@@ -71,7 +93,7 @@
       </div>
     </div>
 
-    <!-- Step 2: Work + UPI -->
+    <!-- Step 2: Work + UPI + QR -->
     <div id="step-2" class="step-panel">
       <div class="bg-white border border-stone-100 rounded-2xl p-6">
         <h2 class="font-bold text-stone-900 mb-1">What are you working on?</h2>
@@ -86,10 +108,24 @@
             <label class="block text-xs font-semibold text-stone-700 mb-1.5">Your UPI ID *</label>
             <input id="f-upi" type="text" placeholder="e.g. yourname@okicici"
               class="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-stone-400 focus:outline-none" />
-            <p class="text-xs text-stone-400 mt-1">This is shown publicly so supporters can pay you directly. We hold nothing.</p>
+            <p class="text-xs text-stone-400 mt-1">Shown publicly so supporters can pay you directly. We hold nothing.</p>
+          </div>
+          <!-- UPI QR upload -->
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-2">UPI QR code (optional but recommended)</label>
+            <div class="upload-zone" onclick="document.getElementById('f-qr').click()">
+              <div id="qr-placeholder">
+                <div class="text-2xl mb-1">📲</div>
+                <p class="text-xs text-stone-500">Tap to upload your UPI QR code screenshot</p>
+                <p class="text-[10px] text-stone-400 mt-0.5">From GPay / PhonePe / Paytm · max 3MB</p>
+              </div>
+              <img id="f-qr-preview" class="img-preview hidden" />
+              <input type="file" id="f-qr" accept="image/*" />
+            </div>
+            <p class="text-xs text-stone-400 mt-1.5">Supporters can scan this directly — makes paying much easier.</p>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-stone-700 mb-1.5">Goal amount (₹) — optional</label>
+            <label class="block text-xs font-semibold text-stone-700 mb-1.5">Support goal amount (₹) — optional</label>
             <input id="f-goal" type="number" placeholder="e.g. 8000 (leave blank if no specific goal)"
               class="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-stone-400 focus:outline-none" />
           </div>
@@ -107,12 +143,14 @@
       <div class="bg-white border border-stone-100 rounded-2xl p-6 mb-4">
         <h2 class="font-bold text-stone-900 mb-4">Preview your profile</h2>
 
-        <div class="preview-card mb-4">
+        <!-- Preview card -->
+        <div class="bg-stone-50 border border-stone-100 rounded-2xl p-4 mb-4">
           <div class="flex items-start gap-3 mb-3">
-            <div id="prev-avatar" class="w-10 h-10 rounded-xl bg-stone-200 flex items-center justify-center font-black text-stone-600 text-sm shrink-0"></div>
+            <div id="prev-avatar" class="w-12 h-12 rounded-xl bg-stone-200 flex items-center justify-center font-black text-stone-600 text-sm shrink-0 overflow-hidden"></div>
             <div>
               <h3 id="prev-name" class="font-bold text-stone-900 text-sm"></h3>
               <p id="prev-location" class="text-xs text-stone-400 mt-0.5"></p>
+              <span id="prev-category" class="text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 inline-block"></span>
             </div>
           </div>
           <div class="bg-stone-900 text-white rounded-xl p-3 mb-3">
@@ -121,15 +159,15 @@
           </div>
           <p id="prev-bio" class="text-xs text-stone-600 leading-relaxed mb-3"></p>
           <div class="flex items-center justify-between">
-            <span id="prev-category" class="text-[10px] font-bold px-2 py-0.5 rounded-full"></span>
-            <span id="prev-upi" class="text-xs text-stone-400 font-mono"></span>
+            <span class="text-xs text-stone-400 font-mono" id="prev-upi"></span>
+            <span id="prev-qr-badge" class="hidden text-[10px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full border border-emerald-100">QR uploaded ✓</span>
           </div>
         </div>
 
         <!-- Disclaimer -->
         <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-5">
           <p class="text-xs text-amber-800 leading-relaxed">
-            <strong>By creating this profile, you agree:</strong> All information is self-declared. Workledger does not verify transactions or claims. The community can view, comment, and flag your profile. You can delete it at any time.
+            <strong>By creating this profile, you agree:</strong> All information is self-declared. Workledger does not verify transactions or claims. The community can view, comment, and flag your profile. You can delete entries at any time from your profile.
           </p>
         </div>
 
@@ -142,7 +180,7 @@
 
         <div class="flex gap-3">
           <button onclick="goTo(2)" class="flex-1 border border-stone-200 text-stone-600 font-semibold py-3 rounded-xl hover:bg-stone-50 transition-all text-sm">← Back</button>
-          <button onclick="createProfile()" class="flex-[2] bg-stone-900 hover:bg-stone-800 text-white font-bold py-3 rounded-xl transition-all text-sm">
+          <button id="create-btn" onclick="createProfile()" class="flex-[2] bg-stone-900 hover:bg-stone-800 text-white font-bold py-3 rounded-xl transition-all text-sm">
             Create profile ✓
           </button>
         </div>
@@ -154,7 +192,14 @@
       <div class="bg-white border border-stone-100 rounded-2xl p-8 text-center">
         <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-5 text-3xl">✅</div>
         <h2 class="text-xl font-black text-stone-900 mb-2">Profile created!</h2>
-        <p id="success-msg" class="text-stone-500 text-sm mb-6"></p>
+        <p id="success-msg" class="text-stone-500 text-sm mb-6 leading-relaxed"></p>
+
+        <!-- Owner info box -->
+        <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-5 text-left">
+          <p class="text-xs font-bold text-amber-800 mb-1">You own this profile on this browser</p>
+          <p class="text-xs text-amber-700 leading-relaxed">When you open the profile link from this browser, you'll see the owner panel where you can report received support, report spending, and post updates. Don't clear your browser data or the ownership will be lost.</p>
+        </div>
+
         <div class="bg-stone-50 rounded-xl p-3 mb-6 text-left">
           <p class="text-xs font-semibold text-stone-500 mb-1">Your profile link</p>
           <p id="profile-link" class="text-sm text-stone-800 font-mono break-all"></p>
@@ -177,7 +222,7 @@
     TL.init();
     document.getElementById('nav-placeholder').innerHTML = TL.navHTML('');
 
-    // Category selector
+    // ── Category selector ──────────────────────────────────────────────
     const CATEGORIES = [
       { id:'environment', label:'Environment', emoji:'🌿' },
       { id:'education',   label:'Education',   emoji:'📚' },
@@ -205,6 +250,23 @@
       catGrid.appendChild(btn);
     });
 
+    // ── Image previews ─────────────────────────────────────────────────
+    function setupUploadZone(inputId, previewId, placeholderId) {
+      document.getElementById(inputId).addEventListener('change', async e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          const url = await TL.readImageFile(file);
+          const img = document.getElementById(previewId);
+          img.src = url; img.classList.remove('hidden');
+          if (placeholderId) document.getElementById(placeholderId).classList.add('hidden');
+        } catch(err) { alert(err); e.target.value=''; }
+      });
+    }
+    setupUploadZone('f-photo', 'f-photo-preview', 'photo-placeholder');
+    setupUploadZone('f-qr',    'f-qr-preview',    'qr-placeholder');
+
+    // ── Step navigation ────────────────────────────────────────────────
     let currentStep = 1;
     let createdSlug = '';
 
@@ -231,7 +293,7 @@
       if (step === 2) {
         if (!document.getElementById('f-work').value.trim()) { showErr(errEl, 'Please describe your current work.'); return false; }
         const upi = document.getElementById('f-upi').value.trim();
-        if (!upi || !upi.includes('@'))                       { showErr(errEl, 'Please enter a valid UPI ID (e.g. name@okicici).'); return false; }
+        if (!upi || !upi.includes('@')) { showErr(errEl, 'Please enter a valid UPI ID (e.g. name@okicici).'); return false; }
       }
       return true;
     }
@@ -239,8 +301,17 @@
     function showErr(el, msg) { if (!el) return; el.textContent = msg; el.classList.remove('hidden'); }
 
     function fillPreview() {
-      const name = document.getElementById('f-name').value.trim();
-      document.getElementById('prev-avatar').textContent   = TL.initials(name);
+      const name    = document.getElementById('f-name').value.trim();
+      const photoSrc = document.getElementById('f-photo-preview').src;
+      const hasPhoto = !document.getElementById('f-photo-preview').classList.contains('hidden');
+      const hasQR    = !document.getElementById('f-qr-preview').classList.contains('hidden');
+
+      const av = document.getElementById('prev-avatar');
+      if (hasPhoto) {
+        av.innerHTML = `<img src="${photoSrc}" class="w-full h-full object-cover"/>`;
+      } else {
+        av.innerHTML = TL.initials(name);
+      }
       document.getElementById('prev-name').textContent     = name;
       document.getElementById('prev-location').textContent = '📍 ' + document.getElementById('f-location').value.trim();
       document.getElementById('prev-work').textContent     = document.getElementById('f-work').value.trim();
@@ -248,43 +319,62 @@
       document.getElementById('prev-upi').textContent      = document.getElementById('f-upi').value.trim();
       const catEl = document.getElementById('prev-category');
       if (selectedCategory) {
-        catEl.textContent  = TL.categoryLabel(selectedCategory);
-        catEl.className    = `text-[10px] font-bold px-2 py-0.5 rounded-full ${TL.categoryColor(selectedCategory)}`;
+        catEl.textContent = TL.categoryLabel(selectedCategory);
+        catEl.className   = `text-[10px] font-bold px-2 py-0.5 rounded-full inline-block ${TL.categoryColor(selectedCategory)}`;
       }
+      document.getElementById('prev-qr-badge').classList.toggle('hidden', !hasQR);
     }
 
-    function createProfile() {
+    // ── Create profile ─────────────────────────────────────────────────
+    async function createProfile() {
       const errEl = document.getElementById('err-3');
       errEl.classList.add('hidden');
       if (!document.getElementById('f-consent').checked) {
         showErr(errEl, 'Please read and tick the agreement above.'); return;
       }
-      const name  = document.getElementById('f-name').value.trim();
-      const goal  = parseInt(document.getElementById('f-goal').value) || null;
-      const slug  = TL.slugify(name);
+
+      const btn = document.getElementById('create-btn');
+      btn.disabled = true; btn.textContent = 'Creating…';
+
+      const name      = document.getElementById('f-name').value.trim();
+      const goal      = parseInt(document.getElementById('f-goal').value) || null;
+      const slug      = TL.slugify(name);
+      const editToken = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+
+      // Read optional images
+      const photoFile = document.getElementById('f-photo').files[0];
+      const qrFile    = document.getElementById('f-qr').files[0];
+      let photoUrl = null, upiQrUrl = null;
+      if (photoFile) { try { photoUrl = await TL.readImageFile(photoFile); } catch(e) {} }
+      if (qrFile)    { try { upiQrUrl = await TL.readImageFile(qrFile);    } catch(e) {} }
+
       const profile = {
-        id:            TL.generateId('P'),
+        id:               TL.generateId('P'),
         slug,
+        editToken,
         name,
-        photoUrl:      null,
-        bio:           document.getElementById('f-bio').value.trim(),
-        upiId:         document.getElementById('f-upi').value.trim(),
-        currentWork:   document.getElementById('f-work').value.trim(),
-        goalAmount:    goal,
-        locationText:  document.getElementById('f-location').value.trim(),
-        locationPrecision: 'area',
-        category:      selectedCategory || 'other',
-        discoverable:  true,
-        createdAt:     new Date().toISOString(),
-        lastActiveAt:  new Date().toISOString()
+        photoUrl,
+        upiQrUrl,
+        bio:              document.getElementById('f-bio').value.trim(),
+        upiId:            document.getElementById('f-upi').value.trim(),
+        currentWork:      document.getElementById('f-work').value.trim(),
+        goalAmount:       goal,
+        locationText:     document.getElementById('f-location').value.trim(),
+        locationPrecision:'area',
+        category:         selectedCategory || 'other',
+        discoverable:     true,
+        createdAt:        new Date().toISOString(),
+        lastActiveAt:     new Date().toISOString()
       };
-      TL.addProfile(profile);
+
+      TL.addProfile(profile); // also calls claimOwnership() internally
       createdSlug = slug;
+
       const profileUrl = `tl-profile.html?slug=${slug}`;
       document.getElementById('step-3').classList.remove('active');
       document.getElementById('step-success').classList.add('active');
-      document.getElementById('success-msg').textContent = `${name}'s profile is live. Share the link below with anyone you want to support your work.`;
-      document.getElementById('profile-link').textContent = window.location.origin + '/' + profileUrl;
+      document.getElementById('success-msg').textContent = `${name}'s profile is live. Share the link below and people can view and support your work directly.`;
+      document.getElementById('profile-link').textContent = window.location.origin + window.location.pathname.replace('tl-create.html','') + profileUrl;
       document.getElementById('view-profile-btn').href = profileUrl;
       document.getElementById('step-indicator').textContent = 'Done!';
       document.getElementById('progress-bar').style.width = '100%';
@@ -293,10 +383,10 @@
 
     function copyLink() {
       const link = `tl-profile.html?slug=${createdSlug}`;
-      const full  = window.location.origin + '/' + link;
-      navigator.clipboard.writeText(full)
+      const base = window.location.origin + window.location.pathname.replace('tl-create.html','');
+      navigator.clipboard.writeText(base + link)
         .then(() => alert('Link copied!'))
-        .catch(() => alert('Copy manually: ' + full));
+        .catch(() => alert('Copy manually: ' + base + link));
     }
   </script>
 </body>
