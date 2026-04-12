@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in — Workledger</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="tl-config.js"></script>
+  <script src="tl-supabase.js"></script>
+  <style>
+    body { font-family:'Inter',sans-serif; background:#fafaf9; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .fade { animation:fadeIn .3s ease-out; }
+    .otp-input { letter-spacing: .4em; font-size: 1.5rem; text-align: center; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center px-4 py-10">
+
+  <div class="w-full max-w-sm fade">
+
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <a href="trust-ledger.html" class="inline-flex items-center gap-1.5">
+        <span class="font-black text-stone-900 text-2xl tracking-tight">workledger</span>
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+      </a>
+      <p class="text-stone-500 text-sm mt-2">Sign in to create and manage your profile</p>
+    </div>
+
+    <!-- Step 1: Email entry -->
+    <div id="step-email" class="bg-white rounded-2xl border border-stone-100 shadow-sm p-6">
+      <h2 class="font-bold text-stone-900 mb-1">Enter your email</h2>
+      <p class="text-stone-400 text-xs mb-5 leading-relaxed">
+        We'll send a <strong>6-digit code</strong> — no password, no account setup.
+        Use the same email each time to get owner access to your profile.
+      </p>
+
+      <input id="f-email" type="email" placeholder="you@example.com"
+        autocomplete="email" inputmode="email"
+        class="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-stone-400 focus:outline-none mb-4"/>
+
+      <div id="err-email" class="text-rose-500 text-xs mb-3 hidden"></div>
+
+      <button id="btn-send" onclick="sendOtp()"
+        class="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold py-3.5 rounded-xl transition-all text-sm">
+        Send code →
+      </button>
+
+      <p class="text-center text-xs text-stone-400 mt-5">
+        Just browsing? <a href="trust-ledger.html" class="underline hover:text-stone-600">Skip sign-in ↗</a>
+      </p>
+    </div>
+
+    <!-- Step 2: OTP entry -->
+    <div id="step-otp" class="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 hidden">
+      <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">📬</div>
+      <h2 class="font-bold text-stone-900 text-center mb-1">Check your inbox</h2>
+      <p id="otp-hint" class="text-stone-400 text-xs text-center mb-6 leading-relaxed"></p>
+
+      <input id="f-otp" type="text" inputmode="numeric" placeholder="— — — — — —"
+        maxlength="6" autocomplete="one-time-code"
+        class="otp-input w-full border-2 border-stone-200 rounded-xl px-4 py-3 font-mono font-bold text-stone-900 focus:border-stone-800 focus:outline-none mb-4 transition-colors"/>
+
+      <div id="err-otp" class="text-rose-500 text-xs mb-3 hidden"></div>
+
+      <button id="btn-verify" onclick="verifyCode()"
+        class="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold py-3.5 rounded-xl transition-all text-sm">
+        Verify & continue →
+      </button>
+
+      <button onclick="goBack()"
+        class="w-full mt-3 text-stone-400 text-xs hover:text-stone-600 transition-colors py-1">
+        ← Use a different email
+      </button>
+
+      <div class="mt-4 bg-stone-50 rounded-xl p-3">
+        <p class="text-xs text-stone-500 leading-relaxed">
+          <strong>Didn't receive the code?</strong> Check spam/promotions. The code expires in 60 minutes.
+          You can also click the magic link in the same email.
+        </p>
+      </div>
+    </div>
+
+    <!-- Success state (brief flash before redirect) -->
+    <div id="step-success" class="bg-white rounded-2xl border border-stone-100 shadow-sm p-8 text-center hidden">
+      <div class="text-4xl mb-3">✅</div>
+      <h2 class="font-bold text-stone-900 mb-1">Signed in!</h2>
+      <p class="text-stone-400 text-xs">Redirecting…</p>
+    </div>
+
+  </div>
+
+  <script>
+    TL.init();
+
+    const params  = new URLSearchParams(window.location.search);
+    const nextUrl = params.get('next') || 'trust-ledger.html';
+    let   sentEmail = '';
+
+    // If already signed in → redirect immediately
+    (async () => {
+      const user = await TL.getUser();
+      if (user) redirect();
+    })();
+
+    async function sendOtp() {
+      const email = document.getElementById('f-email').value.trim().toLowerCase();
+      const errEl = document.getElementById('err-email');
+      errEl.classList.add('hidden');
+
+      if (!email || !email.includes('@') || !email.includes('.')) {
+        errEl.textContent = 'Please enter a valid email address.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      const btn = document.getElementById('btn-send');
+      btn.disabled = true; btn.textContent = 'Sending…';
+
+      const { error } = await TL.signInWithOtp(email);
+
+      if (error) {
+        errEl.textContent = error.message || 'Something went wrong. Try again.';
+        errEl.classList.remove('hidden');
+        btn.disabled = false; btn.textContent = 'Send code →';
+        return;
+      }
+
+      sentEmail = email;
+      document.getElementById('step-email').classList.add('hidden');
+      document.getElementById('step-otp').classList.remove('hidden');
+      document.getElementById('otp-hint').textContent =
+        `We sent a 6-digit code to ${email}. Enter it below — or click the link in the email.`;
+      document.getElementById('f-otp').focus();
+    }
+
+    async function verifyCode() {
+      const raw   = document.getElementById('f-otp').value.replace(/\D/g,'');
+      const errEl = document.getElementById('err-otp');
+      errEl.classList.add('hidden');
+
+      if (raw.length !== 6) {
+        errEl.textContent = 'Enter the full 6-digit code.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      const btn = document.getElementById('btn-verify');
+      btn.disabled = true; btn.textContent = 'Verifying…';
+
+      const { error } = await TL.verifyOtp(sentEmail, raw);
+
+      if (error) {
+        errEl.textContent = 'Code is invalid or expired. Request a new one.';
+        errEl.classList.remove('hidden');
+        btn.disabled = false; btn.textContent = 'Verify & continue →';
+        return;
+      }
+
+      document.getElementById('step-otp').classList.add('hidden');
+      document.getElementById('step-success').classList.remove('hidden');
+      setTimeout(redirect, 600);
+    }
+
+    function goBack() {
+      document.getElementById('step-otp').classList.add('hidden');
+      document.getElementById('step-email').classList.remove('hidden');
+      document.getElementById('btn-send').disabled = false;
+      document.getElementById('btn-send').textContent = 'Send code →';
+      document.getElementById('f-otp').value = '';
+    }
+
+    function redirect() {
+      // Stay on same origin for safety
+      try {
+        const url = new URL(nextUrl, window.location.href);
+        if (url.origin === window.location.origin) {
+          window.location.href = url.href;
+          return;
+        }
+      } catch(_) {}
+      window.location.href = 'trust-ledger.html';
+    }
+
+    // Auto-submit when 6 digits entered
+    document.getElementById('f-otp').addEventListener('input', e => {
+      const digits = e.target.value.replace(/\D/g,'');
+      e.target.value = digits.slice(0,6);
+      if (digits.length >= 6) verifyCode();
+    });
+
+    // Allow Enter key in email field
+    document.getElementById('f-email').addEventListener('keydown', e => {
+      if (e.key === 'Enter') sendOtp();
+    });
+  </script>
+</body>
+</html>
