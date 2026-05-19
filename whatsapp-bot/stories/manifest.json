@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "title": "The Seed That Dreamed of Sun",
+    "description": "A tiny seed buried in darkness learns patience and courage.",
+    "pdf_file": "story_01.pdf",
+    "video_url": "",
+    "activities": [
+      "Draw a picture of a seed growing into a plant. What does it need to grow?",
+      "Find 3 things outside that were once seeds. What are they now?",
+      "Write or tell a story about something small that became something big."
+    ],
+    "age_group": "5-8",
+    "theme": "patience, growth"
+  },
+  {
+    "id": 2,
+    "title": "The River That Sang",
+    "description": "A river learns that its voice can heal a thirsty village.",
+    "pdf_file": "story_02.pdf",
+    "video_url": "",
+    "activities": [
+      "Listen to water sounds (rain, tap, stream). What emotions do they bring?",
+      "Make your own water music using bottles with different water levels.",
+      "Write a thank-you note to a river or body of water near you."
+    ],
+    "age_group": "6-10",
+    "theme": "community, giving"
+  },
+  {
+    "id": 3,
+    "title": "Rumi and the Mango Tree",
+    "description": "Rumi discovers that the oldest mango tree in the village holds a secret about belonging.",
+    "pdf_file": "story_03.pdf",
+    "video_url": "",
+    "activities": [
+      "Find a tree you like. Sit with it for 5 minutes and write what you notice.",
+      "Ask an elder in your family about a tree they remember from childhood.",
+      "Draw your family tree — include the non-human members too (pets, trees, places)."
+    ],
+    "age_group": "7-12",
+    "theme": "belonging, roots"
+  }
+]
