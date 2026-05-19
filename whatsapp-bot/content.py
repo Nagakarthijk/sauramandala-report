@@ -41,14 +41,18 @@ def story_count() -> int:
 
 
 def pdf_url(story: dict, base_url: str) -> Optional[str]:
-    """Return public URL for the story PDF if file exists."""
     pdf_file = story.get("pdf_file", "")
     if pdf_file and (STORIES_DIR / pdf_file).exists():
         return f"{base_url.rstrip('/')}/stories/{pdf_file}"
     return None
 
 
-def format_story_message(story: dict, base_url: str, include_activities: bool = True) -> tuple[str, Optional[str]]:
+def format_story_message(
+    story: dict,
+    base_url: str,
+    role_tip: str = "",
+    include_activities: bool = True,
+) -> tuple[str, Optional[str]]:
     """Return (text_body, media_url_or_None)."""
     lines = [
         f"📖 *{story['title']}*",
@@ -67,18 +71,24 @@ def format_story_message(story: dict, base_url: str, include_activities: bool = 
     if story.get("video_url"):
         lines += ["", f"🎬 *Watch the story video:* {story['video_url']}"]
 
+    if role_tip:
+        lines += ["", f"💡 *Tip for you:* {role_tip}"]
+
     total = story_count()
     lines += ["", f"_(Story {story['id']} of {total})_"]
-    lines += ["", "Reply *NEXT* for the next story, *LIST* to see all stories, or *STOP* to unsubscribe."]
+    lines += [
+        "",
+        "Reply *NEXT* for the next story · *LIST* to browse all · *STOP* to unsubscribe",
+    ]
 
-    media_url = pdf_url(story, base_url)
-    return "\n".join(lines), media_url
+    media = pdf_url(story, base_url)
+    return "\n".join(lines), media
 
 
 def format_list_message() -> str:
     stories = get_all_stories()
     lines = [f"📚 *All {len(stories)} Stories:*", ""]
     for s in stories:
-        lines.append(f"{s['id']}. {s['title']} _{s.get('theme', '')}_")
+        lines.append(f"{s['id']}. *{s['title']}* — _{s.get('theme', '')}_")
     lines += ["", "Reply *STORY [number]* to get any story, e.g. *STORY 5*"]
     return "\n".join(lines)
