@@ -3,7 +3,7 @@ package org.sauramandala.lingualkeys
 import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.json.JSONObject
+import org.json.JSONArray
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
@@ -14,9 +14,9 @@ class TranslationManager {
         .readTimeout(8, TimeUnit.SECONDS)
         .build()
 
-    // LRU-style cache keyed by "src|tgt|text"
-    private val cache = object : LinkedHashMap<String, String>(64, 0.75f, true) {
-        override fun removeEldestEntry(eldest: Map.Entry<String, String>) = size > 64
+    // LRU cache: key = "src|tgt|text"
+    private val cache = object : LinkedHashMap<String, TranslationResult>(64, 0.75f, true) {
+        override fun removeEldestEntry(eldest: Map.Entry<String, TranslationResult>) = size > 64
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -27,7 +27,7 @@ class TranslationManager {
         src: String,
         tgt: String,
         onLoading: () -> Unit,
-        onResult: (String) -> Unit,
+        onResult: (TranslationResult) -> Unit,
         onError: () -> Unit
     ) {
         pendingJob?.cancel()
@@ -47,22 +47,48 @@ class TranslationManager {
 
             try {
                 val encoded = URLEncoder.encode(text.trim(), "UTF-8")
-                val url = "https://api.mymemory.translated.net/get?q=$encoded&langpair=$src|$tgt"
-                val req = Request.Builder().url(url).build()
+                // dt=t → translation, dt=rm → romanization of the translated text
+                val url = "https://translate.googleapis.com/translate_a/single" +
+                    "?client=gtx&sl=$src&tl=$tgt&dt=t&dt=rm&q=$encoded"
+                val req = Request.Builder()
+                    .url(url)
+                    .header("User-Agent", "Mozilla/5.0")
+                    .build()
                 val body = client.newCall(req).execute().use { it.body?.string() }
                     ?: throw IllegalStateException("Empty body")
-                val translated = JSONObject(body)
-                    .getJSONObject("responseData")
-                    .getString("translatedText")
 
-                synchronized(cache) { cache[key] = translated }
-                withContext(Dispatchers.Main) { onResult(translated) }
+                val result = parseResponse(body)
+                if (result.nativeScript.isBlank()) throw IllegalStateException("Empty translation")
+
+                synchronized(cache) { cache[key] = result }
+                withContext(Dispatchers.Main) { onResult(result) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) { onError() }
             }
         }
+    }
+
+    // Response: [[[nativeText, sourceText, romanization?], ...], null, detectedLang]
+    // Index [0][i][0] = translated segment i
+    // Index [0][i][2] = romanization of segment i (present when dt=rm, language supports it)
+    private fun parseResponse(body: String): TranslationResult {
+        val arr = JSONArray(body)
+        val segs = arr.getJSONArray(0)
+        val translation = StringBuilder()
+        val romanized = StringBuilder()
+
+        for (i in 0 until segs.length()) {
+            val seg = segs.optJSONArray(i) ?: continue
+            seg.optString(0).takeIf { it.isNotBlank() }?.let { translation.append(it) }
+            seg.optString(2).takeIf { it.isNotBlank() }?.let { romanized.append(it) }
+        }
+
+        val tStr = translation.toString().trim()
+        // Only keep romanization if it differs from the translation (Latin-script languages won't have it)
+        val rStr = romanized.toString().trim().takeIf { it.isNotEmpty() && it != tStr }
+        return TranslationResult(tStr, rStr)
     }
 
     fun cancel() {

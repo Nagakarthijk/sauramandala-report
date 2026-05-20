@@ -1,12 +1,9 @@
 package org.sauramandala.lingualkeys
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.inputmethodservice.InputMethodService
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.LinearLayout
-import android.widget.Toast
 
 class LanguageIMEService : InputMethodService() {
 
@@ -36,6 +33,12 @@ class LanguageIMEService : InputMethodService() {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 resources.getDimensionPixelSize(R.dimen.translation_bar_height)
             )
+            onSpeakClick = { nativeText ->
+                if (prefs.ttsEnabled) {
+                    val lang = LanguageData.byCode(prefs.targetLanguage)
+                    tts.speak(nativeText, lang?.ttsLocale ?: "en-US")
+                }
+            }
         }
 
         keyboardView = KeyboardView(this).apply {
@@ -46,19 +49,6 @@ class LanguageIMEService : InputMethodService() {
             onKey = ::handleKeyEvent
         }
 
-        translationBar.onSpeakClick = { text ->
-            if (prefs.ttsEnabled) {
-                val lang = LanguageData.byCode(prefs.targetLanguage)
-                tts.speak(text, lang?.ttsLocale ?: "en-US")
-            }
-        }
-
-        translationBar.onTranslationLongClick = { text ->
-            val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-            clipboard.setPrimaryClip(ClipData.newPlainText("translation", text))
-            Toast.makeText(this, R.string.copied, Toast.LENGTH_SHORT).show()
-        }
-
         container.addView(translationBar)
         container.addView(keyboardView)
         return container
@@ -67,7 +57,6 @@ class LanguageIMEService : InputMethodService() {
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         composedText.clear()
-        // Seed with any text already in the field
         val existing = currentInputConnection?.getTextBeforeCursor(300, 0)?.toString() ?: ""
         composedText.append(existing)
         if (composedText.isNotEmpty()) scheduleTranslation() else translationBar.showEmpty()
@@ -106,13 +95,7 @@ class LanguageIMEService : InputMethodService() {
         }
     }
 
-    // Extract the current phrase: text after last sentence break
-    private fun currentPhrase(): String {
-        val text = composedText.toString()
-        val lastBreak = text.lastIndexOfAny(charArrayOf('.', '!', '?', '\n'))
-        return if (lastBreak >= 0) text.substring(lastBreak + 1).trim() else text.trim()
-    }
-
+    // Translate the current phrase (text after last sentence boundary)
     private fun scheduleTranslation() {
         if (!prefs.translationEnabled) return
         val phrase = currentPhrase()
@@ -127,9 +110,15 @@ class LanguageIMEService : InputMethodService() {
             src = prefs.sourceLanguage,
             tgt = prefs.targetLanguage,
             onLoading = { translationBar.showLoading() },
-            onResult = { translated -> translationBar.showTranslation(translated, targetLang) },
+            onResult = { result -> translationBar.showTranslation(result, targetLang) },
             onError = { translationBar.showError() }
         )
+    }
+
+    private fun currentPhrase(): String {
+        val text = composedText.toString()
+        val lastBreak = text.lastIndexOfAny(charArrayOf('.', '!', '?', '\n'))
+        return if (lastBreak >= 0) text.substring(lastBreak + 1).trim() else text.trim()
     }
 
     override fun onFinishInput() {

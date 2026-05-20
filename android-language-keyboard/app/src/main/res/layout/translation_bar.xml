@@ -4,24 +4,36 @@
     tools:parentTag="android.widget.LinearLayout"
     tools:orientation="horizontal">
 
+    <!-- Language code chip — e.g. "KN", "HI", "ES" -->
     <TextView
-        android:id="@+id/tv_target_lang"
-        android:layout_width="wrap_content"
+        android:id="@+id/tv_lang"
+        android:layout_width="52dp"
         android:layout_height="match_parent"
-        android:gravity="center"
-        android:minWidth="60dp"
-        android:paddingHorizontal="10dp"
         android:background="#EDE7F6"
+        android:gravity="center"
         android:textColor="#6200EE"
         android:textSize="12sp"
         android:textStyle="bold"
-        tools:text="ಕನ್ನಡ" />
+        android:letterSpacing="0.05"
+        tools:text="KN" />
 
+    <!-- 1dp separator -->
+    <View
+        android:layout_width="1dp"
+        android:layout_height="match_parent"
+        android:background="#E5E7EB" />
+
+    <!-- Tap-to-copy content area -->
     <FrameLayout
+        android:id="@+id/content_area"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
 
+        <!-- Loading spinner -->
         <ProgressBar
             android:id="@+id/progress_bar"
             style="?android:attr/progressBarStyleSmall"
@@ -30,30 +42,63 @@
             android:layout_gravity="center"
             android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/tv_translation"
+        <!-- Two-row translation content -->
+        <LinearLayout
+            android:id="@+id/translation_content"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:ellipsize="end"
-            android:gravity="center_vertical"
-            android:hint="@string/translation_hint"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:orientation="vertical"
             android:paddingHorizontal="12dp"
-            android:singleLine="true"
-            android:textColor="#1F2937"
-            android:textColorHint="#9CA3AF"
-            android:textSize="15sp" />
+            android:paddingVertical="6dp">
+
+            <!-- Primary: romanized pronunciation e.g. "Hēgiddīri?" -->
+            <TextView
+                android:id="@+id/tv_primary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:hint="@string/translation_hint"
+                android:singleLine="true"
+                android:textColor="#111827"
+                android:textColorHint="#9CA3AF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                tools:text="Hēgiddīri?" />
+
+            <!-- Secondary: native script e.g. "ಹೇಗಿದ್ದೀರಿ?" — hidden for Latin targets -->
+            <TextView
+                android:id="@+id/tv_secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:textColor="#7C3AED"
+                android:textSize="11sp"
+                android:visibility="gone"
+                tools:text="ಹೇಗಿದ್ದೀರಿ?"
+                tools:visibility="visible" />
+
+        </LinearLayout>
 
     </FrameLayout>
 
+    <!-- 1dp separator -->
+    <View
+        android:layout_width="1dp"
+        android:layout_height="match_parent"
+        android:background="#E5E7EB" />
+
+    <!-- Hear button -->
     <ImageButton
         android:id="@+id/btn_speak"
-        android:layout_width="44dp"
+        android:layout_width="52dp"
         android:layout_height="match_parent"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/speak"
         android:enabled="false"
-        android:padding="10dp"
+        android:padding="14dp"
         android:src="@drawable/ic_volume"
-        android:tint="#6200EE" />
+        android:tint="#C4B5FD" />
 
 </merge>

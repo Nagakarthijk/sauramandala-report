@@ -30,4 +30,5 @@
     <string name="translation_error">Translation unavailable</string>
     <string name="speak">Speak translation</string>
     <string name="copied">Translation copied to clipboard</string>
+    <string name="native_copied">Native script copied</string>
 </resources>
