@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Brand -->
     <color name="colorPrimary">#6200EE</color>
     <color name="colorPrimaryVariant">#3700B3</color>
     <color name="colorSecondary">#03DAC5</color>
+
+    <!-- Status -->
     <color name="status_ok">#15803D</color>
     <color name="status_warn">#B91C1C</color>
+
+    <!-- Dark mode surface colors (used in themes) -->
+    <color name="dark_surface">#1A1A2E</color>
+    <color name="dark_surface_variant">#1E2035</color>
+    <color name="dark_on_surface">#E8ECF4</color>
 </resources>

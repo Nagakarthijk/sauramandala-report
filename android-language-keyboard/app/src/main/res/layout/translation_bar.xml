@@ -4,26 +4,23 @@
     tools:parentTag="android.widget.LinearLayout"
     tools:orientation="horizontal">
 
-    <!-- Language code chip — e.g. "KN", "HI", "ES" -->
+    <!-- Language code badge: KN / HI / EN / ES … -->
     <TextView
         android:id="@+id/tv_lang"
         android:layout_width="52dp"
         android:layout_height="match_parent"
-        android:background="#EDE7F6"
         android:gravity="center"
-        android:textColor="#6200EE"
         android:textSize="12sp"
         android:textStyle="bold"
-        android:letterSpacing="0.05"
+        android:letterSpacing="0.04"
         tools:text="KN" />
 
-    <!-- 1dp separator -->
     <View
         android:layout_width="1dp"
         android:layout_height="match_parent"
-        android:background="#E5E7EB" />
+        android:id="@+id/divider_left" />
 
-    <!-- Tap-to-copy content area -->
+    <!-- Tappable translation area: tap → copy, long-press → copy for paste -->
     <FrameLayout
         android:id="@+id/content_area"
         android:layout_width="0dp"
@@ -33,72 +30,43 @@
         android:clickable="true"
         android:focusable="true">
 
-        <!-- Loading spinner -->
         <ProgressBar
             android:id="@+id/progress_bar"
             style="?android:attr/progressBarStyleSmall"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
             android:layout_gravity="center"
             android:visibility="gone" />
 
-        <!-- Two-row translation content -->
-        <LinearLayout
-            android:id="@+id/translation_content"
+        <TextView
+            android:id="@+id/tv_translation"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:orientation="vertical"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp">
-
-            <!-- Primary: romanized pronunciation e.g. "Hēgiddīri?" -->
-            <TextView
-                android:id="@+id/tv_primary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:hint="@string/translation_hint"
-                android:singleLine="true"
-                android:textColor="#111827"
-                android:textColorHint="#9CA3AF"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                tools:text="Hēgiddīri?" />
-
-            <!-- Secondary: native script e.g. "ಹೇಗಿದ್ದೀರಿ?" — hidden for Latin targets -->
-            <TextView
-                android:id="@+id/tv_secondary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:singleLine="true"
-                android:textColor="#7C3AED"
-                android:textSize="11sp"
-                android:visibility="gone"
-                tools:text="ಹೇಗಿದ್ದೀರಿ?"
-                tools:visibility="visible" />
-
-        </LinearLayout>
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="14dp"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:hint="@string/translation_hint"
+            tools:text="ಹೇಗಿದ್ದೀರಿ?" />
 
     </FrameLayout>
 
-    <!-- 1dp separator -->
     <View
         android:layout_width="1dp"
         android:layout_height="match_parent"
-        android:background="#E5E7EB" />
+        android:id="@+id/divider_right" />
 
-    <!-- Hear button -->
+    <!-- Speak / hear button -->
     <ImageButton
         android:id="@+id/btn_speak"
-        android:layout_width="52dp"
+        android:layout_width="50dp"
         android:layout_height="match_parent"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/speak"
         android:enabled="false"
-        android:padding="14dp"
-        android:src="@drawable/ic_volume"
-        android:tint="#C4B5FD" />
+        android:padding="13dp"
+        android:src="@drawable/ic_volume" />
 
 </merge>

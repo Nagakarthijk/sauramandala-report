@@ -13,7 +13,7 @@
     <string name="enable_keyboard">Enable Keyboard</string>
     <string name="switch_keyboard">Switch to LingualKeys</string>
     <string name="how_title">How it works</string>
-    <string name="how_desc">As you type in any app, LingualKeys shows a live translation in your chosen language in the bar above the keyboard.\n\n• Tap the 🔊 button to hear pronunciation\n• Long-press the translation to copy it\n• Change languages anytime in Settings\n\nLearn your target language passively — through your own everyday vocabulary.</string>
+    <string name="how_desc">As you type in any app, LingualKeys shows a live translation in your chosen language in the bar above the keyboard.\n\n• If you type in English, the translation appears romanized so you can actually read and pronounce it\n• Tap the 🔊 button to hear it spoken aloud\n• Tap the translation to copy it\n• Use the 🎤 button for voice input\n• Swipe across letters to type words\n\nChange languages anytime in Settings.</string>
 
     <!-- Settings screen -->
     <string name="section_language">Languages</string>
@@ -29,6 +29,10 @@
     <string name="translation_hint">Start typing to see translation…</string>
     <string name="translation_error">Translation unavailable</string>
     <string name="speak">Speak translation</string>
-    <string name="copied">Translation copied to clipboard</string>
-    <string name="native_copied">Native script copied</string>
+    <string name="copied">Translation copied</string>
+    <string name="listening">🎤  Listening…</string>
+
+    <!-- Voice / mic -->
+    <string name="voice_error">Voice recognition unavailable</string>
+    <string name="mic_permission_needed">Tap here → grant Microphone permission in app settings</string>
 </resources>

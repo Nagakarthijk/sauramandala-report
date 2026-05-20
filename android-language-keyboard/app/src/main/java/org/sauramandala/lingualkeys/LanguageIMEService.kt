@@ -1,15 +1,20 @@
 package org.sauramandala.lingualkeys
 
+import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.inputmethodservice.InputMethodService
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.LinearLayout
+import android.widget.Toast
+import androidx.core.content.ContextCompat
 
 class LanguageIMEService : InputMethodService() {
 
     private lateinit var translator: TranslationManager
     private lateinit var tts: TTSManager
     private lateinit var prefs: LanguagePreferences
+    private lateinit var voice: VoiceInputManager
 
     private lateinit var translationBar: TranslationBarView
     private lateinit var keyboardView: KeyboardView
@@ -21,6 +26,35 @@ class LanguageIMEService : InputMethodService() {
         translator = TranslationManager()
         tts = TTSManager(this)
         prefs = LanguagePreferences(this)
+        initVoice()
+    }
+
+    private fun initVoice() {
+        voice = VoiceInputManager(
+            context = this,
+            onPartial = { partial ->
+                translationBar.showPartial(partial)
+            },
+            onResult = { text ->
+                val ic = currentInputConnection ?: return@VoiceInputManager
+                ic.commitText("$text ", 1)
+                composedText.append(text).append(' ')
+                keyboardView.setMicListening(false)
+                scheduleTranslation()
+            },
+            onListening = {
+                translationBar.showListening()
+                keyboardView.setMicListening(true)
+            },
+            onStopped = {
+                keyboardView.setMicListening(false)
+                scheduleTranslation()
+            },
+            onError = {
+                keyboardView.setMicListening(false)
+                Toast.makeText(this, R.string.voice_error, Toast.LENGTH_SHORT).show()
+            }
+        )
     }
 
     override fun onCreateInputView(): View {
@@ -33,10 +67,10 @@ class LanguageIMEService : InputMethodService() {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 resources.getDimensionPixelSize(R.dimen.translation_bar_height)
             )
-            onSpeakClick = { nativeText ->
+            onSpeakClick = { text ->
                 if (prefs.ttsEnabled) {
                     val lang = LanguageData.byCode(prefs.targetLanguage)
-                    tts.speak(nativeText, lang?.ttsLocale ?: "en-US")
+                    tts.speak(text, lang?.ttsLocale ?: "en-US")
                 }
             }
         }
@@ -62,12 +96,24 @@ class LanguageIMEService : InputMethodService() {
         if (composedText.isNotEmpty()) scheduleTranslation() else translationBar.showEmpty()
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Refresh theme when night mode toggles
+        if (::translationBar.isInitialized) translationBar.applyTheme()
+        if (::keyboardView.isInitialized) keyboardView.refreshTheme()
+    }
+
     private fun handleKeyEvent(event: KeyboardView.KeyEvent) {
         val ic = currentInputConnection ?: return
         when (event) {
             is KeyboardView.KeyEvent.Char -> {
                 ic.commitText(event.c.toString(), 1)
                 composedText.append(event.c)
+                scheduleTranslation()
+            }
+            is KeyboardView.KeyEvent.SwipeWord -> {
+                ic.commitText("${event.word} ", 1)
+                composedText.append(event.word).append(' ')
                 scheduleTranslation()
             }
             is KeyboardView.KeyEvent.Space -> {
@@ -90,12 +136,20 @@ class LanguageIMEService : InputMethodService() {
                 composedText.clear()
                 translationBar.showEmpty()
             }
+            is KeyboardView.KeyEvent.MicTap -> handleMicTap()
             is KeyboardView.KeyEvent.ShiftToggle,
             is KeyboardView.KeyEvent.SwitchToNumbers -> Unit
         }
     }
 
-    // Translate the current phrase (text after last sentence boundary)
+    private fun handleMicTap() {
+        if (!hasRecordPermission()) {
+            Toast.makeText(this, R.string.mic_permission_needed, Toast.LENGTH_LONG).show()
+            return
+        }
+        voice.toggle(prefs.sourceLanguage)
+    }
+
     private fun scheduleTranslation() {
         if (!prefs.translationEnabled) return
         val phrase = currentPhrase()
@@ -110,20 +164,25 @@ class LanguageIMEService : InputMethodService() {
             src = prefs.sourceLanguage,
             tgt = prefs.targetLanguage,
             onLoading = { translationBar.showLoading() },
-            onResult = { result -> translationBar.showTranslation(result, targetLang) },
+            onResult = { t -> translationBar.showTranslation(t, targetLang) },
             onError = { translationBar.showError() }
         )
     }
 
     private fun currentPhrase(): String {
         val text = composedText.toString()
-        val lastBreak = text.lastIndexOfAny(charArrayOf('.', '!', '?', '\n'))
-        return if (lastBreak >= 0) text.substring(lastBreak + 1).trim() else text.trim()
+        val last = text.lastIndexOfAny(charArrayOf('.', '!', '?', '\n'))
+        return if (last >= 0) text.substring(last + 1).trim() else text.trim()
     }
+
+    private fun hasRecordPermission() =
+        ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
 
     override fun onFinishInput() {
         super.onFinishInput()
         translator.cancel()
+        if (voice.isListening) voice.stop()
         composedText.clear()
     }
 
@@ -131,5 +190,6 @@ class LanguageIMEService : InputMethodService() {
         super.onDestroy()
         translator.destroy()
         tts.destroy()
+        voice.destroy()
     }
 }

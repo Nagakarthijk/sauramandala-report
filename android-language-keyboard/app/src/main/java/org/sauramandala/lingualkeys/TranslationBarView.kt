@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
@@ -19,120 +20,135 @@ class TranslationBarView @JvmOverloads constructor(
 
     private val binding = TranslationBarBinding.inflate(LayoutInflater.from(context), this, true)
 
-    var onSpeakClick: ((nativeScriptText: String) -> Unit)? = null
+    var onSpeakClick: ((String) -> Unit)? = null
 
-    private var currentResult: TranslationResult? = null
+    private var currentTranslation = ""
+
+    private val isDark: Boolean
+        get() = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
 
     init {
         orientation = HORIZONTAL
-        setBackgroundColor(0xFFFFFFFF.toInt())
+        applyTheme()
 
-        // Tap content area → copy romanized (primary) text with inline feedback
         binding.contentArea.setOnClickListener {
-            currentResult?.let { copyWithFeedback(it.primaryText) }
-        }
-
-        // Long-press → copy native script (for when user wants to paste actual script)
-        binding.contentArea.setOnLongClickListener {
-            val result = currentResult ?: return@setOnLongClickListener false
-            val native = result.secondaryText
-            if (native != null) {
-                copyToClipboard(native)
-                Toast.makeText(context, R.string.native_copied, Toast.LENGTH_SHORT).show()
-            } else {
-                copyWithFeedback(result.primaryText)
+            currentTranslation.takeIf { it.isNotEmpty() }?.let { text ->
+                copyToClipboard(text)
+                flashCopied(text)
             }
-            true
         }
 
-        // Tap speaker → hear the translation spoken aloud
+        binding.contentArea.setOnLongClickListener {
+            currentTranslation.takeIf { it.isNotEmpty() }?.let { text ->
+                copyToClipboard(text)
+                Toast.makeText(context, R.string.copied, Toast.LENGTH_SHORT).show()
+                true
+            } ?: false
+        }
+
         binding.btnSpeak.setOnClickListener {
-            currentResult?.nativeScript?.takeIf { it.isNotEmpty() }?.let { text ->
+            currentTranslation.takeIf { it.isNotEmpty() }?.let { text ->
                 onSpeakClick?.invoke(text)
                 pulseSpeakButton()
             }
         }
     }
 
-    fun showLoading() {
-        binding.progressBar.visibility = View.VISIBLE
-        binding.translationContent.visibility = View.INVISIBLE
-        setSpeakEnabled(false)
-        currentResult = null
+    fun applyTheme() {
+        val dark = isDark
+        setBackgroundColor(if (dark) 0xFF1A1A2E.toInt() else 0xFFFFFFFF.toInt())
+
+        binding.tvLang.setBackgroundColor(if (dark) 0xFF2D1B69.toInt() else 0xFFEDE7F6.toInt())
+        binding.tvLang.setTextColor(if (dark) 0xFFD4BBFF.toInt() else 0xFF6200EE.toInt())
+
+        binding.dividerLeft.setBackgroundColor(if (dark) 0xFF2A2A3E.toInt() else 0xFFE5E7EB.toInt())
+        binding.dividerRight.setBackgroundColor(if (dark) 0xFF2A2A3E.toInt() else 0xFFE5E7EB.toInt())
+
+        binding.tvTranslation.setTextColor(if (dark) 0xFFF1F5F9.toInt() else 0xFF111827.toInt())
+        binding.tvTranslation.setHintTextColor(if (dark) 0xFF4B5563.toInt() else 0xFF9CA3AF.toInt())
+
+        refreshSpeakTint()
     }
 
-    fun showTranslation(result: TranslationResult, targetLang: Language) {
-        currentResult = result
+    fun showLoading() {
+        currentTranslation = ""
+        binding.progressBar.visibility = View.VISIBLE
+        binding.tvTranslation.visibility = View.INVISIBLE
+        refreshSpeakTint()
+    }
 
+    fun showTranslation(translation: String, targetLang: Language) {
+        currentTranslation = translation
         binding.tvLang.text = targetLang.code.uppercase()
-
-        // Primary: romanized pronunciation ("Hēgiddīri?") or plain translation for Latin scripts
-        binding.tvPrimary.text = result.primaryText
-
-        // Secondary: native script below ("ಹೇಗಿದ್ದೀರಿ?") — only shown when romanization exists
-        if (result.secondaryText != null) {
-            binding.tvSecondary.text = result.secondaryText
-            binding.tvSecondary.visibility = View.VISIBLE
-        } else {
-            binding.tvSecondary.visibility = View.GONE
-        }
-
+        binding.tvTranslation.text = translation
         binding.progressBar.visibility = View.GONE
-        binding.translationContent.visibility = View.VISIBLE
-        setSpeakEnabled(true)
+        binding.tvTranslation.visibility = View.VISIBLE
+        refreshSpeakTint()
+        fadeIn(binding.tvTranslation)
+    }
 
-        fadeIn(binding.translationContent)
+    fun showListening() {
+        currentTranslation = ""
+        binding.tvTranslation.text = context.getString(R.string.listening)
+        binding.progressBar.visibility = View.VISIBLE
+        binding.tvTranslation.visibility = View.VISIBLE
+        refreshSpeakTint()
+    }
+
+    fun showPartial(text: String) {
+        binding.tvTranslation.text = "🎤 $text"
+        binding.progressBar.visibility = View.GONE
+        binding.tvTranslation.visibility = View.VISIBLE
     }
 
     fun showEmpty() {
-        currentResult = null
+        currentTranslation = ""
         binding.progressBar.visibility = View.GONE
-        binding.translationContent.visibility = View.VISIBLE
-        binding.tvPrimary.text = ""
-        binding.tvSecondary.visibility = View.GONE
-        setSpeakEnabled(false)
+        binding.tvTranslation.visibility = View.VISIBLE
+        binding.tvTranslation.text = ""
+        refreshSpeakTint()
     }
 
     fun showError() {
-        currentResult = null
+        currentTranslation = ""
         binding.progressBar.visibility = View.GONE
-        binding.translationContent.visibility = View.VISIBLE
-        binding.tvPrimary.text = context.getString(R.string.translation_error)
-        binding.tvSecondary.visibility = View.GONE
-        setSpeakEnabled(false)
+        binding.tvTranslation.visibility = View.VISIBLE
+        binding.tvTranslation.text = context.getString(R.string.translation_error)
+        refreshSpeakTint()
     }
 
-    private fun setSpeakEnabled(enabled: Boolean) {
-        binding.btnSpeak.isEnabled = enabled
-        val tint = if (enabled) 0xFF6200EE.toInt() else 0xFFC4B5FD.toInt()
-        binding.btnSpeak.imageTintList = ColorStateList.valueOf(tint)
+    private fun refreshSpeakTint() {
+        val hasContent = currentTranslation.isNotEmpty()
+        binding.btnSpeak.isEnabled = hasContent
+        val color = if (hasContent) {
+            if (isDark) 0xFFBB86FC.toInt() else 0xFF6200EE.toInt()
+        } else {
+            if (isDark) 0xFF3D3D5C.toInt() else 0xFFD1D5DB.toInt()
+        }
+        binding.btnSpeak.imageTintList = ColorStateList.valueOf(color)
     }
 
-    private fun copyWithFeedback(text: String) {
-        copyToClipboard(text)
-        val prev = binding.tvPrimary.text
-        binding.tvPrimary.text = "✓  Copied"
-        binding.tvPrimary.postDelayed({ binding.tvPrimary.text = prev }, 1100)
+    private fun flashCopied(original: String) {
+        binding.tvTranslation.text = "✓  Copied"
+        binding.tvTranslation.postDelayed({ binding.tvTranslation.text = original }, 1000)
     }
 
     private fun copyToClipboard(text: String) {
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("lingualkeys", text))
+        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        cm.setPrimaryClip(ClipData.newPlainText("lingualkeys", text))
     }
 
     private fun fadeIn(view: View) {
         view.alpha = 0f
-        ObjectAnimator.ofFloat(view, "alpha", 0f, 1f).apply {
-            duration = 180
-            start()
-        }
+        ObjectAnimator.ofFloat(view, "alpha", 0f, 1f).setDuration(160).start()
     }
 
     private fun pulseSpeakButton() {
         binding.btnSpeak.animate()
-            .scaleX(0.82f).scaleY(0.82f).setDuration(70)
+            .scaleX(0.78f).scaleY(0.78f).setDuration(60)
             .withEndAction {
-                binding.btnSpeak.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
+                binding.btnSpeak.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
             }.start()
     }
 }

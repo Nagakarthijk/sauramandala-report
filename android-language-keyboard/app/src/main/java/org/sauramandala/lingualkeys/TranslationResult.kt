@@ -1,12 +1,5 @@
 package org.sauramandala.lingualkeys
 
-data class TranslationResult(
-    val nativeScript: String,  // ಹೇಗಿದ್ದೀರಿ?
-    val romanized: String?     // Hēgiddīri? — null for Latin-script targets like Spanish/French
-) {
-    // What the learner reads: romanized pronunciation if available, else the translation itself
-    val primaryText: String get() = romanized ?: nativeScript
-
-    // Shown smaller below primary — the "real" script to aspirationally learn
-    val secondaryText: String? get() = if (romanized != null) nativeScript else null
-}
+// Translation display logic moved into TranslationManager.parseDisplay().
+// TranslationManager now returns the final display string directly,
+// choosing romanized or native script based on the source language.
