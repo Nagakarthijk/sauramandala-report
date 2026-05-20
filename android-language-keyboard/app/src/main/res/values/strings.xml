@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LingualKeys</string>
+    <string name="app_tagline">Type in your language, learn a new one</string>
+    <string name="ime_label">LingualKeys</string>
+    <string name="subtype_en_us">English (US)</string>
+    <string name="settings">Language Settings</string>
+
+    <!-- Setup screen -->
+    <string name="keyboard_status_label">Keyboard Status</string>
+    <string name="keyboard_enabled">✓ LingualKeys is active</string>
+    <string name="keyboard_not_enabled">LingualKeys is not enabled</string>
+    <string name="enable_keyboard">Enable Keyboard</string>
+    <string name="switch_keyboard">Switch to LingualKeys</string>
+    <string name="how_title">How it works</string>
+    <string name="how_desc">As you type in any app, LingualKeys shows a live translation in your chosen language in the bar above the keyboard.\n\n• Tap the 🔊 button to hear pronunciation\n• Long-press the translation to copy it\n• Change languages anytime in Settings\n\nLearn your target language passively — through your own everyday vocabulary.</string>
+
+    <!-- Settings screen -->
+    <string name="section_language">Languages</string>
+    <string name="section_preferences">Preferences</string>
+    <string name="i_type_in">I normally type in</string>
+    <string name="i_want_to_learn">I want to learn</string>
+    <string name="show_translation">Show Translation Bar</string>
+    <string name="show_translation_desc">Display live translations as you type</string>
+    <string name="voice_pronunciation">Voice Pronunciation</string>
+    <string name="voice_pronunciation_desc">Tap speaker icon to hear the translation</string>
+
+    <!-- IME / Translation bar -->
+    <string name="translation_hint">Start typing to see translation…</string>
+    <string name="translation_error">Translation unavailable</string>
+    <string name="speak">Speak translation</string>
+    <string name="copied">Translation copied to clipboard</string>
+</resources>

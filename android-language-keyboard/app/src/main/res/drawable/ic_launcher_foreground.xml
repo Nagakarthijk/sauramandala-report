@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Keyboard outline -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M22,36 Q18,36 18,40 L18,72 Q18,76 22,76 L86,76 Q90,76 90,72 L90,40 Q90,36 86,36 Z" />
+    <!-- Key dots representing multilingual keys -->
+    <path
+        android:fillColor="#6200EE"
+        android:pathData="M28,48 L36,48 L36,56 L28,56 Z" />
+    <path
+        android:fillColor="#6200EE"
+        android:pathData="M40,48 L48,48 L48,56 L40,56 Z" />
+    <path
+        android:fillColor="#6200EE"
+        android:pathData="M52,48 L60,48 L60,56 L52,56 Z" />
+    <path
+        android:fillColor="#6200EE"
+        android:pathData="M64,48 L72,48 L72,56 L64,56 Z" />
+    <!-- Spacebar -->
+    <path
+        android:fillColor="#6200EE"
+        android:pathData="M34,62 L74,62 L74,68 L34,68 Z" />
+</vector>
