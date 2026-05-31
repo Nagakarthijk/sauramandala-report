@@ -16,56 +16,59 @@ export interface Question {
 export const QUESTIONS: Question[] = [
   {
     id: 'q_age',
-    section: 'demo',
+    section: 'demographics',
     type: 'pick',
     required: true,
     text: {
       en: 'How old are you?',
       kh: 'Katno u snem jong phi?',
       ga: 'Aro nimbireka?',
-      pn: 'Katno u snem jong phi?'
+      pn: 'Katno u snem jong phi?',
     },
     options: [
       { en: '13–15', kh: '13–15', ga: '13–15', pn: '13–15' },
       { en: '16–18', kh: '16–18', ga: '16–18', pn: '16–18' },
       { en: '19–21', kh: '19–21', ga: '19–21', pn: '19–21' },
       { en: '22–24', kh: '22–24', ga: '22–24', pn: '22–24' },
-      { en: '25–29', kh: '25–29', ga: '25–29', pn: '25–29' }
-    ]
+      { en: '25–29', kh: '25–29', ga: '25–29', pn: '25–29' },
+    ],
   },
   {
     id: 'q_gender',
-    section: 'demo',
+    section: 'demographics',
     type: 'pick',
     required: true,
     text: {
       en: 'How do you describe yourself?',
       kh: 'Phi la kynmaw ia phi katno?',
       ga: 'Aro nisa ong ia ngi?',
-      pn: 'Phi la kynmaw ia phi katno?'
+      pn: 'Phi la kynmaw ia phi katno?',
     },
     options: [
       { en: 'Female', kh: 'Kynthei', ga: 'Kynthei', pn: 'Kynthei' },
       { en: 'Male', kh: 'Shynrang', ga: 'Shynrang', pn: 'Shynrang' },
       { en: 'Non-binary / gender diverse', kh: 'Nongkynmaw khlem sah', ga: 'Gender diverse', pn: 'Nongkynmaw khlem sah' },
-      { en: 'Prefer not to say', kh: 'Lym tip pat', ga: 'Lym tip pat', pn: 'Lym tip pat' }
-    ]
+      { en: 'Transgender', kh: 'Transgender', ga: 'Transgender', pn: 'Transgender' },
+      { en: 'Prefer not to say', kh: 'Lym tip pat', ga: 'Lym tip pat', pn: 'Lym tip pat' },
+      { en: 'Other', kh: 'Noh', ga: 'Noh', pn: 'Noh' },
+    ],
   },
   {
     id: 'q_district',
-    section: 'demo',
+    section: 'demographics',
     type: 'pick',
     required: true,
     text: {
       en: 'Which district do you live in?',
       kh: 'Phi shong ha district dei?',
       ga: 'Baksa district ngi ong?',
-      pn: 'Phi shong ha district dei?'
+      pn: 'Phi shong ha district dei?',
     },
     options: [
       { en: 'East Khasi Hills', kh: 'East Khasi Hills', ga: 'East Khasi Hills', pn: 'East Khasi Hills' },
       { en: 'West Khasi Hills', kh: 'West Khasi Hills', ga: 'West Khasi Hills', pn: 'West Khasi Hills' },
       { en: 'South West Khasi Hills', kh: 'South West Khasi Hills', ga: 'South West Khasi Hills', pn: 'South West Khasi Hills' },
+      { en: 'Eastern West Khasi Hills', kh: 'Eastern West Khasi Hills', ga: 'Eastern West Khasi Hills', pn: 'Eastern West Khasi Hills' },
       { en: 'Ri Bhoi', kh: 'Ri Bhoi', ga: 'Ri Bhoi', pn: 'Ri Bhoi' },
       { en: 'East Jaintia Hills', kh: 'East Jaintia Hills', ga: 'East Jaintia Hills', pn: 'East Jaintia Hills' },
       { en: 'West Jaintia Hills', kh: 'West Jaintia Hills', ga: 'West Jaintia Hills', pn: 'West Jaintia Hills' },
@@ -73,328 +76,372 @@ export const QUESTIONS: Question[] = [
       { en: 'West Garo Hills', kh: 'West Garo Hills', ga: 'West Garo Hills', pn: 'West Garo Hills' },
       { en: 'South Garo Hills', kh: 'South Garo Hills', ga: 'South Garo Hills', pn: 'South Garo Hills' },
       { en: 'North Garo Hills', kh: 'North Garo Hills', ga: 'North Garo Hills', pn: 'North Garo Hills' },
-      { en: 'Eastern West Khasi Hills', kh: 'Eastern West Khasi Hills', ga: 'Eastern West Khasi Hills', pn: 'Eastern West Khasi Hills' }
-    ]
+    ],
   },
   {
-    id: 'q_wellbeing_overall',
+    id: 'q_setting',
+    section: 'demographics',
+    type: 'pick',
+    required: true,
+    text: {
+      en: 'Where do you mainly live?',
+      kh: 'Phi shong ha kano bynta?',
+      ga: 'Ngi ong hadei?',
+      pn: 'Phi shong ha kano bynta?',
+    },
+    options: [
+      { en: 'Urban (town/city)', kh: 'Ha iew (shong)', ga: 'Urban (town)', pn: 'Ha iew (shong)' },
+      { en: 'Semi-urban', kh: 'Semi-urban', ga: 'Semi-urban', pn: 'Semi-urban' },
+      { en: 'Rural (village)', kh: 'Ha shnong', ga: 'Rural (village)', pn: 'Ha shnong' },
+      { en: 'Remote / forest area', kh: 'Ha shnong dur / khlaw', ga: 'Remote / forest', pn: 'Ha shnong dur / khlaw' },
+    ],
+  },
+  {
+    id: 'q_occupation',
+    section: 'demographics',
+    type: 'pick',
+    required: true,
+    text: {
+      en: 'What is your main occupation or activity?',
+      kh: 'Dei noh u jingshong / jingshym jong phi?',
+      ga: 'Baksa ngi occupation?',
+      pn: 'Dei noh u jingshong / jingshym jong phi?',
+    },
+    options: [
+      { en: 'Student', kh: 'Nongbang skul', ga: 'Student', pn: 'Nongbang skul' },
+      { en: 'Employed (formal job)', kh: 'Shong formal', ga: 'Employed', pn: 'Shong formal' },
+      { en: 'Self-employed / business', kh: 'Shong dei noh / business', ga: 'Self-employed', pn: 'Shong dei noh / business' },
+      { en: 'Farming / agriculture', kh: 'Jingduh pynsah', ga: 'Farming', pn: 'Jingduh pynsah' },
+      { en: 'Looking for work', kh: 'Pynhiar shong', ga: 'Looking for work', pn: 'Pynhiar shong' },
+      { en: 'Caring for family', kh: 'Jingbam kur kha', ga: 'Caring for family', pn: 'Jingbam kur kha' },
+      { en: 'Other', kh: 'Noh', ga: 'Noh', pn: 'Noh' },
+    ],
+  },
+  {
+    id: 'q_life',
     section: 'wellbeing',
     type: 'scale',
     required: true,
-    scaleSteps: 10,
+    scaleSteps: 5,
     text: {
-      en: 'Overall, how would you rate your wellbeing right now?',
-      kh: 'Kumno phi tip ia jong phi ha jingiasuh mynta?',
-      ga: 'Aro ngi ong kumno sa aro ngi ong jongngi mynta?',
-      pn: 'Kumno phi tip ia jong phi ha jingiasuh mynta?'
+      en: 'Overall, how has your life been feeling lately? (WHO-5)',
+      kh: 'Ha jingim jong phi ha mynta, phi tip kumno?',
+      ga: 'Kumno ngi ong sa jongngi mynta?',
+      pn: 'Ha jingim jong phi ha mynta, phi tip kumno?',
     },
     scaleMin: { en: 'Very poor', kh: 'Kham bad', ga: 'Manchi bad', pn: 'Kham bad' },
-    scaleMax: { en: 'Excellent', kh: 'Kham lah', ga: 'Bor good', pn: 'Kham lah' }
+    scaleMax: { en: 'Very good', kh: 'Kham lah', ga: 'Bor good', pn: 'Kham lah' },
   },
   {
-    id: 'q_wellbeing_domains',
+    id: 'q_life_voice',
     section: 'wellbeing',
+    type: 'voice_text',
+    required: false,
+    text: {
+      en: 'Would you like to share more about how life has been feeling?',
+      kh: 'Phi dang tip ban ia biang haba jingim jong phi?',
+      ga: 'Ngi dang tip ban ia biang haba jongngi?',
+      pn: 'Phi dang tip ban ia biang haba jingim jong phi?',
+    },
+  },
+  {
+    id: 'q_mh_feel',
+    section: 'mental_health',
     type: 'multi',
+    required: false,
     text: {
-      en: 'Which areas of your life feel most challenging right now? (Select all that apply)',
-      kh: 'Dei dei thaw ha mynta phi la buh haduh?',
-      ga: 'Baka area ngi ong jongngi sa manchi bor hard mynta?',
-      pn: 'Dei dei thaw ha mynta phi la buh haduh?'
+      en: 'In the past month, which of these have you experienced? (Select all that apply)',
+      kh: 'Ha u bnai ïa ioh, dei dei jingiasem phi la tip? (Buh ia noh)',
+      ga: 'Ha u month ïa ioh, baksa jingiasem ngi la ong?',
+      pn: 'Ha u bnai ïa ioh, dei dei jingiasem phi la tip? (Buh ia noh)',
     },
     options: [
-      { en: 'Mental health / emotions', kh: 'Jingthymme / jingiasem', ga: 'Mental health', pn: 'Jingthymme / jingiasem' },
-      { en: 'Physical health', kh: 'Jingshong sha', ga: 'Physical health', pn: 'Jingshong sha' },
-      { en: 'Relationships & family', kh: 'Jingim bad kur kha', ga: 'Relationships', pn: 'Jingim bad kur kha' },
-      { en: 'Work or school', kh: 'Shong / Skul', ga: 'Skul/work', pn: 'Shong / Skul' },
-      { en: 'Money / financial pressure', kh: 'Jingpait jingiap', ga: 'Financial', pn: 'Jingpait jingiap' },
-      { en: 'Environment / climate', kh: 'Jingkynmaw tem', ga: 'Climate/environment', pn: 'Jingkynmaw tem' },
-      { en: 'Sexual & reproductive health', kh: 'SRH', ga: 'SRH', pn: 'SRH' },
-      { en: 'Nothing feels challenging', kh: 'Khlem noh', ga: 'Nonggin noh', pn: 'Khlem noh' }
-    ]
+      { en: 'Feeling sad or low most of the time', kh: 'Tip jingiasem burom biang sngi', ga: 'Sad / low biang sngi', pn: 'Tip jingiasem burom biang sngi' },
+      { en: 'Feeling anxious or worried a lot', kh: 'Tip jingburom biang', ga: 'Anxious / worried biang', pn: 'Tip jingburom biang' },
+      { en: 'Difficulty sleeping', kh: 'Bym lah iap lah', ga: 'Bym lah iap lah', pn: 'Bym lah iap lah' },
+      { en: 'Feeling alone or isolated', kh: 'Tip jingthiaw / jingphah', ga: 'Feeling alone', pn: 'Tip jingthiaw / jingphah' },
+      { en: 'Losing interest in things I used to enjoy', kh: 'Bym dang tip ban jooh ia noh ka phi la jooh', ga: 'Loss of interest', pn: 'Bym dang tip ban jooh ia noh ka phi la jooh' },
+      { en: 'Feeling overwhelmed or hopeless', kh: 'Tip bym lah / bym ïoh jingmut', ga: 'Overwhelmed / hopeless', pn: 'Tip bym lah / bym ïoh jingmut' },
+      { en: 'None of these', kh: 'Khlem noh ha neh', ga: 'Nongkin noh', pn: 'Khlem noh ha neh' },
+      { en: 'Prefer not to say', kh: 'Lym tip pat', ga: 'Lym tip pat', pn: 'Lym tip pat' },
+    ],
   },
   {
-    id: 'q_mental_freq',
+    id: 'q_mh_turn',
     section: 'mental_health',
     type: 'pick',
+    required: false,
     text: {
-      en: 'Over the past month, how often have you felt sad, anxious, or hopeless?',
-      kh: 'Ha u bnai ïa ioh, phi la tip jingiasem burom kumno?',
-      ga: 'Ha u month ïa ioh, kumno bor phi la ong jingiasem sad?',
-      pn: 'Ha u bnai ïa ioh, phi la tip jingiasem burom kumno?'
-    },
-    options: [
-      { en: 'Never', kh: 'Khlem', ga: 'Nongkin', pn: 'Khlem' },
-      { en: 'Rarely', kh: 'Bym biang', ga: 'Bym biang', pn: 'Bym biang' },
-      { en: 'Sometimes', kh: 'Sah sah', ga: 'Sah sah', pn: 'Sah sah' },
-      { en: 'Often', kh: 'Biang biang', ga: 'Biang biang', pn: 'Biang biang' },
-      { en: 'Almost always', kh: 'Ïap ïap', ga: 'Ïap ïap', pn: 'Ïap ïap' }
-    ]
-  },
-  {
-    id: 'q_mental_support',
-    section: 'mental_health',
-    type: 'pick',
-    text: {
-      en: 'When you feel this way, who do you usually turn to for support?',
-      kh: 'Lada phi tip jingiasem bad, neikin phi wan sha kano nongkynmaw?',
+      en: 'When you feel that way, who do you usually turn to?',
+      kh: 'Lada phi tip jingiasem bad, neikin phi wan sha kano?',
       ga: 'Lada ngi ong jingiasem kumta, neikin ngi ong sha kano?',
-      pn: 'Lada phi tip jingiasem bad, neikin phi wan sha kano nongkynmaw?'
+      pn: 'Lada phi tip jingiasem bad, neikin phi wan sha kano?',
     },
     options: [
       { en: 'Family', kh: 'Kur kha', ga: 'Kur kha', pn: 'Kur kha' },
       { en: 'Friends', kh: 'Raplang', ga: 'Raplang', pn: 'Raplang' },
       { en: 'Religious leader / church', kh: 'Nongklam / sorkar', ga: 'Nongklam / church', pn: 'Nongklam / sorkar' },
-      { en: 'Teacher / school counsellor', kh: 'Bah kynmaw / nongbang', ga: 'Nongbang', pn: 'Bah kynmaw / nongbang' },
-      { en: 'Health worker / doctor', kh: 'Nong ïakhun / doctor', ga: 'Doctor', pn: 'Nong ïakhun / doctor' },
+      { en: 'Teacher or school counsellor', kh: 'Bah kynmaw / nongbang', ga: 'Nongbang / counsellor', pn: 'Bah kynmaw / nongbang' },
+      { en: 'Health worker or doctor', kh: 'Nong ïakhun / doctor', ga: 'Doctor / health worker', pn: 'Nong ïakhun / doctor' },
       { en: 'Online / social media', kh: 'Online / social media', ga: 'Online / social media', pn: 'Online / social media' },
-      { en: 'Nobody / I handle it alone', kh: 'Khlam noh / nga ioh da nga mynsiem', ga: 'Nonggin / alone', pn: 'Khlam noh / nga ioh da nga mynsiem' }
-    ]
+      { en: 'Nobody — I handle it alone', kh: 'Khlam noh — nga ioh da nga mynsiem', ga: 'Nonggin — alone', pn: 'Khlam noh — nga ioh da nga mynsiem' },
+    ],
   },
   {
-    id: 'q_mental_open',
+    id: 'q_mh_voice',
     section: 'mental_health',
     type: 'voice_text',
+    required: false,
     text: {
-      en: 'Is there anything about your mental health that you\'d like to share in your own words?',
-      kh: 'Dei noh phi dang tip ban ïoh haba jingthymme jong phi?',
-      ga: 'Dei noh ngi dang tip ban ïoh haba mental health jongngi?',
-      pn: 'Dei noh phi dang tip ban ïoh haba jingthymme jong phi?'
-    }
-  },
-  {
-    id: 'q_work_status',
-    section: 'work',
-    type: 'pick',
-    text: {
-      en: 'What is your current work or study situation?',
-      kh: 'Katno u jingshong / jingbang ha mynta?',
-      ga: 'Baksa situation ngi ong shong/bang mynta?',
-      pn: 'Katno u jingshong / jingbang ha mynta?'
+      en: 'Is there anything about your mental health you would like to share in your own words?',
+      kh: 'Dei noh phi dang tip ban ia haba jingthymme jong phi?',
+      ga: 'Dei noh ngi dang tip ban ia haba mental health jongngi?',
+      pn: 'Dei noh phi dang tip ban ia haba jingthymme jong phi?',
     },
-    options: [
-      { en: 'In school / college', kh: 'Ha skul / college', ga: 'Ha skul / college', pn: 'Ha skul / college' },
-      { en: 'Working full-time', kh: 'Shong pynkut', ga: 'Shong pynkut', pn: 'Shong pynkut' },
-      { en: 'Working part-time', kh: 'Shong sah sah', ga: 'Shong sah sah', pn: 'Shong sah sah' },
-      { en: 'Looking for work', kh: 'Pynhiar shong', ga: 'Pynhiar shong', pn: 'Pynhiar shong' },
-      { en: 'Not working or studying', kh: 'Bym shong bym bang', ga: 'Bym shong bym bang', pn: 'Bym shong bym bang' }
-    ]
   },
   {
-    id: 'q_work_pressure',
+    id: 'q_job',
     section: 'work',
     type: 'scale',
+    required: false,
     scaleSteps: 5,
     text: {
-      en: 'How much pressure do you feel from work or school expectations?',
-      kh: 'Katno u jingburom phi tip ha shong / skul?',
-      ga: 'Kumno bor jingburom ngi ong ha shong / skul?',
-      pn: 'Katno u jingburom phi tip ha shong / skul?'
+      en: 'How much pressure do you feel around work or earning a living?',
+      kh: 'Katno u jingburom phi tip ha shong / jingpait jingiap?',
+      ga: 'Kumno bor jingburom ngi ong ha shong / jingpait?',
+      pn: 'Katno u jingburom phi tip ha shong / jingpait jingiap?',
     },
     scaleMin: { en: 'No pressure', kh: 'Khlem jingburom', ga: 'Nongkin burom', pn: 'Khlem jingburom' },
-    scaleMax: { en: 'Extreme pressure', kh: 'Jingburom kham biang', ga: 'Bor burom', pn: 'Jingburom kham biang' }
+    scaleMax: { en: 'Extreme pressure', kh: 'Jingburom kham biang', ga: 'Bor burom', pn: 'Jingburom kham biang' },
   },
   {
-    id: 'q_relationships_safety',
+    id: 'q_migr',
+    section: 'work',
+    type: 'pick',
+    required: false,
+    text: {
+      en: 'Have you thought about leaving Meghalaya to find work or a better life?',
+      kh: 'Phi la tip ban leit Meghalaya ban pynhiar shong / jingim lah biang?',
+      ga: 'Ngi la tip ban leit Meghalaya ban pynhiar shong?',
+      pn: 'Phi la tip ban leit Meghalaya ban pynhiar shong / jingim lah biang?',
+    },
+    options: [
+      { en: 'Yes, I plan to leave soon', kh: 'Ïa, nga tip ban leit sngi lynba', ga: 'Ïa, plan ban leit sngi lynba', pn: 'Ïa, nga tip ban leit sngi lynba' },
+      { en: 'Yes, I have thought about it', kh: 'Ïa, nga la tip ia noh', ga: 'Ïa, la tip ia noh', pn: 'Ïa, nga la tip ia noh' },
+      { en: 'Not sure', kh: 'Bym tip', ga: 'Bym tip', pn: 'Bym tip' },
+      { en: 'No, I prefer to stay', kh: 'Khlam, nga tip ban shong', ga: 'Khlam, nga tip ban shong', pn: 'Khlam, nga tip ban shong' },
+      { en: 'I have already migrated and returned', kh: 'Nga la leit bad la wan ktah', ga: 'La leit bad la wan ktah', pn: 'Nga la leit bad la wan ktah' },
+    ],
+  },
+  {
+    id: 'q_work_voice',
+    section: 'work',
+    type: 'voice_text',
+    required: false,
+    text: {
+      en: 'Is there anything about work, money, or your future you would like to share?',
+      kh: 'Dei noh phi dang tip ban ia haba shong, jingiap, bad jingpyrshah jong phi?',
+      ga: 'Dei noh ngi dang tip ban ia haba shong, jingiap, bad jingpyrshah?',
+      pn: 'Dei noh phi dang tip ban ia haba shong, jingiap, bad jingpyrshah jong phi?',
+    },
+  },
+  {
+    id: 'q_social',
+    section: 'relationships',
+    type: 'scale',
+    required: false,
+    scaleSteps: 5,
+    text: {
+      en: 'How supported do you feel by the people around you?',
+      kh: 'Katno phi tip jingïasist da neh ha raplang phi?',
+      ga: 'Kumno bor ngi ong supported da ngi?',
+      pn: 'Katno phi tip jingïasist da neh ha raplang phi?',
+    },
+    scaleMin: { en: 'Not at all supported', kh: 'Khlem jingïasist', ga: 'Nongkin supported', pn: 'Khlem jingïasist' },
+    scaleMax: { en: 'Very well supported', kh: 'Kham jingïasist', ga: 'Bor supported', pn: 'Kham jingïasist' },
+  },
+  {
+    id: 'q_relate',
     section: 'relationships',
     type: 'pick',
+    required: false,
     text: {
-      en: 'Do you feel safe and respected in your closest relationships?',
-      kh: 'Phi tip jingïap bad jingkhlaw ha jingim jong phi?',
-      ga: 'Ngi ong safe bad respected ha jingim jongngi?',
-      pn: 'Phi tip jingïap bad jingkhlaw ha jingim jong phi?'
+      en: 'How comfortable do you feel expressing your feelings to people close to you?',
+      kh: 'Katno phi tip lah ban ia ia jingiasem jong phi sha neh raplang?',
+      ga: 'Kumno bor comfortable ngi ong ban ia jingiasem sha neh?',
+      pn: 'Katno phi tip lah ban ia ia jingiasem jong phi sha neh raplang?',
+    },
+    options: [
+      { en: 'Very comfortable', kh: 'Kham tip lah', ga: 'Bor comfortable', pn: 'Kham tip lah' },
+      { en: 'Somewhat comfortable', kh: 'Sah sah tip lah', ga: 'Sah comfortable', pn: 'Sah sah tip lah' },
+      { en: 'Not very comfortable', kh: 'Bym biang tip lah', ga: 'Bym biang comfortable', pn: 'Bym biang tip lah' },
+      { en: 'Very uncomfortable', kh: 'Kham bym tip lah', ga: 'Bor uncomfortable', pn: 'Kham bym tip lah' },
+      { en: 'It depends on the person', kh: 'Dei da u/ka nongkynmaw', ga: 'Depends on person', pn: 'Dei da u/ka nongkynmaw' },
+    ],
+  },
+  {
+    id: 'q_sh_info',
+    section: 'sexual_health',
+    type: 'pick',
+    required: false,
+    text: {
+      en: 'How would you rate your access to sexual and reproductive health information?',
+      kh: 'Katno phi tip ia jingïoh lah information ha SRH?',
+      ga: 'Kumno bor ngi ong access ha SRH information?',
+      pn: 'Katno phi tip ia jingïoh lah information ha SRH?',
+    },
+    options: [
+      { en: 'Very good access', kh: 'Kham lah ban ïoh', ga: 'Bor good access', pn: 'Kham lah ban ïoh' },
+      { en: 'Good access', kh: 'Lah ban ïoh', ga: 'Good access', pn: 'Lah ban ïoh' },
+      { en: 'Limited access', kh: 'Sah sah ban ïoh', ga: 'Limited access', pn: 'Sah sah ban ïoh' },
+      { en: 'Very limited', kh: 'Kham khlem ban ïoh', ga: 'Bor limited', pn: 'Kham khlem ban ïoh' },
+      { en: 'No access at all', kh: 'Khlem noh ban ïoh', ga: 'Nongkin access', pn: 'Khlem noh ban ïoh' },
+      { en: 'I have not sought this information', kh: 'Nga bym la pynhiar ia noh', ga: 'Bym la pynhiar ia noh', pn: 'Nga bym la pynhiar ia noh' },
+    ],
+  },
+  {
+    id: 'q_sh_safe',
+    section: 'sexual_health',
+    type: 'pick',
+    required: false,
+    text: {
+      en: 'When you have sought health information or services, did you feel safe and respected?',
+      kh: 'Haba phi la pynhiar jingïakhun, phi tip jingïap bad jingkhlaw?',
+      ga: 'Haba ngi la pynhiar health information, ngi ong safe bad respected?',
+      pn: 'Haba phi la pynhiar jingïakhun, phi tip jingïap bad jingkhlaw?',
     },
     options: [
       { en: 'Yes, always', kh: 'Ïa, ïap ïap', ga: 'Ïa, ïap ïap', pn: 'Ïa, ïap ïap' },
       { en: 'Mostly yes', kh: 'Biang biang ïa', ga: 'Biang biang ïa', pn: 'Biang biang ïa' },
       { en: 'Sometimes', kh: 'Sah sah', ga: 'Sah sah', pn: 'Sah sah' },
       { en: 'Mostly no', kh: 'Biang biang khlam', ga: 'Biang biang khlam', pn: 'Biang biang khlam' },
-      { en: 'No, I feel unsafe', kh: 'Khlam, nga tip jingshapbiang', ga: 'Khlam, nga ong unsafe', pn: 'Khlam, nga tip jingshapbiang' }
-    ]
+      { en: 'No, I felt judged or unsafe', kh: 'Khlam, nga tip jingïakren / bym ïap', ga: 'Khlam, nga ong judged / unsafe', pn: 'Khlam, nga tip jingïakren / bym ïap' },
+    ],
   },
   {
-    id: 'q_srh_info',
-    section: 'srh',
-    type: 'pick',
-    text: {
-      en: 'Do you feel you have enough information about sexual and reproductive health?',
-      kh: 'Phi tip ban neh haba SRH?',
-      ga: 'Ngi ong ngi la ioh bor information ha SRH?',
-      pn: 'Phi tip ban neh haba SRH?'
-    },
-    options: [
-      { en: 'Yes, more than enough', kh: 'Ïa, biang neh', ga: 'Ïa, biang neh', pn: 'Ïa, biang neh' },
-      { en: 'Enough', kh: 'Neh', ga: 'Neh', pn: 'Neh' },
-      { en: 'Not enough', kh: 'Bym neh', ga: 'Bym neh', pn: 'Bym neh' },
-      { en: 'Very little', kh: 'Sah sah ban neh', ga: 'Sah sah neh', pn: 'Sah sah ban neh' },
-      { en: 'None at all', kh: 'Khlem noh', ga: 'Nongkin noh', pn: 'Khlem noh' }
-    ]
-  },
-  {
-    id: 'q_srh_barriers',
-    section: 'srh',
-    type: 'multi',
-    text: {
-      en: 'What makes it difficult to access SRH services? (Select all that apply)',
-      kh: 'Dei dei thaw bym ïoh lah ban wan sha SRH services?',
-      ga: 'Baksa thaw bym ïoh SRH services?',
-      pn: 'Dei dei thaw bym ïoh lah ban wan sha SRH services?'
-    },
-    options: [
-      { en: 'Shame or stigma', kh: 'Jingïohleh / jingïakren', ga: 'Shame / stigma', pn: 'Jingïohleh / jingïakren' },
-      { en: 'Lack of privacy', kh: 'Bym ïoh jingphah mynsiem', ga: 'Bym ïoh privacy', pn: 'Bym ïoh jingphah mynsiem' },
-      { en: 'Cost', kh: 'Jingpait', ga: 'Cost', pn: 'Jingpait' },
-      { en: 'Distance to services', kh: 'Jingdur sha services', ga: 'Distance', pn: 'Jingdur sha services' },
-      { en: 'Don\'t know where to go', kh: 'Bym tip sha dei ban ia', ga: 'Bym tip sha dei', pn: 'Bym tip sha dei ban ia' },
-      { en: 'Family or community disapproval', kh: 'Kur kha / seng bym ïoh lah', ga: 'Family disapproval', pn: 'Kur kha / seng bym ïoh lah' },
-      { en: 'Services don\'t feel safe or trustworthy', kh: 'Services bym ïap', ga: 'Services bym safe', pn: 'Services bym ïap' },
-      { en: 'No barriers', kh: 'Khlem noh', ga: 'Nongkin', pn: 'Khlem noh' }
-    ]
-  },
-  {
-    id: 'q_physical_activity',
-    section: 'physical',
-    type: 'pick',
-    text: {
-      en: 'How often do you engage in physical activity (sports, walking, etc.)?',
-      kh: 'Katno phi ïoh jingshym sha jingkynmaw sha sha (ka kot, ka ia, etc.)?',
-      ga: 'Kumno bor ngi ong physical activity?',
-      pn: 'Katno phi ïoh jingshym sha jingkynmaw sha sha (ka kot, ka ia, etc.)?'
-    },
-    options: [
-      { en: 'Every day', kh: 'Ïap sngi', ga: 'Ïap sngi', pn: 'Ïap sngi' },
-      { en: '3–5 times a week', kh: '3–5 snem ha u synshar', ga: '3–5 times a week', pn: '3–5 snem ha u synshar' },
-      { en: '1–2 times a week', kh: '1–2 snem ha u synshar', ga: '1–2 times a week', pn: '1–2 snem ha u synshar' },
-      { en: 'Rarely', kh: 'Bym biang', ga: 'Bym biang', pn: 'Bym biang' },
-      { en: 'Never', kh: 'Khlem', ga: 'Nongkin', pn: 'Khlem' }
-    ]
-  },
-  {
-    id: 'q_physical_sleep',
-    section: 'physical',
-    type: 'pick',
-    text: {
-      en: 'How many hours of sleep do you usually get per night?',
-      kh: 'Katno u sumar phi la iap ha u bnong?',
-      ga: 'Kumno bor sumar ngi ong iap ha u bnong?',
-      pn: 'Katno u sumar phi la iap ha u bnong?'
-    },
-    options: [
-      { en: 'Less than 5 hours', kh: 'Bym neh 5 sumar', ga: 'Less than 5 hours', pn: 'Bym neh 5 sumar' },
-      { en: '5–6 hours', kh: '5–6 sumar', ga: '5–6 hours', pn: '5–6 sumar' },
-      { en: '7–8 hours', kh: '7–8 sumar', ga: '7–8 hours', pn: '7–8 sumar' },
-      { en: 'More than 8 hours', kh: 'Biang 8 sumar', ga: 'More than 8 hours', pn: 'Biang 8 sumar' }
-    ]
-  },
-  {
-    id: 'q_climate_impact',
-    section: 'climate',
-    type: 'pick',
-    text: {
-      en: 'Have you personally experienced impacts from climate change or environmental issues?',
-      kh: 'Phi la ioh da phi mynsiem haba jingkynmaw tem / u bnong?',
-      ga: 'Ngi la ioh da climate change?',
-      pn: 'Phi la ioh da phi mynsiem haba jingkynmaw tem / u bnong?'
-    },
-    options: [
-      { en: 'Yes, significantly', kh: 'Ïa, biang', ga: 'Ïa, biang', pn: 'Ïa, biang' },
-      { en: 'Yes, somewhat', kh: 'Ïa, sah sah', ga: 'Ïa, sah sah', pn: 'Ïa, sah sah' },
-      { en: 'Not sure', kh: 'Bym tip', ga: 'Bym tip', pn: 'Bym tip' },
-      { en: 'No', kh: 'Khlam', ga: 'Khlam', pn: 'Khlam' }
-    ]
-  },
-  {
-    id: 'q_climate_worry',
-    section: 'climate',
+    id: 'q_phys',
+    section: 'physical_health',
     type: 'scale',
+    required: false,
     scaleSteps: 5,
     text: {
-      en: 'How worried are you about the future because of environmental problems?',
-      kh: 'Katno phi burom haba jingpyrshah ha jingkynmaw tem?',
-      ga: 'Kumno bor ngi ong burom haba jingpyrshah?',
-      pn: 'Katno phi burom haba jingpyrshah ha jingkynmaw tem?'
+      en: 'How would you rate your physical health overall?',
+      kh: 'Katno phi tip jingshong sha jong phi ha jingïoh mynsiem?',
+      ga: 'Kumno bor ngi ong physical health jongngi?',
+      pn: 'Katno phi tip jingshong sha jong phi ha jingïoh mynsiem?',
     },
-    scaleMin: { en: 'Not worried', kh: 'Khlem burom', ga: 'Nongkin burom', pn: 'Khlem burom' },
-    scaleMax: { en: 'Extremely worried', kh: 'Kham burom', ga: 'Bor burom', pn: 'Kham burom' }
+    scaleMin: { en: 'Very poor', kh: 'Kham bad', ga: 'Manchi bad', pn: 'Kham bad' },
+    scaleMax: { en: 'Excellent', kh: 'Kham lah', ga: 'Bor good', pn: 'Kham lah' },
   },
   {
-    id: 'q_cmyc_aware',
-    section: 'cmyc',
+    id: 'q_health_challenges',
+    section: 'physical_health',
+    type: 'multi',
+    required: false,
+    text: {
+      en: 'Do you face any of these health challenges? (Select all that apply)',
+      kh: 'Dei dei jingkhmat jingshong phi la ioh? (Buh ia noh)',
+      ga: 'Baksa health challenges ngi ong? (Buh ia noh)',
+      pn: 'Dei dei jingkhmat jingshong phi la ioh? (Buh ia noh)',
+    },
+    options: [
+      { en: 'Poor nutrition / not enough food', kh: 'Bym ïoh jingsha neh', ga: 'Bym ïoh food neh', pn: 'Bym ïoh jingsha neh' },
+      { en: 'No access to healthcare', kh: 'Bym ïoh lah sha jingïakhun', ga: 'Bym ïoh healthcare', pn: 'Bym ïoh lah sha jingïakhun' },
+      { en: 'Tobacco use', kh: 'Jingshim tobacco', ga: 'Tobacco use', pn: 'Jingshim tobacco' },
+      { en: 'Alcohol use', kh: 'Jingshim ciad', ga: 'Alcohol use', pn: 'Jingshim ciad' },
+      { en: 'Chronic pain or illness', kh: 'Jingïawbei / jingphar biang sngi', ga: 'Chronic pain / illness', pn: 'Jingïawbei / jingphar biang sngi' },
+      { en: 'Disability', kh: 'Jingbym ïoh lah', ga: 'Disability', pn: 'Jingbym ïoh lah' },
+      { en: 'None of these', kh: 'Khlem noh ha neh', ga: 'Nongkin noh', pn: 'Khlem noh ha neh' },
+      { en: 'Prefer not to say', kh: 'Lym tip pat', ga: 'Lym tip pat', pn: 'Lym tip pat' },
+    ],
+  },
+  {
+    id: 'q_clim',
+    section: 'climate',
     type: 'pick',
+    required: false,
     text: {
-      en: 'Have you heard of or visited a CMYC (Community Mental Wellness Centre)?',
-      kh: 'Phi la ioh klang ia CMYC bad phi la wan sha?',
-      ga: 'Ngi la ioh klang ia CMYC?',
-      pn: 'Phi la ioh klang ia CMYC bad phi la wan sha?'
+      en: 'Have environmental or climate changes affected your life or livelihood?',
+      kh: 'La ka jingkynmaw tem bad ka climate change pynïaid ia jingim / jingpait jong phi?',
+      ga: 'La climate change / environment ong impact ha jongngi?',
+      pn: 'La ka jingkynmaw tem bad ka climate change pynïaid ia jingim / jingpait jong phi?',
     },
     options: [
-      { en: 'Yes, I have visited', kh: 'Ïa, nga la wan sha', ga: 'Ïa, nga la wan sha', pn: 'Ïa, nga la wan sha' },
-      { en: 'I have heard of it but not visited', kh: 'Nga la ioh klang khlam wan sha', ga: 'La ioh klang, bym wan sha', pn: 'Nga la ioh klang khlam wan sha' },
-      { en: 'No, first time hearing', kh: 'Khlam, mynta ïa ioh klang', ga: 'Khlam, mynta ïa ioh klang', pn: 'Khlam, mynta ïa ioh klang' }
-    ]
+      { en: 'Yes, significantly', kh: 'Ïa, biang biang', ga: 'Ïa, biang biang', pn: 'Ïa, biang biang' },
+      { en: 'Yes, somewhat', kh: 'Ïa, sah sah', ga: 'Ïa, sah sah', pn: 'Ïa, sah sah' },
+      { en: 'Not sure', kh: 'Bym tip', ga: 'Bym tip', pn: 'Bym tip' },
+      { en: 'No, not really', kh: 'Khlam, bym biang', ga: 'Khlam, bym biang', pn: 'Khlam, bym biang' },
+      { en: 'No, not at all', kh: 'Khlam noh', ga: 'Khlam noh', pn: 'Khlam noh' },
+    ],
   },
   {
-    id: 'q_cmyc_use',
-    section: 'cmyc',
-    type: 'multi',
-    text: {
-      en: 'If you have visited a CMYC, what did you use it for? (Select all that apply)',
-      kh: 'Lada phi la wan sha CMYC, dei dei ha phi la shim ia noh?',
-      ga: 'Lada ngi la wan sha CMYC, baksa ngi la shim ia?',
-      pn: 'Lada phi la wan sha CMYC, dei dei ha phi la shim ia noh?'
-    },
-    options: [
-      { en: 'Counselling', kh: 'Jingbang nongkynmaw', ga: 'Counselling', pn: 'Jingbang nongkynmaw' },
-      { en: 'Health check-up', kh: 'Jingïakren jingshong', ga: 'Health check', pn: 'Jingïakren jingshong' },
-      { en: 'Youth activities / skills', kh: 'Jingim iing / skills', ga: 'Youth activities', pn: 'Jingim iing / skills' },
-      { en: 'Information / awareness', kh: 'Information / jingïakren', ga: 'Information', pn: 'Information / jingïakren' },
-      { en: 'Referral / support', kh: 'Jingpynkuli / jingiasist', ga: 'Referral', pn: 'Jingpynkuli / jingiasist' },
-      { en: 'I haven\'t visited', kh: 'Bym wan sha', ga: 'Bym wan sha', pn: 'Bym wan sha' }
-    ]
-  },
-  {
-    id: 'q_cmyc_needed',
-    section: 'cmyc',
-    type: 'multi',
-    text: {
-      en: 'What services do you most need from a youth wellness centre? (Select up to 3)',
-      kh: 'Dei dei services phi dang neh biang ha youth wellness centre? (Buh haduh 3)',
-      ga: 'Baksa services ngi dang neh biang ha youth wellness centre?',
-      pn: 'Dei dei services phi dang neh biang ha youth wellness centre? (Buh haduh 3)'
-    },
-    options: [
-      { en: 'Mental health support', kh: 'Jingïasist jingthymme', ga: 'Mental health support', pn: 'Jingïasist jingthymme' },
-      { en: 'Sexual & reproductive health', kh: 'SRH', ga: 'SRH', pn: 'SRH' },
-      { en: 'Employment / skills training', kh: 'Shong / skills', ga: 'Skills training', pn: 'Shong / skills' },
-      { en: 'Sports & recreation', kh: 'Jingkot / jingshym', ga: 'Sports', pn: 'Jingkot / jingshym' },
-      { en: 'Safe space to talk', kh: 'Jingphah mynsiem ban ia', ga: 'Safe space', pn: 'Jingphah mynsiem ban ia' },
-      { en: 'Nutrition & physical health', kh: 'Nutrition / jingshong sha', ga: 'Nutrition', pn: 'Nutrition / jingshong sha' },
-      { en: 'Digital / technology skills', kh: 'Digital skills', ga: 'Digital skills', pn: 'Digital skills' },
-      { en: 'Legal aid / rights information', kh: 'Legal aid / jingpynkuli', ga: 'Legal aid', pn: 'Legal aid / jingpynkuli' }
-    ]
-  },
-  {
-    id: 'q_open_final',
-    section: 'cmyc',
+    id: 'q_climate_voice',
+    section: 'climate',
     type: 'voice_text',
+    required: false,
     text: {
-      en: 'Is there anything else you\'d like to share — something that matters to you that we haven\'t asked about?',
+      en: 'Would you like to share more about how environmental changes are affecting you?',
+      kh: 'Phi dang tip ban ia biang kumno ka jingkynmaw tem la pynïaid ia phi?',
+      ga: 'Ngi dang tip ban ia biang kumno climate change la ong impact ha ngi?',
+      pn: 'Phi dang tip ban ia biang kumno ka jingkynmaw tem la pynïaid ia phi?',
+    },
+  },
+  {
+    id: 'q_cmyc',
+    section: 'cmyc',
+    type: 'multi',
+    required: false,
+    text: {
+      en: 'What does a Community Mental Wellness Centre (CMYC) mean to you? (Select all that apply)',
+      kh: 'Dei noh u CMYC hawa phi? (Buh ia noh)',
+      ga: 'Dei noh CMYC hawa ngi? (Buh ia noh)',
+      pn: 'Dei noh u CMYC hawa phi? (Buh ia noh)',
+    },
+    options: [
+      { en: 'A safe place to talk and be heard', kh: 'Ka jingphah mynsiem ban ia bad tip klang', ga: 'Safe place ban ia', pn: 'Ka jingphah mynsiem ban ia bad tip klang' },
+      { en: 'A place to get health services', kh: 'Ka jingïoh lah jingïakhun', ga: 'Place ban ïoh health services', pn: 'Ka jingïoh lah jingïakhun' },
+      { en: 'A community gathering space', kh: 'Ka jingkrehkynmaw seng', ga: 'Community space', pn: 'Ka jingkrehkynmaw seng' },
+      { en: 'A place to learn skills', kh: 'Ka jingbang skills', ga: 'Place ban bah skills', pn: 'Ka jingbang skills' },
+      { en: 'I do not know what it is', kh: 'Bym tip ia noh', ga: 'Bym tip ia noh', pn: 'Bym tip ia noh' },
+      { en: 'Something else', kh: 'Noh', ga: 'Noh', pn: 'Noh' },
+    ],
+  },
+  {
+    id: 'q_final_voice',
+    section: 'closing',
+    type: 'voice_text',
+    required: false,
+    text: {
+      en: 'Is there anything else you would like to share — something important to you that we have not asked?',
       kh: 'Dei noh dang ïoh ban ia — dei noh phi dang tip ban ïoh haka phi bym la phi ia?',
       ga: 'Dei noh ngi dang ïoh ban ia — dei noh ngi dang tip ban ïoh haka ngi bym la ia?',
-      pn: 'Dei noh dang ïoh ban ia — dei noh phi dang tip ban ïoh haka phi bym la phi ia?'
-    }
-  }
+      pn: 'Dei noh dang ïoh ban ia — dei noh phi dang tip ban ïoh haka phi bym la phi ia?',
+    },
+  },
 ]
 
-export const SECTION_ORDER = ['demo', 'wellbeing', 'mental_health', 'work', 'relationships', 'srh', 'physical', 'climate', 'cmyc']
+export const SECTION_ORDER = [
+  'demographics',
+  'wellbeing',
+  'mental_health',
+  'work',
+  'relationships',
+  'sexual_health',
+  'physical_health',
+  'climate',
+  'cmyc',
+  'closing',
+]
 
 export const SECTION_LABELS: Record<string, Record<Lang, string>> = {
-  demo: { en: 'About You', kh: 'Haba Phi', ga: 'Haba Ngi', pn: 'Haba Phi' },
+  demographics: { en: 'About You', kh: 'Haba Phi', ga: 'Haba Ngi', pn: 'Haba Phi' },
   wellbeing: { en: 'Wellbeing', kh: 'Jingïasuh', ga: 'Wellbeing', pn: 'Jingïasuh' },
   mental_health: { en: 'Mental Health', kh: 'Jingthymme', ga: 'Mental Health', pn: 'Jingthymme' },
-  work: { en: 'Work & Study', kh: 'Shong & Bang', ga: 'Shong & Bang', pn: 'Shong & Bang' },
+  work: { en: 'Work & Future', kh: 'Shong & Jingpyrshah', ga: 'Shong & Future', pn: 'Shong & Jingpyrshah' },
   relationships: { en: 'Relationships', kh: 'Jingim', ga: 'Jingim', pn: 'Jingim' },
-  srh: { en: 'Sexual & Reproductive Health', kh: 'SRH', ga: 'SRH', pn: 'SRH' },
-  physical: { en: 'Physical Health', kh: 'Jingshong Sha', ga: 'Physical Health', pn: 'Jingshong Sha' },
+  sexual_health: { en: 'Sexual & Reproductive Health', kh: 'SRH', ga: 'SRH', pn: 'SRH' },
+  physical_health: { en: 'Physical Health', kh: 'Jingshong Sha', ga: 'Physical Health', pn: 'Jingshong Sha' },
   climate: { en: 'Environment & Climate', kh: 'Jingkynmaw Tem', ga: 'Climate', pn: 'Jingkynmaw Tem' },
-  cmyc: { en: 'Youth Wellness Centre', kh: 'CMYC', ga: 'CMYC', pn: 'CMYC' }
+  cmyc: { en: 'Youth Wellness Centre', kh: 'CMYC', ga: 'CMYC', pn: 'CMYC' },
+  closing: { en: 'Final Thoughts', kh: 'Jingmut Kynmaw', ga: 'Final Thoughts', pn: 'Jingmut Kynmaw' },
 }
