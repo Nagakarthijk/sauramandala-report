@@ -922,19 +922,16 @@ async function generateImage() {
     const seed = Math.floor(Math.random() * 999999);
     const url = `https://image.pollinations.ai/prompt/${encoded}?width=${w}&height=${h}&model=flux&seed=${seed}&nologo=true`;
 
-    // Preload the image
-    await new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = url;
-    });
+    setStatus('gen-status', 'loading', 'Fetching from Pollinations.ai — may take 20–40s...');
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const blob = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
 
     setStatus('gen-status', 'success', 'Image generated successfully.');
-    loadImageToCanvas(url, w, h);
+    loadImageToCanvas(blobUrl, w, h);
   } catch (err) {
-    setStatus('gen-status', 'error', 'Generation failed. Check your connection and try again.');
+    setStatus('gen-status', 'error', 'Generation failed: ' + err.message + '. Try again.');
     console.error(err);
   } finally {
     document.getElementById('gen-btn').disabled = false;
@@ -981,7 +978,7 @@ function loadImageToCanvas(url, imgW, imgH) {
     fabricCanvas.sendToBack(fimg);
     currentImage = { url, origW: imgW, origH: imgH, dispW: cw, dispH: ch, scale };
     fabricCanvas.renderAll();
-  }, { crossOrigin: 'anonymous' });
+  });
 
   setupCanvasEvents();
   annotations = [];
@@ -1282,16 +1279,14 @@ async function doFullRegen() {
     const seed = Math.floor(Math.random() * 999999);
     const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhanced)}?width=${w}&height=${h}&model=flux&seed=${seed}&nologo=true`;
 
-    await new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = resolve;
-      img.onerror = reject;
-      img.src = url;
-    });
+    setStatus('regen-status', 'loading', 'Fetching regenerated image — may take 20–40s...');
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const blob = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
 
     setStatus('regen-status', 'success', 'Regeneration complete. Review the result below.');
-    showResult(url);
+    showResult(blobUrl);
   } catch (err) {
     setStatus('regen-status', 'error', 'Regeneration failed: ' + err.message);
   } finally {
@@ -1301,52 +1296,75 @@ async function doFullRegen() {
 
 async function doRegionInpaint(annot, token) {
   if (!annot) { alert('No annotation selected for region inpainting.'); return; }
-  setStatus('regen-status', 'loading', 'Preparing mask and calling HF inpainting model...');
+  setStatus('regen-status', 'loading', 'Preparing image and mask...');
   document.getElementById('regen-btn').disabled = true;
 
   try {
-    // 1. Get base image as base64
-    const base64img = await imageUrlToBase64(currentImage.url);
+    // 1. Get base image as full data URI
+    const imgDataUri = await urlToDataUri(currentImage.url);
 
-    // 2. Create mask: white in annotated region, black elsewhere
-    const maskBase64 = createMaskBase64(annot.rect, currentImage.dispW, currentImage.dispH,
-                                         currentImage.origW, currentImage.origH);
+    // 2. Resize image to 512×512 (SD inpainting requirement) and create mask
+    const { resizedImg, resizedMask } = await resizeForInpainting(
+      imgDataUri, annot.rect, currentImage.dispW, currentImage.dispH
+    );
 
     // 3. Build inpaint prompt
     const cultureKey = document.getElementById('culture-select').value;
     const ctx = CULTURAL_CONTEXT[cultureKey];
     const inpaintPrompt = ctx
-      ? `${annot.desc}, ${ctx.visual_elements}, culturally authentic, photorealistic`
-      : `${annot.desc}, culturally authentic, photorealistic`;
+      ? `${annot.desc}, ${ctx.visual_elements}, culturally authentic, high quality, detailed`
+      : `${annot.desc}, culturally authentic, high quality, detailed`;
 
-    // 4. Call HF Inference API — SDXL Inpainting
-    setStatus('regen-status', 'loading', 'Sending to HuggingFace inpainting model (this may take 30–60s)...');
-    const response = await fetch(
-      'https://api-inference.huggingface.co/models/diffusers/stable-diffusion-xl-1.0-inpainting-0.1',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          inputs: inpaintPrompt,
-          parameters: {
-            image: base64img,
-            mask_image: maskBase64,
-            num_inference_steps: 30,
-            guidance_scale: 7.5
-          }
-        })
+    // 4. Call HF Inference API with retry for model warm-up (503)
+    setStatus('regen-status', 'loading', 'Calling HuggingFace inpainting model — warming up, may take 60–90s...');
+
+    const HF_MODEL = 'runwayml/stable-diffusion-inpainting';
+    let response;
+    for (let attempt = 1; attempt <= 8; attempt++) {
+      response = await fetch(
+        `https://api-inference.huggingface.co/models/${HF_MODEL}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            inputs: inpaintPrompt,
+            parameters: {
+              image: resizedImg,
+              mask_image: resizedMask,
+              num_inference_steps: 25,
+              guidance_scale: 7.5
+            }
+          })
+        }
+      );
+
+      if (response.status === 503) {
+        let wait = 15;
+        try {
+          const j = await response.json();
+          wait = Math.min(j.estimated_time || 15, 30);
+        } catch(_) {}
+        setStatus('regen-status', 'loading',
+          `Model loading on HF servers — waiting ${wait}s then retry (attempt ${attempt}/8)...`);
+        await new Promise(r => setTimeout(r, wait * 1000));
+        continue;
       }
-    );
+      break;
+    }
 
     if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`HF API error ${response.status}: ${err}`);
+      const errText = await response.text();
+      throw new Error(`HF API ${response.status}: ${errText.slice(0, 200)}`);
     }
 
     const blob = await response.blob();
+    if (!blob.type.startsWith('image/')) {
+      const txt = await blob.text();
+      throw new Error('Unexpected response: ' + txt.slice(0, 200));
+    }
     const resultUrl = URL.createObjectURL(blob);
     setStatus('regen-status', 'success', 'Region inpainting complete.');
     showResult(resultUrl);
@@ -1358,36 +1376,49 @@ async function doRegionInpaint(annot, token) {
   }
 }
 
-function createMaskBase64(rect, dispW, dispH, origW, origH) {
-  const mask = document.createElement('canvas');
-  mask.width = origW;
-  mask.height = origH;
-  const ctx = mask.getContext('2d');
+// Resize image + create mask at 512×512 (SD inpainting native size)
+async function resizeForInpainting(imgDataUri, rect, dispW, dispH) {
+  const SIZE = 512;
 
-  // Scale rect back to original image dimensions
-  const scaleX = origW / dispW;
-  const scaleY = origH / dispH;
+  // Draw resized image
+  const imgEl = await new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = imgDataUri;
+  });
 
-  ctx.fillStyle = 'black';
-  ctx.fillRect(0, 0, origW, origH);
-  ctx.fillStyle = 'white';
-  ctx.fillRect(
-    Math.round(rect.left * scaleX),
-    Math.round(rect.top * scaleY),
-    Math.round(rect.width * scaleX),
-    Math.round(rect.height * scaleY)
+  const imgCanvas = document.createElement('canvas');
+  imgCanvas.width = SIZE; imgCanvas.height = SIZE;
+  imgCanvas.getContext('2d').drawImage(imgEl, 0, 0, SIZE, SIZE);
+
+  // Draw mask (scale annotation rect to 512×512 space)
+  const maskCanvas = document.createElement('canvas');
+  maskCanvas.width = SIZE; maskCanvas.height = SIZE;
+  const mctx = maskCanvas.getContext('2d');
+  mctx.fillStyle = 'black';
+  mctx.fillRect(0, 0, SIZE, SIZE);
+  mctx.fillStyle = 'white';
+  const sx = SIZE / dispW, sy = SIZE / dispH;
+  mctx.fillRect(
+    Math.round(rect.left * sx), Math.round(rect.top * sy),
+    Math.round(rect.width * sx), Math.round(rect.height * sy)
   );
 
-  return mask.toDataURL('image/png').split(',')[1];
+  return {
+    resizedImg: imgCanvas.toDataURL('image/png').split(',')[1],
+    resizedMask: maskCanvas.toDataURL('image/png').split(',')[1]
+  };
 }
 
-async function imageUrlToBase64(url) {
-  if (url.startsWith('data:')) return url.split(',')[1];
+
+async function urlToDataUri(url) {
+  if (url.startsWith('data:')) return url;
   const response = await fetch(url);
   const blob = await response.blob();
   return new Promise((resolve) => {
     const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+    reader.onloadend = () => resolve(reader.result);
     reader.readAsDataURL(blob);
   });
 }
@@ -1401,12 +1432,10 @@ function showResult(url) {
 }
 
 function acceptResult() {
-  const url = document.getElementById('result-img')._src ||
-               document.getElementById('result-img').src;
+  const imgEl = document.getElementById('result-img');
+  const url = imgEl.src;
   if (!url) return;
-  const img = new Image();
-  img.onload = () => loadImageToCanvas(url, img.naturalWidth || currentImage.origW, img.naturalHeight || currentImage.origH);
-  img.src = url;
+  loadImageToCanvas(url, imgEl.naturalWidth || currentImage.origW, imgEl.naturalHeight || currentImage.origH);
   document.getElementById('result-img-wrap').style.display = 'none';
   setStatus('regen-status', 'success', 'Result accepted as new base image.');
 }
