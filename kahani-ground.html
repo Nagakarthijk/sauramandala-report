@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kahani Ground — Cultural Image Grounding Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+<style>
+  :root {
+    --bg: #0f0e0b;
+    --surface: #1a1814;
+    --surface2: #242018;
+    --border: #3a3428;
+    --accent: #c8922a;
+    --accent2: #5a8a4a;
+    --accent3: #7b5ea7;
+    --text: #e8e0d0;
+    --text2: #9a9080;
+    --red: #c04040;
+    --font: 'Georgia', serif;
+    --mono: 'Courier New', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-size: 1.1rem;
+    font-weight: normal;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+  }
+  header h1 span { color: var(--text2); font-size: 0.85rem; }
+  .header-badges { display: flex; gap: 8px; align-items: center; }
+  .badge {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+  .badge-free { color: var(--accent2); border-color: var(--accent2); }
+  .badge-neindia { color: var(--accent); border-color: var(--accent); }
+
+  /* ── Main Layout ── */
+  main {
+    display: grid;
+    grid-template-columns: 280px 1fr 300px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Panels ── */
+  .panel {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel:last-child { border-right: none; border-left: 1px solid var(--border); }
+  .panel-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .panel-header .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+  }
+  .panel-body::-webkit-scrollbar { width: 4px; }
+  .panel-body::-webkit-scrollbar-track { background: transparent; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── Canvas Area ── */
+  .canvas-area {
+    background: #080807;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .canvas-wrapper {
+    position: relative;
+    cursor: crosshair;
+  }
+  #canvas-el {
+    display: block;
+  }
+  .canvas-empty {
+    text-align: center;
+    color: var(--text2);
+    font-size: 0.85rem;
+    line-height: 1.8;
+  }
+  .canvas-empty .big {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    opacity: 0.3;
+  }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    gap: 4px;
+    padding: 6px;
+    z-index: 10;
+  }
+  .tool-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text2);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    font-family: var(--font);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tool-btn:hover { color: var(--text); border-color: var(--border); }
+  .tool-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+  .tool-btn.danger { color: var(--red); }
+  .tool-btn.danger:hover { border-color: var(--red); color: var(--red); }
+  .tool-sep { width: 1px; background: var(--border); margin: 0 2px; }
+
+  /* ── Form Elements ── */
+  label {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 5px;
+    margin-top: 14px;
+  }
+  label:first-child { margin-top: 0; }
+  input[type="text"], textarea, select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-family: var(--font);
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-color 0.15s;
+    resize: vertical;
+  }
+  input[type="text"]:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+  }
+  select option { background: var(--surface2); }
+  textarea { min-height: 70px; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 0.82rem;
+    transition: all 0.15s;
+    width: 100%;
+    margin-top: 10px;
+    letter-spacing: 0.03em;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    font-weight: bold;
+  }
+  .btn-primary:hover { background: #d9a03c; }
+  .btn-primary:disabled { background: var(--border); color: var(--text2); cursor: not-allowed; }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-green {
+    background: var(--accent2);
+    color: #fff;
+  }
+  .btn-green:hover { background: #6a9a5a; }
+  .btn-purple {
+    background: var(--accent3);
+    color: #fff;
+  }
+
+  /* ── Status / Spinner ── */
+  .status {
+    font-size: 0.75rem;
+    font-family: var(--mono);
+    color: var(--text2);
+    padding: 8px 10px;
+    border-radius: 4px;
+    background: var(--surface2);
+    margin-top: 8px;
+    border-left: 3px solid var(--border);
+    display: none;
+  }
+  .status.show { display: block; }
+  .status.loading { border-left-color: var(--accent); color: var(--accent); }
+  .status.success { border-left-color: var(--accent2); color: var(--accent2); }
+  .status.error { border-left-color: var(--red); color: var(--red); }
+
+  .spinner {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 5px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Annotation Card ── */
+  .annotation-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    position: relative;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .annotation-card:hover { border-color: var(--accent); }
+  .annotation-card.selected { border-color: var(--accent); background: #1e1c14; }
+  .annotation-card .card-num {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .annotation-card .card-desc {
+    color: var(--text);
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+  .annotation-card .card-meta {
+    color: var(--text2);
+    font-size: 0.7rem;
+    font-family: var(--mono);
+  }
+  .annotation-card .card-del {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: none; border: none;
+    color: var(--text2); cursor: pointer;
+    font-size: 0.9rem;
+    padding: 2px 5px;
+  }
+  .annotation-card .card-del:hover { color: var(--red); }
+  .annotation-card .ref-thumb {
+    width: 100%;
+    max-height: 80px;
+    object-fit: cover;
+    border-radius: 3px;
+    margin-top: 6px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── Cultural Tags ── */
+  .culture-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+  }
+  .culture-tag {
+    font-size: 0.65rem;
+    font-family: var(--mono);
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .culture-tag:hover, .culture-tag.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(200,146,42,0.1);
+  }
+
+  /* ── Section divider ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+  }
+
+  /* ── HF token input row ── */
+  .token-row {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .token-row input { flex: 1; }
+  .token-row .btn { width: auto; margin-top: 0; padding: 8px 10px; }
+
+  /* ── Info box ── */
+  .info-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-size: 0.75rem;
+    color: var(--text2);
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+  .info-box a { color: var(--accent); text-decoration: none; }
+  .info-box a:hover { text-decoration: underline; }
+
+  /* ── Mode toggle ── */
+  .mode-toggle {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .mode-btn {
+    flex: 1;
+    padding: 7px;
+    background: transparent;
+    border: none;
+    color: var(--text2);
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 0.75rem;
+    transition: all 0.15s;
+  }
+  .mode-btn.active { background: var(--accent); color: #000; }
+
+  /* ── Export preview ── */
+  #export-preview {
+    display: none;
+    margin-top: 10px;
+  }
+
+  /* ── Upload area ── */
+  .upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 5px;
+    padding: 16px;
+    text-align: center;
+    color: var(--text2);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    margin-top: 6px;
+  }
+  .upload-area:hover { border-color: var(--accent); color: var(--accent); }
+  .upload-area input[type="file"] { display: none; }
+
+  /* ── Annotation input section ── */
+  #annot-form {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 10px;
+    display: none;
+  }
+  #annot-form.show { display: block; }
+  #annot-form h3 {
+    font-size: 0.8rem;
+    color: var(--accent);
+    margin-bottom: 10px;
+    font-weight: normal;
+    letter-spacing: 0.05em;
+  }
+
+  .regen-section {
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    margin-top: 14px;
+  }
+  .regen-section h3 {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 10px;
+  }
+
+  /* ── Result image ── */
+  #result-img-wrap {
+    display: none;
+    margin-top: 10px;
+  }
+  #result-img-wrap img {
+    width: 100%;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  #result-img-wrap .result-label {
+    font-size: 0.65rem;
+    font-family: var(--mono);
+    color: var(--text2);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* responsive */
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; grid-template-rows: auto 60vh auto; }
+    .panel:last-child { border-left: none; border-top: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Kahani Ground &nbsp;<span>— Cultural Image Grounding for NE India</span></h1>
+  <div class="header-badges">
+    <span class="badge badge-free">Free APIs</span>
+    <span class="badge badge-neindia">NE India Focus</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ══ LEFT PANEL: Generate ══ -->
+  <div class="panel">
+    <div class="panel-header"><span class="dot"></span>Generate / Load</div>
+    <div class="panel-body">
+
+      <label>Cultural Community</label>
+      <select id="culture-select">
+        <option value="">— Select focus culture —</option>
+        <optgroup label="Nagaland">
+          <option value="naga-angami">Angami Naga</option>
+          <option value="naga-ao">Ao Naga</option>
+          <option value="naga-konyak">Konyak Naga</option>
+          <option value="naga-sumi">Sumi Naga</option>
+          <option value="naga-lotha">Lotha Naga</option>
+        </optgroup>
+        <optgroup label="Arunachal Pradesh">
+          <option value="arunachal-apatani">Apatani</option>
+          <option value="arunachal-nyishi">Nyishi</option>
+          <option value="arunachal-adi">Adi</option>
+          <option value="arunachal-monpa">Monpa</option>
+          <option value="arunachal-garo">Garo (AR)</option>
+        </optgroup>
+        <optgroup label="Meghalaya">
+          <option value="meghalaya-khasi">Khasi</option>
+          <option value="meghalaya-jaintia">Jaintia (Pnar)</option>
+          <option value="meghalaya-garo">Garo</option>
+        </optgroup>
+        <optgroup label="Mizoram">
+          <option value="mizo">Mizo (Lusei)</option>
+          <option value="mizo-lai">Lai / Mara</option>
+        </optgroup>
+        <optgroup label="Manipur">
+          <option value="manipur-meitei">Meitei</option>
+          <option value="manipur-tangkhul">Tangkhul Naga</option>
+          <option value="manipur-zeliangrong">Zeliangrong</option>
+          <option value="manipur-hmar">Hmar</option>
+        </optgroup>
+        <optgroup label="Assam">
+          <option value="assam-bodo">Bodo</option>
+          <option value="assam-karbi">Karbi</option>
+          <option value="assam-dimasa">Dimasa</option>
+          <option value="assam-mising">Mising</option>
+          <option value="assam-rabha">Rabha</option>
+        </optgroup>
+        <optgroup label="Tripura / Others">
+          <option value="tripura-kokborok">Tripuri (Kokborok)</option>
+          <option value="tripura-reang">Reang (Bru)</option>
+        </optgroup>
+      </select>
+
+      <label>Scene / Story Description</label>
+      <textarea id="prompt-input" rows="4" placeholder="e.g. An elder woman weaving a traditional shawl outside a bamboo house, village in the hills, morning light..."></textarea>
+
+      <div id="culture-hint" class="info-box" style="display:none;margin-top:6px;"></div>
+
+      <label>Style</label>
+      <select id="style-select">
+        <option value="photorealistic">Photorealistic documentary</option>
+        <option value="editorial">Editorial / magazine</option>
+        <option value="illustration">Watercolour illustration</option>
+        <option value="sketch">Pencil sketch</option>
+      </select>
+
+      <label>Image Size</label>
+      <select id="size-select">
+        <option value="1024x768">Landscape 1024×768</option>
+        <option value="768x1024">Portrait 768×1024</option>
+        <option value="1024x1024">Square 1024×1024</option>
+      </select>
+
+      <button class="btn btn-primary" onclick="generateImage()" id="gen-btn">
+        ✦ Generate Image
+      </button>
+      <div id="gen-status" class="status"></div>
+
+      <div class="divider"></div>
+
+      <label>Or Upload Existing AI Image</label>
+      <div class="upload-area" onclick="document.getElementById('img-upload').click()">
+        <input type="file" id="img-upload" accept="image/*" onchange="loadUploadedImage(event)">
+        Click to upload image
+      </div>
+
+      <div class="divider"></div>
+
+      <label>HuggingFace Token <span style="color:var(--text2);text-transform:none;font-size:0.65rem;">(optional — enables region inpainting)</span></label>
+      <div class="token-row">
+        <input type="password" id="hf-token" placeholder="hf_xxxxxxxxxxxx">
+        <button class="btn btn-secondary" style="font-size:0.7rem;" onclick="saveToken()">Save</button>
+      </div>
+      <div class="info-box">
+        Free HF token: <a href="https://huggingface.co/join" target="_blank">huggingface.co/join</a> → Settings → Access Tokens.<br>
+        Without it, we regenerate the whole image. With it, only the marked region changes.
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ CENTER: Canvas ══ -->
+  <div class="canvas-area" id="canvas-area">
+    <div class="canvas-empty" id="canvas-empty">
+      <div class="big">◈</div>
+      Generate or upload an image to begin.<br>
+      Then mark regions that need cultural correction.
+    </div>
+    <div class="canvas-wrapper" id="canvas-wrapper" style="display:none;">
+      <canvas id="canvas-el"></canvas>
+    </div>
+    <div class="toolbar" id="toolbar" style="display:none;">
+      <button class="tool-btn active" id="tool-select" onclick="setTool('select')">⊹ Select</button>
+      <button class="tool-btn" id="tool-rect" onclick="setTool('rect')">▭ Mark Region</button>
+      <div class="tool-sep"></div>
+      <button class="tool-btn" id="tool-zoom-in" onclick="zoomCanvas(1.2)">＋ Zoom</button>
+      <button class="tool-btn" id="tool-zoom-out" onclick="zoomCanvas(0.83)">－</button>
+      <button class="tool-btn" id="tool-fit" onclick="fitCanvas()">⊡ Fit</button>
+      <div class="tool-sep"></div>
+      <button class="tool-btn danger" onclick="clearAnnotations()">✕ Clear Marks</button>
+    </div>
+  </div>
+
+  <!-- ══ RIGHT PANEL: Annotations + Regen ══ -->
+  <div class="panel">
+    <div class="panel-header"><span class="dot" style="background:var(--accent2)"></span>Annotations & Grounding</div>
+    <div class="panel-body">
+
+      <div id="annot-empty" style="color:var(--text2);font-size:0.8rem;line-height:1.7;">
+        Draw a rectangle on the image to mark a region that needs cultural grounding.<br><br>
+        You can add:<br>
+        · A text description of what should be there<br>
+        · A real ground photograph for reference
+      </div>
+
+      <!-- Annotation input form (shown when a rect is drawn) -->
+      <div id="annot-form">
+        <h3>◈ New Annotation</h3>
+
+        <label>What's wrong / what should change?</label>
+        <textarea id="annot-desc" rows="3" placeholder="e.g. The woman's shawl pattern looks generic — it should be an Angami Naga traditional shawl with specific red and black stripes (lohe)..."></textarea>
+
+        <label>Correction Mode</label>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="mode-desc" onclick="setAnnotMode('description')">By Description</button>
+          <button class="mode-btn" id="mode-photo" onclick="setAnnotMode('photo')">By Reference Photo</button>
+        </div>
+
+        <div id="ref-photo-section" style="display:none;margin-top:8px;">
+          <label>Upload Ground Truth Photo</label>
+          <div class="upload-area" onclick="document.getElementById('ref-upload').click()">
+            <input type="file" id="ref-upload" accept="image/*" onchange="loadRefPhoto(event)">
+            Upload actual photograph from the field
+          </div>
+          <img id="ref-preview" style="display:none;width:100%;max-height:120px;object-fit:cover;border-radius:4px;margin-top:6px;border:1px solid var(--border);">
+        </div>
+
+        <button class="btn btn-green" onclick="saveAnnotation()">+ Add Annotation</button>
+        <button class="btn btn-secondary" onclick="cancelAnnotation()" style="margin-top:5px;">Cancel</button>
+      </div>
+
+      <!-- Saved annotations list -->
+      <div id="annot-list" style="margin-top:12px;"></div>
+
+      <!-- Regeneration section -->
+      <div class="regen-section" id="regen-section" style="display:none;">
+        <h3>Regenerate with Corrections</h3>
+
+        <div id="selected-annot-info" style="font-size:0.78rem;color:var(--text2);margin-bottom:8px;"></div>
+
+        <label>Regeneration Mode</label>
+        <select id="regen-mode">
+          <option value="region">Region only (requires HF token)</option>
+          <option value="full">Full image with all corrections</option>
+        </select>
+
+        <button class="btn btn-primary" onclick="regenerateImage()" id="regen-btn">
+          ⟳ Apply Corrections
+        </button>
+        <div id="regen-status" class="status"></div>
+
+        <div id="result-img-wrap">
+          <div class="result-label">Corrected Result</div>
+          <img id="result-img" src="" alt="Result">
+          <button class="btn btn-secondary" onclick="acceptResult()" style="margin-top:6px;font-size:0.75rem;">
+            ✓ Accept as new base image
+          </button>
+        </div>
+
+        <div class="divider"></div>
+
+        <button class="btn btn-purple" onclick="exportReport()">
+          ↓ Export Annotated Report
+        </button>
+        <div id="export-preview"></div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  CULTURAL CONTEXT LIBRARY — NE India
+// ═══════════════════════════════════════════════════
+const CULTURAL_CONTEXT = {
+  'naga-angami': {
+    name: 'Angami Naga',
+    region: 'Kohima district, Nagaland',
+    visual_elements: 'traditional Angami shawl (lohe) with black red and white geometric patterns, stone-walled village of Khonoma or Kohima village, wooden morung (traditional dormitory), warrior terrace fields on hillsides, traditional ornaments of conch shells and bronze, women in indigo-dyed skirt',
+    avoid: 'generic Indian sari, flat plains, palm trees, generic Asian features',
+    colors: 'deep red, black, white geometric patterns, natural indigo',
+    architecture: 'stone-walled houses, wooden frames, thatched roofs on steep hillsides',
+    hint: 'Angami people are known for stone terracing, the lohe shawl with its warrior status symbols, and the Kisama heritage village (Hornbill Festival site). Older women may have traditional chin tattoos.'
+  },
+  'naga-ao': {
+    name: 'Ao Naga',
+    region: 'Mokokchung district, Nagaland',
+    visual_elements: 'Ao traditional male shawl (tsungkotepsu — white with black stripes and red border) or female shawl (supong), bamboo groves, morung with carvings of mithun skulls and human heads (historical), red cane hats, brass earrings, log drum',
+    avoid: 'generic Indian dress, lowland imagery',
+    colors: 'white with black stripes, bold red borders, cane and bamboo tones',
+    architecture: 'elevated bamboo and timber longhouses, morung with carved posts',
+    hint: 'Ao Naga are among the first converted Christian Naga tribes. The morung (youth dormitory) remains culturally central. Log drums (wooden slit gongs) are used for communication.'
+  },
+  'naga-konyak': {
+    name: 'Konyak Naga',
+    region: 'Mon district, Nagaland (near Myanmar border)',
+    visual_elements: 'heavily tattooed elder men with face tattoos (earned through headhunting), brass ornaments on chest, cane cap decorated with hornbill feathers and boars tusks, bead necklaces, dark handwoven wrap, traditional longhouse with carved skulls, log drum outside morung',
+    avoid: 'modern clothing, any generic South Asian or East Asian features',
+    colors: 'dark handwoven cloth, cane tan, brass gold, bone white, black tattoos',
+    architecture: 'massive timber longhouses of the Angh (chief), morung with skull motif carvings',
+    hint: 'Konyak are the last tattooed headhunters of Nagaland. Elder men (over 70) have full facial tattoos. The Angh is the hereditary chief. Mon is extremely remote near the Myanmar border.'
+  },
+  'naga-sumi': {
+    name: 'Sumi Naga',
+    region: 'Zunheboto district, Nagaland',
+    visual_elements: 'Sumi traditional warrior shawl (ghando pfura) in red and black, brass armlets, silver ornaments, traditional Sumi apron skirt for women, bamboo and wood architecture in hilly landscape, millet granaries on stilts',
+    avoid: 'lowland imagery, non-Naga dress styles',
+    colors: 'red dominant with black patterns, silver ornament tones',
+    architecture: 'hillside bamboo and wood houses, granaries',
+    hint: 'Sumi Naga are known for the Aghunato festival and traditional tusu (rice beer) brewing. Agricultural terraces on slopes are common.'
+  },
+  'naga-lotha': {
+    name: 'Lotha Naga',
+    region: 'Wokha district, Nagaland',
+    visual_elements: 'Lotha warrior shawl (ngotso) with unique blue-green and red stripes, traditional cane and feather headdress, beadwork necklaces, Doyang river valley in background, pine forest hills',
+    avoid: 'generic hill tribe imagery, non-specific shawl patterns',
+    colors: 'blue-green with red accents, cane tones',
+    hint: 'Lotha are known for fine weaving. The Tsungrem Mong festival marks the sowing season. The Doyang hydroelectric dam is in Lotha territory.'
+  },
+  'arunachal-apatani': {
+    name: 'Apatani',
+    region: 'Ziro valley, Lower Subansiri district, Arunachal Pradesh',
+    visual_elements: 'older Apatani women with traditional facial tattoos and large circular nose plugs (noshi — now discontinued among younger generations), handwoven black and white striped cloth, Ziro valley wet rice paddy fields with pine forest backdrop, unique integrated fish-in-paddy cultivation, bamboo houses on slightly elevated ground, traditional Apatani male headband with boar tusks',
+    avoid: 'nose rings that look modern, flat terrain without Himalayan backdrop, generic tribal look',
+    colors: 'black and white striped cloth, deep green paddy, pine forest green, earthy tones',
+    architecture: 'bamboo and plank longhouses in compact village clusters, granaries',
+    hint: 'Apatani have a UNESCO-recognized agricultural system. Ziro valley is a World Heritage nomination site. Older women distinctively have large circular nose plugs and chin tattoos — these identify them. The Myoko and Dree festivals are important. Apatani are skilled rice farmers and have a matrilineal system element.'
+  },
+  'arunachal-nyishi': {
+    name: 'Nyishi',
+    region: 'West and East Kameng, Papum Pare, Arunachal Pradesh',
+    visual_elements: 'traditional Nyishi male headdress — a bamboo cane cap topped with hornbill beak (or now resin replica), cane sword holder at waist, woven cane armlets, handwoven shawl with geometric pattern, hilly sub-Himalayan forest backdrop, bamboo stilt houses',
+    avoid: 'flat terrain, generic feathered headdress of other tribes',
+    colors: 'cane tan, hornbill yellow and red beak, earthy woven tones',
+    architecture: 'bamboo stilt houses in dispersed hill settlements',
+    hint: 'Nyishi are the largest tribal group in Arunachal Pradesh. The hornbill beak headdress (chaké) is iconic to Nyishi men. Modern replicas use resin to protect hornbills. The Nyokum festival celebrates prosperity.'
+  },
+  'arunachal-adi': {
+    name: 'Adi',
+    region: 'East Siang, West Siang, Upper Siang districts, Arunachal Pradesh',
+    visual_elements: 'traditional Adi woven textile with bold red and black geometric patterns, cane helmet-like headgear, Siang river gorge and Himalayan foothills, bamboo platform houses on steep hillsides, women in handwoven wrap skirt (gale) with geometric borders',
+    avoid: 'generic hill tribe look, non-specific patterns',
+    colors: 'bold red and black geometric weave, cane natural tone',
+    architecture: 'large bamboo communal houses on steep hillsides above river valleys',
+    hint: 'Adi people live along the Siang (Brahmaputra) river. The Ponung dance (women\'s song-dance) and Dobur Uie festival are central. They are known for fine cane and bamboo craftsmanship.'
+  },
+  'arunachal-monpa': {
+    name: 'Monpa',
+    region: 'Tawang and West Kameng districts, Arunachal Pradesh',
+    visual_elements: 'Tibetan Buddhist influence — Tawang monastery backdrop (largest Buddhist monastery in India), traditional Monpa red woollen cloak, yak herding in alpine meadows, prayer flags, snow-capped peaks, traditional Monpa yak wool cap (lichi), butter tea serving',
+    avoid: 'tropical or sub-tropical imagery, Hindu temple backdrop, non-Buddhist elements',
+    colors: 'maroon monk robes, red and blue traditional Monpa dress, prayer flag primary colours',
+    architecture: 'whitewashed stone and timber Tibetan-style buildings, large monastery complex',
+    hint: 'Monpa are a Buddhist tribe closely related to Tibetan culture. Tawang Monastery (Galden Namgey Lhatse) at 10,000 ft is the defining landmark. They raise yaks and make handmade Monpa paper, wooden bowls, and thangkas.'
+  },
+  'meghalaya-khasi': {
+    name: 'Khasi',
+    region: 'East and West Khasi Hills, Meghalaya',
+    visual_elements: 'Khasi women in jainsem (traditional dress — pinafore-style with pleated front), men in jymphong (sleeveless coat with matching shorts), living root bridges in Cherrapunji/Mawlynnong area, betel nut and leaf common in hands or mouth, matrilineal family gathering, pan-covered shaded village, Sacred Grove (Law Kyntang) of dense rainforest',
+    avoid: 'generic northeastern or Assamese elements, sari on Khasi women',
+    colors: 'yellow, gold, white in jainsem, deep green rainforest',
+    architecture: 'wooden houses on hillsides, living root bridges, stone paths',
+    hint: 'Khasi society is matrilineal — children take mother\'s clan name. The youngest daughter (khatduh) inherits ancestral home. Khasi are known for the living root bridges of Meghalaya. Nongkrem dance is the major festival. Shillong is the capital.'
+  },
+  'meghalaya-garo': {
+    name: 'Garo',
+    region: 'East, West, and South Garo Hills, Meghalaya',
+    visual_elements: 'Garo traditional dress — dakgala skirt and matching top for women, traditional Garo male wraparound in white with red and black border (daksari), wangala festival drums and dancing, bamboo and thatch architecture in relatively flat Garo Hills, betel nut palm trees, dokgala headdress with feathers for ceremonial use',
+    avoid: 'Khasi jainsem, Himalayan landscape',
+    colors: 'white with red and black borders, green bamboo, earthy tones',
+    architecture: 'large communal bamboo nobis (bachelor\'s dormitory), bamboo houses',
+    hint: 'Garo are the second largest tribe in Meghalaya, also matrilineal. The Wangala (100 Drums Festival) is the harvest celebration and most prominent cultural event. Garo Hills are flatter than Khasi Hills.'
+  },
+  'mizo': {
+    name: 'Mizo (Lusei)',
+    region: 'Aizawl district, Mizoram',
+    visual_elements: 'Mizo women in puanchei (colourful traditional shawl with pink red and white horizontal stripes for festive occasions) or puan skirt, cheraw (bamboo dance) performance with bamboo poles on ground, Presbyterian church backdrop (Christianity is dominant), terraced jhum cultivation fields, Aizawl city on steep ridgeline',
+    avoid: 'Hindu or animist imagery, non-Christian contexts (most Mizo are Christian), generic East Asian look',
+    colors: 'bright pink, red, white, black in traditional puanchei; bamboo green',
+    architecture: 'corrugated iron roof timber houses on steep ridgelines, large church buildings',
+    hint: 'Mizoram is one of the most literate states in India. Over 87% Christian. The cheraw (bamboo dance) is iconic. The zawlbuk (dormitory) was the traditional social institution. Tlawmngaihna (selfless service to others) is a core Mizo value.'
+  },
+  'manipur-meitei': {
+    name: 'Meitei',
+    region: 'Imphal Valley, Manipur',
+    visual_elements: 'Meitei women in phanek (wrap skirt in striped silk/cotton) with innaphi (shawl), Ras Leela classical dance performance, Kangla Fort backdrop, Loktak lake with phumdis (floating islands), sangai deer, polo game (Meitei invented it), traditional earthen pots and handloom market in Ima Keithel (all-women market)',
+    avoid: 'generic sari or North Indian clothing, non-Manipuri classical dance forms',
+    colors: 'striped phanek in earthy tones, silk shimmer, lotus pink of Loktak lake',
+    architecture: 'Kangla palace complex, traditional Meitei longhouse (yumjao), thatched roof',
+    hint: 'Manipur has a sophisticated classical tradition — Manipuri classical dance (Ras Leela) is a major form. The Ima Keithel market run exclusively by women is unique in Asia. Polo was invented in Manipur. The Loktak lake with sangai (brow-antlered deer) is the defining ecological identity.'
+  },
+  'assam-bodo': {
+    name: 'Bodo',
+    region: 'Bodoland Territorial Region, Assam (Kokrajhar, Chirang, Baksa, Udalguri)',
+    visual_elements: 'Bodo women in dokhona (wrap dress in handwoven Bodo silk/cotton with geometric patterns) and aronai (small shawl), traditional Bodo handloom with bold geometric motifs, Bagurumba dance (butterfly dance) performance, bamboo and areca palm landscape, rice fields of Brahmaputra plains, traditional Bodo rice beer (jou) in bamboo mug',
+    avoid: 'Assamese mekhela chador, hill tribe imagery, generic North Indian look',
+    colors: 'white and bright geometric patterns in dokhona, emerald green landscape',
+    architecture: 'bamboo platform house on Brahmaputra plains, areca palm surrounds',
+    hint: 'Bodo are the largest plains tribe of Assam. The Bagurumba (butterfly dance) by women in dokhona is iconic. Bodo handloom has unique geometric motifs. Bwisagu festival marks the new year. Bodoland Territorial Council administers their homeland.'
+  },
+  'assam-karbi': {
+    name: 'Karbi',
+    region: 'Karbi Anglong district, Assam',
+    visual_elements: 'traditional Karbi attire — women in poho (waist cloth) and pine (breast cloth), men in traditional white cane helmets decorated with hornbill feathers for ceremony, Chomangkan festival dances, forested plateau and hills of Karbi Anglong',
+    avoid: 'generic Assamese or Naga look',
+    colors: 'white and red in traditional dress, cane natural tone',
+    hint: 'Karbi have their own autonomous district council. The Chomangkan (funerary festival) is a major ritual. Karbi Anglong is a large hilly district between Assam and Nagaland.'
+  },
+  'assam-mising': {
+    name: 'Mising (Missing)',
+    region: 'Dhemaji, Lakhimpur, Majuli districts, Assam',
+    visual_elements: 'Mising women in Eging (wraparound skirt with geometric weave in blue, black, and red) and Gaseng Galuk blouse, Chang (stilt house on bamboo stilts above flood level), Brahmaputra river and Majuli island riverine landscape, boat, traditional handloom, Ali Aye Ligang festival (spring festival)',
+    avoid: 'non-riverine imagery, hill tribe elements, generic Assamese dress',
+    colors: 'indigo blue, red, black geometric weave, bamboo and water tones',
+    architecture: 'Chang ghar — elevated stilt house above flood plains, bamboo',
+    hint: 'Mising are a riverine people who live on the banks of the Brahmaputra and its tributaries including Majuli island. Their stilt houses protect against flooding. The Ali Aye Ligang spring festival features traditional food and dance. They are known for fine weaving.'
+  },
+  'tripura-kokborok': {
+    name: 'Tripuri (Kokborok)',
+    region: 'Tripura',
+    visual_elements: 'Tripuri women in traditional rignai (wraparound skirt with vertical stripe pattern) and rikutu (breast cloth), traditional bamboo weaving baskets and furniture, rubber plantations and bamboo forest of Tripura, traditional bamboo musical instruments (sarinda), Garia festival dance around Garia post',
+    avoid: 'generic Bengali dress, non-tribal look',
+    colors: 'bright vertical stripes in rignai, bamboo and forest green',
+    architecture: 'bamboo and thatch house, some on stilts',
+    hint: 'Tripuri are the major indigenous people of Tripura. Kokborok is their language. The Garia puja (festival to Garia deity) is central to their culture. Tripura has significant Bengali migration so indigenous communities are now a minority in their own state.'
+  },
+  'meghalaya-jaintia': {
+    name: 'Jaintia (Pnar)',
+    region: 'East Jaintia Hills, Meghalaya',
+    visual_elements: 'similar to Khasi but Jaintia-specific patterns in jainsem, Nartiang monoliths (largest menhir/megalith field in India), coal and limestone mining landscape (controversial), Behdeinkhlam festival procession with decorated towers',
+    avoid: 'confusing with generic Khasi imagery, mining industry imagery',
+    hint: 'Jaintia (self-name: Pnar) are closely related to Khasi but distinct. The Behdeinkhlam festival involves elaborate processions to drive away evil. The Nartiang monoliths include some of the tallest standing stones in Asia.'
+  },
+  'tripura-reang': {
+    name: 'Reang (Bru)',
+    region: 'North Tripura, also Mizoram and Assam',
+    visual_elements: 'Reang women in traditional dress of risa (blouse) and rignai with distinctive pattern, hozagiri dance (performed balancing objects on head), bamboo forest, displaced community settlement scenes',
+    avoid: 'confusing with mainstream Tripuri',
+    hint: 'Reang/Bru are a small tribe that suffered displacement from Mizoram in the late 1990s and many lived in refugee camps in Tripura until a 2020 settlement. Hozagiri is an acrobatic balancing dance. Their situation reflects challenges of tribal displacement in NE India.'
+  },
+  'manipur-tangkhul': {
+    name: 'Tangkhul Naga',
+    region: 'Ukhrul district, Manipur',
+    visual_elements: 'Tangkhul traditional shawl with intricate patterns, Shirui Lily (endemic pink lily found only on Shirui peak), alpine meadows of Ukhrul hills, traditional Tangkhul warrior headdress, Longphi festival (spring festival)',
+    hint: 'Tangkhul are closely related to the Naga tribes across the border in Myanmar. The Shirui Lily is found only on Shirui Kashong peak near Ukhrul and is Manipur\'s state flower. They are distinct from Meitei culturally.'
+  }
+};
+
+// ═══════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════
+let fabricCanvas = null;
+let currentImage = null;       // { url, width, height }
+let annotations = [];          // saved annotation objects
+let pendingRect = null;        // fabric rect being drawn
+let currentTool = 'select';
+let annotMode = 'description'; // 'description' | 'photo'
+let currentRefPhotoDataUrl = null;
+let hfToken = localStorage.getItem('hf_token') || '';
+let selectedAnnotId = null;
+
+if (hfToken) document.getElementById('hf-token').value = hfToken;
+
+// ═══════════════════════════════════════════════════
+//  CULTURE SELECT → HINT
+// ═══════════════════════════════════════════════════
+document.getElementById('culture-select').addEventListener('change', function() {
+  const key = this.value;
+  const hint = document.getElementById('culture-hint');
+  if (key && CULTURAL_CONTEXT[key]) {
+    const c = CULTURAL_CONTEXT[key];
+    hint.innerHTML = `<strong style="color:var(--accent)">${c.name}</strong> — ${c.region}<br><span style="font-size:0.7rem;">${c.hint}</span>`;
+    hint.style.display = 'block';
+  } else {
+    hint.style.display = 'none';
+  }
+});
+
+// ═══════════════════════════════════════════════════
+//  PROMPT ENHANCEMENT — builds culturally rich prompt
+// ═══════════════════════════════════════════════════
+function buildEnhancedPrompt(userPrompt, cultureKey, style) {
+  const ctx = CULTURAL_CONTEXT[cultureKey];
+  if (!ctx) return userPrompt;
+
+  const styleModifiers = {
+    'photorealistic': 'photorealistic documentary photography, natural light, high detail',
+    'editorial': 'editorial photography, magazine quality, professional composition',
+    'illustration': 'watercolour illustration, painterly, warm tones',
+    'sketch': 'detailed pencil sketch, cross-hatching, monochrome'
+  };
+
+  return `${userPrompt}, ${ctx.visual_elements}, ${ctx.region}, ${ctx.architecture ? ctx.architecture + ', ' : ''}${styleModifiers[style] || ''}, culturally authentic, avoid: ${ctx.avoid}`;
+}
+
+// ═══════════════════════════════════════════════════
+//  IMAGE GENERATION — Pollinations.ai (free, no key)
+// ═══════════════════════════════════════════════════
+async function generateImage() {
+  const userPrompt = document.getElementById('prompt-input').value.trim();
+  if (!userPrompt) { alert('Please enter a scene description.'); return; }
+
+  const cultureKey = document.getElementById('culture-select').value;
+  const style = document.getElementById('style-select').value;
+  const sizeStr = document.getElementById('size-select').value;
+  const [w, h] = sizeStr.split('x').map(Number);
+
+  const enhanced = buildEnhancedPrompt(userPrompt, cultureKey, style);
+
+  setStatus('gen-status', 'loading', 'Generating via Pollinations.ai (FLUX)...');
+  document.getElementById('gen-btn').disabled = true;
+
+  try {
+    const encoded = encodeURIComponent(enhanced);
+    const seed = Math.floor(Math.random() * 999999);
+    const url = `https://image.pollinations.ai/prompt/${encoded}?width=${w}&height=${h}&model=flux&seed=${seed}&nologo=true`;
+
+    // Preload the image
+    await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = url;
+    });
+
+    setStatus('gen-status', 'success', 'Image generated successfully.');
+    loadImageToCanvas(url, w, h);
+  } catch (err) {
+    setStatus('gen-status', 'error', 'Generation failed. Check your connection and try again.');
+    console.error(err);
+  } finally {
+    document.getElementById('gen-btn').disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  CANVAS SETUP
+// ═══════════════════════════════════════════════════
+function loadImageToCanvas(url, imgW, imgH) {
+  document.getElementById('canvas-empty').style.display = 'none';
+  const wrapper = document.getElementById('canvas-wrapper');
+  wrapper.style.display = 'block';
+  document.getElementById('toolbar').style.display = 'flex';
+
+  // Compute canvas display size
+  const area = document.getElementById('canvas-area');
+  const maxW = area.clientWidth - 40;
+  const maxH = area.clientHeight - 80;
+  const scale = Math.min(maxW / imgW, maxH / imgH, 1);
+  const cw = Math.round(imgW * scale);
+  const ch = Math.round(imgH * scale);
+
+  // Destroy old canvas if exists
+  if (fabricCanvas) {
+    fabricCanvas.dispose();
+    fabricCanvas = null;
+  }
+
+  const el = document.getElementById('canvas-el');
+  el.width = cw;
+  el.height = ch;
+
+  fabricCanvas = new fabric.Canvas('canvas-el', {
+    width: cw,
+    height: ch,
+    selection: false
+  });
+
+  fabric.Image.fromURL(url, function(fimg) {
+    fimg.set({ left: 0, top: 0, selectable: false, evented: false });
+    fimg.scaleToWidth(cw);
+    fabricCanvas.add(fimg);
+    fabricCanvas.sendToBack(fimg);
+    currentImage = { url, origW: imgW, origH: imgH, dispW: cw, dispH: ch, scale };
+    fabricCanvas.renderAll();
+  }, { crossOrigin: 'anonymous' });
+
+  setupCanvasEvents();
+  annotations = [];
+  renderAnnotationList();
+}
+
+function loadUploadedImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => loadImageToCanvas(e.target.result, img.width, img.height);
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ═══════════════════════════════════════════════════
+//  CANVAS TOOLS
+// ═══════════════════════════════════════════════════
+let isDrawing = false;
+let drawStart = null;
+let drawRect = null;
+
+function setupCanvasEvents() {
+  fabricCanvas.off('mouse:down');
+  fabricCanvas.off('mouse:move');
+  fabricCanvas.off('mouse:up');
+
+  fabricCanvas.on('mouse:down', (opt) => {
+    if (currentTool !== 'rect') return;
+    const p = fabricCanvas.getPointer(opt.e);
+    isDrawing = true;
+    drawStart = p;
+    drawRect = new fabric.Rect({
+      left: p.x, top: p.y,
+      width: 0, height: 0,
+      fill: 'rgba(200,146,42,0.15)',
+      stroke: '#c8922a',
+      strokeWidth: 2,
+      strokeDashArray: [5, 3],
+      selectable: false,
+      evented: false,
+      id: 'pending'
+    });
+    fabricCanvas.add(drawRect);
+  });
+
+  fabricCanvas.on('mouse:move', (opt) => {
+    if (!isDrawing || !drawRect) return;
+    const p = fabricCanvas.getPointer(opt.e);
+    const left = Math.min(p.x, drawStart.x);
+    const top = Math.min(p.y, drawStart.y);
+    const w = Math.abs(p.x - drawStart.x);
+    const h = Math.abs(p.y - drawStart.y);
+    drawRect.set({ left, top, width: w, height: h });
+    fabricCanvas.renderAll();
+  });
+
+  fabricCanvas.on('mouse:up', (opt) => {
+    if (!isDrawing || !drawRect) return;
+    isDrawing = false;
+    const r = drawRect;
+    if (r.width < 10 || r.height < 10) {
+      fabricCanvas.remove(r);
+      drawRect = null;
+      return;
+    }
+    pendingRect = r;
+    drawRect = null;
+    openAnnotationForm();
+  });
+}
+
+function setTool(tool) {
+  currentTool = tool;
+  document.querySelectorAll('.tool-btn[id^="tool-"]').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('tool-' + tool);
+  if (btn) btn.classList.add('active');
+  if (fabricCanvas) {
+    fabricCanvas.defaultCursor = tool === 'rect' ? 'crosshair' : 'default';
+  }
+}
+
+function zoomCanvas(factor) {
+  if (!fabricCanvas) return;
+  fabricCanvas.setZoom(fabricCanvas.getZoom() * factor);
+}
+
+function fitCanvas() {
+  if (!fabricCanvas) return;
+  fabricCanvas.setZoom(1);
+  fabricCanvas.setViewportTransform([1,0,0,1,0,0]);
+}
+
+function clearAnnotations() {
+  if (!fabricCanvas) return;
+  // Remove all rects except the background image
+  const objs = fabricCanvas.getObjects().filter(o => o.id !== undefined || o.type === 'rect');
+  objs.forEach(o => fabricCanvas.remove(o));
+  annotations = [];
+  pendingRect = null;
+  renderAnnotationList();
+  hideAnnotForm();
+}
+
+// ═══════════════════════════════════════════════════
+//  ANNOTATION FORM
+// ═══════════════════════════════════════════════════
+function openAnnotationForm() {
+  document.getElementById('annot-empty').style.display = 'none';
+  document.getElementById('annot-form').classList.add('show');
+  document.getElementById('annot-desc').value = '';
+  document.getElementById('ref-preview').style.display = 'none';
+  currentRefPhotoDataUrl = null;
+  setAnnotMode('description');
+  setTool('select');
+}
+
+function hideAnnotForm() {
+  document.getElementById('annot-form').classList.remove('show');
+  document.getElementById('annot-empty').style.display = 'block';
+}
+
+function setAnnotMode(mode) {
+  annotMode = mode;
+  document.getElementById('mode-desc').classList.toggle('active', mode === 'description');
+  document.getElementById('mode-photo').classList.toggle('active', mode === 'photo');
+  document.getElementById('ref-photo-section').style.display = mode === 'photo' ? 'block' : 'none';
+}
+
+function loadRefPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    currentRefPhotoDataUrl = e.target.result;
+    const prev = document.getElementById('ref-preview');
+    prev.src = e.target.result;
+    prev.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveAnnotation() {
+  const desc = document.getElementById('annot-desc').value.trim();
+  if (!desc) { alert('Please describe what needs to change.'); return; }
+  if (!pendingRect) return;
+
+  const id = 'annot_' + Date.now();
+  const r = pendingRect;
+
+  // Finalise the rect on canvas with a permanent id
+  r.set({
+    fill: 'rgba(200,146,42,0.12)',
+    stroke: '#c8922a',
+    strokeDashArray: null,
+    strokeWidth: 1.5,
+    id
+  });
+
+  // Add number label
+  const label = new fabric.Text(String(annotations.length + 1), {
+    left: r.left + 4,
+    top: r.top + 3,
+    fontSize: 11,
+    fill: '#c8922a',
+    fontFamily: 'Courier New',
+    selectable: false,
+    evented: false,
+    id: id + '_label'
+  });
+  fabricCanvas.add(label);
+  fabricCanvas.renderAll();
+
+  const annot = {
+    id,
+    num: annotations.length + 1,
+    desc,
+    mode: annotMode,
+    refPhoto: annotMode === 'photo' ? currentRefPhotoDataUrl : null,
+    rect: {
+      left: r.left,
+      top: r.top,
+      width: r.width,
+      height: r.height
+    }
+  };
+
+  annotations.push(annot);
+  pendingRect = null;
+  currentRefPhotoDataUrl = null;
+
+  hideAnnotForm();
+  renderAnnotationList();
+  document.getElementById('regen-section').style.display = 'block';
+}
+
+function cancelAnnotation() {
+  if (pendingRect && fabricCanvas) {
+    fabricCanvas.remove(pendingRect);
+    fabricCanvas.renderAll();
+  }
+  pendingRect = null;
+  hideAnnotForm();
+}
+
+function deleteAnnotation(id) {
+  annotations = annotations.filter(a => a.id !== id);
+  // Remove from canvas
+  const objs = fabricCanvas.getObjects().filter(o => o.id === id || o.id === id + '_label');
+  objs.forEach(o => fabricCanvas.remove(o));
+  fabricCanvas.renderAll();
+  // Renumber
+  annotations.forEach((a, i) => { a.num = i + 1; });
+  renderAnnotationList();
+  if (annotations.length === 0) {
+    document.getElementById('regen-section').style.display = 'none';
+  }
+}
+
+function renderAnnotationList() {
+  const list = document.getElementById('annot-list');
+  if (annotations.length === 0) {
+    list.innerHTML = '';
+    return;
+  }
+  list.innerHTML = annotations.map(a => `
+    <div class="annotation-card ${selectedAnnotId === a.id ? 'selected' : ''}" onclick="selectAnnotation('${a.id}')">
+      <div class="card-num">[ ${a.num.toString().padStart(2,'0')} ] ${a.mode === 'photo' ? '📷 Photo reference' : '✎ Description'}</div>
+      <div class="card-desc">${escapeHtml(a.desc)}</div>
+      <div class="card-meta">Region: ${Math.round(a.rect.width)}×${Math.round(a.rect.height)}px at (${Math.round(a.rect.left)}, ${Math.round(a.rect.top)})</div>
+      ${a.refPhoto ? `<img class="ref-thumb" src="${a.refPhoto}" alt="Reference photo">` : ''}
+      <button class="card-del" onclick="event.stopPropagation();deleteAnnotation('${a.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function selectAnnotation(id) {
+  selectedAnnotId = selectedAnnotId === id ? null : id;
+  renderAnnotationList();
+  updateRegenInfo();
+}
+
+function updateRegenInfo() {
+  const el = document.getElementById('selected-annot-info');
+  if (selectedAnnotId) {
+    const a = annotations.find(x => x.id === selectedAnnotId);
+    el.textContent = a ? `Selected: Annotation ${a.num} — "${a.desc.slice(0, 60)}..."` : '';
+  } else {
+    el.textContent = `${annotations.length} annotation(s). Select one for region-only regen, or use Full Image to apply all.`;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  REGENERATION
+// ═══════════════════════════════════════════════════
+async function regenerateImage() {
+  if (!currentImage) { alert('No image loaded.'); return; }
+  if (annotations.length === 0) { alert('Add at least one annotation first.'); return; }
+
+  const mode = document.getElementById('regen-mode').value;
+  const token = document.getElementById('hf-token').value.trim() || hfToken;
+
+  if (mode === 'region') {
+    if (!token) {
+      const ok = confirm('Region inpainting requires a free HuggingFace token.\n\nFall back to full-image regeneration instead?');
+      if (!ok) return;
+      await doFullRegen();
+    } else {
+      const annot = selectedAnnotId
+        ? annotations.find(a => a.id === selectedAnnotId)
+        : annotations[0];
+      await doRegionInpaint(annot, token);
+    }
+  } else {
+    await doFullRegen();
+  }
+}
+
+async function doFullRegen() {
+  setStatus('regen-status', 'loading', 'Building corrected prompt and regenerating...');
+  document.getElementById('regen-btn').disabled = true;
+
+  try {
+    const cultureKey = document.getElementById('culture-select').value;
+    const style = document.getElementById('style-select').value;
+    const baseDesc = document.getElementById('prompt-input').value.trim() || 'scene';
+
+    // Merge all annotation descriptions into the prompt
+    const corrections = annotations.map(a => a.desc).join(', ');
+    const correctedPrompt = `${baseDesc}, ${corrections}`;
+    const enhanced = buildEnhancedPrompt(correctedPrompt, cultureKey, style);
+
+    const sizeStr = document.getElementById('size-select').value;
+    const [w, h] = sizeStr.split('x').map(Number);
+    const seed = Math.floor(Math.random() * 999999);
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhanced)}?width=${w}&height=${h}&model=flux&seed=${seed}&nologo=true`;
+
+    await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = url;
+    });
+
+    setStatus('regen-status', 'success', 'Regeneration complete. Review the result below.');
+    showResult(url);
+  } catch (err) {
+    setStatus('regen-status', 'error', 'Regeneration failed: ' + err.message);
+  } finally {
+    document.getElementById('regen-btn').disabled = false;
+  }
+}
+
+async function doRegionInpaint(annot, token) {
+  if (!annot) { alert('No annotation selected for region inpainting.'); return; }
+  setStatus('regen-status', 'loading', 'Preparing mask and calling HF inpainting model...');
+  document.getElementById('regen-btn').disabled = true;
+
+  try {
+    // 1. Get base image as base64
+    const base64img = await imageUrlToBase64(currentImage.url);
+
+    // 2. Create mask: white in annotated region, black elsewhere
+    const maskBase64 = createMaskBase64(annot.rect, currentImage.dispW, currentImage.dispH,
+                                         currentImage.origW, currentImage.origH);
+
+    // 3. Build inpaint prompt
+    const cultureKey = document.getElementById('culture-select').value;
+    const ctx = CULTURAL_CONTEXT[cultureKey];
+    const inpaintPrompt = ctx
+      ? `${annot.desc}, ${ctx.visual_elements}, culturally authentic, photorealistic`
+      : `${annot.desc}, culturally authentic, photorealistic`;
+
+    // 4. Call HF Inference API — SDXL Inpainting
+    setStatus('regen-status', 'loading', 'Sending to HuggingFace inpainting model (this may take 30–60s)...');
+    const response = await fetch(
+      'https://api-inference.huggingface.co/models/diffusers/stable-diffusion-xl-1.0-inpainting-0.1',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          inputs: inpaintPrompt,
+          parameters: {
+            image: base64img,
+            mask_image: maskBase64,
+            num_inference_steps: 30,
+            guidance_scale: 7.5
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`HF API error ${response.status}: ${err}`);
+    }
+
+    const blob = await response.blob();
+    const resultUrl = URL.createObjectURL(blob);
+    setStatus('regen-status', 'success', 'Region inpainting complete.');
+    showResult(resultUrl);
+  } catch (err) {
+    setStatus('regen-status', 'error', 'Inpainting failed: ' + err.message + '. Try Full Image mode instead.');
+    console.error(err);
+  } finally {
+    document.getElementById('regen-btn').disabled = false;
+  }
+}
+
+function createMaskBase64(rect, dispW, dispH, origW, origH) {
+  const mask = document.createElement('canvas');
+  mask.width = origW;
+  mask.height = origH;
+  const ctx = mask.getContext('2d');
+
+  // Scale rect back to original image dimensions
+  const scaleX = origW / dispW;
+  const scaleY = origH / dispH;
+
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0, 0, origW, origH);
+  ctx.fillStyle = 'white';
+  ctx.fillRect(
+    Math.round(rect.left * scaleX),
+    Math.round(rect.top * scaleY),
+    Math.round(rect.width * scaleX),
+    Math.round(rect.height * scaleY)
+  );
+
+  return mask.toDataURL('image/png').split(',')[1];
+}
+
+async function imageUrlToBase64(url) {
+  if (url.startsWith('data:')) return url.split(',')[1];
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+    reader.readAsDataURL(blob);
+  });
+}
+
+function showResult(url) {
+  const wrap = document.getElementById('result-img-wrap');
+  document.getElementById('result-img').src = url;
+  wrap.style.display = 'block';
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  wrap._resultUrl = url;
+}
+
+function acceptResult() {
+  const url = document.getElementById('result-img')._src ||
+               document.getElementById('result-img').src;
+  if (!url) return;
+  const img = new Image();
+  img.onload = () => loadImageToCanvas(url, img.naturalWidth || currentImage.origW, img.naturalHeight || currentImage.origH);
+  img.src = url;
+  document.getElementById('result-img-wrap').style.display = 'none';
+  setStatus('regen-status', 'success', 'Result accepted as new base image.');
+}
+
+// ═══════════════════════════════════════════════════
+//  EXPORT REPORT
+// ═══════════════════════════════════════════════════
+function exportReport() {
+  if (!currentImage) { alert('No image to export.'); return; }
+
+  const culture = document.getElementById('culture-select').value;
+  const ctx = CULTURAL_CONTEXT[culture];
+  const cultureName = ctx ? ctx.name : 'Unknown Culture';
+  const region = ctx ? ctx.region : '';
+
+  const annotHtml = annotations.map(a => `
+    <div style="display:flex;gap:20px;margin-bottom:30px;padding:20px;background:#1a1814;border-radius:8px;border-left:4px solid #c8922a;">
+      <div style="flex:1;">
+        <div style="font-size:0.7rem;font-family:monospace;color:#c8922a;margin-bottom:6px;">ANNOTATION ${a.num.toString().padStart(2,'0')} — ${a.mode === 'photo' ? 'PHOTO REFERENCE' : 'DESCRIPTION'}</div>
+        <p style="line-height:1.7;color:#e8e0d0;">${escapeHtml(a.desc)}</p>
+        <p style="font-size:0.75rem;color:#9a9080;font-family:monospace;margin-top:8px;">Region: ${Math.round(a.rect.width)}×${Math.round(a.rect.height)} at (${Math.round(a.rect.left)}, ${Math.round(a.rect.top)})</p>
+      </div>
+      ${a.refPhoto ? `<div style="flex:0 0 180px;"><div style="font-size:0.65rem;font-family:monospace;color:#9a9080;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.1em;">Ground Truth Photo</div><img src="${a.refPhoto}" style="width:180px;height:120px;object-fit:cover;border-radius:4px;border:1px solid #3a3428;"></div>` : ''}
+    </div>
+  `).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cultural Ground Report — ${cultureName}</title>
+<style>
+  body { background:#0f0e0b; color:#e8e0d0; font-family:Georgia,serif; max-width:960px; margin:0 auto; padding:40px 20px; }
+  h1 { color:#c8922a; font-weight:normal; font-size:1.6rem; border-bottom:1px solid #3a3428; padding-bottom:12px; }
+  h2 { font-weight:normal; font-size:1rem; color:#9a9080; letter-spacing:0.1em; text-transform:uppercase; margin:30px 0 15px; }
+  .meta { font-family:monospace; font-size:0.8rem; color:#9a9080; margin-bottom:30px; }
+  .ai-image { width:100%; max-height:500px; object-fit:contain; border-radius:6px; border:1px solid #3a3428; }
+  .hint { background:#1a1814; border:1px solid #3a3428; border-radius:6px; padding:16px; font-size:0.85rem; line-height:1.7; color:#9a9080; }
+</style>
+</head>
+<body>
+<h1>Kahani Ground — Cultural Grounding Report</h1>
+<div class="meta">
+  Culture: ${cultureName} | Region: ${region}<br>
+  Generated: ${new Date().toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'})}<br>
+  Annotations: ${annotations.length}
+</div>
+
+<h2>AI-Generated Image</h2>
+<img class="ai-image" src="${currentImage.url}" alt="AI generated image">
+
+${ctx ? `<div class="hint" style="margin-top:16px;"><strong style="color:#c8922a;">Cultural Context:</strong> ${ctx.hint}</div>` : ''}
+
+<h2>Cultural Corrections & Ground Truth</h2>
+${annotHtml || '<p style="color:#9a9080;">No annotations added.</p>'}
+
+<hr style="border-color:#3a3428;margin:40px 0;">
+<p style="font-size:0.75rem;color:#9a9080;font-family:monospace;">Generated with Kahani Ground — Cultural Image Grounding Tool | Sauramandala</p>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `kahani-ground-${culture || 'report'}-${Date.now()}.html`;
+  a.click();
+}
+
+// ═══════════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════════
+function setStatus(id, type, msg) {
+  const el = document.getElementById(id);
+  el.className = `status show ${type}`;
+  el.innerHTML = type === 'loading'
+    ? `<span class="spinner"></span>${msg}`
+    : msg;
+}
+
+function saveToken() {
+  hfToken = document.getElementById('hf-token').value.trim();
+  localStorage.setItem('hf_token', hfToken);
+  alert(hfToken ? 'HuggingFace token saved. Region inpainting is now enabled.' : 'Token cleared.');
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Init
+updateRegenInfo();
+</script>
+</body>
+</html>
