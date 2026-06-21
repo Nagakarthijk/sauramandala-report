@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OESN Provider</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="oesn-data.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #fafaf9; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .sheet { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+    .sheet.open { transform: translateY(0); }
+    .overlay { display: none; }
+    .overlay.show { display: block; }
+  </style>
+</head>
+<body class="bg-stone-50 min-h-screen">
+
+  <!-- Fixed header -->
+  <header class="fixed top-0 left-0 right-0 z-30 bg-white border-b border-stone-200 h-14 flex items-center justify-between px-4">
+    <span class="font-semibold text-stone-900">Rajan Creatives</span>
+    <span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full">Provider</span>
+  </header>
+
+  <!-- Tab bar -->
+  <nav class="fixed top-14 left-0 right-0 z-30 bg-white border-b border-stone-100 flex">
+    <button data-tab="active" class="flex-1 py-3 text-sm font-medium flex items-center justify-center gap-1.5 min-h-[44px]">
+      Active <span class="bg-amber-100 text-amber-700 text-xs rounded-full px-1.5 py-0.5 leading-none">2</span>
+    </button>
+    <button data-tab="rtc" class="flex-1 py-3 text-sm font-medium flex items-center justify-center gap-1.5 min-h-[44px]">
+      RTC <span class="bg-stone-100 text-stone-600 text-xs rounded-full px-1.5 py-0.5 leading-none">1</span>
+    </button>
+    <button data-tab="done" class="flex-1 py-3 text-sm font-medium flex items-center justify-center gap-1.5 min-h-[44px]">
+      Done <span class="bg-emerald-100 text-emerald-700 text-xs rounded-full px-1.5 py-0.5 leading-none">2</span>
+    </button>
+  </nav>
+
+  <!-- Content area -->
+  <main class="pt-28 pb-6 px-4">
+
+    <!-- Tab: Active -->
+    <div id="tab-active" class="tab-content">
+      <p class="text-xs font-medium text-stone-500 uppercase tracking-wide mb-3">Active Referrals</p>
+
+      <!-- Card 1 -->
+      <div class="bg-white rounded-xl shadow-sm p-4 mb-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="bg-stone-100 text-stone-700 text-xs rounded-full px-2 py-0.5">Agarbatti Mfg · Raichur</span>
+          <span class="bg-amber-50 text-amber-700 text-xs rounded-full px-2 py-0.5">Day 15</span>
+        </div>
+        <p class="font-semibold text-base text-stone-900">Label Design &amp; Print Files</p>
+        <p class="text-sm text-stone-400 mt-0.5">Created: Jun 6, 2026</p>
+        <p class="text-sm font-medium text-amber-700 mt-1">Commission pending: ₹180</p>
+        <div class="flex gap-2 mt-3">
+          <button onclick="openSheet('ref-001')" class="flex-1 border border-stone-300 text-stone-700 rounded-lg px-3 py-2 text-sm min-h-[44px] font-medium active:bg-stone-50">Update Status</button>
+          <button onclick="openBlockerSheet('ref-001')" class="flex-1 border border-red-300 text-red-600 rounded-lg px-3 py-2 text-sm min-h-[44px] font-medium active:bg-red-50">Flag Blocker</button>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="bg-white rounded-xl shadow-sm p-4 mb-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="bg-stone-100 text-stone-700 text-xs rounded-full px-2 py-0.5">Food Processing · Gulbarga</span>
+          <span class="bg-amber-50 text-amber-700 text-xs rounded-full px-2 py-0.5">Day 8</span>
+        </div>
+        <p class="font-semibold text-base text-stone-900">Label Design &amp; Print Files</p>
+        <p class="text-sm text-stone-400 mt-0.5">Created: Jun 13, 2026</p>
+        <p class="text-sm font-medium text-amber-700 mt-1">Commission pending: ₹150</p>
+        <div class="flex gap-2 mt-3">
+          <button onclick="openSheet('ref-002')" class="flex-1 border border-stone-300 text-stone-700 rounded-lg px-3 py-2 text-sm min-h-[44px] font-medium active:bg-stone-50">Update Status</button>
+          <button onclick="openBlockerSheet('ref-002')" class="flex-1 border border-red-300 text-red-600 rounded-lg px-3 py-2 text-sm min-h-[44px] font-medium active:bg-red-50">Flag Blocker</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: RTC -->
+    <div id="tab-rtc" class="tab-content">
+      <p class="text-xs font-medium text-stone-500 uppercase tracking-wide mb-3">Ready to Close — Awaiting Verification</p>
+
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="bg-amber-100 text-amber-800 text-xs rounded-full px-2 py-0.5">Handicrafts · Raichur</span>
+          <span class="text-stone-500 text-xs">Marked ready 2d ago</span>
+        </div>
+        <p class="font-semibold text-base text-stone-900">Market Linkage Facilitation</p>
+        <p class="text-sm text-stone-400 mt-0.5">RTC marked: Jun 19, 2026</p>
+        <p class="text-sm font-medium text-amber-700 mt-1">Commission: ₹250</p>
+        <p class="text-sm text-stone-500 mt-2 flex items-center gap-1.5">
+          <span>⏳</span> Awaiting agent verification
+        </p>
+      </div>
+    </div>
+
+    <!-- Tab: Done -->
+    <div id="tab-done" class="tab-content">
+      <p class="text-xs font-medium text-stone-500 uppercase tracking-wide mb-3">Completed Referrals</p>
+
+      <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 mb-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="bg-stone-100 text-stone-700 text-xs rounded-full px-2 py-0.5">Textile · Raichur</span>
+          <span class="bg-emerald-100 text-emerald-800 text-xs rounded-full px-2 py-0.5">✓ Completed</span>
+        </div>
+        <p class="font-semibold text-base text-stone-900">Label Design &amp; Print Files</p>
+        <p class="text-sm text-stone-400 mt-0.5">Completed: Jun 2, 2026</p>
+        <p class="text-sm font-medium text-emerald-700 mt-1">Commission earned: ₹180</p>
+      </div>
+
+      <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 mb-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="bg-stone-100 text-stone-700 text-xs rounded-full px-2 py-0.5">Food Processing · Raichur</span>
+          <span class="bg-emerald-100 text-emerald-800 text-xs rounded-full px-2 py-0.5">✓ Completed</span>
+        </div>
+        <p class="font-semibold text-base text-stone-900">FSSAI Documentation Support</p>
+        <p class="text-sm text-stone-400 mt-0.5">Completed: May 28, 2026</p>
+        <p class="text-sm font-medium text-emerald-700 mt-1">Commission earned: ₹120</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Overlay -->
+  <div id="overlay" class="overlay fixed inset-0 bg-black/50 z-40" onclick="closeSheet()"></div>
+
+  <!-- Bottom sheet: Referral Detail -->
+  <div id="referral-sheet" class="sheet fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl z-50 max-h-[90vh] overflow-y-auto">
+    <div class="w-12 h-1.5 bg-stone-300 rounded-full mx-auto mt-3 mb-4"></div>
+    <button onclick="closeSheet()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-600 text-xl leading-none">&times;</button>
+
+    <div class="px-4 pb-8">
+      <!-- Sheet header -->
+      <div class="flex items-start justify-between gap-2 mb-1">
+        <h2 id="sheet-title" class="font-semibold text-lg text-stone-900 leading-tight pr-8">Label Design &amp; Print Files</h2>
+        <span id="sheet-status-badge" class="shrink-0 bg-red-100 text-red-700 text-xs rounded-full px-2 py-0.5 mt-0.5">OVERDUE</span>
+      </div>
+      <p id="sheet-meta" class="text-sm text-stone-400 mb-4">Created: Jun 6, 2026 · Day 15</p>
+
+      <div class="text-sm text-stone-600 mb-1"><span class="font-medium text-stone-700">Sector:</span> Agarbatti manufacturing · Raichur</div>
+      <div class="text-sm text-stone-600 mb-4"><span class="font-medium text-stone-700">Commission:</span> ₹180 on agent verification</div>
+
+      <!-- Completion Criteria -->
+      <div class="border-t border-stone-100 pt-4 mb-4">
+        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Completion Criteria</p>
+        <p class="text-sm text-stone-600 italic">"Final print-ready label files (PDF + AI format) delivered to entrepreneur and confirmed usable by them"</p>
+      </div>
+
+      <!-- Timeline -->
+      <div class="border-t border-stone-100 pt-4 mb-4">
+        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">Timeline</p>
+        <div class="space-y-2">
+          <div class="flex items-center gap-3 text-sm">
+            <span class="w-2 h-2 rounded-full bg-stone-700 shrink-0"></span>
+            <span class="text-stone-500 w-24">Created</span>
+            <span class="text-stone-800">Jun 6</span>
+          </div>
+          <div class="flex items-center gap-3 text-sm">
+            <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+            <span class="text-stone-500 w-24">In Progress</span>
+            <span class="text-stone-800">Jun 7</span>
+          </div>
+          <div class="flex items-center gap-3 text-sm">
+            <span class="w-2 h-2 rounded-full bg-stone-200 shrink-0"></span>
+            <span class="text-stone-400 w-24">RTC</span>
+            <span class="text-stone-400">—</span>
+          </div>
+          <div class="flex items-center gap-3 text-sm">
+            <span class="w-2 h-2 rounded-full bg-stone-200 shrink-0"></span>
+            <span class="text-stone-400 w-24">Completed</span>
+            <span class="text-stone-400">—</span>
+          </div>
+        </div>
+        <p class="text-sm text-red-500 mt-3 flex items-center gap-1.5">⚠ Deadline: Jun 18 · 3 days overdue</p>
+      </div>
+
+      <!-- Mark RTC section -->
+      <div class="border-t border-stone-100 pt-4 mb-4">
+        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">Mark Ready to Close</p>
+        <button id="btn-rtc" onclick="toggleRTCForm()" class="w-full bg-emerald-600 text-white font-medium rounded-xl py-3 text-sm min-h-[44px] active:bg-emerald-700">✓ Mark Ready to Close</button>
+
+        <!-- RTC form (hidden by default) -->
+        <div id="rtc-form" class="hidden mt-4 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1.5">Notes (describe what was delivered):</label>
+            <textarea id="rtc-notes" rows="4" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none" placeholder="Describe what was delivered..."></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1.5">Photo evidence:</label>
+            <div class="flex gap-2">
+              <label class="flex-1 flex items-center justify-center gap-1.5 border border-stone-300 rounded-lg py-2.5 text-sm text-stone-600 min-h-[44px] cursor-pointer active:bg-stone-50">
+                📷 Take Photo
+                <input type="file" accept="image/*" capture="environment" class="hidden" onchange="previewPhoto(this)">
+              </label>
+              <label class="flex-1 flex items-center justify-center gap-1.5 border border-stone-300 rounded-lg py-2.5 text-sm text-stone-600 min-h-[44px] cursor-pointer active:bg-stone-50">
+                🖼 Choose File
+                <input type="file" accept="image/*" class="hidden" onchange="previewPhoto(this)">
+              </label>
+            </div>
+            <img id="photo-preview" class="hidden mt-2 rounded-lg w-full object-cover max-h-40" alt="Photo preview">
+          </div>
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" id="rtc-confirm" onchange="toggleSubmitBtn()" class="mt-0.5 w-4 h-4 accent-emerald-600">
+            <span class="text-sm text-stone-700">I confirm this service has been delivered per the completion criteria</span>
+          </label>
+          <button id="btn-submit-rtc" onclick="submitRTC()" disabled class="w-full bg-emerald-600 text-white font-medium rounded-xl py-3 text-sm min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed active:bg-emerald-700">Submit</button>
+        </div>
+      </div>
+
+      <!-- Flag Blocker section -->
+      <div class="border-t border-stone-100 pt-4">
+        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">Flag Blocker</p>
+        <button onclick="toggleBlockerForm()" class="w-full border border-red-300 text-red-600 font-medium rounded-xl py-3 text-sm min-h-[44px] active:bg-red-50">⚑ Flag Blocker</button>
+
+        <!-- Blocker form (hidden by default) -->
+        <div id="blocker-form" class="hidden mt-4 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1.5">What's blocking this?</label>
+            <textarea id="blocker-reason" rows="3" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent resize-none" placeholder="Describe the blocker..."></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1.5">What's needed to unblock?</label>
+            <textarea id="blocker-needed" rows="3" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent resize-none" placeholder="What support or action is needed?"></textarea>
+          </div>
+          <button onclick="submitBlocker()" class="w-full bg-red-600 text-white font-medium rounded-xl py-3 text-sm min-h-[44px] active:bg-red-700">Submit Blocker Report</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-stone-900 text-white text-sm px-4 py-3 rounded-xl shadow-lg transition-opacity duration-300 opacity-0 pointer-events-none z-50 whitespace-nowrap">
+    Message here
+  </div>
+
+  <script>
+    let currentReferralId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof OESN !== 'undefined') OESN.init();
+
+      document.querySelectorAll('[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
+
+      switchTab('active');
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      }
+    });
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      document.querySelectorAll('[data-tab]').forEach(btn => {
+        const isActive = btn.dataset.tab === name;
+        btn.classList.toggle('text-amber-600', isActive);
+        btn.classList.toggle('border-b-2', isActive);
+        btn.classList.toggle('border-amber-600', isActive);
+        btn.classList.toggle('text-stone-500', !isActive);
+      });
+    }
+
+    function openSheet(referralId) {
+      currentReferralId = referralId;
+      resetSheetForms();
+      document.getElementById('referral-sheet').classList.add('open');
+      document.getElementById('overlay').classList.add('show');
+    }
+
+    function openBlockerSheet(referralId) {
+      currentReferralId = referralId;
+      resetSheetForms();
+      document.getElementById('blocker-form').classList.remove('hidden');
+      document.getElementById('referral-sheet').classList.add('open');
+      document.getElementById('overlay').classList.add('show');
+    }
+
+    function closeSheet() {
+      document.getElementById('referral-sheet').classList.remove('open');
+      document.getElementById('overlay').classList.remove('show');
+      setTimeout(resetSheetForms, 300);
+    }
+
+    function resetSheetForms() {
+      document.getElementById('rtc-form').classList.add('hidden');
+      document.getElementById('blocker-form').classList.add('hidden');
+      document.getElementById('rtc-notes').value = '';
+      document.getElementById('blocker-reason').value = '';
+      document.getElementById('blocker-needed').value = '';
+      document.getElementById('rtc-confirm').checked = false;
+      document.getElementById('btn-submit-rtc').disabled = true;
+      const preview = document.getElementById('photo-preview');
+      preview.classList.add('hidden');
+      preview.src = '';
+    }
+
+    function toggleRTCForm() {
+      document.getElementById('rtc-form').classList.toggle('hidden');
+    }
+
+    function toggleBlockerForm() {
+      document.getElementById('blocker-form').classList.toggle('hidden');
+    }
+
+    function toggleSubmitBtn() {
+      const checked = document.getElementById('rtc-confirm').checked;
+      document.getElementById('btn-submit-rtc').disabled = !checked;
+    }
+
+    function previewPhoto(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const preview = document.getElementById('photo-preview');
+          preview.src = e.target.result;
+          preview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function submitRTC() {
+      const notes = document.getElementById('rtc-notes').value.trim();
+      if (typeof OESN !== 'undefined') {
+        OESN.updateReferral(currentReferralId, {
+          status: 'RTC',
+          rtc_note: notes,
+          rtc_date: new Date().toISOString()
+        });
+      }
+      closeSheet();
+      showToast('Marked ready to close. Awaiting agent verification.');
+    }
+
+    function submitBlocker() {
+      const reason = document.getElementById('blocker-reason').value.trim();
+      const needed = document.getElementById('blocker-needed').value.trim();
+      if (typeof OESN !== 'undefined') {
+        OESN.updateReferral(currentReferralId, {
+          status: 'BLOCKED',
+          blocker_reason: reason,
+          blocker_needed: needed
+        });
+      }
+      closeSheet();
+      showToast('Blocker reported. Agent has been notified.');
+    }
+
+    function showToast(msg, duration = 3000) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.remove('opacity-0');
+      t.classList.add('opacity-100');
+      setTimeout(() => {
+        t.classList.remove('opacity-100');
+        t.classList.add('opacity-0');
+      }, duration);
+    }
+  </script>
+
+</body>
+</html>

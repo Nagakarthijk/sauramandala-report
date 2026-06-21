@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OESN Programme Dashboard</title>
+  <link rel="manifest" href="manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="oesn-data.js" onerror="window.OESN=null"></script>
+  <style>
+    :root {
+      --ground:  #f5f4f1;
+      --text:    #1c1917;
+      --accent:  #d97706;
+      --accent2: #059669;
+      --alert:   #dc2626;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--ground); color: var(--text); }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .tab-btn { border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
+    .tab-btn.active { color: #d97706; border-bottom-color: #d97706; }
+    .bar-track { background: #e7e5e4; border-radius: 999px; height: 6px; overflow: hidden; }
+    .bar-fill  { height: 100%; border-radius: 999px; background: #d97706; transition: width .5s ease-out; }
+    .bar-fill.muted { background: #a8a29e; }
+    .bar-fill.warn  { background: #f59e0b; }
+    .toast {
+      position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(8px);
+      background: #1c1917; color: #fff; font-size: .8125rem; font-weight: 600;
+      padding: .6rem 1.25rem; border-radius: 999px; opacity: 0;
+      transition: opacity .25s, transform .25s; pointer-events: none; z-index: 100;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .pill { display: inline-flex; align-items: center; gap: .35rem; font-size: .75rem; font-weight: 600; padding: .25rem .75rem; border-radius: 999px; }
+    .pill-red   { background: #fee2e2; color: #991b1b; }
+    .pill-amber { background: #fef3c7; color: #92400e; }
+    .pill-green { background: #d1fae5; color: #065f46; }
+    .agent-bar { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; }
+    .agent-bar-label { font-size: .7rem; color: #78716c; width: 3.5rem; text-align: right; flex-shrink: 0; }
+    .agent-bar-track { flex: 1; background: #e7e5e4; border-radius: 999px; height: 10px; overflow: hidden; }
+    .agent-bar-fill  { height: 100%; background: #d97706; border-radius: 999px; }
+    .agent-bar-count { font-size: .75rem; font-weight: 700; color: #1c1917; width: 1.5rem; flex-shrink: 0; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up { animation: fadeUp .3s ease-out both; }
+    @media (prefers-reduced-motion: reduce) { .fade-up { animation: none; } }
+    main { padding-top: 7rem; }
+    @media (min-width: 768px) { main { padding-top: 6rem; } }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- ── FIXED HEADER ── -->
+  <header class="fixed top-0 left-0 right-0 z-50 bg-[#f5f4f1] border-b border-stone-200">
+    <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+      <div class="flex items-baseline gap-2.5">
+        <span class="font-bold text-amber-600 text-base tracking-tight">OESN</span>
+        <span class="text-stone-400 text-sm">Programme Dashboard</span>
+      </div>
+      <div class="text-right">
+        <div class="text-sm font-semibold text-stone-800 leading-tight">Shreya Mehta</div>
+        <div class="text-xs text-stone-400 leading-tight">Anant Foundation</div>
+      </div>
+    </div>
+    <!-- Tab nav -->
+    <div class="max-w-5xl mx-auto px-4 flex gap-0 border-t border-stone-200 overflow-x-auto">
+      <button class="tab-btn active px-5 py-2.5 text-sm font-semibold text-stone-600 shrink-0 bg-transparent border-0 cursor-pointer focus:outline-none" onclick="switchTab('overview', this)">Overview</button>
+      <button class="tab-btn px-5 py-2.5 text-sm font-semibold text-stone-600 shrink-0 bg-transparent border-0 cursor-pointer focus:outline-none" onclick="switchTab('agents', this)">Agents</button>
+      <button class="tab-btn px-5 py-2.5 text-sm font-semibold text-stone-600 shrink-0 bg-transparent border-0 cursor-pointer focus:outline-none" onclick="switchTab('credits', this)">Credits</button>
+    </div>
+  </header>
+
+  <!-- ── MAIN ── -->
+  <main class="max-w-5xl mx-auto px-4 pb-16">
+
+    <!-- ══ TAB 1: OVERVIEW ══ -->
+    <div id="tab-overview" class="tab-content active fade-up">
+
+      <!-- Programme hero -->
+      <div class="bg-stone-900 text-white rounded-2xl p-6 mb-6">
+        <p class="text-xs font-semibold text-amber-400 uppercase tracking-widest mb-1">Active Programme</p>
+        <h1 class="text-lg font-bold leading-snug mb-0.5">Anant Foundation Entrepreneurship Programme</h1>
+        <p class="text-stone-400 text-sm mb-5">Month 6 of 12 · Raichur District · Karnataka</p>
+        <div class="bar-track mb-2" style="background:#44403c">
+          <div class="bar-fill" id="util-bar" style="width:67.7%"></div>
+        </div>
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <span class="mono text-sm font-medium text-white">
+            <span id="util-spent">₹8,12,000</span>
+            <span class="text-stone-500"> of </span>
+            <span id="util-total">₹12,00,000</span>
+            <span class="text-stone-400 text-xs ml-1.5">utilised · 67.7%</span>
+          </span>
+          <span class="text-stone-500 text-xs">On track for Month 9 full utilisation</span>
+        </div>
+      </div>
+
+      <!-- Key metrics -->
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-stone-100">
+          <div class="mono text-2xl font-semibold text-stone-900 mb-0.5" id="m-registered">51</div>
+          <div class="text-xs text-stone-400">entrepreneurs registered</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-stone-100">
+          <div class="mono text-2xl font-semibold text-stone-900 mb-0.5" id="m-diagnostics">48</div>
+          <div class="text-xs text-stone-400">diagnostics completed</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-stone-100">
+          <div class="mono text-2xl font-semibold text-stone-900 mb-0.5" id="m-outcomes">43</div>
+          <div class="text-xs text-stone-400">outcomes verified</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-stone-100">
+          <div class="mono text-2xl font-semibold text-stone-900 mb-0.5" id="m-salary">₹40,000</div>
+          <div class="text-xs text-stone-400">agent salary paid this month</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-stone-100">
+          <div class="mono text-2xl font-semibold text-amber-600 mb-0.5" id="m-commission">₹23,400</div>
+          <div class="text-xs text-stone-400">commission agents earned</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-4 border border-stone-100">
+          <div class="mono text-2xl font-semibold text-red-600 mb-0.5" id="m-overdue">1</div>
+          <div class="text-xs text-stone-400">referral overdue</div>
+        </div>
+      </div>
+
+      <!-- Service credits summary -->
+      <div class="bg-white rounded-xl shadow-sm border border-stone-100 p-5 mb-6">
+        <h2 class="text-sm font-semibold text-stone-800 mb-4">Service Credits</h2>
+        <div class="space-y-3.5" id="credits-summary"></div>
+      </div>
+
+      <!-- Status pills -->
+      <div class="flex flex-wrap gap-2 mb-6">
+        <span class="pill pill-red">Overdue: 1</span>
+        <span class="pill pill-amber">Pending empanelment: 2</span>
+        <span class="pill pill-green">Active agents: 1</span>
+      </div>
+
+      <!-- Escalation inbox -->
+      <div class="mb-8">
+        <div class="flex items-center gap-2 mb-3">
+          <h2 class="text-sm font-semibold text-stone-800">Escalation Inbox</h2>
+          <span class="bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full leading-none" id="escalation-count">1</span>
+        </div>
+
+        <div id="escalation-card" class="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div class="flex items-start gap-3 mb-3">
+            <span class="text-red-500 mt-0.5 text-base leading-none shrink-0">⚑</span>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-stone-900 text-sm">Provider Exception Request</div>
+              <div class="text-xs text-stone-400 mb-2">Phiba · 48 hours ago</div>
+              <p class="text-sm text-stone-700 leading-relaxed">
+                Branding provider exception request — non-empanelled provider Creativix Studio requested for Kavitha's packaging redesign.
+              </p>
+            </div>
+          </div>
+          <div class="flex gap-2 pt-1">
+            <button onclick="resolveEscalation('approve')"
+              class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors cursor-pointer">
+              Approve
+            </button>
+            <button onclick="resolveEscalation('reject')"
+              class="flex-1 border border-red-400 text-red-600 hover:bg-red-100 text-sm font-semibold py-2 px-4 rounded-lg transition-colors cursor-pointer">
+              Reject
+            </button>
+          </div>
+        </div>
+
+        <div id="escalation-resolved" class="hidden bg-stone-100 border border-stone-200 rounded-xl p-4 text-center text-sm text-stone-400 font-medium">
+          No open escalations
+        </div>
+      </div>
+
+      <!-- Timeline note -->
+      <p class="text-stone-400 text-sm">Next milestone: Month 6 review — July 15, 2026</p>
+    </div>
+
+    <!-- ══ TAB 2: AGENTS ══ -->
+    <div id="tab-agents" class="tab-content fade-up">
+
+      <h2 class="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-4">Field Agents · 1 active</h2>
+
+      <!-- Agent card -->
+      <div class="bg-white rounded-xl shadow-sm border border-stone-100 p-5 mb-4">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="w-11 h-11 rounded-full bg-amber-600 flex items-center justify-center text-white font-bold text-lg shrink-0" aria-label="Agent Phiba">P</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-stone-900">Phiba</div>
+            <div class="text-xs text-stone-400 mb-2">Independent Agent · Raichur</div>
+            <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-stone-500">
+              <span><span class="mono font-semibold text-stone-800">51</span> entrepreneurs</span>
+              <span><span class="mono font-semibold text-stone-800">8</span> active referrals</span>
+              <span><span class="mono font-semibold text-amber-600">₹23,400</span> earned this month</span>
+            </div>
+          </div>
+        </div>
+        <div class="text-xs text-stone-500 mb-4 border-t border-stone-100 pt-3">
+          Referrals: <span class="font-semibold text-stone-700">3 in progress</span> · <span class="font-semibold text-stone-700">1 RTC</span> · <span class="font-semibold text-red-600">1 overdue</span>
+        </div>
+        <div class="flex gap-2">
+          <button class="flex-1 border border-stone-200 text-stone-700 text-sm font-semibold py-2 rounded-lg hover:bg-stone-50 transition-colors cursor-pointer">
+            View Activity
+          </button>
+          <button class="flex-1 border border-stone-200 text-stone-700 text-sm font-semibold py-2 rounded-lg hover:bg-stone-50 transition-colors cursor-pointer">
+            Message
+          </button>
+        </div>
+      </div>
+
+      <!-- Weekly chart -->
+      <div class="bg-white rounded-xl shadow-sm border border-stone-100 p-5 mb-4">
+        <h3 class="text-sm font-semibold text-stone-700 mb-4">Weekly referral activity</h3>
+        <div class="space-y-2.5">
+          <div class="agent-bar">
+            <span class="agent-bar-label">Week 1</span>
+            <div class="agent-bar-track"><div class="agent-bar-fill" style="width:66.7%"></div></div>
+            <span class="agent-bar-count">8</span>
+          </div>
+          <div class="agent-bar">
+            <span class="agent-bar-label">Week 2</span>
+            <div class="agent-bar-track"><div class="agent-bar-fill" style="width:50%"></div></div>
+            <span class="agent-bar-count">6</span>
+          </div>
+          <div class="agent-bar">
+            <span class="agent-bar-label">Week 3</span>
+            <div class="agent-bar-track"><div class="agent-bar-fill" style="width:100%"></div></div>
+            <span class="agent-bar-count">12</span>
+          </div>
+          <div class="agent-bar">
+            <span class="agent-bar-label">Week 4</span>
+            <div class="agent-bar-track"><div class="agent-bar-fill" style="width:75%; opacity:.55"></div></div>
+            <span class="agent-bar-count" style="color:#a8a29e">9</span>
+          </div>
+        </div>
+        <p class="text-xs text-stone-400 mt-3">Week 4 in progress</p>
+      </div>
+
+      <!-- Salary card -->
+      <div class="bg-white rounded-xl shadow-sm border border-stone-100 p-5">
+        <h3 class="text-sm font-semibold text-stone-700 mb-4">Salary &amp; Commission — June 2026</h3>
+        <div class="space-y-2.5 text-sm">
+          <div class="flex justify-between">
+            <span class="text-stone-500">Fixed salary</span>
+            <span class="mono font-semibold text-stone-800">₹8,000</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-stone-500">Performance bonus (verified outcomes)</span>
+            <span class="mono font-semibold text-stone-800">₹2,400</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-stone-500">Service commission (from providers)</span>
+            <span class="mono font-semibold text-stone-800">₹13,000</span>
+          </div>
+          <div class="flex justify-between border-t border-stone-100 pt-2.5">
+            <span class="font-semibold text-stone-800">Total earned</span>
+            <span class="mono font-bold text-amber-600">₹23,400</span>
+          </div>
+        </div>
+        <p class="text-xs text-stone-400 mt-4">Next payout: June 30, 2026</p>
+      </div>
+    </div>
+
+    <!-- ══ TAB 3: CREDITS ══ -->
+    <div id="tab-credits" class="tab-content fade-up">
+
+      <h2 class="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-4">Service Credit Usage</h2>
+
+      <div class="space-y-4 mb-5" id="credits-detail"></div>
+
+      <!-- Reallocation note -->
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <p class="text-sm text-stone-700 leading-relaxed mb-3">
+          💡 Unit Costing credits may exhaust by Month 9. Consider reallocating 10 credits from Loan Facilitation.
+        </p>
+        <button onclick="requestReallocation()"
+          class="border border-amber-500 text-amber-700 hover:bg-amber-100 text-sm font-semibold py-2 px-4 rounded-lg transition-colors cursor-pointer">
+          Request Reallocation
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // ── Seed data ────────────────────────────────────────────────────────────
+    const FALLBACK = {
+      utilised: 812000, budget: 1200000,
+      registered: 51, diagnostics: 48, outcomes: 43,
+      salary: 40000, commission: 23400, overdue: 1
+    };
+
+    const CREDITS_DATA = [
+      { name: 'Unit Costing',       used: 34, total: 50, burnRate: 6,  exhaustMonth: 9,  warn: false, muted: false,
+        recent: ['Vinod Sharma — Jun 19', 'Meera Sharma — Jun 15'] },
+      { name: 'FSSAI Registration', used: 24, total: 40, burnRate: 4,  exhaustMonth: 10, warn: false, muted: false,
+        recent: [] },
+      { name: 'Market Linkage',     used: 19, total: 40, burnRate: 3,  exhaustMonth: 13, warn: true,  muted: false,
+        note: 'May need reallocation', recent: [] },
+      { name: 'Loan Facilitation',  used: 12, total: 30, burnRate: 2,  exhaustMonth: 15, warn: false, muted: true,
+        note: 'Underutilised — review target', recent: [] }
+    ];
+
+    function getData() {
+      try {
+        if (window.OESN && typeof OESN.init === 'function') {
+          OESN.init();
+          if (typeof OESN.getProgramme === 'function') {
+            const p = OESN.getProgramme();
+            if (p) return p;
+          }
+        }
+      } catch (e) {}
+      return FALLBACK;
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function fmtRupee(n) {
+      return '₹' + n.toLocaleString('en-IN');
+    }
+
+    // ── Render credits summary (overview tab) ────────────────────────────────
+    function renderCreditsSummary() {
+      const el = document.getElementById('credits-summary');
+      el.innerHTML = CREDITS_DATA.map(function(c) {
+        const pct = Math.round((c.used / c.total) * 1000) / 10;
+        const fillClass = 'bar-fill' + (c.muted ? ' muted' : c.warn ? ' warn' : '');
+        return '<div>' +
+          '<div class="flex justify-between text-xs mb-1.5">' +
+          '<span class="font-medium text-stone-700">' + c.name + '</span>' +
+          '<span class="text-stone-400">' + c.used + ' of ' + c.total + ' used · ' + pct + '%</span>' +
+          '</div>' +
+          '<div class="bar-track"><div class="' + fillClass + '" style="width:' + pct + '%"></div></div>' +
+          '</div>';
+      }).join('');
+    }
+
+    // ── Render credits detail (credits tab) ──────────────────────────────────
+    function renderCreditsDetail() {
+      const el = document.getElementById('credits-detail');
+      el.innerHTML = CREDITS_DATA.map(function(c) {
+        const pct = Math.round((c.used / c.total) * 1000) / 10;
+        const remaining = c.total - c.used;
+        const fillClass = 'bar-fill' + (c.muted ? ' muted' : c.warn ? ' warn' : '');
+        const recentHTML = (c.recent && c.recent.length)
+          ? '<div class="mt-3 space-y-1">' + c.recent.map(function(r) {
+              return '<div class="text-xs text-stone-400">↳ ' + r + '</div>';
+            }).join('') + '</div>'
+          : '';
+        const noteHTML = c.note
+          ? '<div class="text-xs text-amber-700 mt-2 font-medium">' + c.note + '</div>'
+          : '';
+        return '<div class="bg-white rounded-xl shadow-sm border border-stone-100 p-5">' +
+          '<div class="flex items-start justify-between gap-2 mb-3">' +
+          '<h3 class="font-semibold text-stone-900 text-sm">' + c.name + '</h3>' +
+          '<span class="mono text-xs font-semibold text-stone-400 shrink-0">' + c.used + ' / ' + c.total + '</span>' +
+          '</div>' +
+          '<div class="bar-track mb-3"><div class="' + fillClass + '" style="width:' + pct + '%"></div></div>' +
+          '<div class="grid grid-cols-3 gap-3 text-xs text-stone-400">' +
+          '<div><div class="mono font-semibold text-stone-800 text-sm">' + remaining + '</div><div>remaining</div></div>' +
+          '<div><div class="mono font-semibold text-stone-800 text-sm">~' + c.burnRate + '/mo</div><div>burn rate</div></div>' +
+          '<div><div class="mono font-semibold text-stone-800 text-sm">Month ' + c.exhaustMonth + '</div><div>projected end</div></div>' +
+          '</div>' +
+          noteHTML + recentHTML +
+          '</div>';
+      }).join('');
+    }
+
+    // ── Render overview numbers ──────────────────────────────────────────────
+    function renderOverview() {
+      const d = getData();
+      document.getElementById('m-registered').textContent = d.registered;
+      document.getElementById('m-diagnostics').textContent = d.diagnostics;
+      document.getElementById('m-outcomes').textContent = d.outcomes;
+      document.getElementById('m-salary').textContent = fmtRupee(d.salary);
+      document.getElementById('m-commission').textContent = fmtRupee(d.commission);
+      document.getElementById('m-overdue').textContent = d.overdue;
+      document.getElementById('util-spent').textContent = fmtRupee(d.utilised);
+      document.getElementById('util-total').textContent = fmtRupee(d.budget);
+      const pct = ((d.utilised / d.budget) * 100).toFixed(1);
+      document.getElementById('util-bar').style.width = pct + '%';
+    }
+
+    // ── Tab switching ────────────────────────────────────────────────────────
+    function switchTab(id, btn) {
+      document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      var panel = document.getElementById('tab-' + id);
+      panel.classList.add('active');
+      panel.classList.remove('fade-up');
+      void panel.offsetWidth;
+      panel.classList.add('fade-up');
+      if (btn) btn.classList.add('active');
+    }
+
+    // ── Escalation ───────────────────────────────────────────────────────────
+    function resolveEscalation(action) {
+      var label = action === 'approve' ? 'Approve' : 'Reject';
+      var confirmed = window.confirm(label + ' this exception request?');
+      if (!confirmed) return;
+      document.getElementById('escalation-card').classList.add('hidden');
+      document.getElementById('escalation-resolved').classList.remove('hidden');
+      document.getElementById('escalation-count').classList.add('hidden');
+      showToast('Decision recorded');
+    }
+
+    // ── Reallocation ─────────────────────────────────────────────────────────
+    function requestReallocation() {
+      showToast('Reallocation request submitted');
+    }
+
+    // ── Toast ────────────────────────────────────────────────────────────────
+    var _toastTimer = null;
+    function showToast(msg) {
+      var t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      if (_toastTimer) clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2800);
+    }
+
+    // ── Init ─────────────────────────────────────────────────────────────────
+    renderOverview();
+    renderCreditsSummary();
+    renderCreditsDetail();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(function() {});
+    }
+  </script>
+</body>
+</html>
