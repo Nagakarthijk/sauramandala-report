@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OESN Field Agent</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="oesn-data.js"></script>
+  <style>
+    :root {
+      --ground: #FAFAF8;
+      --text: #1C1917;
+      --accent: #D97706;
+      --accent-2: #059669;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--ground); color: var(--text); }
+    .mono { font-family: 'DM Mono', monospace; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .sheet { transform: translateY(100%); transition: transform 0.3s cubic-bezier(.32,.72,0,1); }
+    .sheet.open { transform: translateY(0); }
+    .overlay { display: none; }
+    .overlay.show { display: block; }
+    .scroll-x::-webkit-scrollbar { display: none; }
+    .scroll-x { -ms-overflow-style: none; scrollbar-width: none; }
+    @media (prefers-reduced-motion: reduce) { .sheet { transition: none; } }
+  </style>
+</head>
+<body class="min-h-screen">
+
+<!-- Overlay -->
+<div id="overlay" class="overlay fixed inset-0 bg-black/50 z-40" onclick="closeSheets()"></div>
+
+<!-- Referral Sheet -->
+<div id="ref-sheet" class="sheet fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-h-[90vh] overflow-y-auto">
+  <div class="w-12 h-1.5 bg-stone-300 rounded-full mx-auto mt-3"></div>
+  <div class="flex items-start justify-between px-5 pt-3 pb-1">
+    <div class="flex-1 pr-3">
+      <div id="rs-title" class="text-base font-bold text-stone-900 leading-snug"></div>
+      <div id="rs-meta" class="text-xs text-stone-400 mt-0.5"></div>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <span id="rs-badge" class="text-[11px] font-semibold px-2.5 py-1 rounded-full"></span>
+      <button onclick="closeSheets()" class="text-stone-400 p-1" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="rs-body" class="px-5 pb-10 space-y-4 text-sm"></div>
+</div>
+
+<!-- Entrepreneur Sheet -->
+<div id="ent-sheet" class="sheet fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-h-[90vh] overflow-y-auto">
+  <div class="w-12 h-1.5 bg-stone-300 rounded-full mx-auto mt-3"></div>
+  <div class="flex items-start justify-between px-5 pt-3 pb-1">
+    <div>
+      <div id="es-name" class="text-base font-bold text-stone-900"></div>
+      <div id="es-sub" class="text-xs text-stone-400 mt-0.5"></div>
+    </div>
+    <button onclick="closeSheets()" class="text-stone-400 p-1 mt-0.5" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div id="es-body" class="px-5 pb-10 space-y-4 text-sm"></div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-stone-200 flex" style="padding-bottom:env(safe-area-inset-bottom)">
+  <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[52px] text-amber-700" aria-label="Dashboard">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1v-9.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 21v-8h6v8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    <span class="text-[10px] font-semibold">Dashboard</span>
+  </button>
+  <button onclick="switchTab('people')" id="nav-people" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[52px] text-stone-400" aria-label="People">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <span class="text-[10px] font-semibold">People</span>
+  </button>
+  <button onclick="switchTab('referrals')" id="nav-referrals" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[52px] text-stone-400" aria-label="Referrals">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="text-[10px] font-semibold">Referrals</span>
+  </button>
+  <button onclick="switchTab('earn')" id="nav-earn" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[52px] text-stone-400" aria-label="Earn">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><text x="12" y="16.5" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor" font-family="serif">₹</text></svg>
+    <span class="text-[10px] font-semibold">Earn</span>
+  </button>
+  <button onclick="switchTab('tools')" id="nav-tools" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[52px] text-stone-400" aria-label="Tools">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3-3a6 6 0 01-7.5 7.5l-5 5A2.12 2.12 0 014.2 15.7L9.2 10.7A6 6 0 0114.7 6.3z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="text-[10px] font-semibold">Tools</span>
+  </button>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 1: DASHBOARD -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-dashboard" class="tab-content active overflow-y-auto" style="height:100dvh;padding-bottom:72px;">
+  <div class="px-4 pt-5 pb-2">
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <h1 class="text-xl font-bold text-stone-900">Good morning, Arjun</h1>
+        <p class="text-sm text-stone-400 mt-0.5">Saturday, 21 June</p>
+      </div>
+      <button class="relative text-stone-400 hover:text-stone-700 p-1 mt-0.5" aria-label="Notifications">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="absolute top-0.5 right-0.5 w-2 h-2 bg-amber-500 rounded-full"></span>
+      </button>
+    </div>
+
+    <!-- Portfolio pills -->
+    <div id="dash-portfolio" class="flex gap-2 overflow-x-auto scroll-x pb-1 mb-2"></div>
+    <!-- Referral status pills -->
+    <div id="dash-ref-status" class="flex gap-2 overflow-x-auto scroll-x pb-1"></div>
+  </div>
+
+  <!-- Priority cards -->
+  <div class="px-4 mt-4">
+    <p class="text-xs text-stone-400 uppercase tracking-widest font-medium mb-3">This week</p>
+    <div id="priority-cards" class="space-y-2.5"></div>
+  </div>
+
+  <!-- Earnings nudge -->
+  <div class="px-4 mt-5">
+    <div id="dash-earnings-card" class="bg-amber-50 border border-amber-200 rounded-xl p-4 cursor-pointer" onclick="switchTab('earn')"></div>
+  </div>
+
+  <!-- Dormant reconnect -->
+  <div class="px-4 mt-5">
+    <div class="flex items-center gap-2 mb-2.5">
+      <p class="text-xs text-stone-400 uppercase tracking-widest font-medium">Reconnect</p>
+      <span id="dormant-count" class="mono text-[11px] font-medium bg-stone-200 text-stone-600 rounded-full px-2 py-0.5"></span>
+    </div>
+    <div id="dormant-list" class="space-y-2.5"></div>
+  </div>
+
+  <!-- Provider updates -->
+  <div class="px-4 mt-5 mb-4">
+    <p class="text-xs text-stone-400 uppercase tracking-widest font-medium mb-2.5">Provider updates</p>
+    <div id="provider-updates" class="space-y-2"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 2: PEOPLE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-people" class="tab-content overflow-y-auto" style="height:100dvh;padding-bottom:72px;">
+  <div class="px-4 pt-5">
+    <div class="relative mb-3">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 w-4 h-4 pointer-events-none" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <input id="people-search" type="search" placeholder="Search by name or business…" oninput="renderPeople()"
+        class="w-full bg-stone-100 rounded-xl pl-9 pr-4 py-2.5 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+    <div class="flex gap-2 overflow-x-auto scroll-x pb-2">
+      <button onclick="setPeopleFilter('All',this)" class="pf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold bg-amber-500 text-white">All</button>
+      <button onclick="setPeopleFilter('active',this)" class="pf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold bg-stone-100 text-stone-600">Active</button>
+      <button onclick="setPeopleFilter('dormant',this)" class="pf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold bg-stone-100 text-stone-600">Dormant</button>
+      <button onclick="setPeopleFilter('pipeline',this)" class="pf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold bg-stone-100 text-stone-600">Pipeline</button>
+    </div>
+  </div>
+  <div id="people-list" class="px-4 space-y-2.5 mt-2 pb-4"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 3: REFERRALS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-referrals" class="tab-content overflow-y-auto" style="height:100dvh;padding-bottom:72px;">
+  <div class="px-4 pt-5">
+    <div class="flex gap-2 overflow-x-auto scroll-x pb-3">
+      <button onclick="setRefFilter('All',this)" class="rf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold bg-amber-500 text-white">All</button>
+      <button onclick="setRefFilter('IN_PROGRESS',this)" class="rf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold bg-stone-100 text-stone-600">In Progress</button>
+      <button onclick="setRefFilter('RTC',this)" class="rf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold bg-stone-100 text-stone-600">RTC</button>
+      <button onclick="setRefFilter('OVERDUE',this)" class="rf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold bg-stone-100 text-stone-600">Overdue</button>
+      <button onclick="setRefFilter('BLOCKED',this)" class="rf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold bg-stone-100 text-stone-600">Blocked</button>
+    </div>
+  </div>
+  <div id="referrals-list" class="px-4 space-y-2.5 pb-4"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 4: EARN -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-earn" class="tab-content overflow-y-auto" style="height:100dvh;padding-bottom:72px;">
+  <div class="px-4 pt-5">
+    <h2 class="text-lg font-bold text-stone-900 mb-4">Earnings</h2>
+    <div class="grid grid-cols-3 gap-2 mb-5">
+      <div class="bg-white rounded-xl p-3 shadow-sm text-center">
+        <p id="earn-week" class="mono text-lg font-medium text-emerald-600">₹0</p>
+        <p class="text-[10px] text-stone-400 mt-0.5">This week</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 shadow-sm text-center">
+        <p id="earn-pending" class="mono text-lg font-medium text-amber-700">₹0</p>
+        <p class="text-[10px] text-stone-400 mt-0.5">Pending</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 shadow-sm text-center">
+        <p id="earn-month" class="mono text-lg font-medium text-stone-700">₹0</p>
+        <p class="text-[10px] text-stone-400 mt-0.5">This month</p>
+      </div>
+    </div>
+    <p class="text-xs text-stone-400 uppercase tracking-widest font-medium mb-2.5">Pending</p>
+    <div id="earn-list" class="space-y-2.5"></div>
+    <div class="bg-stone-100 rounded-xl p-4 mt-5 text-xs text-stone-500 leading-relaxed">
+      Settlements process every Friday. Confirm earnings before Thursday to be included in the next payout.
+    </div>
+    <div class="mt-5">
+      <button onclick="toggleEarnHistory()" id="hist-toggle" class="flex items-center gap-1.5 text-xs font-semibold text-stone-400 hover:text-stone-600">
+        <svg id="hist-chev" width="14" height="14" viewBox="0 0 20 20" fill="none" class="transition-transform"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        History
+      </button>
+      <div id="earn-history" class="hidden mt-3 space-y-2.5"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 5: TOOLS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-tools" class="tab-content overflow-y-auto" style="height:100dvh;padding-bottom:72px;">
+  <div class="px-4 pt-5 space-y-3 pb-4">
+    <h2 class="text-lg font-bold text-stone-900 mb-2">Tools</h2>
+
+    <!-- Unit Costing -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <button onclick="toggleTool('t1')" class="w-full flex items-center justify-between p-4 text-left focus:outline-none">
+        <span class="font-semibold text-stone-900 text-sm">Unit Costing Calculator</span>
+        <svg id="t1-c" width="16" height="16" viewBox="0 0 20 20" fill="none" class="text-stone-400 transition-transform shrink-0"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <div id="t1" class="hidden px-4 pb-5 space-y-3">
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="text-xs text-stone-400 block mb-1">Raw materials (₹)</label><input id="uc-r" type="number" value="0" min="0" oninput="calcUnit()" class="w-full bg-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
+          <div><label class="text-xs text-stone-400 block mb-1">Labour (₹)</label><input id="uc-l" type="number" value="0" min="0" oninput="calcUnit()" class="w-full bg-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
+          <div><label class="text-xs text-stone-400 block mb-1">Energy (₹)</label><input id="uc-e" type="number" value="0" min="0" oninput="calcUnit()" class="w-full bg-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
+          <div><label class="text-xs text-stone-400 block mb-1">Packaging (₹)</label><input id="uc-p" type="number" value="0" min="0" oninput="calcUnit()" class="w-full bg-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
+          <div><label class="text-xs text-stone-400 block mb-1">Transport (₹)</label><input id="uc-t" type="number" value="0" min="0" oninput="calcUnit()" class="w-full bg-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
+          <div><label class="text-xs text-stone-400 block mb-1">Batch size (units)</label><input id="uc-b" type="number" value="1" min="1" oninput="calcUnit()" class="w-full bg-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
+        </div>
+        <div><label class="text-xs text-stone-400 block mb-1">Selling price (₹/unit)</label><input id="uc-s" type="number" value="0" min="0" oninput="calcUnit()" class="w-full bg-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
+        <div id="uc-result" class="bg-stone-50 rounded-xl p-3 space-y-1.5 text-sm"></div>
+        <div class="flex gap-2">
+          <select id="uc-ent" class="flex-1 bg-stone-100 rounded-xl px-3 py-2 text-sm text-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-400"><option value="">Save to entrepreneur…</option></select>
+          <button onclick="saveUnitCosting()" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold text-sm px-4 py-2 rounded-xl transition-colors">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FSSAI -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <button onclick="toggleTool('t2')" class="w-full flex items-center justify-between p-4 text-left focus:outline-none">
+        <span class="font-semibold text-stone-900 text-sm">FSSAI Eligibility</span>
+        <svg id="t2-c" width="16" height="16" viewBox="0 0 20 20" fill="none" class="text-stone-400 transition-transform shrink-0"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <div id="t2" class="hidden px-4 pb-5 space-y-3">
+        <div><label class="text-xs text-stone-400 block mb-1">Business type</label>
+          <select id="fs-t" onchange="calcFSSAI()" class="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <option value="home">Home-based</option><option value="micro">Micro</option><option value="small">Small</option><option value="medium">Medium</option>
+          </select></div>
+        <div><label class="text-xs text-stone-400 block mb-1">Annual turnover</label>
+          <select id="fs-v" onchange="calcFSSAI()" class="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <option value="u12">Under ₹12L</option><option value="12-20">₹12L – ₹20L</option><option value="20-1cr">₹20L – ₹1Cr</option><option value="a1cr">Above ₹1Cr</option>
+          </select></div>
+        <div><label class="text-xs text-stone-400 block mb-1">No. of states</label>
+          <select id="fs-s" onchange="calcFSSAI()" class="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <option value="1">1</option><option value="2-5">2 – 5</option><option value="5+">More than 5</option>
+          </select></div>
+        <div id="fs-result" class="bg-stone-50 rounded-xl p-3 text-sm"></div>
+      </div>
+    </div>
+
+    <!-- Scheme Matcher -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <button onclick="toggleTool('t3')" class="w-full flex items-center justify-between p-4 text-left focus:outline-none">
+        <span class="font-semibold text-stone-900 text-sm">Scheme Matcher</span>
+        <svg id="t3-c" width="16" height="16" viewBox="0 0 20 20" fill="none" class="text-stone-400 transition-transform shrink-0"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <div id="t3" class="hidden px-4 pb-5 space-y-3">
+        <div><label class="text-xs text-stone-400 block mb-1">Category</label>
+          <select id="sm-c" onchange="calcSchemes()" class="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <option>SC</option><option>ST</option><option>OBC</option><option>General</option>
+          </select></div>
+        <div><label class="text-xs text-stone-400 block mb-1">Sector</label>
+          <select id="sm-s" onchange="calcSchemes()" class="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <option>Food processing</option><option>Handicrafts</option><option>Agriculture</option><option>Textile</option><option>Other</option>
+          </select></div>
+        <div><label class="text-xs text-stone-400 block mb-1">Business stage</label>
+          <select id="sm-st" onchange="calcSchemes()" class="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <option>Idea</option><option>Just started</option><option>1-3 years</option><option>3+ years</option>
+          </select></div>
+        <div><label class="text-xs text-stone-400 block mb-1">Prior benefits</label>
+          <select id="sm-p" onchange="calcSchemes()" class="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <option>None</option><option>PMEGP</option><option>Mudra</option><option>Other</option>
+          </select></div>
+        <div id="sm-result" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- Solar Load -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <button onclick="toggleTool('t4')" class="w-full flex items-center justify-between p-4 text-left focus:outline-none">
+        <span class="font-semibold text-stone-900 text-sm">Solar Load Estimator</span>
+        <svg id="t4-c" width="16" height="16" viewBox="0 0 20 20" fill="none" class="text-stone-400 transition-transform shrink-0"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <div id="t4" class="hidden px-4 pb-5 space-y-3">
+        <div id="solar-rows" class="space-y-2"></div>
+        <button onclick="addSolarRow()" class="flex items-center gap-1.5 text-xs font-semibold text-amber-700">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Add appliance
+        </button>
+        <div><label class="text-xs text-stone-400 block mb-1">Current monthly bill (₹)</label>
+          <input id="solar-bill" type="number" value="1200" oninput="calcSolar()" class="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
+        <div id="solar-result" class="bg-stone-50 rounded-xl p-3 text-sm space-y-1.5"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── INIT ──────────────────────────────────────────────────────────────
+OESN.init();
+
+// ─── TAB SWITCHING ─────────────────────────────────────────────────────
+const NAV_IDS = ['dashboard','people','referrals','earn','tools'];
+function switchTab(name) {
+  NAV_IDS.forEach(id => {
+    document.getElementById('tab-' + id).classList.toggle('active', id === name);
+    const btn = document.getElementById('nav-' + id);
+    btn.style.color = id === name ? '#b45309' : '#a8a29e';
+  });
+  if (name === 'people') renderPeople();
+  if (name === 'referrals') renderReferrals();
+  if (name === 'earn') renderEarn();
+}
+
+// ─── SHEETS ────────────────────────────────────────────────────────────
+function openSheet(id) {
+  closeSheets();
+  document.getElementById(id).classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeSheets() {
+  ['ref-sheet','ent-sheet'].forEach(id => document.getElementById(id).classList.remove('open'));
+  document.getElementById('overlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+// ─── BADGE HELPERS ─────────────────────────────────────────────────────
+function badgeCls(status) {
+  const m = { OVERDUE:'bg-red-500 text-white', RTC:'bg-amber-400 text-stone-900', BLOCKED:'bg-red-400 text-white', IN_PROGRESS:'bg-blue-500 text-white', COMPLETED:'bg-emerald-500 text-white' };
+  return m[status] || 'bg-stone-200 text-stone-600';
+}
+function badgeLabel(status) {
+  const m = { IN_PROGRESS:'In Progress', OVERDUE:'Overdue', RTC:'RTC', BLOCKED:'Blocked', COMPLETED:'Completed' };
+  return m[status] || status;
+}
+function borderCls(status) {
+  const m = { OVERDUE:'border-l-[6px] border-l-red-500', RTC:'border-l-4 border-l-amber-400', BLOCKED:'border-l-[6px] border-l-red-400', IN_PROGRESS:'border-l-4 border-l-blue-400', COMPLETED:'border-l-4 border-l-emerald-400' };
+  return m[status] || 'border-l-2 border-l-stone-200';
+}
+function avatarBg(name) {
+  const p = ['bg-amber-100 text-amber-800','bg-emerald-100 text-emerald-800','bg-blue-100 text-blue-800','bg-purple-100 text-purple-800','bg-rose-100 text-rose-800','bg-teal-100 text-teal-800'];
+  return p[(name || '').charCodeAt(0) % p.length];
+}
+function initials(name) { return (name || '').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase(); }
+
+// ─── DATE HELPERS ──────────────────────────────────────────────────────
+function daysBetween(isoA, isoB) { return Math.round((new Date(isoB) - new Date(isoA)) / 86400000); }
+function isToday(iso) { const d = new Date(iso), t = new Date(); return d.toDateString() === t.toDateString(); }
+function fmtDate(iso) { return new Date(iso).toLocaleDateString('en-IN', { day:'numeric', month:'short' }); }
+function lastContactDays(iso) { return daysBetween(iso, new Date().toISOString()); }
+
+// ─── ENTREPRENEUR LOOKUP ───────────────────────────────────────────────
+function entName(id) {
+  const e = OESN.getEntrepreneur(id);
+  return e ? e.name : id;
+}
+
+// ─── DASHBOARD ─────────────────────────────────────────────────────────
+function renderDashboard() {
+  const ents = OESN.getEntrepreneurs();
+  const refs = OESN.getReferrals();
+  const earnings = OESN.getEarnings({ status: 'PENDING' });
+
+  // Portfolio pills
+  const active = ents.filter(e => e.status === 'active').length;
+  const pipeline = ents.filter(e => e.status === 'pipeline').length;
+  const dormant = ents.filter(e => e.status === 'dormant').length;
+  document.getElementById('dash-portfolio').innerHTML = [
+    pill(`<span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span><span class="mono font-medium">${active}</span> active`),
+    pill(`<span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span><span class="mono font-medium">${pipeline}</span> pipeline`),
+    pill(`<span class="w-2 h-2 rounded-full bg-stone-400 shrink-0"></span><span class="mono font-medium">${dormant}</span> dormant`)
+  ].join('');
+
+  // Referral status pills
+  const inProg = refs.filter(r => r.status === 'IN_PROGRESS').length;
+  const rtc = refs.filter(r => r.status === 'RTC').length;
+  const overdue = refs.filter(r => r.status === 'OVERDUE').length;
+  const blocked = refs.filter(r => r.status === 'BLOCKED').length;
+  document.getElementById('dash-ref-status').innerHTML = [
+    pill(`<span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span><span class="mono font-medium">${inProg}</span> in progress`),
+    pill(`<span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span><span class="mono font-medium">${rtc}</span> RTC`),
+    pill(`<span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><span class="mono font-medium">${overdue}</span> overdue`),
+    pill(`<span class="w-2 h-2 rounded-full bg-red-400 shrink-0"></span><span class="mono font-medium">${blocked}</span> blocked`)
+  ].join('');
+
+  // Priority cards
+  const priority = refs.filter(r => ['OVERDUE','RTC','BLOCKED'].includes(r.status));
+  document.getElementById('priority-cards').innerHTML = priority.map(r => {
+    const name = entName(r.entrepreneur_id);
+    let subline = '';
+    if (r.status === 'OVERDUE') {
+      const daysLate = daysBetween(r.deadline, new Date().toISOString());
+      subline = `<p class="text-xs text-red-600 mt-0.5 font-medium">${daysLate} day${daysLate !== 1 ? 's' : ''} overdue</p>`;
+    } else if (r.status === 'RTC') {
+      subline = `<p class="text-xs text-amber-700 mt-0.5">Ready to verify · <span class="mono">₹${r.commission}</span> releases</p>`;
+    } else if (r.status === 'BLOCKED') {
+      subline = `<p class="text-xs text-red-600 mt-0.5">${r.blocker_reason || 'Blocked'}</p>`;
+    }
+    return `<div class="bg-white rounded-xl shadow-sm ${borderCls(r.status)} p-4 cursor-pointer" onclick="openRefSheet('${r.id}')">
+      <div class="flex items-start justify-between mb-1">
+        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full ${badgeCls(r.status)}">${badgeLabel(r.status).toUpperCase()}</span>
+      </div>
+      <p class="font-semibold text-stone-900 text-sm mt-1">${name} · ${r.service}</p>
+      ${subline}
+    </div>`;
+  }).join('') || '<p class="text-sm text-stone-400 text-center py-4">No priority items this week.</p>';
+
+  // Earnings card
+  const totalPending = earnings.reduce((s, e) => s + e.amount, 0);
+  const releasesToday = earnings.filter(e => isToday(e.expected_on)).reduce((s, e) => s + e.amount, 0);
+  document.getElementById('dash-earnings-card').innerHTML = `
+    <div class="flex items-start justify-between">
+      <div>
+        <p class="mono text-2xl font-medium text-amber-800">₹${totalPending.toLocaleString('en-IN')}</p>
+        <p class="text-xs text-amber-700 mt-0.5">pending earnings</p>
+        ${releasesToday > 0 ? `<p class="text-xs text-stone-500 mt-2"><span class="text-amber-700 font-medium mono">₹${releasesToday}</span> releases today on verification</p>` : ''}
+        <p class="text-xs text-stone-400 mt-0.5">Next settlement: Friday</p>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-amber-600 mt-1 shrink-0"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>`;
+
+  // Dormant
+  const dormantEnts = ents.filter(e => e.status === 'dormant');
+  document.getElementById('dormant-count').textContent = dormantEnts.length;
+  document.getElementById('dormant-list').innerHTML = dormantEnts.map(e => {
+    const days = lastContactDays(e.last_contact);
+    const entRefs = refs.filter(r => r.entrepreneur_id === e.id);
+    const blockedRef = entRefs.find(r => r.status === 'BLOCKED');
+    const context = blockedRef ? blockedRef.service + ' · Document blocker' : 'No open referrals';
+    return `<div class="bg-white rounded-xl shadow-sm border-l-2 border-l-stone-200 p-4 flex items-center justify-between">
+      <div>
+        <p class="font-semibold text-stone-900 text-sm">${e.name}</p>
+        <p class="text-xs text-stone-400 mt-0.5"><span class="mono">${days}</span> days · ${e.business} · ${context}</p>
+      </div>
+      <a href="sms:${e.phone}" class="text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 px-3 py-1.5 rounded-lg transition-colors shrink-0 ml-3">Message</a>
+    </div>`;
+  }).join('');
+
+  // Provider updates
+  const recentRTC = refs.filter(r => r.status === 'RTC').slice(0, 3);
+  document.getElementById('provider-updates').innerHTML = recentRTC.map(r => `
+    <div class="bg-white rounded-xl shadow-sm p-3 cursor-pointer" onclick="openRefSheet('${r.id}')">
+      <p class="text-sm font-medium text-stone-800">${r.provider} confirmed delivery</p>
+      <p class="text-xs text-stone-400 mt-0.5">${r.service} · ${OESN.relativeTime(r.updated_at)}</p>
+    </div>`).join('') || '<p class="text-xs text-stone-400">No new updates.</p>';
+}
+
+function pill(content) {
+  return `<span class="whitespace-nowrap bg-stone-100 rounded-full px-3 py-1 text-sm flex items-center gap-1.5 shrink-0">${content}</span>`;
+}
+
+// ─── REFERRAL SHEET ────────────────────────────────────────────────────
+function openRefSheet(refId) {
+  const r = OESN.getReferral(refId);
+  if (!r) return;
+  const name = entName(r.entrepreneur_id);
+  const createdDays = daysBetween(r.created_at, new Date().toISOString());
+  const deadlineDays = daysBetween(new Date().toISOString(), r.deadline);
+  const isOverdue = r.status === 'OVERDUE' || new Date(r.deadline) < new Date();
+  const overdueDays = isOverdue ? Math.abs(daysBetween(r.deadline, new Date().toISOString())) : 0;
+
+  document.getElementById('rs-title').textContent = r.service;
+  document.getElementById('rs-meta').textContent = `Created ${fmtDate(r.created_at)} · ${name}`;
+  const badge = document.getElementById('rs-badge');
+  badge.textContent = badgeLabel(r.status).toUpperCase();
+  badge.className = 'text-[11px] font-semibold px-2.5 py-1 rounded-full ' + badgeCls(r.status);
+
+  const payLabel = { provider_commission:'Provider Commission', direct:'Direct', programme_prebuy:'Programme' };
+  const tlDot = (filled) => filled
+    ? '<span class="w-3 h-3 rounded-full bg-stone-800 shrink-0 mt-0.5"></span>'
+    : '<span class="w-3 h-3 rounded-full border-2 border-stone-300 shrink-0 mt-0.5"></span>';
+
+  const timeline = `
+    <div class="space-y-2">
+      <div class="flex items-start gap-2 text-sm">${tlDot(true)}<span>Created <span class="text-stone-400">${fmtDate(r.created_at)}</span></span></div>
+      <div class="flex items-start gap-2 text-sm">${tlDot(true)}<span>In Progress</span></div>
+      <div class="flex items-start gap-2 text-sm">${tlDot(r.status === 'RTC' || r.status === 'COMPLETED')}<span class="${r.status === 'RTC' || r.status === 'COMPLETED' ? '' : 'text-stone-400'}">RTC${r.status === 'RTC' ? ' — now' : r.status === 'COMPLETED' ? ' — verified' : ' —'}</span></div>
+      <div class="flex items-start gap-2 text-sm">${tlDot(r.status === 'COMPLETED')}<span class="${r.status === 'COMPLETED' ? '' : 'text-stone-400'}">Completed${r.completed_at ? ' — ' + fmtDate(r.completed_at) : ' —'}</span></div>
+    </div>`;
+
+  let action = '';
+  if (r.status === 'RTC') {
+    action = `<div class="border border-stone-200 rounded-xl p-4 space-y-3">
+      <label class="flex items-start gap-2 text-xs text-stone-700 cursor-pointer">
+        <input type="checkbox" id="verify-check" class="mt-0.5 accent-amber-500 shrink-0">
+        <span>I confirm the outcome meets the completion criteria</span>
+      </label>
+      <label class="flex items-center gap-2 text-xs text-stone-500 cursor-pointer">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M3 17l4-4 4 4 6-10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Attach photo evidence
+      </label>
+      <button onclick="verifyOutcome('${r.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl text-sm transition-colors">✓ Verify Outcome</button>
+    </div>`;
+  } else if (r.status === 'BLOCKED') {
+    action = `<div class="bg-red-50 border border-red-200 rounded-xl p-4">
+      <p class="text-xs text-red-700 font-medium mb-3">Blocked: "${r.blocker_reason || 'Unspecified'}"</p>
+      <button onclick="escalateRef('${r.id}')" class="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">Escalate to NFO</button>
+    </div>`;
+  } else if (r.status === 'OVERDUE') {
+    action = `<div class="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700 font-medium">⚠ ${overdueDays} day${overdueDays !== 1 ? 's' : ''} past deadline</div>`;
+  }
+
+  document.getElementById('rs-body').innerHTML = `
+    <div class="space-y-1 text-stone-700">
+      <p><span class="text-stone-400">Entrepreneur</span> · ${name}</p>
+      <p><span class="text-stone-400">Provider</span> · ${r.provider}</p>
+      <p><span class="text-stone-400">Payment</span> · ${payLabel[r.payment_type] || r.payment_type}${r.commission ? ` · <span class="mono">₹${r.commission}</span> on completion` : ''}</p>
+    </div>
+    ${r.criteria ? `<div><p class="text-xs text-stone-400 uppercase tracking-widest mb-1">Criteria</p><p class="text-stone-700 italic">"${r.criteria}"</p></div>` : ''}
+    <div><p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Timeline</p>${timeline}</div>
+    ${action}
+    ${r.notes ? `<div><p class="text-xs text-stone-400 uppercase tracking-widest mb-1">Notes</p><p class="text-stone-600">${r.notes}</p></div>` : ''}
+  `;
+  openSheet('ref-sheet');
+}
+
+function verifyOutcome(refId) {
+  if (!document.getElementById('verify-check').checked) {
+    alert('Please confirm the outcome meets the completion criteria.');
+    return;
+  }
+  if (!confirm('Mark this referral as completed?')) return;
+  OESN.updateReferral(refId, { status: 'COMPLETED', completed_at: new Date().toISOString() });
+  const earn = OESN.getEarnings({ referral_id: refId });
+  earn.forEach(e => OESN.updateEarning(e.id, { status: 'CONFIRMED' }));
+  closeSheets();
+  renderDashboard();
+  renderReferrals();
+}
+
+function escalateRef(refId) {
+  alert('Escalation raised with NFO coordinator.');
+}
+
+// ─── PEOPLE TAB ────────────────────────────────────────────────────────
+let pfActive = 'All';
+function setPeopleFilter(f, btn) {
+  pfActive = f;
+  document.querySelectorAll('.pf-btn').forEach(b => {
+    b.className = `pf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${b === btn ? 'bg-amber-500 text-white' : 'bg-stone-100 text-stone-600'}`;
+  });
+  renderPeople();
+}
+function renderPeople() {
+  const q = (document.getElementById('people-search').value || '').toLowerCase();
+  let list = OESN.getEntrepreneurs();
+  if (q) list = list.filter(e => e.name.toLowerCase().includes(q) || e.business.toLowerCase().includes(q));
+  if (pfActive !== 'All') list = list.filter(e => e.status === pfActive);
+  const refs = OESN.getReferrals();
+  const dotCls = { active:'bg-emerald-400', dormant:'bg-stone-300', pipeline:'bg-amber-400' };
+  const el = document.getElementById('people-list');
+  if (!list.length) { el.innerHTML = '<p class="text-sm text-stone-400 text-center py-8">No entrepreneurs found.</p>'; return; }
+  el.innerHTML = list.map(e => {
+    const entRefs = refs.filter(r => r.entrepreneur_id === e.id && !['COMPLETED'].includes(r.status));
+    const days = lastContactDays(e.last_contact);
+    return `<div class="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3 cursor-pointer" onclick="openEntSheet('${e.id}')">
+      <div class="w-10 h-10 rounded-full ${avatarBg(e.name)} flex items-center justify-center text-sm font-bold shrink-0">${initials(e.name)}</div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <p class="font-semibold text-stone-900 text-sm">${e.name}</p>
+          <span class="text-[10px] bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">${e.business}</span>
+        </div>
+        <p class="text-xs text-stone-400 mt-0.5">${e.location} · ${days}d ago</p>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        ${entRefs.length ? `<span class="mono text-[11px] font-medium bg-amber-100 text-amber-700 rounded-full w-5 h-5 flex items-center justify-center">${entRefs.length}</span>` : ''}
+        <span class="w-2 h-2 rounded-full ${dotCls[e.status] || 'bg-stone-300'}"></span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openEntSheet(entId) {
+  const e = OESN.getEntrepreneur(entId);
+  if (!e) return;
+  document.getElementById('es-name').textContent = e.name;
+  document.getElementById('es-sub').textContent = `${e.business} — ${e.location}`;
+  const diag = OESN.getDiagnostic(entId);
+  const tags = diag ? diag.tags : [];
+  const allTags = ['unit_costing','fssai','market_linkage','gst_registered','udyam_registered','solar_viable','loan_ready'];
+  const capHtml = allTags.filter(t => tags.includes(t)).map(t =>
+    `<span class="text-[11px] px-2 py-0.5 rounded-full bg-stone-800 text-white font-medium">${t}</span>`
+  ).join(' ') || '<span class="text-xs text-stone-400">No capabilities recorded</span>';
+
+  const entRefs = OESN.getReferrals({ entrepreneur_id: entId }).filter(r => !['COMPLETED'].includes(r.status));
+  const refsHtml = entRefs.length ? entRefs.map(r =>
+    `<div class="flex items-center gap-2 text-sm cursor-pointer" onclick="closeSheets();setTimeout(()=>openRefSheet('${r.id}'),50)">
+      <span class="w-1.5 h-1.5 rounded-full bg-stone-400 shrink-0"></span>
+      <span class="flex-1">${r.service}</span>
+      <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full ${badgeCls(r.status)}">${badgeLabel(r.status)}</span>
+    </div>`
+  ).join('') : '<p class="text-stone-400 text-sm">No active referrals</p>';
+
+  const notes = OESN.getConversationNotes(entId).slice(-2).reverse();
+  const notesHtml = notes.map(n =>
+    `<div class="flex gap-2"><span class="text-stone-400 text-xs shrink-0 mt-0.5">${OESN.relativeTime(n.created_at)}</span><span class="text-stone-600 text-sm">${n.body.slice(0,80)}${n.body.length > 80 ? '…' : ''}</span></div>`
+  ).join('');
+
+  document.getElementById('es-body').innerHTML = `
+    <div class="flex gap-3 text-xs text-stone-400 border-b border-stone-100 pb-3">
+      <span>KYC: ${e.kyc_done ? 'Done' : 'Pending'}</span><span>|</span><span>Status: ${e.status}</span>
+    </div>
+    <div><p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Capabilities</p><div class="flex flex-wrap gap-1.5">${capHtml}</div></div>
+    <div><p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Active referrals (${entRefs.length})</p><div class="space-y-2">${refsHtml}</div></div>
+    ${notesHtml ? `<div><p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Recent activity</p><div class="space-y-2">${notesHtml}</div></div>` : ''}
+    <div class="grid grid-cols-3 gap-2 pt-1">
+      <button class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold text-xs py-2.5 rounded-xl transition-colors">New Referral</button>
+      <button class="bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs py-2.5 rounded-xl transition-colors">Log Note</button>
+      <button class="bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs py-2.5 rounded-xl transition-colors">Diagnostic</button>
+    </div>`;
+  openSheet('ent-sheet');
+}
+
+// ─── REFERRALS TAB ─────────────────────────────────────────────────────
+let rfActive = 'All';
+function setRefFilter(f, btn) {
+  rfActive = f;
+  document.querySelectorAll('.rf-btn').forEach(b => {
+    b.className = `rf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${b === btn ? 'bg-amber-500 text-white' : 'bg-stone-100 text-stone-600'}`;
+  });
+  renderReferrals();
+}
+function renderReferrals() {
+  let list = OESN.getReferrals();
+  if (rfActive !== 'All') list = list.filter(r => r.status === rfActive);
+  const ptLabel = { provider_commission:'Commission', direct:'Direct', programme_prebuy:'Programme' };
+  const el = document.getElementById('referrals-list');
+  if (!list.length) { el.innerHTML = '<p class="text-sm text-stone-400 text-center py-8">No referrals.</p>'; return; }
+  el.innerHTML = list.map(r => {
+    const name = entName(r.entrepreneur_id);
+    const created = daysBetween(r.created_at, new Date().toISOString());
+    const total = daysBetween(r.created_at, r.deadline);
+    const overdue = r.status === 'OVERDUE' || new Date(r.deadline) < new Date();
+    const overdueDays = overdue ? Math.abs(daysBetween(r.deadline, new Date().toISOString())) : 0;
+    const progress = overdue ? `${overdueDays} day${overdueDays !== 1 ? 's' : ''} overdue` : `Day ${created} of ${total}`;
+    const progCls = overdue ? 'text-red-600' : 'text-stone-400';
+    return `<div class="bg-white rounded-xl shadow-sm ${borderCls(r.status)} p-4 cursor-pointer" onclick="openRefSheet('${r.id}')">
+      <div class="flex items-start justify-between mb-1.5">
+        <p class="font-bold text-stone-900 text-sm pr-2">${r.service}</p>
+        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full ${badgeCls(r.status)} shrink-0">${badgeLabel(r.status)}</span>
+      </div>
+      <p class="text-xs text-stone-400">${name} → ${r.provider}</p>
+      <div class="flex items-center justify-between mt-2">
+        <p class="mono text-xs ${progCls} font-medium">${progress}</p>
+        <span class="text-[10px] bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">${ptLabel[r.payment_type] || r.payment_type}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── EARN TAB ──────────────────────────────────────────────────────────
+function renderEarn() {
+  const all = OESN.getEarnings();
+  const pending = all.filter(e => e.status === 'PENDING');
+  const confirmed = all.filter(e => e.status === 'CONFIRMED');
+  const settled = all.filter(e => e.status === 'SETTLED');
+  const now = new Date();
+  const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const weekTotal = [...confirmed, ...settled].filter(e => new Date(e.updated_at) >= weekStart).reduce((s, e) => s + e.amount, 0);
+  const monthTotal = [...pending, ...confirmed, ...settled].filter(e => new Date(e.created_at) >= monthStart).reduce((s, e) => s + e.amount, 0);
+  const pendingTotal = pending.reduce((s, e) => s + e.amount, 0);
+
+  document.getElementById('earn-week').textContent = OESN.formatINR(weekTotal);
+  document.getElementById('earn-pending').textContent = OESN.formatINR(pendingTotal);
+  document.getElementById('earn-month').textContent = OESN.formatINR(monthTotal);
+
+  const earnCls = { PENDING:'bg-amber-100 text-amber-700', CONFIRMED:'bg-blue-100 text-blue-700', SETTLED:'bg-emerald-100 text-emerald-700' };
+  document.getElementById('earn-list').innerHTML = pending.map(e => {
+    const today = isToday(e.expected_on);
+    return `<div class="bg-white rounded-xl shadow-sm p-4">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="mono text-xl font-medium text-amber-700">₹${e.amount.toLocaleString('en-IN')}</p>
+          <p class="text-xs text-stone-500 mt-0.5">${e.basis}</p>
+          <p class="text-xs text-stone-400 mt-0.5">${e.payer}</p>
+        </div>
+        <div class="text-right shrink-0 ml-3">
+          <span class="${today ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-500'} text-[11px] font-semibold px-2 py-0.5 rounded-full">${today ? 'Today' : fmtDate(e.expected_on)}</span>
+          <p class="text-[10px] text-stone-400 mt-1.5">PENDING</p>
+        </div>
+      </div>
+    </div>`;
+  }).join('') || '<p class="text-sm text-stone-400 text-center py-4">No pending earnings.</p>';
+
+  document.getElementById('earn-history').innerHTML = [...confirmed, ...settled].map(e =>
+    `<div class="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+      <div>
+        <p class="mono text-base font-medium text-stone-700">₹${e.amount.toLocaleString('en-IN')}</p>
+        <p class="text-xs text-stone-400 mt-0.5">${e.basis}</p>
+      </div>
+      <span class="${earnCls[e.status] || 'bg-stone-100 text-stone-500'} text-[11px] font-semibold px-2 py-0.5 rounded-full">${e.status}</span>
+    </div>`
+  ).join('');
+}
+
+function toggleEarnHistory() {
+  const h = document.getElementById('earn-history');
+  const chev = document.getElementById('hist-chev');
+  h.classList.toggle('hidden');
+  chev.style.transform = h.classList.contains('hidden') ? '' : 'rotate(180deg)';
+}
+
+// ─── TOOLS ─────────────────────────────────────────────────────────────
+function toggleTool(id) {
+  const p = document.getElementById(id);
+  const open = !p.classList.toggle('hidden');
+  document.getElementById(id + '-c').style.transform = open ? 'rotate(180deg)' : '';
+  if (open) {
+    if (id === 't1') calcUnit();
+    if (id === 't2') calcFSSAI();
+    if (id === 't3') calcSchemes();
+    if (id === 't4') calcSolar();
+  }
+}
+
+// Unit Costing
+function calcUnit() {
+  const r = +document.getElementById('uc-r').value||0, l = +document.getElementById('uc-l').value||0;
+  const e = +document.getElementById('uc-e').value||0, p = +document.getElementById('uc-p').value||0;
+  const t = +document.getElementById('uc-t').value||0, b = Math.max(1, +document.getElementById('uc-b').value||1);
+  const s = +document.getElementById('uc-s').value||0;
+  const cpu = (r + l + e + p + t) / b;
+  const margin = s > 0 ? ((s - cpu) / s * 100) : 0;
+  const p25 = cpu > 0 ? (cpu / 0.75).toFixed(2) : '—';
+  const p35 = cpu > 0 ? (cpu / 0.65).toFixed(2) : '—';
+  const mc = margin < 15 ? 'text-red-600' : margin < 25 ? 'text-amber-700' : 'text-emerald-600';
+  document.getElementById('uc-result').innerHTML = `
+    <div class="flex justify-between"><span class="text-stone-400">Cost per unit</span><span class="mono font-medium">₹${cpu.toFixed(2)}</span></div>
+    <div class="flex justify-between"><span class="text-stone-400">Margin at selling price</span><span class="mono font-medium ${mc}">${margin.toFixed(1)}%</span></div>
+    <div class="flex justify-between"><span class="text-stone-400">Price for 25% margin</span><span class="mono font-medium">₹${p25}</span></div>
+    <div class="flex justify-between"><span class="text-stone-400">Price for 35% margin</span><span class="mono font-medium">₹${p35}</span></div>`;
+}
+function saveUnitCosting() {
+  const id = document.getElementById('uc-ent').value;
+  if (!id) { alert('Select an entrepreneur first.'); return; }
+  OESN.updateDiagnostic(id, { tags: ['unit_costing'] });
+  alert('Saved.');
+}
+
+// FSSAI
+function calcFSSAI() {
+  const type = document.getElementById('fs-t').value;
+  const turn = document.getElementById('fs-v').value;
+  const states = document.getElementById('fs-s').value;
+  let licence, fee, timeline, docs;
+  if (turn === 'a1cr' || states === '5+') {
+    licence = 'Central Licence'; fee = '₹7,500+'; timeline = '60 days';
+    docs = ['Aadhaar / PAN card','GST registration','Food safety management plan','Water test report','Blueprint of premises'];
+  } else if (type === 'home' && turn === 'u12' && states === '1') {
+    licence = 'Basic Registration'; fee = '₹100'; timeline = '7 days';
+    docs = ['Aadhaar card','Passport-size photo','Self-declaration of address'];
+  } else {
+    licence = 'State Licence'; fee = '₹2,000 – ₹5,000'; timeline = '30 days';
+    docs = ['Aadhaar / PAN card','Business registration proof','Premises address proof','Water test report'];
+  }
+  document.getElementById('fs-result').innerHTML = `
+    <p class="font-semibold text-stone-900 mb-2">${licence}</p>
+    <ul class="space-y-1 mb-3">${docs.map(d => `<li class="flex items-center gap-1.5 text-xs text-stone-600"><span class="w-1 h-1 rounded-full bg-stone-400 shrink-0"></span>${d}</li>`).join('')}</ul>
+    <div class="flex gap-5 text-xs"><span><span class="text-stone-400">Fee</span> <span class="mono font-medium text-stone-800">${fee}</span></span><span><span class="text-stone-400">Timeline</span> <span class="mono font-medium text-stone-800">${timeline}</span></span></div>`;
+}
+
+// Scheme Matcher
+const SCHEMES = [
+  { name:'PM Mudra Yojana', benefit:'Up to ₹10L collateral-free loan', conditions:'All categories · Shishu / Kishore / Tarun tiers', ease:5, cats:['SC','ST','OBC','General'], prior:['None','Mudra','Other','PMEGP'] },
+  { name:'PMEGP', benefit:'Up to 35% subsidy on project cost', conditions:'SC/ST/Women get higher subsidy · DIC registration needed', ease:3, cats:['SC','ST','OBC','General'], prior:['None'] },
+  { name:'Stand-Up India', benefit:'₹10L – ₹1Cr for SC/ST/Women', conditions:'SC/ST or Women only · Greenfield enterprise required', ease:3, cats:['SC','ST'], prior:['None'] },
+  { name:'Udyogini', benefit:'Up to ₹3L for women entrepreneurs', conditions:'Women only · Below poverty line preference', ease:4, cats:['SC','ST','OBC','General'], prior:['None','Other'] },
+  { name:'Karnataka SC/ST Entrepreneurship', benefit:'State subsidy 50% on project cost', conditions:'Karnataka residents · SC/ST category only', ease:3, cats:['SC','ST'], prior:['None','Other'] },
+  { name:'One District One Product', benefit:'Market linkage + subsidy support', conditions:'Product must belong to district ODOP cluster', ease:4, cats:['SC','ST','OBC','General'], prior:['None','Mudra','Other','PMEGP'] }
+];
+function stars(n) { return '★'.repeat(n) + '☆'.repeat(5 - n); }
+function calcSchemes() {
+  const cat = document.getElementById('sm-c').value;
+  const prior = document.getElementById('sm-p').value;
+  const matched = SCHEMES.filter(s => s.cats.includes(cat) && s.prior.includes(prior)).slice(0, 5);
+  document.getElementById('sm-result').innerHTML = matched.length
+    ? matched.map(s => `<div class="bg-stone-50 rounded-xl p-3 space-y-0.5">
+        <p class="font-semibold text-stone-900 text-sm">${s.name}</p>
+        <p class="text-xs text-stone-600">${s.benefit}</p>
+        <p class="text-[11px] text-stone-400">${s.conditions}</p>
+        <p class="text-amber-500 text-xs">Ease: ${stars(s.ease)}</p>
+      </div>`).join('')
+    : '<p class="text-xs text-stone-400">No matching schemes for this combination.</p>';
+}
+
+// Solar
+let solarRows = [{ n:'Tubelight', w:40, h:8 }, { n:'Fan', w:75, h:10 }, { n:'Machine', w:500, h:6 }];
+function renderSolarRows() {
+  document.getElementById('solar-rows').innerHTML = solarRows.map((row, i) =>
+    `<div class="flex gap-1.5 items-center">
+      <input value="${row.n}" oninput="solarRows[${i}].n=this.value" placeholder="Appliance" class="flex-1 bg-stone-100 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400">
+      <input type="number" value="${row.w}" min="0" oninput="solarRows[${i}].w=+this.value;calcSolar()" placeholder="W" class="w-16 bg-stone-100 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400">
+      <input type="number" value="${row.h}" min="0" max="24" oninput="solarRows[${i}].h=+this.value;calcSolar()" placeholder="h/d" class="w-14 bg-stone-100 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400">
+      <button onclick="removeSolarRow(${i})" class="text-stone-300 hover:text-red-400 text-xl leading-none px-1" aria-label="Remove">×</button>
+    </div>`
+  ).join('');
+  calcSolar();
+}
+function addSolarRow() { solarRows.push({ n:'', w:0, h:0 }); renderSolarRows(); }
+function removeSolarRow(i) { solarRows.splice(i, 1); renderSolarRows(); }
+function calcSolar() {
+  const daily = solarRows.reduce((s, r) => s + (r.w * r.h) / 1000, 0);
+  const monthly = daily * 30;
+  const kw = Math.ceil(daily / 4 * 10) / 10;
+  const low = Math.round(kw * 60000);
+  const high = Math.round(kw * 80000);
+  const savings = Math.round(monthly * 8);
+  const payback = savings > 0 ? ((low + high) / 2 / (savings * 12)).toFixed(1) : '—';
+  document.getElementById('solar-result').innerHTML = `
+    <div class="flex justify-between"><span class="text-stone-400">Daily load</span><span class="mono font-medium">${daily.toFixed(1)} kWh</span></div>
+    <div class="flex justify-between"><span class="text-stone-400">Monthly load</span><span class="mono font-medium">${monthly.toFixed(0)} kWh</span></div>
+    <div class="flex justify-between"><span class="text-stone-400">Recommended system</span><span class="mono font-medium">${kw} kW</span></div>
+    <div class="flex justify-between"><span class="text-stone-400">Estimated cost</span><span class="mono font-medium">₹${(low/1000).toFixed(0)}K – ₹${(high/1000).toFixed(0)}K</span></div>
+    <div class="flex justify-between"><span class="text-stone-400">Monthly savings</span><span class="mono font-medium text-emerald-600">₹${savings.toLocaleString('en-IN')}</span></div>
+    <div class="flex justify-between"><span class="text-stone-400">Payback</span><span class="mono font-medium">${payback} yrs</span></div>`;
+}
+
+// ─── BOOT ──────────────────────────────────────────────────────────────
+renderDashboard();
+renderSolarRows();
+
+// Populate entrepreneur dropdown for unit costing
+const ucEnt = document.getElementById('uc-ent');
+OESN.getEntrepreneurs().forEach(e => {
+  const o = document.createElement('option');
+  o.value = e.id;
+  o.textContent = e.name;
+  ucEnt.appendChild(o);
+});
+
+// Service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>

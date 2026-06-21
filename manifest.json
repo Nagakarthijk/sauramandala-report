@@ -1,0 +1,55 @@
+{
+  "name": "OESN Field App",
+  "short_name": "OESN",
+  "description": "Open Entrepreneurship Support Network — field agent CRM, referral management, and offline calculation tools",
+  "start_url": "./oesn.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fafaf9",
+  "theme_color": "#1c1917",
+  "lang": "en-IN",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%231c1917'/%3E%3Crect x='24' y='24' width='64' height='64' rx='12' fill='%23f59e0b'/%3E%3Crect x='104' y='24' width='64' height='64' rx='12' fill='%2318181b' opacity='0.4'/%3E%3Crect x='24' y='104' width='64' height='64' rx='12' fill='%2318181b' opacity='0.4'/%3E%3Crect x='104' y='104' width='64' height='64' rx='12' fill='%2310b981'/%3E%3Cpath d='M112 48 L104 64 L120 64 L112 80 L128 56 L116 56 L124 40 Z' fill='%23fafaf9'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%231c1917'/%3E%3Crect x='64' y='64' width='172' height='172' rx='28' fill='%23f59e0b'/%3E%3Crect x='276' y='64' width='172' height='172' rx='28' fill='%2318181b' opacity='0.4'/%3E%3Crect x='64' y='276' width='172' height='172' rx='28' fill='%2318181b' opacity='0.4'/%3E%3Crect x='276' y='276' width='172' height='172' rx='28' fill='%2310b981'/%3E%3Cpath d='M296 128 L276 172 L320 172 L296 216 L340 152 L308 152 L332 108 Z' fill='%23fafaf9'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Field Agent",
+      "short_name": "Agent",
+      "description": "Open agent CRM",
+      "url": "./agent.html",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='16' fill='%23f59e0b'/%3E%3Ccircle cx='48' cy='36' r='16' fill='%231c1917'/%3E%3Cellipse cx='48' cy='72' rx='28' ry='18' fill='%231c1917'/%3E%3C/svg%3E",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Provider",
+      "short_name": "Provider",
+      "description": "Open provider view",
+      "url": "./provider.html",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='16' fill='%2310b981'/%3E%3Crect x='28' y='20' width='40' height='56' rx='4' fill='%231c1917'/%3E%3Crect x='36' y='32' width='24' height='4' rx='2' fill='%23f59e0b'/%3E%3Crect x='36' y='44' width='24' height='4' rx='2' fill='%23f59e0b'/%3E%3C/svg%3E",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}
