@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Profile — Workledger</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+  <script src="tl-data.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #fafaf9; }
+    .step-panel { display: none; }
+    .step-panel.active { display: block; animation: fadeIn .3s ease-out; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .img-preview { max-height: 160px; width: 100%; object-fit: cover; border-radius: .75rem; }
+    .upload-zone {
+      border: 2px dashed #d6d3d1; border-radius: .75rem; padding: 1rem;
+      text-align: center; cursor: pointer; transition: border-color .2s;
+      background: #fafaf9;
+    }
+    .upload-zone:hover { border-color: #78716c; }
+    .upload-zone input[type="file"] { display: none; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <div id="nav-placeholder"></div>
+
+  <main class="max-w-lg mx-auto px-4 py-10">
+
+    <div class="mb-8">
+      <a href="trust-ledger.html" class="text-stone-400 text-sm hover:text-stone-600 transition-colors">← Back</a>
+      <h1 class="text-2xl font-black text-stone-900 mt-4 mb-1">Create your profile</h1>
+      <p class="text-stone-500 text-sm">Takes about 2 minutes. No account needed.</p>
+    </div>
+
+    <!-- Progress -->
+    <div class="flex items-center gap-2 mb-8">
+      <div class="flex-1 h-1.5 rounded-full bg-stone-200 overflow-hidden">
+        <div id="progress-bar" class="h-full bg-stone-900 rounded-full transition-all duration-300" style="width: 33%"></div>
+      </div>
+      <span id="step-indicator" class="text-xs text-stone-400 font-medium shrink-0">Step 1 of 3</span>
+    </div>
+
+    <!-- Step 1: Identity + Photo -->
+    <div id="step-1" class="step-panel active">
+      <div class="bg-white border border-stone-100 rounded-2xl p-6">
+        <h2 class="font-bold text-stone-900 mb-1">Who are you?</h2>
+        <p class="text-stone-500 text-xs mb-5">This is public — use your real name if you're comfortable.</p>
+        <div class="space-y-4">
+
+          <!-- Photo upload -->
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-2">Profile photo (optional)</label>
+            <div class="upload-zone" onclick="document.getElementById('f-photo').click()">
+              <div id="photo-placeholder">
+                <div class="text-2xl mb-1">📷</div>
+                <p class="text-xs text-stone-500">Tap to upload a photo</p>
+                <p class="text-[10px] text-stone-400 mt-0.5">JPG, PNG · max 3MB</p>
+              </div>
+              <img id="f-photo-preview" class="img-preview hidden" />
+              <input type="file" id="f-photo" accept="image/*" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1.5">Your name *</label>
+            <input id="f-name" type="text" placeholder="e.g. Divya Menon"
+              class="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-stone-400 focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1.5">Short bio *</label>
+            <textarea id="f-bio" rows="3" placeholder="Who are you and what kind of work do you do? 2-3 sentences."
+              class="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-stone-400 focus:outline-none resize-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1.5">Location (area / city / district) *</label>
+            <input id="f-location" type="text" placeholder="e.g. HSR Layout, Bangalore"
+              class="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-stone-400 focus:outline-none" />
+            <p class="text-xs text-stone-400 mt-1">Only area-level. Exact location is never shown.</p>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1.5">Category</label>
+            <div class="grid grid-cols-2 gap-2" id="category-grid">
+              <!-- Injected by JS -->
+            </div>
+          </div>
+        </div>
+        <div id="err-1" class="text-rose-500 text-xs mt-3 hidden"></div>
+        <button onclick="goTo(2)" class="mt-6 w-full bg-stone-900 hover:bg-stone-800 text-white font-bold py-3.5 rounded-xl transition-all text-sm">
+          Next →
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Work + UPI + QR -->
+    <div id="step-2" class="step-panel">
+      <div class="bg-white border border-stone-100 rounded-2xl p-6">
+        <h2 class="font-bold text-stone-900 mb-1">What are you working on?</h2>
+        <p class="text-stone-500 text-xs mb-5">Tell supporters what you're doing right now and how their support will be used.</p>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1.5">Current work / project *</label>
+            <textarea id="f-work" rows="4" placeholder="Describe what you're doing now and what you need support for. Be specific — it builds more trust."
+              class="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-stone-400 focus:outline-none resize-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1.5">Your UPI ID *</label>
+            <input id="f-upi" type="text" placeholder="e.g. yourname@okicici"
+              class="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-stone-400 focus:outline-none" />
+            <p class="text-xs text-stone-400 mt-1">Shown publicly so supporters can pay you directly. We hold nothing.</p>
+          </div>
+          <!-- UPI QR upload -->
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-2">UPI QR code (optional but recommended)</label>
+            <div class="upload-zone" onclick="document.getElementById('f-qr').click()">
+              <div id="qr-placeholder">
+                <div class="text-2xl mb-1">📲</div>
+                <p class="text-xs text-stone-500">Tap to upload your UPI QR code screenshot</p>
+                <p class="text-[10px] text-stone-400 mt-0.5">From GPay / PhonePe / Paytm · max 3MB</p>
+              </div>
+              <img id="f-qr-preview" class="img-preview hidden" />
+              <input type="file" id="f-qr" accept="image/*" />
+            </div>
+            <p class="text-xs text-stone-400 mt-1.5">Supporters can scan this directly — makes paying much easier.</p>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1.5">Support goal amount (₹) — optional</label>
+            <input id="f-goal" type="number" placeholder="e.g. 8000 (leave blank if no specific goal)"
+              class="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-stone-400 focus:outline-none" />
+          </div>
+        </div>
+        <div id="err-2" class="text-rose-500 text-xs mt-3 hidden"></div>
+        <div class="flex gap-3 mt-6">
+          <button onclick="goTo(1)" class="flex-1 border border-stone-200 text-stone-600 font-semibold py-3 rounded-xl hover:bg-stone-50 transition-all text-sm">← Back</button>
+          <button onclick="goTo(3)" class="flex-[2] bg-stone-900 hover:bg-stone-800 text-white font-bold py-3 rounded-xl transition-all text-sm">Next →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Preview + Confirm -->
+    <div id="step-3" class="step-panel">
+      <div class="bg-white border border-stone-100 rounded-2xl p-6 mb-4">
+        <h2 class="font-bold text-stone-900 mb-4">Preview your profile</h2>
+
+        <!-- Preview card -->
+        <div class="bg-stone-50 border border-stone-100 rounded-2xl p-4 mb-4">
+          <div class="flex items-start gap-3 mb-3">
+            <div id="prev-avatar" class="w-12 h-12 rounded-xl bg-stone-200 flex items-center justify-center font-black text-stone-600 text-sm shrink-0 overflow-hidden"></div>
+            <div>
+              <h3 id="prev-name" class="font-bold text-stone-900 text-sm"></h3>
+              <p id="prev-location" class="text-xs text-stone-400 mt-0.5"></p>
+              <span id="prev-category" class="text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 inline-block"></span>
+            </div>
+          </div>
+          <div class="bg-stone-900 text-white rounded-xl p-3 mb-3">
+            <p class="text-[10px] text-stone-400 font-semibold uppercase tracking-wider mb-1">Currently working on</p>
+            <p id="prev-work" class="text-xs leading-relaxed text-stone-100"></p>
+          </div>
+          <p id="prev-bio" class="text-xs text-stone-600 leading-relaxed mb-3"></p>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-stone-400 font-mono" id="prev-upi"></span>
+            <span id="prev-qr-badge" class="hidden text-[10px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full border border-emerald-100">QR uploaded ✓</span>
+          </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-5">
+          <p class="text-xs text-amber-800 leading-relaxed">
+            <strong>By creating this profile, you agree:</strong> All information is self-declared. Workledger does not verify transactions or claims. The community can view, comment, and flag your profile. You can delete entries at any time from your profile.
+          </p>
+        </div>
+
+        <label class="flex items-start gap-3 cursor-pointer mb-5">
+          <input type="checkbox" id="f-consent" class="mt-0.5 accent-stone-900 w-4 h-4 shrink-0">
+          <span class="text-xs text-stone-600 leading-relaxed">I understand this profile is public. I'll report support honestly. I won't make false claims.</span>
+        </label>
+
+        <div id="err-3" class="text-rose-500 text-xs mb-4 hidden"></div>
+
+        <div class="flex gap-3">
+          <button onclick="goTo(2)" class="flex-1 border border-stone-200 text-stone-600 font-semibold py-3 rounded-xl hover:bg-stone-50 transition-all text-sm">← Back</button>
+          <button id="create-btn" onclick="createProfile()" class="flex-[2] bg-stone-900 hover:bg-stone-800 text-white font-bold py-3 rounded-xl transition-all text-sm">
+            Create profile ✓
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success -->
+    <div id="step-success" class="step-panel">
+      <div class="bg-white border border-stone-100 rounded-2xl p-8 text-center">
+        <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-5 text-3xl">✅</div>
+        <h2 class="text-xl font-black text-stone-900 mb-2">Profile created!</h2>
+        <p id="success-msg" class="text-stone-500 text-sm mb-6 leading-relaxed"></p>
+
+        <!-- Owner info box -->
+        <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-5 text-left">
+          <p class="text-xs font-bold text-amber-800 mb-1">You own this profile on this browser</p>
+          <p class="text-xs text-amber-700 leading-relaxed">When you open the profile link from this browser, you'll see the owner panel where you can report received support, report spending, and post updates. Don't clear your browser data or the ownership will be lost.</p>
+        </div>
+
+        <div class="bg-stone-50 rounded-xl p-3 mb-6 text-left">
+          <p class="text-xs font-semibold text-stone-500 mb-1">Your profile link</p>
+          <p id="profile-link" class="text-sm text-stone-800 font-mono break-all"></p>
+        </div>
+        <div class="space-y-3">
+          <a id="view-profile-btn" href="#" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold py-3 rounded-xl text-sm transition-all block">
+            View my profile →
+          </a>
+          <button onclick="copyLink()" class="w-full border border-stone-200 text-stone-600 font-semibold py-3 rounded-xl text-sm hover:bg-stone-50 transition-all">
+            Copy link to share
+          </button>
+          <a href="trust-ledger.html" class="block text-stone-400 text-xs hover:text-stone-600 transition-colors text-center pt-1">Browse all profiles</a>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    TL.init();
+    document.getElementById('nav-placeholder').innerHTML = TL.navHTML('');
+
+    // ── Category selector ──────────────────────────────────────────────
+    const CATEGORIES = [
+      { id:'environment', label:'Environment', emoji:'🌿' },
+      { id:'education',   label:'Education',   emoji:'📚' },
+      { id:'journalism',  label:'Journalism',  emoji:'📰' },
+      { id:'craft',       label:'Craft & Art', emoji:'🎨' },
+      { id:'health',      label:'Health',      emoji:'💊' },
+      { id:'community',   label:'Community',   emoji:'🤝' },
+    ];
+    let selectedCategory = '';
+    const catGrid = document.getElementById('category-grid');
+    CATEGORIES.forEach(cat => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'flex items-center gap-2 text-xs font-semibold px-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-stone-600 hover:border-stone-400 transition-all cat-btn';
+      btn.innerHTML = `<span>${cat.emoji}</span> ${cat.label}`;
+      btn.onclick = () => {
+        selectedCategory = cat.id;
+        document.querySelectorAll('.cat-btn').forEach(b => {
+          b.classList.remove('bg-stone-900','text-white','border-stone-900');
+          b.classList.add('bg-stone-50','text-stone-600','border-stone-200');
+        });
+        btn.classList.add('bg-stone-900','text-white','border-stone-900');
+        btn.classList.remove('bg-stone-50','text-stone-600','border-stone-200');
+      };
+      catGrid.appendChild(btn);
+    });
+
+    // ── Image previews ─────────────────────────────────────────────────
+    function setupUploadZone(inputId, previewId, placeholderId) {
+      document.getElementById(inputId).addEventListener('change', async e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          const url = await TL.readImageFile(file);
+          const img = document.getElementById(previewId);
+          img.src = url; img.classList.remove('hidden');
+          if (placeholderId) document.getElementById(placeholderId).classList.add('hidden');
+        } catch(err) { alert(err); e.target.value=''; }
+      });
+    }
+    setupUploadZone('f-photo', 'f-photo-preview', 'photo-placeholder');
+    setupUploadZone('f-qr',    'f-qr-preview',    'qr-placeholder');
+
+    // ── Step navigation ────────────────────────────────────────────────
+    let currentStep = 1;
+    let createdSlug = '';
+
+    function goTo(step) {
+      if (!validate(currentStep)) return;
+      document.getElementById(`step-${currentStep}`).classList.remove('active');
+      document.getElementById(`step-${step}`).classList.add('active');
+      currentStep = step;
+      const pcts = {1:33, 2:66, 3:100};
+      document.getElementById('progress-bar').style.width = (pcts[step] || 100) + '%';
+      document.getElementById('step-indicator').textContent = step <= 3 ? `Step ${step} of 3` : 'Done';
+      if (step === 3) fillPreview();
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function validate(step) {
+      const errEl = document.getElementById(`err-${step}`);
+      if (errEl) errEl.classList.add('hidden');
+      if (step === 1) {
+        if (!document.getElementById('f-name').value.trim())     { showErr(errEl, 'Please enter your name.'); return false; }
+        if (!document.getElementById('f-bio').value.trim())      { showErr(errEl, 'Please write a short bio.'); return false; }
+        if (!document.getElementById('f-location').value.trim()) { showErr(errEl, 'Please enter your location.'); return false; }
+      }
+      if (step === 2) {
+        if (!document.getElementById('f-work').value.trim()) { showErr(errEl, 'Please describe your current work.'); return false; }
+        const upi = document.getElementById('f-upi').value.trim();
+        if (!upi || !upi.includes('@')) { showErr(errEl, 'Please enter a valid UPI ID (e.g. name@okicici).'); return false; }
+      }
+      return true;
+    }
+
+    function showErr(el, msg) { if (!el) return; el.textContent = msg; el.classList.remove('hidden'); }
+
+    function fillPreview() {
+      const name    = document.getElementById('f-name').value.trim();
+      const photoSrc = document.getElementById('f-photo-preview').src;
+      const hasPhoto = !document.getElementById('f-photo-preview').classList.contains('hidden');
+      const hasQR    = !document.getElementById('f-qr-preview').classList.contains('hidden');
+
+      const av = document.getElementById('prev-avatar');
+      if (hasPhoto) {
+        av.innerHTML = `<img src="${photoSrc}" class="w-full h-full object-cover"/>`;
+      } else {
+        av.innerHTML = TL.initials(name);
+      }
+      document.getElementById('prev-name').textContent     = name;
+      document.getElementById('prev-location').textContent = '📍 ' + document.getElementById('f-location').value.trim();
+      document.getElementById('prev-work').textContent     = document.getElementById('f-work').value.trim();
+      document.getElementById('prev-bio').textContent      = document.getElementById('f-bio').value.trim();
+      document.getElementById('prev-upi').textContent      = document.getElementById('f-upi').value.trim();
+      const catEl = document.getElementById('prev-category');
+      if (selectedCategory) {
+        catEl.textContent = TL.categoryLabel(selectedCategory);
+        catEl.className   = `text-[10px] font-bold px-2 py-0.5 rounded-full inline-block ${TL.categoryColor(selectedCategory)}`;
+      }
+      document.getElementById('prev-qr-badge').classList.toggle('hidden', !hasQR);
+    }
+
+    // ── Create profile ─────────────────────────────────────────────────
+    async function createProfile() {
+      const errEl = document.getElementById('err-3');
+      errEl.classList.add('hidden');
+      if (!document.getElementById('f-consent').checked) {
+        showErr(errEl, 'Please read and tick the agreement above.'); return;
+      }
+
+      const btn = document.getElementById('create-btn');
+      btn.disabled = true; btn.textContent = 'Creating…';
+
+      const name      = document.getElementById('f-name').value.trim();
+      const goal      = parseInt(document.getElementById('f-goal').value) || null;
+      const slug      = TL.slugify(name);
+      const editToken = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+
+      // Read optional images
+      const photoFile = document.getElementById('f-photo').files[0];
+      const qrFile    = document.getElementById('f-qr').files[0];
+      let photoUrl = null, upiQrUrl = null;
+      if (photoFile) { try { photoUrl = await TL.readImageFile(photoFile); } catch(e) {} }
+      if (qrFile)    { try { upiQrUrl = await TL.readImageFile(qrFile);    } catch(e) {} }
+
+      const profile = {
+        id:               TL.generateId('P'),
+        slug,
+        editToken,
+        name,
+        photoUrl,
+        upiQrUrl,
+        bio:              document.getElementById('f-bio').value.trim(),
+        upiId:            document.getElementById('f-upi').value.trim(),
+        currentWork:      document.getElementById('f-work').value.trim(),
+        goalAmount:       goal,
+        locationText:     document.getElementById('f-location').value.trim(),
+        locationPrecision:'area',
+        category:         selectedCategory || 'other',
+        discoverable:     true,
+        createdAt:        new Date().toISOString(),
+        lastActiveAt:     new Date().toISOString()
+      };
+
+      TL.addProfile(profile); // also calls claimOwnership() internally
+      createdSlug = slug;
+
+      const profileUrl = `tl-profile.html?slug=${slug}`;
+      document.getElementById('step-3').classList.remove('active');
+      document.getElementById('step-success').classList.add('active');
+      document.getElementById('success-msg').textContent = `${name}'s profile is live. Share the link below and people can view and support your work directly.`;
+      document.getElementById('profile-link').textContent = window.location.origin + window.location.pathname.replace('tl-create.html','') + profileUrl;
+      document.getElementById('view-profile-btn').href = profileUrl;
+      document.getElementById('step-indicator').textContent = 'Done!';
+      document.getElementById('progress-bar').style.width = '100%';
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function copyLink() {
+      const link = `tl-profile.html?slug=${createdSlug}`;
+      const base = window.location.origin + window.location.pathname.replace('tl-create.html','');
+      navigator.clipboard.writeText(base + link)
+        .then(() => alert('Link copied!'))
+        .catch(() => alert('Copy manually: ' + base + link));
+    }
+  </script>
+</body>
+</html>
