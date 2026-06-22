@@ -9,6 +9,20 @@
 
 ## 1. What CMYC Is
 
+### Design Philosophy
+
+CMYC centres are **community spaces** — not institutions. They are primarily for youth and adolescents but open to all ages. The ethos is **safe space and brave space**: a place where young people feel physically and emotionally secure, and are also challenged to grow, take risks, and engage with difficult ideas. Every design decision in this system must serve that ethos:
+
+- No surveillance-style tracking or gamified pressure on attendance
+- Participation data is for programme improvement, not for judging individuals
+- Mental health data is treated with the highest privacy standard — staff cannot casually see it
+- The app should feel like a tool that helps facilitators serve people, not a compliance reporting machine
+- Community mobilisation is first-class — outreach and relationship-building is how new members find the space
+
+This shapes the UI: warm language, no red "failure" indicators for low attendance, issues framed as support needs rather than problems, and learner profiles that centre the person not the metrics.
+
+---
+
 CMYC runs multi-component youth and community development centres. Each centre offers some or all of the following program components:
 
 | Component | What it is |
@@ -89,7 +103,8 @@ id                  UUID PRIMARY KEY
 name                TEXT NOT NULL
 dob                 DATE
 gender              TEXT              -- 'male' | 'female' | 'other' | 'prefer_not_to_say'
-age_group           TEXT              -- auto-derived: 'child' | 'adolescent' | 'youth' | 'adult'
+age_group           TEXT              -- auto-derived: 'child' (<12) | 'adolescent' (12-17) | 'youth' (18-25) | 'adult' (25+)
+                                  -- primary target: adolescent + youth; centres open to all ages
 phone               TEXT              -- learner's own phone if applicable
 guardian_name       TEXT
 guardian_phone      TEXT
