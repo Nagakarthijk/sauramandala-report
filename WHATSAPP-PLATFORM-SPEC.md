@@ -124,19 +124,30 @@ Create the following **Contact Labels** (Settings → Tags):
 
 ### 3.3 Contact Custom Fields
 
-Add these custom fields to contact profiles (Settings → Contact Fields):
+Add these custom fields to contact profiles (Settings → Contact Fields).
 
-**For all contacts:**
-- `program` (text)
-- `language` (text)
-- `location` (text)
-- `assigned_pm` (text)
+**Consent fields (all contacts — required before any data collection):**
+- `consent_given` (boolean: true / false)
+- `consent_date` (date: when consent was recorded)
+- `consent_language` (text: language consent was given in)
+- `consent_method` (text: whatsapp_optin / form / verbal_confirmed_by_pm)
 
-**TFFP additional:**
+**Identity & routing (all contacts):**
+- `program` (text: tffp / cmyc / doorstep)
+- `language` (text: english / khasi / garo / pnar)
+- `location` (text: district name)
+- `assigned_pm` (text: PM staff username)
+
+**TFFP profile (built via progressive profiling — see Section 3.4a):**
 - `ecce_role` (text: anganwadi_worker / preschool_teacher / parent / home_based)
-- `tffp_week` (number: current content week they are on)
+- `experience_years` (text: 0-2 / 3-5 / 6-10 / 10+)
+- `age_group_served` (text: 0-3 / 3-6 / 0-6 / older)
+- `learning_interest` (text: free text or tag)
+- `tffp_week` (number: current content week)
 - `last_content_sent` (date)
-- `engagement_level` (text: high / medium / low)
+- `last_response_date` (date)
+- `streak_weeks` (number: consecutive weeks with at least one response)
+- `engagement_level` (text: high / medium / low / inactive)
 
 **CMYC additional:**
 - `team` (text)
@@ -147,6 +158,141 @@ Add these custom fields to contact profiles (Settings → Contact Fields):
 - `business_stage` (text: idea / early / growing)
 - `primary_need` (text)
 - `onboarding_complete` (boolean)
+
+### 3.4a Consent-First Architecture
+
+Every user must give active consent **before** any data is collected or stored. This applies to all three programs. Consent is not implied by messaging in — it must be explicitly given.
+
+#### Design principles
+
+- **Language before consent:** We cannot ask for consent in a language the person doesn't understand. Language selection is always the first step.
+- **Plain language:** Consent message says exactly what data is collected, how it is used, and how to opt out.
+- **Active YES/NO:** Quick reply buttons — not assumed by silence or continuation.
+- **Revocable:** Typing STOP at any time removes consent. This is handled immediately, not queued.
+- **Consent stored:** `consent_given`, `consent_date`, `consent_language` written to contact fields before any profile questions begin.
+
+#### Consent flow (TFFP example — same pattern for CMYC and Doorstep)
+
+**Step 1 — Language selection** (Glific flow, triggered on first incoming message):
+
+```
+Welcome to Sauramandala's TFFP learning programme.
+
+Please choose your language / अपनी भाषा चुनें:
+
+[English]  [Khasi]  [Garo]  [Pnar]
+```
+
+Flow stores selection to `language` contact field immediately.
+
+**Step 2 — Consent message** (sent in their chosen language; get translations from team):
+
+English version:
+```
+Hello! 👋
+
+The Teachers for the Future Pathway (TFFP) shares weekly 
+learning content on early childhood care and education.
+
+To do this, we will:
+✅ Save your name and phone number
+✅ Send you weekly content on WhatsApp
+✅ Record which content you have received
+
+We will NOT share your details with anyone outside Sauramandala.
+
+You can stop at any time by typing STOP.
+
+Do you agree to join?
+
+[Yes, I agree]  [No, not now]
+```
+
+**Step 3a — YES response:**
+- Set `consent_given = true`
+- Set `consent_date = today`
+- Set `consent_language = their chosen language`
+- Set `consent_method = whatsapp_optin`
+- Add to relevant program group (e.g. `TFFP-Practitioners`)
+- Send confirmation: *"Great! Welcome to TFFP. We'll send your first learning content soon."*
+- Trigger Session 1 profile questions (see progressive profiling below)
+- Notify PM
+
+**Step 3b — NO response:**
+- Set `consent_given = false`
+- Send: *"No problem at all. If you change your mind, just message us again."*
+- Do not add to any group
+- Do not collect any further data
+- PM notified (they may wish to follow up via other channel if appropriate)
+
+**STOP handling (any time, any message containing "STOP"):**
+- Flow detects keyword
+- Set `consent_given = false`
+- Remove from all TFFP groups immediately (synchronous)
+- Send: *"You have been unsubscribed from TFFP. We won't message you again. Text JOIN if you'd like to re-join in future."*
+- Log opt-out event with timestamp
+
+#### Progressive profiling — TFFP
+
+Instead of asking 6 questions at signup (overwhelming), spread them across three sessions.
+
+**Session 1 — After consent YES (3 questions):**
+```
+To send you the most useful content, we have 3 quick questions.
+
+1. What best describes your role?
+[Anganwadi Worker]  [Preschool Teacher]  [Parent]  [Home-based Caregiver]
+```
+After answer, next question:
+```
+2. Which district are you in?
+[type your district]
+```
+After answer:
+```
+3. How many years of experience do you have working with young children?
+[0–2 years]  [3–5 years]  [6–10 years]  [10+ years]
+```
+→ Save to `ecce_role`, `location`, `experience_years`. Send first content.
+
+**Session 2 — After Week 2 content delivery (2 questions):**
+Sent 48 hours after second weekly content:
+```
+Quick question while you have a moment — which age group do you mainly work with?
+[0–3 years]  [3–6 years]  [Mixed 0–6]  [Older children]
+```
+After answer:
+```
+How was last week's content for you?
+[Very useful]  [Somewhat useful]  [Not very useful]
+```
+→ Save to `age_group_served`. Use content rating to improve personalisation.
+
+**Session 3 — After Week 4 content delivery (1 question):**
+```
+One last question — is there any topic you'd especially like us to cover?
+[Play-based learning]  [Child nutrition]  [Emotional wellbeing]  [Talking with parents]
+```
+→ Save to `learning_interest`. Profile is now complete. No more profile questions.
+
+#### Content personalisation using profile
+
+Once `ecce_role` and `age_group_served` are known, use them to segment broadcasts:
+
+| Segment | Criteria | Broadcast variant |
+|---|---|---|
+| Anganwadi 0–3 | role=anganwadi + age_group=0-3 | Infant & toddler ECCE focus |
+| Anganwadi 3–6 | role=anganwadi + age_group=3-6 | Preschool activities focus |
+| Preschool teachers | role=preschool_teacher | Structured classroom content |
+| Parents/home-based | role=parent or home_based | Home learning + play ideas |
+
+Glific supports contact field variables in templates: `{{contact.ecce_role}}`, `{{contact.location}}` — use these to personalise the opening line of each broadcast.
+
+Example template opening:
+```
+Hello {{contact.name}},
+This week's content for {{contact.ecce_role}}s working in {{contact.location}}:
+```
 
 ### 3.4 Conversation Inbox Configuration
 
@@ -176,15 +322,17 @@ Glific flows handle **only** the automated touchpoints. Do not build complex log
 
 **Flows to create:**
 
-#### Opt-in / Welcome Flow
-Triggered when a new contact sends any message for the first time.
+#### Opt-in / Consent Flow
+Triggered when a new contact sends any message for the first time. **No data is stored and no group is assigned until consent is given.** Full design in Section 3.4a.
 
 Nodes:
-1. Send welcome message (in English — PM will follow up in local language)
-2. Ask which program they are joining (TFFP / CMYC / Doorstep) — use quick reply buttons
-3. Based on answer: add to correct group + apply program label
-4. Notify assigned PM via staff notification
-5. End flow — PM takes over conversation
+1. Send language selection message → quick reply buttons [English] [Khasi] [Garo] [Pnar]
+2. Save `language` contact field
+3. Send consent message in chosen language
+4. Wait for YES / NO / STOP keyword
+5. **YES branch:** set consent fields → ask which program → add to group → apply label → trigger Session 1 profile questions → notify PM
+6. **NO branch:** set `consent_given=false` → send no-problem message → end flow
+7. **STOP keyword (any time):** remove from groups → set `consent_given=false` → send unsubscribe confirmation
 
 #### TFFP Content Delivery Flow
 Not a conversation flow — this is a broadcast template. See Section 3.6.
@@ -242,11 +390,17 @@ All broadcast and outbound messages need pre-approved WhatsApp templates. Apply 
 
 | Template Name | Use | Variables |
 |---|---|---|
-| `tffp_weekly_content` | Weekly TFFP broadcast | `{{week_number}}`, `{{content_title}}`, `{{content_body}}` |
+| `tffp_consent_request` | First-contact consent ask | *(language-specific, no variables — static text)* |
+| `tffp_consent_confirmed` | Post-consent welcome | `{{first_name}}` |
+| `tffp_profile_q1` | Session 1 role question | — |
+| `tffp_profile_q2_session2` | Session 2 age group question | `{{first_name}}` |
+| `tffp_profile_q3_session3` | Session 3 interest question | `{{first_name}}` |
+| `tffp_weekly_content` | Weekly TFFP broadcast | `{{first_name}}`, `{{ecce_role}}`, `{{location}}`, `{{week_number}}`, `{{content_title}}`, `{{content_body}}` |
 | `cmyc_weekly_reminder` | Monday CMYC form trigger | `{{first_name}}` |
 | `doorstep_welcome` | New entrepreneur welcome | `{{first_name}}` |
 | `general_followup` | PM-triggered follow-up | `{{first_name}}`, `{{message}}` |
 | `inactivity_checkin` | 21-day re-engagement | `{{first_name}}` |
+| `stop_confirmation` | Opt-out acknowledgement | *(static, no variables)* |
 
 For each template: submit via Gupshup Dashboard → Templates → Create Template. Allow 24–48 hours for Meta approval.
 
@@ -504,8 +658,10 @@ Tasks:
 - [ ] Create PM staff accounts in Glific
 - [ ] Create contact groups and labels in Glific
 - [ ] Add contact custom fields in Glific
-- [ ] Create and get approved: `tffp_weekly_content`, `general_followup`, `inactivity_checkin` templates in Gupshup
-- [ ] Build and test opt-in welcome flow in Glific
+- [ ] Create and get approved: `tffp_consent_request` (4 language variants), `tffp_consent_confirmed`, `tffp_weekly_content`, `general_followup`, `inactivity_checkin`, `stop_confirmation` templates in Gupshup
+- [ ] Add consent fields to Glific contact profile: `consent_given`, `consent_date`, `consent_language`, `consent_method`
+- [ ] Build and test consent flow in Glific (language → consent message → YES/NO/STOP handling)
+- [ ] Build and test Session 1 progressive profiling flow (3 questions post-consent)
 - [ ] Create TFFP content library Google Sheet and populate Week 1–4
 - [ ] Set up first 4 weekly broadcasts in Glific (scheduled)
 - [ ] Create Saved Replies in Glific for PMs
@@ -598,3 +754,6 @@ Before Phase 1 build starts, decisions needed:
 6. **CMYC group size:** How many people will be submitting weekly reports? This determines broadcast volume.
 7. **Dashboard viewers:** Who sees the dashboard — internal team only, or shared with funders/partners?
 8. **Data privacy:** Are contact phone numbers sensitive? Do you need a data handling policy for WhatsApp conversations?
+9. **Consent translations:** Who will translate the consent message into Khasi, Garo, and Pnar? This must be done by a fluent speaker — do not use machine translation for legal consent text.
+10. **STOP keyword localisation:** Should STOP also work in local language equivalents (e.g. a Khasi word for "stop")? If yes, what are those keywords? Add them to the flow keyword triggers.
+11. **Re-join flow:** If someone who previously typed STOP messages again, should the consent flow restart automatically or should a PM reach out first?
