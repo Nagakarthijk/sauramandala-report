@@ -104,23 +104,41 @@ Assign one PM per program minimum. PMs should only see their program's contacts 
 
 ### 3.2 Contact Groups & Labels
 
-Create the following **Groups** (Settings → Groups):
+#### Groups — region × language (community layer)
 
-- `TFFP-Anganwadi`
-- `TFFP-Preschool`
-- `TFFP-Parents`
-- `TFFP-HomeBased`
-- `CMYC-Team`
-- `Doorstep-Entrepreneurs`
+Groups in this system are **community spaces**, not delivery channels. Personalised content goes to individuals via scheduled broadcasts. Groups carry nudges, shared reflections, and collective feedback.
 
-Create the following **Contact Labels** (Settings → Tags):
+Name groups as `{Program}-{Region}-{Language}`:
+
+**TFFP groups:**
+- `TFFP-EastKhasi-Khasi`
+- `TFFP-WestKhasi-Khasi`
+- `TFFP-WestGaro-Garo`
+- `TFFP-EastGaro-Garo`
+- `TFFP-Jaintia-Pnar`
+- `TFFP-Urban-English` *(for district HQ / English-speaking members)*
+
+Add regions as needed. One person can be in one group only (their home district × primary language). The group is for:
+- Weekly community nudge (e.g. "What did you try this week? Share a moment 🌱")
+- Celebrating member responses publicly in the group ("Thangi shared a great idea this week!")
+- PM posting links to new content when it drops on YouTube/Facebook/WhatsApp
+- Peer questions and informal conversation (PM monitors, does not moderate heavily)
+
+**CMYC groups:**
+- `CMYC-{District}` — one per district, language follows the district's dominant language
+
+**Doorstep groups:**
+- Not group-based at this stage — individual CRM conversations only
+
+#### Contact Labels (Settings → Tags)
 
 - `tffp` `cmyc` `doorstep` — program assignment
-- `language-khasi` `language-garo` `language-pnar` `language-english` — for routing
+- `language-khasi` `language-garo` `language-pnar` `language-english` — for PM routing and translation
 - `active` `inactive` `new` — engagement status
+- `parent-track` — TFFP members on the developmental stage content path (see Section 3.4b)
 - `needs-followup` `milestone-reached` `resource-shared` `escalate-to-coordinator`
 
-**On contact opt-in:** assign program label + language label immediately. This enables PM filtering and AI translation routing.
+**On contact opt-in:** assign program label + language label immediately. Add to their region × language group after district is confirmed in Session 1 profiling.
 
 ### 3.3 Contact Custom Fields
 
@@ -140,14 +158,20 @@ Add these custom fields to contact profiles (Settings → Contact Fields).
 
 **TFFP profile (built via progressive profiling — see Section 3.4a):**
 - `ecce_role` (text: anganwadi_worker / preschool_teacher / parent / home_based)
-- `experience_years` (text: 0-2 / 3-5 / 6-10 / 10+)
-- `age_group_served` (text: 0-3 / 3-6 / 0-6 / older)
+- `experience_years` (text: 0-2 / 3-5 / 6-10 / 10+ — not collected for parents)
 - `learning_interest` (text: free text or tag)
-- `tffp_week` (number: current content week)
+- `tffp_week` (number: current content week — used for anganwadi/teacher/home-based tracks)
 - `last_content_sent` (date)
 - `last_response_date` (date)
 - `streak_weeks` (number: consecutive weeks with at least one response)
 - `engagement_level` (text: high / medium / low / inactive)
+
+**TFFP parent developmental track (see Section 3.4b):**
+- `child_dob` (date: child's date of birth — YYYY-MM format is sufficient)
+- `child_count` (number: if more than one child, track eldest or most recently born)
+- `dev_stage` (text: computed and updated monthly — see stage table in 3.4b)
+- `dev_stage_updated` (date: last time dev_stage was recalculated)
+- `parent_content_week` (number: weeks of content sent within current dev_stage — resets when stage advances)
 
 **CMYC additional:**
 - `team` (text)
@@ -198,6 +222,9 @@ To do this, we will:
 ✅ Save your name and phone number
 ✅ Send you weekly content on WhatsApp
 ✅ Record which content you have received
+✅ If you are a parent: save your child's birth month and year
+   to personalise content to your child's age (no other child
+   data is stored)
 
 We will NOT share your details with anyone outside Sauramandala.
 
@@ -234,65 +261,153 @@ Do you agree to join?
 
 #### Progressive profiling — TFFP
 
-Instead of asking 6 questions at signup (overwhelming), spread them across three sessions.
+Instead of a long signup form, spread questions across three sessions. The flow branches at the role question — parents get a different path.
 
-**Session 1 — After consent YES (3 questions):**
+**Session 1 — After consent YES (3 questions, all tracks):**
 ```
-To send you the most useful content, we have 3 quick questions.
+To send you the most useful content, a few quick questions.
 
-1. What best describes your role?
+What best describes you?
 [Anganwadi Worker]  [Preschool Teacher]  [Parent]  [Home-based Caregiver]
 ```
-After answer, next question:
-```
-2. Which district are you in?
-[type your district]
-```
 After answer:
 ```
-3. How many years of experience do you have working with young children?
+Which district are you in?  (type your district name)
+```
+After answer — **if NOT parent:**
+```
+How many years have you worked with young children?
 [0–2 years]  [3–5 years]  [6–10 years]  [10+ years]
 ```
-→ Save to `ecce_role`, `location`, `experience_years`. Send first content.
+→ Save `ecce_role`, `location`, `experience_years`. Add to region×language group. Send Week 1 content.
 
-**Session 2 — After Week 2 content delivery (2 questions):**
-Sent 48 hours after second weekly content:
+After answer — **if PARENT:**
 ```
-Quick question while you have a moment — which age group do you mainly work with?
+What is your child's birth month and year? (e.g. March 2023)
+```
+→ Save `child_dob`. Compute `dev_stage`. Add to region×language group. Send Stage 1 content. Apply `parent-track` label. **Skip** to Section 3.4b for parent scheduling logic.
+
+**Session 2 — After Week 2 content (2 questions, non-parent tracks only):**
+Sent 48 hours after second weekly content piece:
+```
+Quick question — which age group do you mainly work with?
 [0–3 years]  [3–6 years]  [Mixed 0–6]  [Older children]
 ```
-After answer:
 ```
-How was last week's content for you?
+How was last week's content?
 [Very useful]  [Somewhat useful]  [Not very useful]
 ```
-→ Save to `age_group_served`. Use content rating to improve personalisation.
+→ Save `age_group_served`. Use rating to flag low-engagement contacts for PM follow-up.
 
-**Session 3 — After Week 4 content delivery (1 question):**
+**Session 3 — After Week 4 content (1 question, all non-parent tracks):**
 ```
-One last question — is there any topic you'd especially like us to cover?
+Is there a topic you'd especially like us to cover?
 [Play-based learning]  [Child nutrition]  [Emotional wellbeing]  [Talking with parents]
 ```
-→ Save to `learning_interest`. Profile is now complete. No more profile questions.
+→ Save `learning_interest`. Profile complete. No more profile questions.
 
-#### Content personalisation using profile
+#### Content personalisation — non-parent tracks
 
-Once `ecce_role` and `age_group_served` are known, use them to segment broadcasts:
-
-| Segment | Criteria | Broadcast variant |
+| Segment | Filter criteria | Content focus |
 |---|---|---|
-| Anganwadi 0–3 | role=anganwadi + age_group=0-3 | Infant & toddler ECCE focus |
-| Anganwadi 3–6 | role=anganwadi + age_group=3-6 | Preschool activities focus |
-| Preschool teachers | role=preschool_teacher | Structured classroom content |
-| Parents/home-based | role=parent or home_based | Home learning + play ideas |
+| Anganwadi workers | `ecce_role=anganwadi_worker` | AWC activities, Poshan, ICDS integration |
+| Preschool teachers | `ecce_role=preschool_teacher` | Classroom practice, structured learning |
+| Home-based caregivers | `ecce_role=home_based` | Home environment, play, language stimulation |
 
-Glific supports contact field variables in templates: `{{contact.ecce_role}}`, `{{contact.location}}` — use these to personalise the opening line of each broadcast.
+Content is tagged in the library with `audience` field. Individual scheduled messages use Glific template variables:
 
-Example template opening:
 ```
 Hello {{contact.name}},
-This week's content for {{contact.ecce_role}}s working in {{contact.location}}:
+Your learning content for this week — for {{contact.ecce_role}}s in {{contact.location}}:
 ```
+
+### 3.4b Parent Developmental Stage Track
+
+Parents are on a fundamentally different schedule from other TFFP participants. An anganwadi worker always works with 3–6 year olds — her content can follow a standard week-by-week curriculum. A parent's content must grow alongside their child. A parent who joins when their child is 4 months old needs completely different content two years later than they did on day one.
+
+#### Developmental stage table
+
+| Stage ID | Child age | Content focus |
+|---|---|---|
+| `newborn` | 0–3 months | Responsive caregiving, skin contact, sleep, feeding |
+| `early_infancy` | 3–6 months | Sensory play, talking to baby, tummy time |
+| `late_infancy` | 6–9 months | Solid foods, babbling, object permanence |
+| `crawler` | 9–12 months | Exploration, safety, first words |
+| `toddler_early` | 12–18 months | Walking, language explosion, tantrums |
+| `toddler_mid` | 18–24 months | Pretend play, independence, routines |
+| `toddler_late` | 24–30 months | Stories, social play, toilet readiness |
+| `preschool_early` | 30–36 months | Drawing, counting, peer play |
+| `preschool_mid` | 3–4 years | School readiness, emotional regulation |
+| `preschool_late` | 4–5 years | Reading readiness, friendships, questions |
+| `kindergarten` | 5–6 years | Formal learning transitions, independence |
+
+#### How stage advancement works
+
+A scheduled backend job (runs monthly, or can run weekly and only acts on changes) does:
+
+```python
+from dateutil.relativedelta import relativedelta
+
+def compute_dev_stage(child_dob: date) -> str:
+    age = relativedelta(date.today(), child_dob)
+    age_months = age.years * 12 + age.months
+    if age_months < 3:   return "newborn"
+    if age_months < 6:   return "early_infancy"
+    if age_months < 9:   return "late_infancy"
+    if age_months < 12:  return "crawler"
+    if age_months < 18:  return "toddler_early"
+    if age_months < 24:  return "toddler_mid"
+    if age_months < 30:  return "toddler_late"
+    if age_months < 36:  return "preschool_early"
+    if age_months < 48:  return "preschool_mid"
+    if age_months < 60:  return "preschool_late"
+    return "kindergarten"
+```
+
+When `compute_dev_stage(child_dob)` returns a value different from the stored `dev_stage`:
+1. Update `dev_stage` contact field in Glific via GraphQL
+2. Reset `parent_content_week = 1`
+3. Update `dev_stage_updated = today`
+4. Send a stage-transition message to the parent:
+
+```
+Hi {{contact.name}} 🌱
+
+Your child has reached a new stage! This month we'll be sharing ideas for
+children aged {{new_stage_label}}.
+
+The world looks different to them now — and your role is evolving too.
+```
+
+#### Content library tagging for parent track
+
+Parent content in the library has two tags instead of the standard `audience`:
+- `track = parent`
+- `dev_stage = {stage_id}` (e.g. `toddler_early`)
+
+Each stage has a content sequence of 4–6 weekly pieces. `parent_content_week` tracks position within the current stage's sequence. When it reaches the end of the stage's content before the child ages out, the system:
+- Sends a "reinforcement" piece (activity idea, reflection prompt)
+- Does not repeat the same content — flags to content team to add more for that stage
+
+#### Parent content delivery
+
+Parent content is **always individual** — never a group broadcast. The Glific GraphQL API sends a personalised message to each parent contact according to:
+- Their `dev_stage` (which content pool to draw from)
+- Their `parent_content_week` (which piece in the sequence)
+- Their `language` (which translation variant)
+- Their `last_content_sent` date (to maintain weekly cadence without double-sending)
+
+Parent group posts (in the region×language group) are separate from this — they are community nudges, not personalised content. Example group nudge for parent segment:
+
+```
+This week's thought for parents in the group 🌟
+What's one thing your child did this week that made you smile?
+Share here — we love hearing your stories.
+```
+
+#### No child data beyond DOB
+
+The system stores only the child's birth month/year — no name, no gender, no photos, no health data. The developmental stage is derived entirely from age. This is explicitly stated in the consent message for parents.
 
 ### 3.4 Conversation Inbox Configuration
 
@@ -364,19 +479,99 @@ This is the core TFFP delivery mechanism.
 3. Select message template (pre-approved by WhatsApp/Gupshup — see Section 4.1)
 4. Schedule for specific day/time (e.g. every Wednesday 10am)
 
-**Content library:** Maintain a Google Sheet with columns:
-- `week_number`
-- `content_type` (story / activity_idea / video / lesson / pdf / reflection_prompt)
-- `title`
-- `language`
-- `content_text` (or link for media)
-- `gupshup_template_name` (approved template to use)
-- `broadcast_date`
-- `target_group`
+**Content library:** Maintain a Google Sheet as the content master. The scheduler reads this sheet to know what to send and to whom.
 
-Team populates this sheet weekly. The broadcast is either:
-- Sent manually by PM using above sheet as reference, OR
-- Automated via the middleware script (Section 6) that reads the sheet and triggers the Glific GraphQL API
+| Column | Values / notes |
+|---|---|
+| `content_id` | Unique ID, e.g. `TFFP-AW-W03` or `TFFP-P-TODDLER_EARLY-W02` |
+| `track` | `anganwadi_worker` / `preschool_teacher` / `home_based` / `parent` |
+| `dev_stage` | For parent track only: stage ID from Section 3.4b. Leave blank for other tracks. |
+| `week_in_sequence` | Which week within the track or stage (1, 2, 3...) |
+| `content_type` | `story` / `activity_idea` / `video` / `lesson` / `pdf` / `reflection_prompt` / `group_nudge` |
+| `title` | Short title for PM reference |
+| `language` | `english` / `khasi` / `garo` / `pnar` |
+| `platform` | Where the content lives: `whatsapp` / `youtube` / `facebook` / `instagram` / `drive` |
+| `content_text` | The WhatsApp message body (for `platform=whatsapp`) or the caption/intro text (for link platforms) |
+| `media_url` | YouTube link / Facebook post URL / Instagram reel URL / Google Drive shareable link |
+| `whatsapp_media_id` | For WhatsApp-native media (images, audio, PDFs uploaded to Gupshup) — Gupshup media ID |
+| `gupshup_template_name` | Approved template name to use for this content send |
+| `approved` | `yes` / `no` — content is not sent until marked approved |
+| `added_by` | Staff name who added the row |
+
+#### Multi-platform sending logic
+
+When the scheduler picks a content row to send, it builds the WhatsApp message based on `platform`:
+
+- **`whatsapp`** — send `content_text` directly, attach `whatsapp_media_id` if present
+- **`youtube`** — send `content_text` + YouTube link: *"Watch on YouTube: {media_url}"*
+- **`facebook`** — send `content_text` + link: *"See on Facebook: {media_url}"*
+- **`instagram`** — send `content_text` + link: *"Watch on Instagram: {media_url}"*
+- **`drive`** — send `content_text` + link: *"Open resource: {media_url}"*
+
+The WhatsApp message always has context text — never just a bare link. The link platform is secondary; the content is described first.
+
+**Important:** YouTube and Drive links work fine inside WhatsApp messages. Instagram and Facebook links render as plain links — WhatsApp does not embed them. Warn content team to write strong caption text for those platforms since the preview may not show.
+
+Team populates this sheet as content is prepared. The scheduler (Section 6) reads only rows where `approved=yes` and selects based on `track`, `dev_stage` (if parent), `week_in_sequence`, and `language`.
+
+---
+
+## 3.7 Individual vs Group Scheduling — Two-Layer Model
+
+TFFP operates two parallel communication layers. They are independent systems with different logic.
+
+### Individual layer — personalised content delivery
+
+Each contact receives their own content sequence on their own schedule. The scheduler runs weekly (e.g. every Wednesday 9am) and for each eligible contact:
+
+1. Look up `ecce_role` → determines which track (anganwadi / teacher / home_based / parent)
+2. **If parent:** look up `dev_stage` and `parent_content_week` → find matching content row
+3. **If other:** look up `tffp_week` → find matching content row
+4. Check `language` → select correct language variant
+5. Check `last_content_sent` → skip if content was sent less than 6 days ago (prevents double-send)
+6. Send personalised message via Glific GraphQL API
+7. Increment `tffp_week` or `parent_content_week`
+8. Update `last_content_sent = today`
+
+This means two anganwadi workers who joined 3 weeks apart are on different weeks. A parent whose child just turned 18 months gets `toddler_early` content regardless of when they joined.
+
+**No group broadcasts for content delivery.** Content is always individual so the sequence is correct.
+
+### Group layer — community nudges and feedback
+
+Groups (region × language) receive:
+- One nudge per week from PM or automated message — a prompt to share, reflect, or celebrate
+- Links when new content is posted to YouTube/Facebook/Instagram (PM posts manually — not automated, since social media timing varies)
+- Peer conversation — no moderation script, PM participates naturally
+
+Group messages are simple Glific broadcasts to the group, not the individual scheduling system. PM sends them from the Glific interface, or they are scheduled as simple weekly templates with no personalisation logic.
+
+Example weekly group nudge template (`tffp_group_nudge`):
+```
+{{contact.name}} and friends 🌱
+
+This week's question for our group:
+What is one thing a child in your care did this week that surprised you?
+
+Share here — your stories help everyone learn.
+```
+
+### Gamification — individual streaks, group celebrations
+
+Individual streaks (`streak_weeks`) are tracked per contact. When a contact replies to content (any inbound message within 72h of content send), `streak_weeks` increments. If no reply for 8+ days after content sent, streak resets.
+
+Milestone messages trigger at: 1 week, 4 weeks, 8 weeks, 16 weeks, 26 weeks (6 months).
+
+Example at 4 weeks:
+```
+You've been learning with TFFP for 4 weeks! 🎉
+That's consistency — and it shows. Keep going.
+```
+
+**No leaderboards.** Streak is personal. Group posts celebrate engagement without ranking:
+```
+Our group has been active for 3 weeks straight — thank you everyone for sharing! 🙏
+```
 
 ---
 
