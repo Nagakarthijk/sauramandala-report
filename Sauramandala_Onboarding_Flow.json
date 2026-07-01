@@ -1,0 +1,821 @@
+{
+  "interactive_templates": [
+    {
+      "source_id": 91001,
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "options": [
+          {
+            "type": "text",
+            "title": "English"
+          },
+          {
+            "type": "text",
+            "title": "Khasi"
+          },
+          {
+            "type": "text",
+            "title": "Garo"
+          },
+          {
+            "type": "text",
+            "title": "Pnar"
+          }
+        ],
+        "content": {
+          "type": "text",
+          "header": "Language Selection",
+          "text": "Welcome to Sauramandala! 🌱\n\nPlease choose your language:\n\n1 - English\n2 - Khasi\n3 - Garo\n4 - Pnar"
+        }
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "options": [
+            {
+              "type": "text",
+              "title": "English"
+            },
+            {
+              "type": "text",
+              "title": "Khasi"
+            },
+            {
+              "type": "text",
+              "title": "Garo"
+            },
+            {
+              "type": "text",
+              "title": "Pnar"
+            }
+          ],
+          "content": {
+            "type": "text",
+            "header": "Language Selection",
+            "text": "Welcome to Sauramandala! 🌱\n\nPlease choose your language:\n\n1 - English\n2 - Khasi\n3 - Garo\n4 - Pnar"
+          }
+        }
+      },
+      "type": "quick_reply",
+      "label": "Language Selection"
+    },
+    {
+      "source_id": 91002,
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "options": [
+          {
+            "type": "text",
+            "title": "Yes"
+          },
+          {
+            "type": "text",
+            "title": "No"
+          }
+        ],
+        "content": {
+          "type": "text",
+          "header": "Consent",
+          "text": "Before we begin:\n\n📋 We collect your name, phone, role and progress.\n🔒 We use it to send you relevant content.\n❌ You can leave anytime — reply STOP.\n\nDo you agree to join?",
+          "caption": "Reply STOP at any time to opt out"
+        }
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "options": [
+            {
+              "type": "text",
+              "title": "Yes"
+            },
+            {
+              "type": "text",
+              "title": "No"
+            }
+          ],
+          "content": {
+            "type": "text",
+            "header": "Consent",
+            "text": "Before we begin:\n\n📋 We collect your name, phone, role and progress.\n🔒 We use it to send you relevant content.\n❌ You can leave anytime — reply STOP.\n\nDo you agree to join?",
+            "caption": "Reply STOP at any time to opt out"
+          }
+        }
+      },
+      "type": "quick_reply",
+      "label": "Consent"
+    },
+    {
+      "source_id": 91003,
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "options": [
+          {
+            "type": "text",
+            "title": "TFFP"
+          },
+          {
+            "type": "text",
+            "title": "CMYC"
+          },
+          {
+            "type": "text",
+            "title": "Doorstep"
+          },
+          {
+            "type": "text",
+            "title": "Core Team"
+          }
+        ],
+        "content": {
+          "type": "text",
+          "header": "Programme Selection",
+          "text": "Great! Which programme are you part of?\n\n1 - TFFP (Early Childhood Education)\n2 - CMYC (Youth Centres)\n3 - Doorstep (Entrepreneur Support)\n4 - Core Team (Sauramandala Staff)"
+        }
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "options": [
+            {
+              "type": "text",
+              "title": "TFFP"
+            },
+            {
+              "type": "text",
+              "title": "CMYC"
+            },
+            {
+              "type": "text",
+              "title": "Doorstep"
+            },
+            {
+              "type": "text",
+              "title": "Core Team"
+            }
+          ],
+          "content": {
+            "type": "text",
+            "header": "Programme Selection",
+            "text": "Great! Which programme are you part of?\n\n1 - TFFP (Early Childhood Education)\n2 - CMYC (Youth Centres)\n3 - Doorstep (Entrepreneur Support)\n4 - Core Team (Sauramandala Staff)"
+          }
+        }
+      },
+      "type": "quick_reply",
+      "label": "Programme Selection"
+    }
+  ],
+  "flows": [
+    {
+      "definition": {
+        "uuid": "b0000000-0001-4000-8000-000000000000",
+        "name": "Sauramandala — Common Onboarding",
+        "type": "messaging",
+        "spec_version": "13.2.0",
+        "language": "base",
+        "expire_after_minutes": 10080,
+        "localization": {},
+        "_ui": {
+          "nodes": {},
+          "stickies": {}
+        },
+        "nodes": [
+          {
+            "uuid": "b1000001-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000001-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000002-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000001-0001-4000-8000-000000000000",
+                "type": "send_interactive_msg",
+                "text": "{\"type\": \"quick_reply\", \"options\": [{\"type\": \"text\", \"title\": \"English\"}, {\"type\": \"text\", \"title\": \"Khasi\"}, {\"type\": \"text\", \"title\": \"Garo\"}, {\"type\": \"text\", \"title\": \"Pnar\"}], \"content\": {\"type\": \"text\", \"header\": \"Language Selection\", \"text\": \"Welcome to Sauramandala! \\ud83c\\udf31\\n\\nPlease choose your language:\\n\\n1 - English\\n2 - Khasi\\n3 - Garo\\n4 - Pnar\"}}",
+                "name": "Language Selection",
+                "labels": [],
+                "id": 91001,
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ]
+          },
+          {
+            "uuid": "b1000002-0001-4000-8000-000000000000",
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "preferred_language",
+              "operand": "@input.text",
+              "default_category_uuid": "c1000005-0001-4000-8000-000000000000",
+              "categories": [
+                {
+                  "uuid": "c1000001-0001-4000-8000-000000000000",
+                  "name": "English",
+                  "exit_uuid": "d1000001-0001-4000-8000-000000000000"
+                },
+                {
+                  "uuid": "c1000002-0001-4000-8000-000000000000",
+                  "name": "Khasi",
+                  "exit_uuid": "d1000002-0001-4000-8000-000000000000"
+                },
+                {
+                  "uuid": "c1000003-0001-4000-8000-000000000000",
+                  "name": "Garo",
+                  "exit_uuid": "d1000003-0001-4000-8000-000000000000"
+                },
+                {
+                  "uuid": "c1000004-0001-4000-8000-000000000000",
+                  "name": "Pnar",
+                  "exit_uuid": "d1000004-0001-4000-8000-000000000000"
+                },
+                {
+                  "uuid": "c1000005-0001-4000-8000-000000000000",
+                  "name": "Other",
+                  "exit_uuid": "d1000005-0001-4000-8000-000000000000"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "f1000001-0001-4000-8000-000000000000",
+                  "type": "has_any_word",
+                  "category_uuid": "c1000001-0001-4000-8000-000000000000",
+                  "arguments": [
+                    "English",
+                    "1"
+                  ]
+                },
+                {
+                  "uuid": "f1000002-0001-4000-8000-000000000000",
+                  "type": "has_any_word",
+                  "category_uuid": "c1000002-0001-4000-8000-000000000000",
+                  "arguments": [
+                    "Khasi",
+                    "2"
+                  ]
+                },
+                {
+                  "uuid": "f1000003-0001-4000-8000-000000000000",
+                  "type": "has_any_word",
+                  "category_uuid": "c1000003-0001-4000-8000-000000000000",
+                  "arguments": [
+                    "Garo",
+                    "3"
+                  ]
+                },
+                {
+                  "uuid": "f1000004-0001-4000-8000-000000000000",
+                  "type": "has_any_word",
+                  "category_uuid": "c1000004-0001-4000-8000-000000000000",
+                  "arguments": [
+                    "Pnar",
+                    "4"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "d1000001-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000003-0001-4000-8000-000000000000"
+              },
+              {
+                "uuid": "d1000002-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000004-0001-4000-8000-000000000000"
+              },
+              {
+                "uuid": "d1000003-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000005-0001-4000-8000-000000000000"
+              },
+              {
+                "uuid": "d1000004-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000006-0001-4000-8000-000000000000"
+              },
+              {
+                "uuid": "d1000005-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000007-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": []
+          },
+          {
+            "uuid": "b1000003-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000002-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000008-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000003-0001-4000-8000-000000000000",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "preferred_language",
+                  "name": "Preferred Language"
+                },
+                "value": "English"
+              }
+            ]
+          },
+          {
+            "uuid": "b1000004-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000003-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000008-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000004-0001-4000-8000-000000000000",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "preferred_language",
+                  "name": "Preferred Language"
+                },
+                "value": "Khasi"
+              }
+            ]
+          },
+          {
+            "uuid": "b1000005-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000004-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000008-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000005-0001-4000-8000-000000000000",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "preferred_language",
+                  "name": "Preferred Language"
+                },
+                "value": "Garo"
+              }
+            ]
+          },
+          {
+            "uuid": "b1000006-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000005-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000008-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000006-0001-4000-8000-000000000000",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "preferred_language",
+                  "name": "Preferred Language"
+                },
+                "value": "Pnar"
+              }
+            ]
+          },
+          {
+            "uuid": "b1000007-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000006-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000001-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000007-0001-4000-8000-000000000000",
+                "type": "send_msg",
+                "text": "Please choose 1, 2, 3 or 4 to select your language.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ]
+          },
+          {
+            "uuid": "b1000008-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000007-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000009-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000008-0001-4000-8000-000000000000",
+                "type": "send_interactive_msg",
+                "text": "{\"type\": \"quick_reply\", \"options\": [{\"type\": \"text\", \"title\": \"Yes\"}, {\"type\": \"text\", \"title\": \"No\"}], \"content\": {\"type\": \"text\", \"header\": \"Consent\", \"text\": \"Before we begin:\\n\\n\\ud83d\\udccb We collect your name, phone, role and progress.\\n\\ud83d\\udd12 We use it to send you relevant content.\\n\\u274c You can leave anytime \\u2014 reply STOP.\\n\\nDo you agree to join?\", \"caption\": \"Reply STOP at any time to opt out\"}}",
+                "name": "Consent",
+                "labels": [],
+                "id": 91002,
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ]
+          },
+          {
+            "uuid": "b1000009-0001-4000-8000-000000000000",
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "consent_reply",
+              "operand": "@input.text",
+              "default_category_uuid": "c1000008-0001-4000-8000-000000000000",
+              "categories": [
+                {
+                  "uuid": "c1000006-0001-4000-8000-000000000000",
+                  "name": "Yes",
+                  "exit_uuid": "d1000006-0001-4000-8000-000000000000"
+                },
+                {
+                  "uuid": "c1000007-0001-4000-8000-000000000000",
+                  "name": "No",
+                  "exit_uuid": "d1000007-0001-4000-8000-000000000000"
+                },
+                {
+                  "uuid": "c1000008-0001-4000-8000-000000000000",
+                  "name": "Other",
+                  "exit_uuid": "d1000008-0001-4000-8000-000000000000"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "f1000006-0001-4000-8000-000000000000",
+                  "type": "has_any_word",
+                  "category_uuid": "c1000006-0001-4000-8000-000000000000",
+                  "arguments": [
+                    "Yes",
+                    "yes",
+                    "YES",
+                    "y"
+                  ]
+                },
+                {
+                  "uuid": "f1000007-0001-4000-8000-000000000000",
+                  "type": "has_any_word",
+                  "category_uuid": "c1000007-0001-4000-8000-000000000000",
+                  "arguments": [
+                    "No",
+                    "no",
+                    "NO",
+                    "n",
+                    "STOP",
+                    "stop"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "d1000006-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000010-0001-4000-8000-000000000000"
+              },
+              {
+                "uuid": "d1000007-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000011-0001-4000-8000-000000000000"
+              },
+              {
+                "uuid": "d1000008-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000012-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": []
+          },
+          {
+            "uuid": "b1000010-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000008-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000013-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000010-0001-4000-8000-000000000000",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "consent_given",
+                  "name": "Consent Given"
+                },
+                "value": "yes"
+              }
+            ]
+          },
+          {
+            "uuid": "b1000011-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000009-0001-4000-8000-000000000000",
+                "destination_uuid": null
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000011-0001-4000-8000-000000000000",
+                "type": "send_msg",
+                "text": "No problem at all. You won't receive further messages from us. Reply JOIN anytime if you change your mind. 🙏",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ]
+          },
+          {
+            "uuid": "b1000012-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000010-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000008-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000012-0001-4000-8000-000000000000",
+                "type": "send_msg",
+                "text": "Please reply Yes to join or No to decline.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ]
+          },
+          {
+            "uuid": "b1000013-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000011-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000014-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000013-0001-4000-8000-000000000000",
+                "type": "send_interactive_msg",
+                "text": "{\"type\": \"quick_reply\", \"options\": [{\"type\": \"text\", \"title\": \"TFFP\"}, {\"type\": \"text\", \"title\": \"CMYC\"}, {\"type\": \"text\", \"title\": \"Doorstep\"}, {\"type\": \"text\", \"title\": \"Core Team\"}], \"content\": {\"type\": \"text\", \"header\": \"Programme Selection\", \"text\": \"Great! Which programme are you part of?\\n\\n1 - TFFP (Early Childhood Education)\\n2 - CMYC (Youth Centres)\\n3 - Doorstep (Entrepreneur Support)\\n4 - Core Team (Sauramandala Staff)\"}}",
+                "name": "Programme Selection",
+                "labels": [],
+                "id": 91003,
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ]
+          },
+          {
+            "uuid": "b1000014-0001-4000-8000-000000000000",
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "programme",
+              "operand": "@input.text",
+              "default_category_uuid": "c1000013-0001-4000-8000-000000000000",
+              "categories": [
+                {
+                  "uuid": "c1000009-0001-4000-8000-000000000000",
+                  "name": "TFFP",
+                  "exit_uuid": "d1000009-0001-4000-8000-000000000000"
+                },
+                {
+                  "uuid": "c1000010-0001-4000-8000-000000000000",
+                  "name": "CMYC",
+                  "exit_uuid": "d1000010-0001-4000-8000-000000000000"
+                },
+                {
+                  "uuid": "c1000011-0001-4000-8000-000000000000",
+                  "name": "Doorstep",
+                  "exit_uuid": "d1000011-0001-4000-8000-000000000000"
+                },
+                {
+                  "uuid": "c1000012-0001-4000-8000-000000000000",
+                  "name": "Core Team",
+                  "exit_uuid": "d1000012-0001-4000-8000-000000000000"
+                },
+                {
+                  "uuid": "c1000013-0001-4000-8000-000000000000",
+                  "name": "Other",
+                  "exit_uuid": "d1000013-0001-4000-8000-000000000000"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "f1000009-0001-4000-8000-000000000000",
+                  "type": "has_any_word",
+                  "category_uuid": "c1000009-0001-4000-8000-000000000000",
+                  "arguments": [
+                    "TFFP",
+                    "tffp",
+                    "1"
+                  ]
+                },
+                {
+                  "uuid": "f1000010-0001-4000-8000-000000000000",
+                  "type": "has_any_word",
+                  "category_uuid": "c1000010-0001-4000-8000-000000000000",
+                  "arguments": [
+                    "CMYC",
+                    "cmyc",
+                    "2"
+                  ]
+                },
+                {
+                  "uuid": "f1000011-0001-4000-8000-000000000000",
+                  "type": "has_any_word",
+                  "category_uuid": "c1000011-0001-4000-8000-000000000000",
+                  "arguments": [
+                    "Doorstep",
+                    "doorstep",
+                    "OESN",
+                    "oesn",
+                    "3"
+                  ]
+                },
+                {
+                  "uuid": "f1000012-0001-4000-8000-000000000000",
+                  "type": "has_any_word",
+                  "category_uuid": "c1000012-0001-4000-8000-000000000000",
+                  "arguments": [
+                    "Core",
+                    "core",
+                    "Core Team",
+                    "4"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "d1000009-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000015-0001-4000-8000-000000000000"
+              },
+              {
+                "uuid": "d1000010-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000016-0001-4000-8000-000000000000"
+              },
+              {
+                "uuid": "d1000011-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000017-0001-4000-8000-000000000000"
+              },
+              {
+                "uuid": "d1000012-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000018-0001-4000-8000-000000000000"
+              },
+              {
+                "uuid": "d1000013-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000019-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": []
+          },
+          {
+            "uuid": "b1000015-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000012-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000020-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000015-0001-4000-8000-000000000000",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "programme",
+                  "name": "Programme"
+                },
+                "value": "tffp"
+              }
+            ]
+          },
+          {
+            "uuid": "b1000016-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000013-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000020-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000016-0001-4000-8000-000000000000",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "programme",
+                  "name": "Programme"
+                },
+                "value": "cmyc"
+              }
+            ]
+          },
+          {
+            "uuid": "b1000017-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000014-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000020-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000017-0001-4000-8000-000000000000",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "programme",
+                  "name": "Programme"
+                },
+                "value": "oesn"
+              }
+            ]
+          },
+          {
+            "uuid": "b1000018-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000015-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000020-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000018-0001-4000-8000-000000000000",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "programme",
+                  "name": "Programme"
+                },
+                "value": "core_team"
+              }
+            ]
+          },
+          {
+            "uuid": "b1000019-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000016-0001-4000-8000-000000000000",
+                "destination_uuid": "b1000013-0001-4000-8000-000000000000"
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000019-0001-4000-8000-000000000000",
+                "type": "send_msg",
+                "text": "Please choose 1, 2, 3 or 4 to select your programme.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ]
+          },
+          {
+            "uuid": "b1000020-0001-4000-8000-000000000000",
+            "exits": [
+              {
+                "uuid": "e1000017-0001-4000-8000-000000000000",
+                "destination_uuid": null
+              }
+            ],
+            "actions": [
+              {
+                "uuid": "a1000020-0001-4000-8000-000000000000",
+                "type": "send_msg",
+                "text": "You're all set! ✅\n\nWelcome to Sauramandala. Your programme team will be in touch soon with your first content.\n\nReply STOP at any time to leave. 🌱",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ]
+          }
+        ],
+        "vars": []
+      },
+      "keywords": [
+        "hi",
+        "hello",
+        "start",
+        "join",
+        "optin"
+      ]
+    }
+  ],
+  "contact_field": [
+    "preferred_language",
+    "consent_given",
+    "programme"
+  ],
+  "collections": []
+}
