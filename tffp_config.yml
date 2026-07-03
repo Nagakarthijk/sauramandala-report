@@ -1,0 +1,564 @@
+# ============================================================
+# TFFP — Thrive From the First Phase
+# Glific Configuration YAML
+# Deploy: python3 deploy.py tffp_config.yml
+# ============================================================
+
+programme: tffp
+description: "Early childhood education — content delivery, engagement, gamification"
+
+# ── Contact Fields ───────────────────────────────────────────────────────────
+contact_fields:
+  - key: ecce_role
+    label: "ECCE Role"
+    value_type: text
+    # values: anganwadi_worker | preschool_teacher | parent | home_caregiver
+    scope: contact
+
+  - key: child_dob
+    label: "Child Date of Birth"
+    value_type: text
+    # format: DD/MM/YYYY — parents only
+    scope: contact
+
+  - key: age_band
+    label: "Age Band"
+    value_type: text
+    # values: 3-4 | 4-5 | 5-6 | 6-8
+    # calculated from child_dob, updated monthly
+    scope: contact
+
+  - key: tffp_activity_count
+    label: "TFFP Activity Count"
+    value_type: text
+    # integer stored as text — incremented on each activity submission
+    scope: contact
+
+  - key: tffp_last_active
+    label: "TFFP Last Active"
+    value_type: text
+    # date of last interaction — updated on any engagement
+    scope: contact
+
+  - key: tffp_champion_level
+    label: "TFFP Champion Level"
+    value_type: text
+    # values: none | bronze | silver | gold
+    scope: contact
+
+  - key: tffp_last_content_id
+    label: "TFFP Last Content ID"
+    value_type: text
+    # ID of last content item sent — used for resend requests
+    scope: contact
+
+# ── Groups (Collections) ─────────────────────────────────────────────────────
+groups:
+  - label: "TFFP — All"
+    shortcode: tffp_all
+    description: "All TFFP programme contacts"
+
+  - label: "TFFP — Parents"
+    shortcode: tffp_parents
+    description: "Parents and caregivers with children aged 3–8"
+
+  - label: "TFFP — Practitioners"
+    shortcode: tffp_practitioners
+    description: "Anganwadi workers, preschool teachers, home-based caregivers"
+
+  - label: "TFFP — Supervisors"
+    shortcode: tffp_supervisors
+    description: "Block and cluster supervisors"
+
+# ── Tags ─────────────────────────────────────────────────────────────────────
+tags:
+  - label: "TFFP Activity Submission"
+    description: "Contact submitted an activity response (photo/video/audio)"
+
+  - label: "TFFP Content Request"
+    description: "Contact requested specific content"
+
+  - label: "TFFP Inactive 14d"
+    description: "Contact has not engaged in 14+ days"
+
+  - label: "TFFP Champion"
+    description: "Contact has reached bronze or above champion level"
+
+  - label: "TFFP Escalated"
+    description: "Content request escalated to programme team"
+
+# ── Content Sheet ─────────────────────────────────────────────────────────────
+content_sheet:
+  name: "TFFP Content Calendar"
+  # Column layout — matches CONTENT-SCHEDULER-SPEC.md
+  # Apps Script reads this sheet daily and triggers Glific API
+  audiences:
+    - tffp_parents
+    - tffp_practitioners
+    - tffp_supervisors
+    - tffp_all
+  cadence: "2x per week (Tuesday content, Thursday follow-up)"
+
+# ── Triggers ─────────────────────────────────────────────────────────────────
+triggers:
+  - name: "TFFP Age Band Monthly Update"
+    type: scheduled
+    schedule: "0 6 1 * *"   # 1st of every month, 6 AM
+    flow: tffp_age_band_update
+    group: tffp_parents      # only parents have child_dob
+
+  - name: "TFFP Inactivity Check"
+    type: scheduled
+    schedule: "0 8 * * 1"   # every Monday 8 AM
+    flow: tffp_inactivity_nudge
+    group: tffp_all
+
+# ── Flows ─────────────────────────────────────────────────────────────────────
+flows:
+
+  # ── 1. Weekly Content Delivery ──────────────────────────────────────────────
+  # Triggered by Apps Script (Glific API call), not a keyword.
+  # Apps Script reads the Content Calendar sheet and calls
+  # sendGroupMessage for the matching audience group.
+  # The message itself (text/image/video/document/audio) is
+  # constructed by Apps Script from the sheet row.
+  # No Glific flow needed for basic delivery — only for follow-up.
+
+  - name: "TFFP — Content Follow-Up"
+    shortcode: tffp_content_followup
+    keywords: []   # triggered programmatically after content send
+    description: "Sent 2 days after content delivery to prompt activity response"
+    expire_after_minutes: 4320   # 3 days
+    nodes:
+
+      - id: ASK_RESPONSE
+        type: send_msg
+        text: |
+          Did you try this week's activity? 🌱
+
+          You can share:
+          📸 A photo
+          🎬 A short video
+          🎵 A voice note
+
+          Or just reply 👍 if you enjoyed it!
+        next: WAIT_RESPONSE
+
+      - id: WAIT_RESPONSE
+        type: router
+        wait: msg
+        result_name: activity_response
+        operand: "@input.type"
+        cases:
+          - match_type: has_any_word
+            arguments: ["image"]
+            category: Media
+            next: LOG_MEDIA
+          - match_type: has_any_word
+            arguments: ["video"]
+            category: Media
+            next: LOG_MEDIA
+          - match_type: has_any_word
+            arguments: ["audio"]
+            category: Media
+            next: LOG_MEDIA
+          - match_type: has_any_word
+            arguments: ["👍", "good", "yes", "liked", "enjoyed"]
+            category: TextEngaged
+            next: LOG_TEXT
+        default: LOG_TEXT
+
+      - id: LOG_MEDIA
+        type: webhook
+        url: "@system.settings.webhook_url"
+        method: POST
+        body: |
+          {
+            "action": "log_activity",
+            "contact_id": "@contact.id",
+            "type": "@results.activity_response.value",
+            "media_url": "@input.attachments",
+            "programme": "tffp"
+          }
+        next: INCREMENT_COUNT
+
+      - id: LOG_TEXT
+        type: webhook
+        url: "@system.settings.webhook_url"
+        method: POST
+        body: |
+          {
+            "action": "log_activity",
+            "contact_id": "@contact.id",
+            "type": "text_response",
+            "programme": "tffp"
+          }
+        next: INCREMENT_COUNT
+
+      - id: INCREMENT_COUNT
+        type: set_contact_field
+        field_key: tffp_activity_count
+        field_name: "TFFP Activity Count"
+        value: "@contact.fields.tffp_activity_count + 1"
+        next: UPDATE_LAST_ACTIVE
+
+      - id: UPDATE_LAST_ACTIVE
+        type: set_contact_field
+        field_key: tffp_last_active
+        field_name: "TFFP Last Active"
+        value: "@date.today"
+        next: CHECK_MILESTONE
+
+      - id: CHECK_MILESTONE
+        type: router
+        wait: none
+        result_name: ""
+        operand: "@contact.fields.tffp_activity_count.value"
+        cases:
+          - match_type: has_any_word
+            arguments: ["5"]
+            category: Bronze
+            next: AWARD_BRONZE
+          - match_type: has_any_word
+            arguments: ["15"]
+            category: Silver
+            next: AWARD_SILVER
+          - match_type: has_any_word
+            arguments: ["30"]
+            category: Gold
+            next: AWARD_GOLD
+        default: THANK_PLAIN
+
+      - id: AWARD_BRONZE
+        type: set_contact_field
+        field_key: tffp_champion_level
+        field_name: "TFFP Champion Level"
+        value: "bronze"
+        next: SEND_BRONZE_MSG
+
+      - id: SEND_BRONZE_MSG
+        type: send_msg
+        text: |
+          🌟 *Bronze Champion!*
+
+          @contact.name, you've completed 5 activities — amazing effort!
+
+          Your certificate has been saved. Keep going for Silver at 15! 🏅
+        next: END
+
+      - id: AWARD_SILVER
+        type: set_contact_field
+        field_key: tffp_champion_level
+        field_name: "TFFP Champion Level"
+        value: "silver"
+        next: SEND_SILVER_MSG
+
+      - id: SEND_SILVER_MSG
+        type: send_msg
+        text: |
+          🥈 *Silver Champion!*
+
+          Incredible, @contact.name — 15 activities completed!
+
+          You're being featured in our champion highlights. Gold is next at 30! 🌟
+        next: END
+
+      - id: AWARD_GOLD
+        type: set_contact_field
+        field_key: tffp_champion_level
+        field_name: "TFFP Champion Level"
+        value: "gold"
+        next: SEND_GOLD_MSG
+
+      - id: SEND_GOLD_MSG
+        type: send_msg
+        text: |
+          🥇 *Gold Champion — @contact.name!*
+
+          30 activities! You are a true champion for children's learning. 🌱
+
+          Our team will be in touch about a special recognition. Thank you!
+        next: END
+
+      - id: THANK_PLAIN
+        type: send_msg
+        text: "Thank you for sharing! Keep it up 🌱"
+        next: END
+
+      - id: END
+        type: end
+
+
+  # ── 2. Content Request Flow ─────────────────────────────────────────────────
+  - name: "TFFP — Content Request"
+    shortcode: tffp_content_request
+    keywords:
+      - "content"
+      - "send content"
+      - "last content"
+      - "activity"
+      - "story"
+      - "send again"
+    description: >
+      Handles requests for specific or previous content.
+      Pattern match first → OpenAI assistant → team escalation.
+    expire_after_minutes: 1440   # 1 day
+    nodes:
+
+      - id: ASK_WHAT
+        type: send_msg
+        text: |
+          What content are you looking for? 📚
+
+          You can ask for:
+          • *Last 3* — resend last 3 items
+          • *Activities 4-5* — activities for age 4–5
+          • *Stories* — latest story content
+          • Or just describe what you need
+        next: WAIT_REQUEST
+
+      - id: WAIT_REQUEST
+        type: router
+        wait: msg
+        result_name: content_query
+        operand: "@input.text"
+        cases:
+          - match_type: has_any_word
+            arguments: ["last 3", "last three", "previous", "resend"]
+            category: Resend
+            next: RESEND_LAST
+          - match_type: has_phrase
+            arguments: ["activities"]
+            category: ActivityRequest
+            next: SEND_TO_AI
+          - match_type: has_phrase
+            arguments: ["stories", "story"]
+            category: StoryRequest
+            next: SEND_TO_AI
+        default: SEND_TO_AI
+
+      - id: RESEND_LAST
+        type: webhook
+        url: "@system.settings.webhook_url"
+        method: POST
+        body: |
+          {
+            "action": "get_last_content",
+            "contact_id": "@contact.id",
+            "count": 3,
+            "programme": "tffp"
+          }
+        next: SEND_RESEND_REPLY
+
+      - id: SEND_RESEND_REPLY
+        type: send_msg
+        text: |
+          Here are your last 3 content items:
+
+          @webhook.response.content_list
+
+          Reply with any questions!
+        next: END
+
+      - id: SEND_TO_AI
+        type: openai
+        assistant_id: "asst_f3bdr643lebg4o3kbtp4t4kc"
+        prompt: |
+          A TFFP programme contact (@contact.fields.ecce_role.value,
+          age band: @contact.fields.age_band.value) is asking for content.
+          Their request: "@results.content_query.value"
+
+          Search the TFFP content library and return the best matching
+          item (title, type, URL). If no match, return ESCALATE.
+        result_name: ai_response
+        next: CHECK_AI_RESULT
+
+      - id: CHECK_AI_RESULT
+        type: router
+        wait: none
+        result_name: ""
+        operand: "@results.ai_response.value"
+        cases:
+          - match_type: has_any_word
+            arguments: ["ESCALATE", "escalate"]
+            category: Escalate
+            next: ESCALATE_TO_TEAM
+        default: SEND_AI_CONTENT
+
+      - id: SEND_AI_CONTENT
+        type: send_msg
+        text: |
+          Here's something that might help:
+
+          @results.ai_response.value
+
+          Was this what you were looking for? Reply *Yes* or *No*
+        next: END
+
+      - id: ESCALATE_TO_TEAM
+        type: send_msg
+        text: |
+          I'll check with the team and get back to you shortly. 🙏
+
+          Your request has been noted.
+        next: FLAG_ESCALATION
+
+      - id: FLAG_ESCALATION
+        type: add_labels
+        labels: ["TFFP Escalated", "TFFP Content Request"]
+        next: END
+
+      - id: END
+        type: end
+
+
+  # ── 3. Age Band Update Flow ─────────────────────────────────────────────────
+  - name: "TFFP — Age Band Update"
+    shortcode: tffp_age_band_update
+    keywords: []   # scheduled trigger only
+    description: >
+      Runs monthly for all TFFP parents.
+      Recalculates age_band from child_dob.
+      Sends a message if band has changed.
+    expire_after_minutes: 60
+    nodes:
+
+      - id: CALCULATE_AGE
+        type: webhook
+        url: "@system.settings.webhook_url"
+        method: POST
+        body: |
+          {
+            "action": "calculate_age_band",
+            "contact_id": "@contact.id",
+            "child_dob": "@contact.fields.child_dob.value"
+          }
+        next: CHECK_BAND_CHANGE
+
+      - id: CHECK_BAND_CHANGE
+        type: router
+        wait: none
+        result_name: ""
+        operand: "@webhook.response.band_changed"
+        cases:
+          - match_type: has_any_word
+            arguments: ["true"]
+            category: Changed
+            next: UPDATE_BAND
+        default: END
+
+      - id: UPDATE_BAND
+        type: set_contact_field
+        field_key: age_band
+        field_name: "Age Band"
+        value: "@webhook.response.new_band"
+        next: NOTIFY_PARENT
+
+      - id: NOTIFY_PARENT
+        type: send_msg
+        text: |
+          🌱 Your child is growing!
+
+          We've updated your content to match their age (@webhook.response.new_band years).
+
+          New activities and stories start this week!
+        next: END
+
+      - id: END
+        type: end
+
+
+  # ── 4. Inactivity Nudge Flow ─────────────────────────────────────────────────
+  - name: "TFFP — Inactivity Nudge"
+    shortcode: tffp_inactivity_nudge
+    keywords: []   # scheduled trigger only
+    description: >
+      Runs weekly. If tffp_last_active > 14 days ago, sends a nudge.
+      If > 21 days, flags for coordinator.
+    expire_after_minutes: 60
+    nodes:
+
+      - id: CHECK_INACTIVE
+        type: webhook
+        url: "@system.settings.webhook_url"
+        method: POST
+        body: |
+          {
+            "action": "check_inactivity",
+            "contact_id": "@contact.id",
+            "last_active": "@contact.fields.tffp_last_active.value",
+            "programme": "tffp"
+          }
+        next: ROUTE_INACTIVITY
+
+      - id: ROUTE_INACTIVITY
+        type: router
+        wait: none
+        result_name: ""
+        operand: "@webhook.response.inactive_days"
+        cases:
+          - match_type: has_number_gte
+            arguments: ["21"]
+            category: VeryInactive
+            next: FLAG_COORDINATOR
+          - match_type: has_number_gte
+            arguments: ["14"]
+            category: Inactive
+            next: SEND_NUDGE
+        default: END
+
+      - id: SEND_NUDGE
+        type: send_msg
+        text: |
+          Hi @contact.name! 👋
+
+          We miss you in the TFFP community.
+
+          Here's a quick activity for this week — no pressure, just fun! 🌱
+
+          @webhook.response.latest_content_url
+        next: UPDATE_LAST_ACTIVE
+
+      - id: FLAG_COORDINATOR
+        type: add_labels
+        labels: ["TFFP Inactive 14d"]
+        next: SEND_NUDGE
+
+      - id: UPDATE_LAST_ACTIVE
+        type: set_contact_field
+        field_key: tffp_last_active
+        field_name: "TFFP Last Active"
+        value: "@date.today"
+        next: END
+
+      - id: END
+        type: end
+
+
+# ── Webhook Endpoint Notes ────────────────────────────────────────────────────
+# All webhook calls above hit the same endpoint (Supabase Edge Function or
+# a small Express server). The `action` field routes internally.
+#
+# Actions needed:
+#   log_activity      → insert into tffp_activity_log table
+#   get_last_content  → query tffp_content_log for contact, return last N
+#   calculate_age_band → compute age from DOB, compare to stored band
+#   check_inactivity  → compute days since last_active, return count + content
+#
+# Supabase tables:
+#   tffp_activity_log (contact_id, type, media_url, content_id, logged_at)
+#   tffp_content_log  (contact_id, content_id, sent_at)
+#   tffp_contacts     (contact_id, ecce_role, age_band, champion_level, ...)
+
+
+# ── deploy.py notes ───────────────────────────────────────────────────────────
+# This YAML is processed by deploy.py which:
+#   1. Creates/updates contact fields via Glific GraphQL
+#   2. Creates/updates groups (collections)
+#   3. Creates/updates tags
+#   4. Compiles each flow to RapidPro JSON
+#   5. Imports via importFlow mutation
+#   6. Creates triggers (scheduled)
+#
+# Run: python3 deploy.py tffp_config.yml --env staging
+#      python3 deploy.py tffp_config.yml --env prod
