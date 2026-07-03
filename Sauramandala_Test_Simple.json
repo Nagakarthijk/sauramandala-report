@@ -1,35 +1,40 @@
 {
+  "interactive_templates": [],
+  "contact_field": [],
+  "collections": [],
   "flows": [
     {
-      "name": "Sauramandala Test Simple",
-      "uuid": "f99001-0001-4000-8000-000000000000",
-      "spec_version": "13.2.0",
-      "language": "base",
-      "type": "messaging",
-      "expire_after_minutes": 10080,
-      "keywords": ["smtest"],
+      "keywords": [
+        "smtest"
+      ],
       "definition": {
-        "uuid": "f99001-0001-4000-8000-000000000000",
+        "uuid": "f9900100-0001-4000-8000-000000000000",
         "name": "Sauramandala Test Simple",
+        "type": "messaging",
         "spec_version": "13.2.0",
         "language": "base",
-        "type": "messaging",
         "expire_after_minutes": 10080,
+        "localization": {},
+        "_ui": null,
+        "vars": [],
         "nodes": [
           {
-            "uuid": "b99001-0001-4000-8000-000000000000",
+            "uuid": "b9900100-0001-4000-8000-000000000000",
             "actions": [
               {
-                "uuid": "a99001-0001-4000-8000-000000000000",
+                "uuid": "a9900100-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "Test message from Sauramandala bot. If you can read this, the flow is working! Reply anything to confirm.",
-                "attachments": [],
-                "quick_replies": []
+                "text": "Test from Sauramandala bot. If you see this, flows are working!",
+                "name": "",
+                "labels": [],
+                "id": "",
+                "attachment_url": "",
+                "attachment_type": ""
               }
             ],
             "exits": [
               {
-                "uuid": "e99001-0001-4000-8000-000000000000",
+                "uuid": "e9900100-0001-4000-8000-000000000000",
                 "destination_uuid": null
               }
             ]
@@ -37,9 +42,5 @@
         ]
       }
     }
-  ],
-  "fields": [],
-  "groups": [],
-  "interactive_templates": [],
-  "collections": []
+  ]
 }
