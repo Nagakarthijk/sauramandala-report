@@ -1,0 +1,45 @@
+{
+  "flows": [
+    {
+      "name": "Sauramandala Test Simple",
+      "uuid": "f99001-0001-4000-8000-000000000000",
+      "spec_version": "13.2.0",
+      "language": "base",
+      "type": "messaging",
+      "expire_after_minutes": 10080,
+      "keywords": ["smtest"],
+      "definition": {
+        "uuid": "f99001-0001-4000-8000-000000000000",
+        "name": "Sauramandala Test Simple",
+        "spec_version": "13.2.0",
+        "language": "base",
+        "type": "messaging",
+        "expire_after_minutes": 10080,
+        "nodes": [
+          {
+            "uuid": "b99001-0001-4000-8000-000000000000",
+            "actions": [
+              {
+                "uuid": "a99001-0001-4000-8000-000000000000",
+                "type": "send_msg",
+                "text": "Test message from Sauramandala bot. If you can read this, the flow is working! Reply anything to confirm.",
+                "attachments": [],
+                "quick_replies": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "e99001-0001-4000-8000-000000000000",
+                "destination_uuid": null
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "fields": [],
+  "groups": [],
+  "interactive_templates": [],
+  "collections": []
+}
