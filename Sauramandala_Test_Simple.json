@@ -15,7 +15,10 @@
         "language": "base",
         "expire_after_minutes": 10080,
         "localization": {},
-        "_ui": null,
+        "_ui": {
+          "nodes": {},
+          "stickies": {}
+        },
         "vars": [],
         "nodes": [
           {
@@ -25,11 +28,9 @@
                 "uuid": "a9900100-0001-4000-8000-000000000000",
                 "type": "send_msg",
                 "text": "Test from Sauramandala bot. If you see this, flows are working!",
-                "name": "",
+                "quick_replies": [],
                 "labels": [],
-                "id": "",
-                "attachment_url": "",
-                "attachment_type": ""
+                "attachments": []
               }
             ],
             "exits": [
