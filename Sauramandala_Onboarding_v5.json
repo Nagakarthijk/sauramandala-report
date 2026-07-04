@@ -21,7 +21,7 @@
               {
                 "uuid": "a10001-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "Welcome to Sauramandala! 🌱\n\nPlease reply with the number for your language:\n1 - English\n2 - Khasi\n3 - Garo\n4 - Pnar",
+                "text": "Welcome to Sauramandala! \ud83c\udf31\n\nPlease reply with the number for your language:\n1 - English\n2 - Khasi\n3 - Garo\n4 - Pnar",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -286,7 +286,7 @@
               {
                 "uuid": "a10007-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "Please select from the list — tap the menu button to choose your language.",
+                "text": "Please select from the list \u2014 tap the menu button to choose your language.",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -486,7 +486,7 @@
               {
                 "uuid": "a10011-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "No problem. You won't receive further messages. Reply ONBOARD anytime to come back. 🙏",
+                "text": "No problem. You won't receive further messages. Reply ONBOARD anytime to come back. \ud83d\ude4f",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -799,7 +799,7 @@
               {
                 "uuid": "a10019-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "Please select from the list — tap the menu button to choose your programme.",
+                "text": "Please select from the list \u2014 tap the menu button to choose your programme.",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -818,7 +818,7 @@
               {
                 "uuid": "a10020-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "Almost there! What is your full name? Please type it below 👇",
+                "text": "Almost there! What is your full name? Please type it below \ud83d\udc47",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -863,8 +863,12 @@
             "actions": [
               {
                 "uuid": "a10022-0001-4000-8000-000000000000",
-                "type": "set_contact_name",
-                "name": "@results.contact_name.value"
+                "type": "set_contact_field",
+                "field": {
+                  "key": "full_name",
+                  "name": "full_name"
+                },
+                "value": "@results.contact_name"
               }
             ]
           },
@@ -1974,7 +1978,7 @@
               {
                 "uuid": "a10049-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "One more for parents 👶\n\nWhat is your child's date of birth?\nPlease type in DD/MM/YYYY format (e.g. 15/03/2023)",
+                "text": "One more for parents \ud83d\udc76\n\nWhat is your child's date of birth?\nPlease type in DD/MM/YYYY format (e.g. 15/03/2023)",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -2024,7 +2028,7 @@
                   "key": "child_dob",
                   "name": "Child Date of Birth"
                 },
-                "value": "@results.child_dob.value"
+                "value": "@results.child_dob"
               }
             ]
           },
@@ -2090,7 +2094,7 @@
                   "key": "region",
                   "name": "Region"
                 },
-                "value": "@results.district.value"
+                "value": "@results.district"
               }
             ]
           },
@@ -2106,7 +2110,7 @@
               {
                 "uuid": "a10055-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "You're all set! ✅\n\nWelcome to Sauramandala! 🌱\n\nYour profile has been saved. Your programme team will be in touch soon.\n\nReply STOP at any time to leave.",
+                "text": "You're all set! \u2705\n\nWelcome to Sauramandala! \ud83c\udf31\n\nYour profile has been saved. Your programme team will be in touch soon.\n\nReply STOP at any time to leave.",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -2130,7 +2134,8 @@
     "oesn_role",
     "core_role",
     "child_dob",
-    "region"
+    "region",
+    "full_name"
   ],
   "collections": []
 }

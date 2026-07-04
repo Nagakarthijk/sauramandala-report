@@ -6,7 +6,7 @@
       "send_with_title": false,
       "interactive_content": {
         "type": "list",
-        "body": "Welcome to Sauramandala! 🌱\n\nPlease choose your language.",
+        "body": "Welcome to Sauramandala! \ud83c\udf31\n\nPlease choose your language.",
         "title": "Choose Language",
         "globalButtons": [
           {
@@ -46,7 +46,7 @@
       "translations": {
         "1": {
           "type": "list",
-          "body": "Welcome to Sauramandala! 🌱\n\nPlease choose your language.",
+          "body": "Welcome to Sauramandala! \ud83c\udf31\n\nPlease choose your language.",
           "title": "Choose Language",
           "globalButtons": [
             {
@@ -280,7 +280,7 @@
         "content": {
           "type": "text",
           "header": "Consent",
-          "text": "Before we begin:\n\n📋 We collect your name, phone, role and progress.\n🔒 We use it to send you relevant content.\n❌ Reply STOP to leave anytime.\n\nDo you agree to join?",
+          "text": "Before we begin:\n\n\ud83d\udccb We collect your name, phone, role and progress.\n\ud83d\udd12 We use it to send you relevant content.\n\u274c Reply STOP to leave anytime.\n\nDo you agree to join?",
           "caption": "Reply STOP at any time to opt out"
         }
       },
@@ -300,7 +300,7 @@
           "content": {
             "type": "text",
             "header": "Consent",
-            "text": "Before we begin:\n\n📋 We collect your name, phone, role and progress.\n🔒 We use it to send you relevant content.\n❌ Reply STOP to leave anytime.\n\nDo you agree to join?",
+            "text": "Before we begin:\n\n\ud83d\udccb We collect your name, phone, role and progress.\n\ud83d\udd12 We use it to send you relevant content.\n\u274c Reply STOP to leave anytime.\n\nDo you agree to join?",
             "caption": "Reply STOP at any time to opt out"
           }
         }
@@ -330,7 +330,7 @@
         ],
         "content": {
           "type": "text",
-          "header": "Your Role — CMYC",
+          "header": "Your Role \u2014 CMYC",
           "text": "What is your role at the youth centre?"
         }
       },
@@ -353,7 +353,7 @@
           ],
           "content": {
             "type": "text",
-            "header": "Your Role — CMYC",
+            "header": "Your Role \u2014 CMYC",
             "text": "What is your role at the youth centre?"
           }
         }
@@ -383,7 +383,7 @@
         ],
         "content": {
           "type": "text",
-          "header": "Your Role — Doorstep",
+          "header": "Your Role \u2014 Doorstep",
           "text": "What is your role in the Doorstep network?"
         }
       },
@@ -406,7 +406,7 @@
           ],
           "content": {
             "type": "text",
-            "header": "Your Role — Doorstep",
+            "header": "Your Role \u2014 Doorstep",
             "text": "What is your role in the Doorstep network?"
           }
         }
@@ -436,7 +436,7 @@
         ],
         "content": {
           "type": "text",
-          "header": "Your Role — Core Team",
+          "header": "Your Role \u2014 Core Team",
           "text": "What is your role at Sauramandala?"
         }
       },
@@ -459,7 +459,7 @@
           ],
           "content": {
             "type": "text",
-            "header": "Your Role — Core Team",
+            "header": "Your Role \u2014 Core Team",
             "text": "What is your role at Sauramandala?"
           }
         }
@@ -472,7 +472,7 @@
     {
       "definition": {
         "uuid": "b0000000-0001-4000-8000-000000000000",
-        "name": "Sauramandala — Common Onboarding",
+        "name": "Sauramandala \u2014 Common Onboarding",
         "type": "messaging",
         "spec_version": "13.2.0",
         "language": "base",
@@ -495,7 +495,7 @@
               {
                 "uuid": "a10001-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "Welcome to Sauramandala! 🌱\n\nPlease reply with the number for your language:\n1 - English\n2 - Khasi\n3 - Garo\n4 - Pnar",
+                "text": "Welcome to Sauramandala! \ud83c\udf31\n\nPlease reply with the number for your language:\n1 - English\n2 - Khasi\n3 - Garo\n4 - Pnar",
                 "attachments": [],
                 "quick_replies": []
               }
@@ -753,7 +753,7 @@
               {
                 "uuid": "a10007-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "Please select from the list — tap the menu button to choose your language.",
+                "text": "Please select from the list \u2014 tap the menu button to choose your language.",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -955,7 +955,7 @@
               {
                 "uuid": "a10011-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "No problem. You won't receive further messages. Reply ONBOARD anytime to come back. 🙏",
+                "text": "No problem. You won't receive further messages. Reply ONBOARD anytime to come back. \ud83d\ude4f",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -1270,7 +1270,7 @@
               {
                 "uuid": "a10019-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "Please select from the list — tap the menu button to choose your programme.",
+                "text": "Please select from the list \u2014 tap the menu button to choose your programme.",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -1289,7 +1289,7 @@
               {
                 "uuid": "a10020-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "Almost there! What is your full name? Please type it below 👇",
+                "text": "Almost there! What is your full name? Please type it below \ud83d\udc47",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -1334,8 +1334,12 @@
             "actions": [
               {
                 "uuid": "a10022-0001-4000-8000-000000000000",
-                "type": "set_contact_name",
-                "name": "@results.contact_name.value"
+                "type": "set_contact_field",
+                "field": {
+                  "key": "full_name",
+                  "name": "full_name"
+                },
+                "value": "@results.contact_name"
               }
             ]
           },
@@ -2453,7 +2457,7 @@
               {
                 "uuid": "a10049-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "One more for parents 👶\n\nWhat is your child's date of birth?\nPlease type in DD/MM/YYYY format (e.g. 15/03/2023)",
+                "text": "One more for parents \ud83d\udc76\n\nWhat is your child's date of birth?\nPlease type in DD/MM/YYYY format (e.g. 15/03/2023)",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -2503,7 +2507,7 @@
                   "key": "child_dob",
                   "name": "Child Date of Birth"
                 },
-                "value": "@results.child_dob.value"
+                "value": "@results.child_dob"
               }
             ]
           },
@@ -2569,7 +2573,7 @@
                   "key": "region",
                   "name": "Region"
                 },
-                "value": "@results.district.value"
+                "value": "@results.district"
               }
             ]
           },
@@ -2585,7 +2589,7 @@
               {
                 "uuid": "a10055-0001-4000-8000-000000000000",
                 "type": "send_msg",
-                "text": "You're all set! ✅\n\nWelcome to Sauramandala! 🌱\n\nYour profile has been saved. Your programme team will be in touch soon.\n\nReply STOP at any time to leave.",
+                "text": "You're all set! \u2705\n\nWelcome to Sauramandala! \ud83c\udf31\n\nYour profile has been saved. Your programme team will be in touch soon.\n\nReply STOP at any time to leave.",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -2609,7 +2613,8 @@
     "oesn_role",
     "core_role",
     "child_dob",
-    "region"
+    "region",
+    "full_name"
   ],
   "collections": []
 }
