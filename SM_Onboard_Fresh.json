@@ -637,14 +637,7 @@
                   "exit_uuid": "7678140e-e247-4db2-8303-668ab37c2083"
                 }
               ],
-              "cases": [
-                {
-                  "uuid": "2266d95a-a829-4f0e-8414-0852e6a9de19",
-                  "type": "has_text",
-                  "category_uuid": "db12d058-703a-42b7-ad90-c48d4e28a385",
-                  "arguments": []
-                }
-              ]
+              "cases": []
             },
             "exits": [
               {
@@ -1022,14 +1015,7 @@
                   "exit_uuid": "ea5bcaca-a6f7-47b9-98c7-0c188a36430e"
                 }
               ],
-              "cases": [
-                {
-                  "uuid": "257535f2-f227-45f7-a6bc-035f8f8251e7",
-                  "type": "has_text",
-                  "category_uuid": "81105ad2-b756-4a70-acc8-af1fcc362ec7",
-                  "arguments": []
-                }
-              ]
+              "cases": []
             },
             "exits": [
               {
@@ -1635,14 +1621,7 @@
                   "exit_uuid": "515a5c28-1a01-40b7-80f1-33b9f7b14735"
                 }
               ],
-              "cases": [
-                {
-                  "uuid": "f046f115-dead-40d5-ad9c-d731af826a89",
-                  "type": "has_text",
-                  "category_uuid": "1f28802a-7829-4938-b2b6-750e3dd34483",
-                  "arguments": []
-                }
-              ]
+              "cases": []
             },
             "exits": [
               {
