@@ -1,0 +1,1986 @@
+{
+  "interactive_templates": [],
+  "contact_field": [
+    "preferred_language",
+    "consent_given",
+    "programme",
+    "ecce_role",
+    "cmyc_role",
+    "oesn_role",
+    "core_role",
+    "child_dob",
+    "region"
+  ],
+  "collections": [],
+  "flows": [
+    {
+      "keywords": [
+        "smjoin"
+      ],
+      "definition": {
+        "uuid": "1b6dfc36-4a5e-4d8c-861b-101e8d446d47",
+        "name": "SM Onboard",
+        "type": "messaging",
+        "spec_version": "13.2.0",
+        "language": "base",
+        "expire_after_minutes": 10080,
+        "localization": {},
+        "_ui": {
+          "nodes": {},
+          "stickies": {}
+        },
+        "vars": [],
+        "nodes": [
+          {
+            "uuid": "b174e87e-3ddd-40f6-9739-8ff183607c46",
+            "actions": [
+              {
+                "uuid": "c6a48906-7cfc-4b9f-a6e7-75f44600764e",
+                "type": "send_msg",
+                "text": "Welcome to Sauramandala! 🌱\n\nReply with a number for your language:\n1 - English\n2 - Khasi\n3 - Garo\n4 - Pnar",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "603bcd67-24f7-4205-8eda-f32a5b55968c",
+                "destination_uuid": "60b25370-a04a-4cd5-b74a-9718ef60a916"
+              }
+            ]
+          },
+          {
+            "uuid": "60b25370-a04a-4cd5-b74a-9718ef60a916",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "result_name": "preferred_language",
+              "operand": "@input.text",
+              "default_category_uuid": "da543a60-7f75-4807-8e71-d59df7730d2a",
+              "categories": [
+                {
+                  "uuid": "a385230c-c41f-43c4-ab9e-d0794041b373",
+                  "name": "English",
+                  "exit_uuid": "e10bbdce-8898-4958-bb38-e9b7214a69d3"
+                },
+                {
+                  "uuid": "cc425f90-0d42-44d3-be0e-0300d4219035",
+                  "name": "Khasi",
+                  "exit_uuid": "8f396beb-676b-40cc-a311-0797111306e4"
+                },
+                {
+                  "uuid": "beeb16f8-a74c-4032-a659-4dca916ee2ce",
+                  "name": "Garo",
+                  "exit_uuid": "ac615265-f500-4c71-9864-f8ad475221e3"
+                },
+                {
+                  "uuid": "35bac9f7-8298-499d-84ad-9a1c51a47875",
+                  "name": "Pnar",
+                  "exit_uuid": "287350e0-ed93-4051-91ef-771fd6fcb9a2"
+                },
+                {
+                  "uuid": "da543a60-7f75-4807-8e71-d59df7730d2a",
+                  "name": "Other",
+                  "exit_uuid": "f8d1348d-be6a-4b65-a518-fe2f3c52d53c"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "cb4c6a09-1e00-4078-bd1a-5cf761a21b0b",
+                  "type": "has_any_word",
+                  "category_uuid": "a385230c-c41f-43c4-ab9e-d0794041b373",
+                  "arguments": [
+                    "1"
+                  ]
+                },
+                {
+                  "uuid": "b737707c-3c23-4322-92b0-89a29e0f8477",
+                  "type": "has_any_word",
+                  "category_uuid": "a385230c-c41f-43c4-ab9e-d0794041b373",
+                  "arguments": [
+                    "English"
+                  ]
+                },
+                {
+                  "uuid": "b9c9d20e-36cc-4547-8f13-07140a4909a3",
+                  "type": "has_any_word",
+                  "category_uuid": "a385230c-c41f-43c4-ab9e-d0794041b373",
+                  "arguments": [
+                    "english"
+                  ]
+                },
+                {
+                  "uuid": "97f31afb-f85c-4595-9e59-6165d45c1593",
+                  "type": "has_any_word",
+                  "category_uuid": "cc425f90-0d42-44d3-be0e-0300d4219035",
+                  "arguments": [
+                    "2"
+                  ]
+                },
+                {
+                  "uuid": "179c1af7-b193-4fe3-88fd-e6b6e3a1064a",
+                  "type": "has_any_word",
+                  "category_uuid": "cc425f90-0d42-44d3-be0e-0300d4219035",
+                  "arguments": [
+                    "Khasi"
+                  ]
+                },
+                {
+                  "uuid": "19488dde-3e76-4eeb-b205-6a511971b99a",
+                  "type": "has_any_word",
+                  "category_uuid": "cc425f90-0d42-44d3-be0e-0300d4219035",
+                  "arguments": [
+                    "khasi"
+                  ]
+                },
+                {
+                  "uuid": "2ddd9c0c-17de-4612-9999-712c41035ff3",
+                  "type": "has_any_word",
+                  "category_uuid": "beeb16f8-a74c-4032-a659-4dca916ee2ce",
+                  "arguments": [
+                    "3"
+                  ]
+                },
+                {
+                  "uuid": "8369bb65-cff8-4c60-ac8b-145db1f1da51",
+                  "type": "has_any_word",
+                  "category_uuid": "beeb16f8-a74c-4032-a659-4dca916ee2ce",
+                  "arguments": [
+                    "Garo"
+                  ]
+                },
+                {
+                  "uuid": "eb668ccb-0b67-4da6-9f3a-895f8f074df5",
+                  "type": "has_any_word",
+                  "category_uuid": "beeb16f8-a74c-4032-a659-4dca916ee2ce",
+                  "arguments": [
+                    "garo"
+                  ]
+                },
+                {
+                  "uuid": "bfbd54ea-227b-4cc2-ac96-0ade28db7f25",
+                  "type": "has_any_word",
+                  "category_uuid": "35bac9f7-8298-499d-84ad-9a1c51a47875",
+                  "arguments": [
+                    "4"
+                  ]
+                },
+                {
+                  "uuid": "5a6a6ee8-7671-4580-866a-74a297cf8c30",
+                  "type": "has_any_word",
+                  "category_uuid": "35bac9f7-8298-499d-84ad-9a1c51a47875",
+                  "arguments": [
+                    "Pnar"
+                  ]
+                },
+                {
+                  "uuid": "a46f3998-0ff9-4963-9e06-a9fa3f8cb3ea",
+                  "type": "has_any_word",
+                  "category_uuid": "35bac9f7-8298-499d-84ad-9a1c51a47875",
+                  "arguments": [
+                    "pnar"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "e10bbdce-8898-4958-bb38-e9b7214a69d3",
+                "destination_uuid": "3d05b433-57b6-46fd-bad8-f8fa05014748"
+              },
+              {
+                "uuid": "8f396beb-676b-40cc-a311-0797111306e4",
+                "destination_uuid": "13cf8afc-2966-4821-ba2b-bb06f4890ef6"
+              },
+              {
+                "uuid": "ac615265-f500-4c71-9864-f8ad475221e3",
+                "destination_uuid": "c597804f-23d3-4522-be0d-424876818e31"
+              },
+              {
+                "uuid": "287350e0-ed93-4051-91ef-771fd6fcb9a2",
+                "destination_uuid": "7e238302-9efd-42fd-91b8-ec49d1adcc40"
+              },
+              {
+                "uuid": "f8d1348d-be6a-4b65-a518-fe2f3c52d53c",
+                "destination_uuid": "6426b2a5-d179-4738-b005-a61f245a8479"
+              }
+            ]
+          },
+          {
+            "uuid": "3d05b433-57b6-46fd-bad8-f8fa05014748",
+            "actions": [
+              {
+                "uuid": "e2ef5671-24a0-402d-b629-af913c93f3cb",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "preferred_language",
+                  "name": "preferred_language"
+                },
+                "value": "English"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "b749ae4e-836d-40a2-8bd5-d8bd18d575d9",
+                "destination_uuid": "d3b8760c-9644-4ad6-a0d9-5d51d4ee7e2a"
+              }
+            ]
+          },
+          {
+            "uuid": "13cf8afc-2966-4821-ba2b-bb06f4890ef6",
+            "actions": [
+              {
+                "uuid": "36f188e6-e18e-4281-a007-6b32a29adcd0",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "preferred_language",
+                  "name": "preferred_language"
+                },
+                "value": "Khasi"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "9480315e-d0b1-4ac1-b959-064e9db8d703",
+                "destination_uuid": "d3b8760c-9644-4ad6-a0d9-5d51d4ee7e2a"
+              }
+            ]
+          },
+          {
+            "uuid": "c597804f-23d3-4522-be0d-424876818e31",
+            "actions": [
+              {
+                "uuid": "4c846e85-d8a2-4b3d-93bb-c0a2eb35643e",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "preferred_language",
+                  "name": "preferred_language"
+                },
+                "value": "Garo"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "d5e89988-ab2f-4d3f-b41f-19e521c5b1b3",
+                "destination_uuid": "d3b8760c-9644-4ad6-a0d9-5d51d4ee7e2a"
+              }
+            ]
+          },
+          {
+            "uuid": "7e238302-9efd-42fd-91b8-ec49d1adcc40",
+            "actions": [
+              {
+                "uuid": "0dc723ed-86c8-4c6c-9826-182706a000d0",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "preferred_language",
+                  "name": "preferred_language"
+                },
+                "value": "Pnar"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "f2ea0eaa-3f0d-4a3a-bbae-deeae378fe84",
+                "destination_uuid": "d3b8760c-9644-4ad6-a0d9-5d51d4ee7e2a"
+              }
+            ]
+          },
+          {
+            "uuid": "6426b2a5-d179-4738-b005-a61f245a8479",
+            "actions": [
+              {
+                "uuid": "1215c54f-9b64-4389-bdd6-1b5cd614fc4a",
+                "type": "send_msg",
+                "text": "Please reply 1, 2, 3 or 4 to choose your language.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "fd27be4b-c697-4e22-b7a5-4489537a7671",
+                "destination_uuid": "b174e87e-3ddd-40f6-9739-8ff183607c46"
+              }
+            ]
+          },
+          {
+            "uuid": "d3b8760c-9644-4ad6-a0d9-5d51d4ee7e2a",
+            "actions": [
+              {
+                "uuid": "3700221f-10dc-4aa4-b877-d8155dca9908",
+                "type": "send_msg",
+                "text": "Do you agree to receive messages from Sauramandala on WhatsApp?\n\n1 - Yes, I agree\n2 - No thanks",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "324b47e8-63ad-4cf3-a809-519c1ddb8362",
+                "destination_uuid": "0c699629-8c9d-4bfc-a053-68d5259d3dac"
+              }
+            ]
+          },
+          {
+            "uuid": "0c699629-8c9d-4bfc-a053-68d5259d3dac",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "result_name": "consent_reply",
+              "operand": "@input.text",
+              "default_category_uuid": "a7b9d1db-6fa3-4e83-a446-a8b0760880da",
+              "categories": [
+                {
+                  "uuid": "8f2f24ed-bba7-4687-9826-1252515ef8ad",
+                  "name": "Yes",
+                  "exit_uuid": "281eac03-1ace-4e5f-a338-307076d8461e"
+                },
+                {
+                  "uuid": "d502f4b5-5901-4dc3-9839-0360fcae0485",
+                  "name": "No",
+                  "exit_uuid": "7f3c3b94-38c0-47ce-b1d0-01d96fed9749"
+                },
+                {
+                  "uuid": "a7b9d1db-6fa3-4e83-a446-a8b0760880da",
+                  "name": "Other",
+                  "exit_uuid": "ee0098e0-3ad0-4d99-a774-eed758d1bc34"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "c31c8850-33f2-4745-aa1b-4258740df2cc",
+                  "type": "has_any_word",
+                  "category_uuid": "8f2f24ed-bba7-4687-9826-1252515ef8ad",
+                  "arguments": [
+                    "1"
+                  ]
+                },
+                {
+                  "uuid": "1a033eda-0229-4a47-abaa-69a714b61369",
+                  "type": "has_any_word",
+                  "category_uuid": "8f2f24ed-bba7-4687-9826-1252515ef8ad",
+                  "arguments": [
+                    "yes"
+                  ]
+                },
+                {
+                  "uuid": "b1433874-30f8-4f3e-b0fa-10abda72779a",
+                  "type": "has_any_word",
+                  "category_uuid": "8f2f24ed-bba7-4687-9826-1252515ef8ad",
+                  "arguments": [
+                    "YES"
+                  ]
+                },
+                {
+                  "uuid": "2afbbfa5-2c88-4526-9be8-db8442cc5b6a",
+                  "type": "has_any_word",
+                  "category_uuid": "8f2f24ed-bba7-4687-9826-1252515ef8ad",
+                  "arguments": [
+                    "Yes"
+                  ]
+                },
+                {
+                  "uuid": "b981dbfb-f743-4e82-9862-f91a1414f50b",
+                  "type": "has_any_word",
+                  "category_uuid": "8f2f24ed-bba7-4687-9826-1252515ef8ad",
+                  "arguments": [
+                    "y"
+                  ]
+                },
+                {
+                  "uuid": "3e6775ae-502f-410b-97fc-adefa1ebfbb3",
+                  "type": "has_any_word",
+                  "category_uuid": "d502f4b5-5901-4dc3-9839-0360fcae0485",
+                  "arguments": [
+                    "2"
+                  ]
+                },
+                {
+                  "uuid": "cfd207e4-15d3-4819-b592-836e31f195a3",
+                  "type": "has_any_word",
+                  "category_uuid": "d502f4b5-5901-4dc3-9839-0360fcae0485",
+                  "arguments": [
+                    "no"
+                  ]
+                },
+                {
+                  "uuid": "f48b0bbe-bc71-4e8d-a455-425012220aed",
+                  "type": "has_any_word",
+                  "category_uuid": "d502f4b5-5901-4dc3-9839-0360fcae0485",
+                  "arguments": [
+                    "NO"
+                  ]
+                },
+                {
+                  "uuid": "86d14aed-c7b7-4090-851e-83876a9127c0",
+                  "type": "has_any_word",
+                  "category_uuid": "d502f4b5-5901-4dc3-9839-0360fcae0485",
+                  "arguments": [
+                    "No"
+                  ]
+                },
+                {
+                  "uuid": "bbc404fb-610a-4ac8-880e-7d5142708f1e",
+                  "type": "has_any_word",
+                  "category_uuid": "d502f4b5-5901-4dc3-9839-0360fcae0485",
+                  "arguments": [
+                    "n"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "281eac03-1ace-4e5f-a338-307076d8461e",
+                "destination_uuid": "be557322-7d4d-4ef4-9d5b-ee7ebec9a1b8"
+              },
+              {
+                "uuid": "7f3c3b94-38c0-47ce-b1d0-01d96fed9749",
+                "destination_uuid": "b01bec46-c317-4488-a2d1-25082d333246"
+              },
+              {
+                "uuid": "ee0098e0-3ad0-4d99-a774-eed758d1bc34",
+                "destination_uuid": "d1ec9bc0-6532-46b7-bbd8-13e59325ad16"
+              }
+            ]
+          },
+          {
+            "uuid": "be557322-7d4d-4ef4-9d5b-ee7ebec9a1b8",
+            "actions": [
+              {
+                "uuid": "f3db85bf-6089-43d7-8c62-feff042e5484",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "consent_given",
+                  "name": "consent_given"
+                },
+                "value": "yes"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "eb31da6c-0c44-4fe7-bd88-7af077aa9137",
+                "destination_uuid": "7fc3f73a-5d5f-4f61-83a5-5ce1d5fe79c9"
+              }
+            ]
+          },
+          {
+            "uuid": "b01bec46-c317-4488-a2d1-25082d333246",
+            "actions": [
+              {
+                "uuid": "480f2781-4333-4b89-a25b-00a33a51b4b2",
+                "type": "send_msg",
+                "text": "No problem. You won't receive further messages. Send smjoin anytime to join later.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "11dc5ded-4243-448b-a416-11a84762cdd9",
+                "destination_uuid": null
+              }
+            ]
+          },
+          {
+            "uuid": "d1ec9bc0-6532-46b7-bbd8-13e59325ad16",
+            "actions": [
+              {
+                "uuid": "989bb295-0a1a-4694-9207-9ce63e5179d0",
+                "type": "send_msg",
+                "text": "Please reply 1 to agree or 2 to decline.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "9b8e3b3e-984f-4a45-8a53-b6513f623af2",
+                "destination_uuid": "d3b8760c-9644-4ad6-a0d9-5d51d4ee7e2a"
+              }
+            ]
+          },
+          {
+            "uuid": "7fc3f73a-5d5f-4f61-83a5-5ce1d5fe79c9",
+            "actions": [
+              {
+                "uuid": "f1555a6b-1872-43a5-9a86-c773eace29e0",
+                "type": "send_msg",
+                "text": "Which programme are you part of?\n\n1 - TFFP (Early Childhood Education)\n2 - CMYC (Youth Centre)\n3 - OESN / Doorstep (Entrepreneur Support)\n4 - Core Team",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "dd292a96-2a46-40d8-a26c-2898cc16f70b",
+                "destination_uuid": "65030824-d92a-4070-a57a-26db8001fe56"
+              }
+            ]
+          },
+          {
+            "uuid": "65030824-d92a-4070-a57a-26db8001fe56",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "result_name": "programme",
+              "operand": "@input.text",
+              "default_category_uuid": "23e93df2-f50f-4489-b0ac-5eec5b7f5c59",
+              "categories": [
+                {
+                  "uuid": "a57acd9b-f191-4504-81d1-462c9caf5e61",
+                  "name": "TFFP",
+                  "exit_uuid": "de2a8f42-1773-4adb-bfc2-cd351e165229"
+                },
+                {
+                  "uuid": "051dda6c-939e-4ac8-a105-2ef3a75afc9c",
+                  "name": "CMYC",
+                  "exit_uuid": "d9d5d7f3-b8e7-451c-966a-38a3fabf99f8"
+                },
+                {
+                  "uuid": "a0a68fb3-d6bb-4fdf-aafa-f1d4e05c5181",
+                  "name": "Doorstep",
+                  "exit_uuid": "0ea35c3c-2fc1-4f0c-9af2-307bca583ddd"
+                },
+                {
+                  "uuid": "3ee5ffc0-c12a-41ea-91ee-b268892ceade",
+                  "name": "Core Team",
+                  "exit_uuid": "629eb9ef-360d-4420-aaff-6f11ae0baaa8"
+                },
+                {
+                  "uuid": "23e93df2-f50f-4489-b0ac-5eec5b7f5c59",
+                  "name": "Other",
+                  "exit_uuid": "82250096-fbb9-4f25-9a35-d021781f95ff"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "353678f7-0427-4f39-8d74-b9398b87c54a",
+                  "type": "has_any_word",
+                  "category_uuid": "a57acd9b-f191-4504-81d1-462c9caf5e61",
+                  "arguments": [
+                    "1"
+                  ]
+                },
+                {
+                  "uuid": "3042d8f0-54d3-4d0a-b015-2cb87eddb382",
+                  "type": "has_any_word",
+                  "category_uuid": "a57acd9b-f191-4504-81d1-462c9caf5e61",
+                  "arguments": [
+                    "tffp"
+                  ]
+                },
+                {
+                  "uuid": "a50109e4-d302-480f-8c19-e9c379e3c3d3",
+                  "type": "has_any_word",
+                  "category_uuid": "a57acd9b-f191-4504-81d1-462c9caf5e61",
+                  "arguments": [
+                    "TFFP"
+                  ]
+                },
+                {
+                  "uuid": "98cdaa03-f565-4eec-a69f-2eabbfa925c6",
+                  "type": "has_any_word",
+                  "category_uuid": "051dda6c-939e-4ac8-a105-2ef3a75afc9c",
+                  "arguments": [
+                    "2"
+                  ]
+                },
+                {
+                  "uuid": "a41810b7-d8c6-4be4-969a-5128b26bbe2d",
+                  "type": "has_any_word",
+                  "category_uuid": "051dda6c-939e-4ac8-a105-2ef3a75afc9c",
+                  "arguments": [
+                    "cmyc"
+                  ]
+                },
+                {
+                  "uuid": "3a26112f-7c75-485b-b0c4-f52aeeb4637b",
+                  "type": "has_any_word",
+                  "category_uuid": "051dda6c-939e-4ac8-a105-2ef3a75afc9c",
+                  "arguments": [
+                    "CMYC"
+                  ]
+                },
+                {
+                  "uuid": "a96583b1-8029-4ea8-bbd1-4607479e7623",
+                  "type": "has_any_word",
+                  "category_uuid": "a0a68fb3-d6bb-4fdf-aafa-f1d4e05c5181",
+                  "arguments": [
+                    "3"
+                  ]
+                },
+                {
+                  "uuid": "d726544f-31b1-4c7f-b37f-55c7f1771416",
+                  "type": "has_any_word",
+                  "category_uuid": "a0a68fb3-d6bb-4fdf-aafa-f1d4e05c5181",
+                  "arguments": [
+                    "oesn"
+                  ]
+                },
+                {
+                  "uuid": "8085a133-6362-403d-8e7b-263600a65f81",
+                  "type": "has_any_word",
+                  "category_uuid": "a0a68fb3-d6bb-4fdf-aafa-f1d4e05c5181",
+                  "arguments": [
+                    "OESN"
+                  ]
+                },
+                {
+                  "uuid": "744b6fb4-6909-455a-82e2-59e20fbccb83",
+                  "type": "has_any_word",
+                  "category_uuid": "a0a68fb3-d6bb-4fdf-aafa-f1d4e05c5181",
+                  "arguments": [
+                    "doorstep"
+                  ]
+                },
+                {
+                  "uuid": "4eb9a1f7-080d-4499-aa50-879c6f34eb1d",
+                  "type": "has_any_word",
+                  "category_uuid": "3ee5ffc0-c12a-41ea-91ee-b268892ceade",
+                  "arguments": [
+                    "4"
+                  ]
+                },
+                {
+                  "uuid": "f41b4b39-56b2-41f4-a597-bd2b39f710fe",
+                  "type": "has_any_word",
+                  "category_uuid": "3ee5ffc0-c12a-41ea-91ee-b268892ceade",
+                  "arguments": [
+                    "core"
+                  ]
+                },
+                {
+                  "uuid": "c0d771d3-7ef6-441c-873d-ee6cf3329d43",
+                  "type": "has_any_word",
+                  "category_uuid": "3ee5ffc0-c12a-41ea-91ee-b268892ceade",
+                  "arguments": [
+                    "Core"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "de2a8f42-1773-4adb-bfc2-cd351e165229",
+                "destination_uuid": "ada63362-6943-40fd-879b-41361d4ff127"
+              },
+              {
+                "uuid": "d9d5d7f3-b8e7-451c-966a-38a3fabf99f8",
+                "destination_uuid": "953f5379-05df-47ae-8b20-0cad467f1347"
+              },
+              {
+                "uuid": "0ea35c3c-2fc1-4f0c-9af2-307bca583ddd",
+                "destination_uuid": "54931b49-babe-42fc-b94e-586e22c8f428"
+              },
+              {
+                "uuid": "629eb9ef-360d-4420-aaff-6f11ae0baaa8",
+                "destination_uuid": "a80db421-5d76-44bf-b9b1-87318c5dbfad"
+              },
+              {
+                "uuid": "82250096-fbb9-4f25-9a35-d021781f95ff",
+                "destination_uuid": "6117a4aa-7f1f-4d48-b5e0-5d68c0308a55"
+              }
+            ]
+          },
+          {
+            "uuid": "ada63362-6943-40fd-879b-41361d4ff127",
+            "actions": [
+              {
+                "uuid": "ab630b88-6e2f-4e0e-b31d-4bed08921f2f",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "programme",
+                  "name": "programme"
+                },
+                "value": "tffp"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "06205e0f-05a7-45b1-aebb-ca2511f5fac4",
+                "destination_uuid": "ca46b998-457c-48dd-9920-de062202bfc2"
+              }
+            ]
+          },
+          {
+            "uuid": "953f5379-05df-47ae-8b20-0cad467f1347",
+            "actions": [
+              {
+                "uuid": "d61d275d-88e9-4353-8f9b-60e0c44f570a",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "programme",
+                  "name": "programme"
+                },
+                "value": "cmyc"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "e58b82ee-b256-438f-b3ec-66b51d95086b",
+                "destination_uuid": "ca46b998-457c-48dd-9920-de062202bfc2"
+              }
+            ]
+          },
+          {
+            "uuid": "54931b49-babe-42fc-b94e-586e22c8f428",
+            "actions": [
+              {
+                "uuid": "e3459e04-16da-436e-8452-9db5bf2dfd84",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "programme",
+                  "name": "programme"
+                },
+                "value": "oesn"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "a04611ff-72aa-4921-9935-f674fb0c8028",
+                "destination_uuid": "ca46b998-457c-48dd-9920-de062202bfc2"
+              }
+            ]
+          },
+          {
+            "uuid": "a80db421-5d76-44bf-b9b1-87318c5dbfad",
+            "actions": [
+              {
+                "uuid": "31917af4-37d6-4762-9044-62dd80f8e738",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "programme",
+                  "name": "programme"
+                },
+                "value": "core_team"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "dd58c254-3958-4de7-b36d-b3b7c69aa669",
+                "destination_uuid": "ca46b998-457c-48dd-9920-de062202bfc2"
+              }
+            ]
+          },
+          {
+            "uuid": "6117a4aa-7f1f-4d48-b5e0-5d68c0308a55",
+            "actions": [
+              {
+                "uuid": "95c54068-c62e-48c1-91ff-5bec7358ba66",
+                "type": "send_msg",
+                "text": "Please reply 1, 2, 3 or 4 to choose your programme.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "721fdbc9-26db-4e03-87ce-6b8293c3d915",
+                "destination_uuid": "7fc3f73a-5d5f-4f61-83a5-5ce1d5fe79c9"
+              }
+            ]
+          },
+          {
+            "uuid": "ca46b998-457c-48dd-9920-de062202bfc2",
+            "actions": [
+              {
+                "uuid": "5dd77f64-2d28-4044-9a91-471be657e980",
+                "type": "send_msg",
+                "text": "What is your full name? Please type it below 👇",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "0f015f56-6fae-43c3-896d-d66452cb5d9c",
+                "destination_uuid": "3d57613c-f6d4-40f5-9dba-5240e0190db2"
+              }
+            ]
+          },
+          {
+            "uuid": "3d57613c-f6d4-40f5-9dba-5240e0190db2",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "result_name": "contact_name",
+              "operand": "@input.text",
+              "default_category_uuid": "6b5213ba-f09b-444f-a0fe-688e0041b7e0",
+              "categories": [
+                {
+                  "uuid": "46721c0f-4450-4b63-ab01-79fdcd95a8c8",
+                  "name": "Any",
+                  "exit_uuid": "87382871-16dd-4a87-b8da-728e8b839bcb"
+                },
+                {
+                  "uuid": "6b5213ba-f09b-444f-a0fe-688e0041b7e0",
+                  "name": "Other",
+                  "exit_uuid": "ca0dcf7f-0a2a-4979-8b47-6bf70978e284"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "5ef2ed6d-225d-4a4f-b2bb-656e70efd7b5",
+                  "type": "has_text",
+                  "category_uuid": "46721c0f-4450-4b63-ab01-79fdcd95a8c8",
+                  "arguments": []
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "87382871-16dd-4a87-b8da-728e8b839bcb",
+                "destination_uuid": "4ca8ef58-36d0-4af4-b5d1-fef9ebe31690"
+              },
+              {
+                "uuid": "ca0dcf7f-0a2a-4979-8b47-6bf70978e284",
+                "destination_uuid": "4ca8ef58-36d0-4af4-b5d1-fef9ebe31690"
+              }
+            ]
+          },
+          {
+            "uuid": "4ca8ef58-36d0-4af4-b5d1-fef9ebe31690",
+            "actions": [
+              {
+                "uuid": "4149db80-ee03-4fb2-9f7c-d1625ab3f66e",
+                "type": "set_contact_name",
+                "name": "@results.contact_name.value"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "cedae95e-802b-44eb-95ef-5f13b8feaae3",
+                "destination_uuid": "741d5ec0-7e29-4631-8eaf-a4c724007848"
+              }
+            ]
+          },
+          {
+            "uuid": "741d5ec0-7e29-4631-8eaf-a4c724007848",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "result_name": "",
+              "operand": "@contact.fields.programme.value",
+              "default_category_uuid": "da9bafae-c780-4d97-a8d7-2e863dd2ae91",
+              "categories": [
+                {
+                  "uuid": "c3245f73-e8c2-4740-ab10-1743744bd610",
+                  "name": "TFFP",
+                  "exit_uuid": "adaa5bf9-c9e5-4683-88bf-8d48168e8f72"
+                },
+                {
+                  "uuid": "5edb119b-11c4-400d-8761-63ad5a69747f",
+                  "name": "CMYC",
+                  "exit_uuid": "774a5d31-565d-4d94-a7ce-917334a64369"
+                },
+                {
+                  "uuid": "4d93f455-aea9-47ca-93eb-fbe06dd10a59",
+                  "name": "OESN",
+                  "exit_uuid": "bd09f0d3-d208-4519-a8ad-12718fa3ce29"
+                },
+                {
+                  "uuid": "90a32a38-d84f-4ef0-a1ed-67ea9ff19e5d",
+                  "name": "Core Team",
+                  "exit_uuid": "c042c6a8-6d4f-4d1a-83d0-afe9be807f53"
+                },
+                {
+                  "uuid": "da9bafae-c780-4d97-a8d7-2e863dd2ae91",
+                  "name": "Other",
+                  "exit_uuid": "542af597-8e39-4c23-b1fd-c3b1fa67e91d"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "93a91e70-c3d2-418a-a38b-3578c7ce15d8",
+                  "type": "has_any_word",
+                  "category_uuid": "c3245f73-e8c2-4740-ab10-1743744bd610",
+                  "arguments": [
+                    "tffp"
+                  ]
+                },
+                {
+                  "uuid": "303a9fcf-4956-4e1e-aac6-c377f7cb7785",
+                  "type": "has_any_word",
+                  "category_uuid": "5edb119b-11c4-400d-8761-63ad5a69747f",
+                  "arguments": [
+                    "cmyc"
+                  ]
+                },
+                {
+                  "uuid": "7362c0f3-098d-4658-a2f7-21fc6aa9fe0c",
+                  "type": "has_any_word",
+                  "category_uuid": "4d93f455-aea9-47ca-93eb-fbe06dd10a59",
+                  "arguments": [
+                    "oesn"
+                  ]
+                },
+                {
+                  "uuid": "741e4685-e520-4906-99ec-61656b60fa57",
+                  "type": "has_any_word",
+                  "category_uuid": "90a32a38-d84f-4ef0-a1ed-67ea9ff19e5d",
+                  "arguments": [
+                    "core_team"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "adaa5bf9-c9e5-4683-88bf-8d48168e8f72",
+                "destination_uuid": "f45902fc-18a2-44ac-8aac-aa26e6244aeb"
+              },
+              {
+                "uuid": "774a5d31-565d-4d94-a7ce-917334a64369",
+                "destination_uuid": "08b5a6c8-14e7-42c2-90ce-4919f878d712"
+              },
+              {
+                "uuid": "bd09f0d3-d208-4519-a8ad-12718fa3ce29",
+                "destination_uuid": "990be2c8-75c0-48e1-a1a0-e3bbe82fa786"
+              },
+              {
+                "uuid": "c042c6a8-6d4f-4d1a-83d0-afe9be807f53",
+                "destination_uuid": "18c1a2ac-e75d-4bc7-9057-b33257fb240e"
+              },
+              {
+                "uuid": "542af597-8e39-4c23-b1fd-c3b1fa67e91d",
+                "destination_uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db"
+              }
+            ]
+          },
+          {
+            "uuid": "f45902fc-18a2-44ac-8aac-aa26e6244aeb",
+            "actions": [
+              {
+                "uuid": "d2da4067-735b-43af-ab06-4db618288e63",
+                "type": "send_msg",
+                "text": "What is your role in TFFP?\n\n1 - Anganwadi Worker\n2 - Preschool Teacher\n3 - Parent\n4 - Home-based Provider",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "de21214f-5feb-4f34-b3c4-1e35880d2fa6",
+                "destination_uuid": "b47603df-fb46-4eb9-a732-f2ff300785d8"
+              }
+            ]
+          },
+          {
+            "uuid": "b47603df-fb46-4eb9-a732-f2ff300785d8",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "result_name": "ecce_role",
+              "operand": "@input.text",
+              "default_category_uuid": "899eb20f-6578-4ce4-98a9-ac482ddc4c4b",
+              "categories": [
+                {
+                  "uuid": "5848103f-afe7-40c7-9f44-0ae5dcae10df",
+                  "name": "Anganwadi Worker",
+                  "exit_uuid": "ed1fb1a3-80b2-4098-b43f-489e5a1e3d16"
+                },
+                {
+                  "uuid": "8dadd40e-e3ea-4b25-a633-328db308b285",
+                  "name": "Preschool Teacher",
+                  "exit_uuid": "d7988719-2894-44bf-bdd2-ce84f273a555"
+                },
+                {
+                  "uuid": "8b937104-1a7c-4a16-821b-93d0d55b4b19",
+                  "name": "Parent",
+                  "exit_uuid": "e71cd513-beb2-4d90-a845-02f98f5ea9ae"
+                },
+                {
+                  "uuid": "0f91b6c4-8468-48b6-86d7-97bb88442b87",
+                  "name": "Home-based Provider",
+                  "exit_uuid": "ba388533-dafb-43fb-87c0-50ea66a9ed24"
+                },
+                {
+                  "uuid": "899eb20f-6578-4ce4-98a9-ac482ddc4c4b",
+                  "name": "Other",
+                  "exit_uuid": "21b85cf3-3a4d-4463-9ccb-5e086ec027b9"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "a6f0f21b-cb9b-4231-a8ee-f6f31137aabc",
+                  "type": "has_any_word",
+                  "category_uuid": "5848103f-afe7-40c7-9f44-0ae5dcae10df",
+                  "arguments": [
+                    "1"
+                  ]
+                },
+                {
+                  "uuid": "5b2b0a34-bcea-4ead-bcf2-12d7febd90c6",
+                  "type": "has_any_word",
+                  "category_uuid": "5848103f-afe7-40c7-9f44-0ae5dcae10df",
+                  "arguments": [
+                    "anganwadi"
+                  ]
+                },
+                {
+                  "uuid": "582e9cb5-490b-48f0-a68e-9305e6ac5e9b",
+                  "type": "has_any_word",
+                  "category_uuid": "8dadd40e-e3ea-4b25-a633-328db308b285",
+                  "arguments": [
+                    "2"
+                  ]
+                },
+                {
+                  "uuid": "9f500fc2-fc40-48ba-bf15-7ebdc4c0148d",
+                  "type": "has_any_word",
+                  "category_uuid": "8dadd40e-e3ea-4b25-a633-328db308b285",
+                  "arguments": [
+                    "teacher"
+                  ]
+                },
+                {
+                  "uuid": "34cb8b56-ae04-4790-a23f-c5ee26b64e2b",
+                  "type": "has_any_word",
+                  "category_uuid": "8dadd40e-e3ea-4b25-a633-328db308b285",
+                  "arguments": [
+                    "preschool"
+                  ]
+                },
+                {
+                  "uuid": "6b361d95-7dcb-477a-8d26-a85af58bf552",
+                  "type": "has_any_word",
+                  "category_uuid": "8b937104-1a7c-4a16-821b-93d0d55b4b19",
+                  "arguments": [
+                    "3"
+                  ]
+                },
+                {
+                  "uuid": "77af4eb2-21d3-45e7-ace3-dff1e0baaaed",
+                  "type": "has_any_word",
+                  "category_uuid": "8b937104-1a7c-4a16-821b-93d0d55b4b19",
+                  "arguments": [
+                    "parent"
+                  ]
+                },
+                {
+                  "uuid": "7665da7a-a0b4-4bd4-8079-42821fcd1af7",
+                  "type": "has_any_word",
+                  "category_uuid": "0f91b6c4-8468-48b6-86d7-97bb88442b87",
+                  "arguments": [
+                    "4"
+                  ]
+                },
+                {
+                  "uuid": "4d7641d8-e08e-4d3d-beaf-54413470563e",
+                  "type": "has_any_word",
+                  "category_uuid": "0f91b6c4-8468-48b6-86d7-97bb88442b87",
+                  "arguments": [
+                    "home"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "ed1fb1a3-80b2-4098-b43f-489e5a1e3d16",
+                "destination_uuid": "45df7376-6071-4c50-aa4e-39537a5fa7cb"
+              },
+              {
+                "uuid": "d7988719-2894-44bf-bdd2-ce84f273a555",
+                "destination_uuid": "f790e236-fb4f-42da-83e2-0fce6d44dfef"
+              },
+              {
+                "uuid": "e71cd513-beb2-4d90-a845-02f98f5ea9ae",
+                "destination_uuid": "58406d1e-470b-40e2-8fe5-e1037eb701ff"
+              },
+              {
+                "uuid": "ba388533-dafb-43fb-87c0-50ea66a9ed24",
+                "destination_uuid": "6696e4fd-fa7b-4f22-8ba9-6664ceeeeb32"
+              },
+              {
+                "uuid": "21b85cf3-3a4d-4463-9ccb-5e086ec027b9",
+                "destination_uuid": "0e4fc120-f57c-494a-b146-c86fdf208083"
+              }
+            ]
+          },
+          {
+            "uuid": "45df7376-6071-4c50-aa4e-39537a5fa7cb",
+            "actions": [
+              {
+                "uuid": "44d1bd97-7ed8-46cc-a2b1-e394484785df",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "ecce_role",
+                  "name": "ecce_role"
+                },
+                "value": "anganwadi_worker"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "c19ae273-7fdb-4e9d-9351-dfa4b6e15d14",
+                "destination_uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db"
+              }
+            ]
+          },
+          {
+            "uuid": "f790e236-fb4f-42da-83e2-0fce6d44dfef",
+            "actions": [
+              {
+                "uuid": "1af7f860-9b80-43da-8920-0d5e9937ade5",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "ecce_role",
+                  "name": "ecce_role"
+                },
+                "value": "preschool_teacher"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "e97eef66-13a8-4ae6-9457-230754c660c0",
+                "destination_uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db"
+              }
+            ]
+          },
+          {
+            "uuid": "58406d1e-470b-40e2-8fe5-e1037eb701ff",
+            "actions": [
+              {
+                "uuid": "691ef5db-0d42-462f-b786-1000f0156ab1",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "ecce_role",
+                  "name": "ecce_role"
+                },
+                "value": "parent"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "d39d5a96-2063-46fa-89a4-5a624f35a885",
+                "destination_uuid": "a4dc4ce8-bcb0-486b-b779-a4c3ffde5e69"
+              }
+            ]
+          },
+          {
+            "uuid": "6696e4fd-fa7b-4f22-8ba9-6664ceeeeb32",
+            "actions": [
+              {
+                "uuid": "c2ee91e3-470b-49cc-b03d-1c1c523ad397",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "ecce_role",
+                  "name": "ecce_role"
+                },
+                "value": "home_caregiver"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "9d4b4f87-0110-4eff-b544-2f6c5d5c8b9c",
+                "destination_uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db"
+              }
+            ]
+          },
+          {
+            "uuid": "0e4fc120-f57c-494a-b146-c86fdf208083",
+            "actions": [
+              {
+                "uuid": "e614af31-82c7-4a06-a4c8-a27718037cfe",
+                "type": "send_msg",
+                "text": "Please reply 1, 2, 3 or 4 to choose your role.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "e2bd5073-7e9a-47f3-ad98-36fae083309c",
+                "destination_uuid": "f45902fc-18a2-44ac-8aac-aa26e6244aeb"
+              }
+            ]
+          },
+          {
+            "uuid": "a4dc4ce8-bcb0-486b-b779-a4c3ffde5e69",
+            "actions": [
+              {
+                "uuid": "6d98097c-2570-418b-af61-07aca85e313d",
+                "type": "send_msg",
+                "text": "What is your child's date of birth? (e.g. 15/03/2021)",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "4432ab0d-b2f1-4141-a0ff-f304d59fc553",
+                "destination_uuid": "0882324c-583b-498f-ac59-e93e572ab797"
+              }
+            ]
+          },
+          {
+            "uuid": "0882324c-583b-498f-ac59-e93e572ab797",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "result_name": "child_dob",
+              "operand": "@input.text",
+              "default_category_uuid": "b2d7067d-30bd-4c81-b2fc-5d473ddbcb43",
+              "categories": [
+                {
+                  "uuid": "4fa93e14-ea3f-4ec6-96f5-78572b4172f8",
+                  "name": "Any",
+                  "exit_uuid": "664bf4ad-2217-4825-8ddc-85014697be28"
+                },
+                {
+                  "uuid": "b2d7067d-30bd-4c81-b2fc-5d473ddbcb43",
+                  "name": "Other",
+                  "exit_uuid": "48fab622-ad84-4e1f-b105-ba58fbcd79b0"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "f1e66f33-1c5f-49fc-b472-d7d33a2f6b9c",
+                  "type": "has_text",
+                  "category_uuid": "4fa93e14-ea3f-4ec6-96f5-78572b4172f8",
+                  "arguments": []
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "664bf4ad-2217-4825-8ddc-85014697be28",
+                "destination_uuid": "941773d0-72a7-4ecb-9356-6d80aceab65a"
+              },
+              {
+                "uuid": "48fab622-ad84-4e1f-b105-ba58fbcd79b0",
+                "destination_uuid": "941773d0-72a7-4ecb-9356-6d80aceab65a"
+              }
+            ]
+          },
+          {
+            "uuid": "941773d0-72a7-4ecb-9356-6d80aceab65a",
+            "actions": [
+              {
+                "uuid": "956f01f3-93ec-4173-991a-d5583d7960a2",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "child_dob",
+                  "name": "child_dob"
+                },
+                "value": "@results.child_dob.value"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "01d39c21-8128-4cbf-8481-7fd3b5b50a94",
+                "destination_uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db"
+              }
+            ]
+          },
+          {
+            "uuid": "08b5a6c8-14e7-42c2-90ce-4919f878d712",
+            "actions": [
+              {
+                "uuid": "ce9dfe1b-0f56-49dc-8037-9942e0d1e5bd",
+                "type": "send_msg",
+                "text": "What is your role in CMYC?\n\n1 - Centre Coordinator\n2 - Youth Member\n3 - Volunteer",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "6d613b69-621f-40c2-8653-4c481d6ca37e",
+                "destination_uuid": "e05096d8-e15b-4bfb-96e9-8f1987fca4df"
+              }
+            ]
+          },
+          {
+            "uuid": "e05096d8-e15b-4bfb-96e9-8f1987fca4df",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "result_name": "cmyc_role",
+              "operand": "@input.text",
+              "default_category_uuid": "34f9a5dd-580f-4fbb-b30c-e732f2c0271e",
+              "categories": [
+                {
+                  "uuid": "319e369f-6203-4685-8ed9-e33ce986622b",
+                  "name": "Centre Coordinator",
+                  "exit_uuid": "04f868f0-4d3b-451c-8f8e-7675ca6723fa"
+                },
+                {
+                  "uuid": "49139bd4-19c9-4869-ad71-9163dc2255d3",
+                  "name": "Youth Member",
+                  "exit_uuid": "0c9b0fd6-bdd1-4cf8-ac09-5bf1483c63eb"
+                },
+                {
+                  "uuid": "1a469ecf-5374-4f34-bdae-ad7461598f1d",
+                  "name": "Volunteer",
+                  "exit_uuid": "ba332016-c5b3-4682-a151-ee03424be869"
+                },
+                {
+                  "uuid": "34f9a5dd-580f-4fbb-b30c-e732f2c0271e",
+                  "name": "Other",
+                  "exit_uuid": "fa1a4d85-bc43-4576-8ee4-11e94107ec14"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "001e0aad-6e70-47c4-9cee-47bf9f92e7c9",
+                  "type": "has_any_word",
+                  "category_uuid": "319e369f-6203-4685-8ed9-e33ce986622b",
+                  "arguments": [
+                    "1"
+                  ]
+                },
+                {
+                  "uuid": "f7a61823-1448-47df-a9e5-e1872b53a7cf",
+                  "type": "has_any_word",
+                  "category_uuid": "319e369f-6203-4685-8ed9-e33ce986622b",
+                  "arguments": [
+                    "coordinator"
+                  ]
+                },
+                {
+                  "uuid": "8ae7fa0e-4458-48bd-8bfc-1f2c95d99cd1",
+                  "type": "has_any_word",
+                  "category_uuid": "49139bd4-19c9-4869-ad71-9163dc2255d3",
+                  "arguments": [
+                    "2"
+                  ]
+                },
+                {
+                  "uuid": "fc5ec529-60c9-4bc1-96b2-6723d581f66c",
+                  "type": "has_any_word",
+                  "category_uuid": "49139bd4-19c9-4869-ad71-9163dc2255d3",
+                  "arguments": [
+                    "youth"
+                  ]
+                },
+                {
+                  "uuid": "3f9ea81e-704b-4a68-89ba-5f9087b6ff7f",
+                  "type": "has_any_word",
+                  "category_uuid": "1a469ecf-5374-4f34-bdae-ad7461598f1d",
+                  "arguments": [
+                    "3"
+                  ]
+                },
+                {
+                  "uuid": "39ecdbf3-bb09-4dec-bda7-ffc24eecd9e9",
+                  "type": "has_any_word",
+                  "category_uuid": "1a469ecf-5374-4f34-bdae-ad7461598f1d",
+                  "arguments": [
+                    "volunteer"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "04f868f0-4d3b-451c-8f8e-7675ca6723fa",
+                "destination_uuid": "0e2f7658-0383-4639-92bb-7b2084407012"
+              },
+              {
+                "uuid": "0c9b0fd6-bdd1-4cf8-ac09-5bf1483c63eb",
+                "destination_uuid": "8845b400-e234-4f0c-abe1-686564ec7a67"
+              },
+              {
+                "uuid": "ba332016-c5b3-4682-a151-ee03424be869",
+                "destination_uuid": "a82a658a-6fc5-4892-84d7-279efd1cbb61"
+              },
+              {
+                "uuid": "fa1a4d85-bc43-4576-8ee4-11e94107ec14",
+                "destination_uuid": "bdd8157c-1d23-4c1f-85b4-3ea20eeb05f2"
+              }
+            ]
+          },
+          {
+            "uuid": "0e2f7658-0383-4639-92bb-7b2084407012",
+            "actions": [
+              {
+                "uuid": "5cdc02d4-d5e9-48dd-9364-627449dfcc7e",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "cmyc_role",
+                  "name": "cmyc_role"
+                },
+                "value": "centre_coordinator"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "ba515fcb-3729-4f58-a831-2e83cb512ee7",
+                "destination_uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db"
+              }
+            ]
+          },
+          {
+            "uuid": "8845b400-e234-4f0c-abe1-686564ec7a67",
+            "actions": [
+              {
+                "uuid": "922a40a2-3f77-4ac7-8f72-9e8a28459f41",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "cmyc_role",
+                  "name": "cmyc_role"
+                },
+                "value": "youth_member"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "c1789039-4d71-4279-a230-14ec3de6066a",
+                "destination_uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db"
+              }
+            ]
+          },
+          {
+            "uuid": "a82a658a-6fc5-4892-84d7-279efd1cbb61",
+            "actions": [
+              {
+                "uuid": "80123b95-3652-487b-b5de-5f7be06874b7",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "cmyc_role",
+                  "name": "cmyc_role"
+                },
+                "value": "volunteer"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "3a6323e9-9350-4cb0-a15f-7bf026acb770",
+                "destination_uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db"
+              }
+            ]
+          },
+          {
+            "uuid": "bdd8157c-1d23-4c1f-85b4-3ea20eeb05f2",
+            "actions": [
+              {
+                "uuid": "d5ac957f-8b5a-4b63-a1d9-9eb9b7313564",
+                "type": "send_msg",
+                "text": "Please reply 1, 2 or 3 to choose your role.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "3308745d-9987-46e7-ac5e-4e3fd4a1c097",
+                "destination_uuid": "08b5a6c8-14e7-42c2-90ce-4919f878d712"
+              }
+            ]
+          },
+          {
+            "uuid": "990be2c8-75c0-48e1-a1a0-e3bbe82fa786",
+            "actions": [
+              {
+                "uuid": "e1586a17-294c-4280-bb8b-cfd03892fbd6",
+                "type": "send_msg",
+                "text": "What is your role in OESN / Doorstep?\n\n1 - Field Agent\n2 - Entrepreneur\n3 - Vendor / Provider",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "c74fed89-6e2a-470d-a88d-9bb78864f048",
+                "destination_uuid": "0e267a02-b786-49bc-a36e-c4825c666806"
+              }
+            ]
+          },
+          {
+            "uuid": "0e267a02-b786-49bc-a36e-c4825c666806",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "result_name": "oesn_role",
+              "operand": "@input.text",
+              "default_category_uuid": "cbb7470b-d79e-44d5-9f60-811b76318d67",
+              "categories": [
+                {
+                  "uuid": "1c9e42c6-057b-41a4-8763-67bae8e1992c",
+                  "name": "Field Agent",
+                  "exit_uuid": "ffb4b92c-c8b7-4b26-8d6b-63749c0da364"
+                },
+                {
+                  "uuid": "709f2126-19ff-4e62-a916-90f43f38af94",
+                  "name": "Entrepreneur",
+                  "exit_uuid": "625f661e-18dd-4d35-a845-8e206b3fdb64"
+                },
+                {
+                  "uuid": "e093b805-b9c8-4482-a9af-767ce31e66e2",
+                  "name": "Vendor",
+                  "exit_uuid": "4495dbe6-f3d3-430d-b00a-fcfb748cb801"
+                },
+                {
+                  "uuid": "cbb7470b-d79e-44d5-9f60-811b76318d67",
+                  "name": "Other",
+                  "exit_uuid": "cd14f5f3-e789-4945-b7b8-1f2460505595"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "84ca4a5e-5568-411b-b808-3c438e5a049b",
+                  "type": "has_any_word",
+                  "category_uuid": "1c9e42c6-057b-41a4-8763-67bae8e1992c",
+                  "arguments": [
+                    "1"
+                  ]
+                },
+                {
+                  "uuid": "9b0d142b-5181-401d-bfc6-d58f413d5162",
+                  "type": "has_any_word",
+                  "category_uuid": "1c9e42c6-057b-41a4-8763-67bae8e1992c",
+                  "arguments": [
+                    "agent"
+                  ]
+                },
+                {
+                  "uuid": "5f142c70-14ce-4376-9eb4-f401a06ffb1f",
+                  "type": "has_any_word",
+                  "category_uuid": "709f2126-19ff-4e62-a916-90f43f38af94",
+                  "arguments": [
+                    "2"
+                  ]
+                },
+                {
+                  "uuid": "a86932a2-4b87-4ea6-b6ab-6aeab805a398",
+                  "type": "has_any_word",
+                  "category_uuid": "709f2126-19ff-4e62-a916-90f43f38af94",
+                  "arguments": [
+                    "entrepreneur"
+                  ]
+                },
+                {
+                  "uuid": "67d0d4ba-da77-47b7-9a80-13e5d3abf8fc",
+                  "type": "has_any_word",
+                  "category_uuid": "e093b805-b9c8-4482-a9af-767ce31e66e2",
+                  "arguments": [
+                    "3"
+                  ]
+                },
+                {
+                  "uuid": "b00bb7bf-a0d3-4e48-8eee-993635169d3b",
+                  "type": "has_any_word",
+                  "category_uuid": "e093b805-b9c8-4482-a9af-767ce31e66e2",
+                  "arguments": [
+                    "vendor"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "ffb4b92c-c8b7-4b26-8d6b-63749c0da364",
+                "destination_uuid": "858ca651-fa88-4144-b885-735e1184f451"
+              },
+              {
+                "uuid": "625f661e-18dd-4d35-a845-8e206b3fdb64",
+                "destination_uuid": "79af000a-1112-40d6-a0ac-db5424bd7a6c"
+              },
+              {
+                "uuid": "4495dbe6-f3d3-430d-b00a-fcfb748cb801",
+                "destination_uuid": "2fb5f146-342b-42b1-8fab-0b0d5ba7b071"
+              },
+              {
+                "uuid": "cd14f5f3-e789-4945-b7b8-1f2460505595",
+                "destination_uuid": "38125e51-7b9f-4187-bc43-e168929c3eb1"
+              }
+            ]
+          },
+          {
+            "uuid": "858ca651-fa88-4144-b885-735e1184f451",
+            "actions": [
+              {
+                "uuid": "cf8589ab-7ce6-485c-8d4c-5ec32f70009c",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "oesn_role",
+                  "name": "oesn_role"
+                },
+                "value": "field_agent"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "b98e67e3-7415-458f-b640-371973ddccec",
+                "destination_uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db"
+              }
+            ]
+          },
+          {
+            "uuid": "79af000a-1112-40d6-a0ac-db5424bd7a6c",
+            "actions": [
+              {
+                "uuid": "1da9dd11-b6dd-47a5-a219-b9ab46427761",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "oesn_role",
+                  "name": "oesn_role"
+                },
+                "value": "entrepreneur"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "1b261c82-6368-480b-89f0-cb3cc6bfb10e",
+                "destination_uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db"
+              }
+            ]
+          },
+          {
+            "uuid": "2fb5f146-342b-42b1-8fab-0b0d5ba7b071",
+            "actions": [
+              {
+                "uuid": "c79df0f9-dd1b-4035-99e6-bbc2164ef049",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "oesn_role",
+                  "name": "oesn_role"
+                },
+                "value": "provider"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "0606a2ce-0c1f-4e62-b0f5-ce2e568475f8",
+                "destination_uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db"
+              }
+            ]
+          },
+          {
+            "uuid": "38125e51-7b9f-4187-bc43-e168929c3eb1",
+            "actions": [
+              {
+                "uuid": "2da12273-17dc-4b5a-b4bc-384739f76798",
+                "type": "send_msg",
+                "text": "Please reply 1, 2 or 3 to choose your role.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "d0c8d4ad-6f49-4780-bf42-49c15acea058",
+                "destination_uuid": "990be2c8-75c0-48e1-a1a0-e3bbe82fa786"
+              }
+            ]
+          },
+          {
+            "uuid": "18c1a2ac-e75d-4bc7-9057-b33257fb240e",
+            "actions": [
+              {
+                "uuid": "0d875894-98a2-4ec6-b4cd-0f2a04ca6927",
+                "type": "send_msg",
+                "text": "What is your role in the Core Team?\n\n1 - Programme Manager\n2 - District Coordinator\n3 - Other Staff",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "7a6493fa-3dbe-4666-a00f-aeed7cc5070b",
+                "destination_uuid": "f83edc0c-2ebd-46e0-8791-75148bafc11f"
+              }
+            ]
+          },
+          {
+            "uuid": "f83edc0c-2ebd-46e0-8791-75148bafc11f",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "result_name": "core_role",
+              "operand": "@input.text",
+              "default_category_uuid": "3c22c9ff-20e0-4aed-9752-32bc8b6a64a6",
+              "categories": [
+                {
+                  "uuid": "b96aef53-16ff-4eda-9bbe-e92e6507e391",
+                  "name": "Programme Manager",
+                  "exit_uuid": "8d1f6771-e48f-4654-87f3-27d695616b6f"
+                },
+                {
+                  "uuid": "f904bef5-47ad-4f40-b9ef-0e899c1caaa6",
+                  "name": "District Coordinator",
+                  "exit_uuid": "cc75fe65-a314-42c8-87bb-dde634c8fb24"
+                },
+                {
+                  "uuid": "0282f593-36e7-4d02-9ec1-2d547ea572d1",
+                  "name": "Other Staff",
+                  "exit_uuid": "c28ddd69-18c9-4b2e-996c-bd55899bb0e3"
+                },
+                {
+                  "uuid": "3c22c9ff-20e0-4aed-9752-32bc8b6a64a6",
+                  "name": "Other",
+                  "exit_uuid": "cc16dad6-edf2-443d-891c-c138dd4a4898"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "ffa091fd-6872-4e5d-a26b-f0080013e994",
+                  "type": "has_any_word",
+                  "category_uuid": "b96aef53-16ff-4eda-9bbe-e92e6507e391",
+                  "arguments": [
+                    "1"
+                  ]
+                },
+                {
+                  "uuid": "e96bbeb1-04b5-47c6-bf1f-e9be9d74e64a",
+                  "type": "has_any_word",
+                  "category_uuid": "b96aef53-16ff-4eda-9bbe-e92e6507e391",
+                  "arguments": [
+                    "manager"
+                  ]
+                },
+                {
+                  "uuid": "f9e2b894-e92a-47df-901f-601463f7c606",
+                  "type": "has_any_word",
+                  "category_uuid": "f904bef5-47ad-4f40-b9ef-0e899c1caaa6",
+                  "arguments": [
+                    "2"
+                  ]
+                },
+                {
+                  "uuid": "21921992-9041-44e6-9864-40e4af8e5e3f",
+                  "type": "has_any_word",
+                  "category_uuid": "f904bef5-47ad-4f40-b9ef-0e899c1caaa6",
+                  "arguments": [
+                    "coordinator"
+                  ]
+                },
+                {
+                  "uuid": "ee1b6c60-d0cc-4cae-b2db-c07a3fd3373d",
+                  "type": "has_any_word",
+                  "category_uuid": "0282f593-36e7-4d02-9ec1-2d547ea572d1",
+                  "arguments": [
+                    "3"
+                  ]
+                },
+                {
+                  "uuid": "2d5bd2d6-859e-4ab2-8131-da9ae66255a5",
+                  "type": "has_any_word",
+                  "category_uuid": "0282f593-36e7-4d02-9ec1-2d547ea572d1",
+                  "arguments": [
+                    "other"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "8d1f6771-e48f-4654-87f3-27d695616b6f",
+                "destination_uuid": "ced8cb7c-44c3-4bd3-8f57-d65ec36001ef"
+              },
+              {
+                "uuid": "cc75fe65-a314-42c8-87bb-dde634c8fb24",
+                "destination_uuid": "9bf72b53-7c06-4048-9100-e364c678dfc6"
+              },
+              {
+                "uuid": "c28ddd69-18c9-4b2e-996c-bd55899bb0e3",
+                "destination_uuid": "8d819435-5914-48cb-8c9b-46d52ca9282e"
+              },
+              {
+                "uuid": "cc16dad6-edf2-443d-891c-c138dd4a4898",
+                "destination_uuid": "732e0c83-b001-4260-a38a-116409aaede6"
+              }
+            ]
+          },
+          {
+            "uuid": "ced8cb7c-44c3-4bd3-8f57-d65ec36001ef",
+            "actions": [
+              {
+                "uuid": "a13508ba-eac1-48f8-9821-9604d3d91587",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "core_role",
+                  "name": "core_role"
+                },
+                "value": "programme_manager"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "1b8ff5f5-a8e5-45fa-8b7f-d7ea66226d77",
+                "destination_uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db"
+              }
+            ]
+          },
+          {
+            "uuid": "9bf72b53-7c06-4048-9100-e364c678dfc6",
+            "actions": [
+              {
+                "uuid": "800aa09d-3ee2-499d-9987-a9ff9916dd3f",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "core_role",
+                  "name": "core_role"
+                },
+                "value": "district_coordinator"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "9bcf0f44-691e-4c23-9fc9-d2b73f3cc582",
+                "destination_uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db"
+              }
+            ]
+          },
+          {
+            "uuid": "8d819435-5914-48cb-8c9b-46d52ca9282e",
+            "actions": [
+              {
+                "uuid": "b04307b1-e990-46e3-8520-676df7314ca0",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "core_role",
+                  "name": "core_role"
+                },
+                "value": "other_staff"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "76afa66c-243c-4481-b851-04e213c4618b",
+                "destination_uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db"
+              }
+            ]
+          },
+          {
+            "uuid": "732e0c83-b001-4260-a38a-116409aaede6",
+            "actions": [
+              {
+                "uuid": "d2f72a92-6962-4f06-80c3-1f99bbd9753b",
+                "type": "send_msg",
+                "text": "Please reply 1, 2 or 3 to choose your role.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "e79bfdca-3713-4fc7-b536-b4638895fb8e",
+                "destination_uuid": "18c1a2ac-e75d-4bc7-9057-b33257fb240e"
+              }
+            ]
+          },
+          {
+            "uuid": "177b5e1b-076f-4fd8-a316-5cbe1cb492db",
+            "actions": [
+              {
+                "uuid": "7bcfad66-fc2e-45ff-b9a6-bbf47f7991a7",
+                "type": "send_msg",
+                "text": "Last step! Which district are you based in? Please type the name.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "1ca0a392-5e48-4309-92e6-566a6fc56bd6",
+                "destination_uuid": "38494e71-9a07-4892-b109-37d3b719ce92"
+              }
+            ]
+          },
+          {
+            "uuid": "38494e71-9a07-4892-b109-37d3b719ce92",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "result_name": "district",
+              "operand": "@input.text",
+              "default_category_uuid": "0f089c71-86ef-4da6-a626-3da1e34c38f8",
+              "categories": [
+                {
+                  "uuid": "cc2ae407-1bb9-4a59-a021-05f46474af9c",
+                  "name": "Any",
+                  "exit_uuid": "71ba034f-ea41-4638-b81f-edc968e9786f"
+                },
+                {
+                  "uuid": "0f089c71-86ef-4da6-a626-3da1e34c38f8",
+                  "name": "Other",
+                  "exit_uuid": "0c889d31-02a3-46fb-a03a-de0e33d55dd2"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "6d713562-9573-417a-b784-7ae40ccb2e3a",
+                  "type": "has_text",
+                  "category_uuid": "cc2ae407-1bb9-4a59-a021-05f46474af9c",
+                  "arguments": []
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "71ba034f-ea41-4638-b81f-edc968e9786f",
+                "destination_uuid": "b1ffee1b-ff3f-40af-8a26-44e81f57b9c6"
+              },
+              {
+                "uuid": "0c889d31-02a3-46fb-a03a-de0e33d55dd2",
+                "destination_uuid": "b1ffee1b-ff3f-40af-8a26-44e81f57b9c6"
+              }
+            ]
+          },
+          {
+            "uuid": "b1ffee1b-ff3f-40af-8a26-44e81f57b9c6",
+            "actions": [
+              {
+                "uuid": "fbe1c86e-3c99-4717-ba51-d413465fc106",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "region",
+                  "name": "region"
+                },
+                "value": "@results.district.value"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "928bcb0e-9ff7-4026-bb98-fae55cf0231f",
+                "destination_uuid": "9fdcf700-0e72-4ade-863d-e29b84bb6313"
+              }
+            ]
+          },
+          {
+            "uuid": "9fdcf700-0e72-4ade-863d-e29b84bb6313",
+            "actions": [
+              {
+                "uuid": "fb53ed93-55d2-41e3-85fb-1fb891a00ba3",
+                "type": "send_msg",
+                "text": "You're all set! ✅\n\nWelcome to Sauramandala! 🌱\n\nYour profile has been saved. You will start receiving updates soon.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "6bcec1fa-986f-42f8-9a18-b055728f4ccd",
+                "destination_uuid": null
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
