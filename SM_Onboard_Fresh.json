@@ -141,7 +141,10 @@
                 "uuid": "543d267a-b5e7-4487-b5aa-f069e8080563",
                 "destination_uuid": "b5ca41e7-64c7-475a-ae10-b040ba287fe4"
               }
-            ]
+            ],
+            "wait": {
+              "type": "msg"
+            }
           },
           {
             "uuid": "21d8d6ea-2fe6-4c15-bcde-4e9fdb53ed01",
@@ -318,7 +321,10 @@
                 "uuid": "d6fb2d19-3cd3-475a-a615-67050f4c1a14",
                 "destination_uuid": "713b538f-3afa-424b-ad3d-ac9ccc2767b8"
               }
-            ]
+            ],
+            "wait": {
+              "type": "msg"
+            }
           },
           {
             "uuid": "04671853-d040-4cfd-a30e-2fabcf056c1b",
@@ -488,7 +494,10 @@
                 "uuid": "ae5c2de4-ba3d-4dfe-919b-20a449b4374e",
                 "destination_uuid": "e8f5deda-abbb-4638-8fe5-c230bd66bd36"
               }
-            ]
+            ],
+            "wait": {
+              "type": "msg"
+            }
           },
           {
             "uuid": "260ecc1f-c08a-4dfe-8727-fab9d45ea6cf",
@@ -646,7 +655,10 @@
                 "uuid": "7678140e-e247-4db2-8303-668ab37c2083",
                 "destination_uuid": "89fa10a6-1178-4bec-b838-4be1d88cf3af"
               }
-            ]
+            ],
+            "wait": {
+              "type": "msg"
+            }
           },
           {
             "uuid": "89fa10a6-1178-4bec-b838-4be1d88cf3af",
@@ -867,7 +879,10 @@
                 "uuid": "310ed6e5-2012-45df-a08d-8010c6d8cf68",
                 "destination_uuid": "a9433eaa-aa3c-4b6f-8bfe-857c44a4890f"
               }
-            ]
+            ],
+            "wait": {
+              "type": "msg"
+            }
           },
           {
             "uuid": "eefcb27c-ab82-494f-b705-c82959b39ed3",
@@ -1025,7 +1040,10 @@
                 "uuid": "ea5bcaca-a6f7-47b9-98c7-0c188a36430e",
                 "destination_uuid": "f0dd9c7e-9b18-4848-932a-48d295af0699"
               }
-            ]
+            ],
+            "wait": {
+              "type": "msg"
+            }
           },
           {
             "uuid": "f0dd9c7e-9b18-4848-932a-48d295af0699",
@@ -1140,7 +1158,10 @@
                 "uuid": "7393bdbd-51db-4670-9228-cde9aeb2c7cf",
                 "destination_uuid": "1aea0d95-a8fa-4ed8-8798-0eb06564aa86"
               }
-            ]
+            ],
+            "wait": {
+              "type": "msg"
+            }
           },
           {
             "uuid": "3ce65a00-73fd-46a1-99d5-5194ef7572bd",
@@ -1314,7 +1335,10 @@
                 "uuid": "cc9deda8-11e9-41b2-9f7f-88e5e9ede45c",
                 "destination_uuid": "4d68a52e-87f5-4e49-8466-6e0a17ac01bf"
               }
-            ]
+            ],
+            "wait": {
+              "type": "msg"
+            }
           },
           {
             "uuid": "083c14f2-ca5f-4162-ace7-49623a1bb65f",
@@ -1488,7 +1512,10 @@
                 "uuid": "84f41fee-7fdb-4402-b8b2-ed1b3d371859",
                 "destination_uuid": "9236d4e5-4ec8-4bb1-92f9-de4a8a3a5c1f"
               }
-            ]
+            ],
+            "wait": {
+              "type": "msg"
+            }
           },
           {
             "uuid": "225e3149-4f80-4dce-8d4b-cfe8c9814e3a",
@@ -1626,7 +1653,10 @@
                 "uuid": "515a5c28-1a01-40b7-80f1-33b9f7b14735",
                 "destination_uuid": "bfea038b-f6a2-4351-82a1-d4866a638f6d"
               }
-            ]
+            ],
+            "wait": {
+              "type": "msg"
+            }
           },
           {
             "uuid": "bfea038b-f6a2-4351-82a1-d4866a638f6d",
