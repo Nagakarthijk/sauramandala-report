@@ -9,7 +9,8 @@
     "oesn_role",
     "core_role",
     "child_dob",
-    "region"
+    "region",
+    "full_name"
   ],
   "collections": [],
   "flows": [
@@ -649,8 +650,12 @@
             "actions": [
               {
                 "uuid": "b8bf35a4-3d5b-4b44-bdf5-5d2f3a970be7",
-                "type": "set_contact_name",
-                "name": "@results.contact_name.value"
+                "type": "set_contact_field",
+                "field": {
+                  "key": "full_name",
+                  "name": "full_name"
+                },
+                "value": "@results.contact_name"
               }
             ],
             "exits": [
@@ -1023,7 +1028,7 @@
                   "key": "child_dob",
                   "name": "child_dob"
                 },
-                "value": "@results.child_dob.value"
+                "value": "@results.child_dob"
               }
             ],
             "exits": [
@@ -1620,7 +1625,7 @@
                   "key": "region",
                   "name": "region"
                 },
-                "value": "@results.district.value"
+                "value": "@results.district"
               }
             ],
             "exits": [
