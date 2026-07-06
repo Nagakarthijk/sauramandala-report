@@ -95,6 +95,25 @@ are future work, not implemented.
   Protection settings. Free at this scale. Left as the placeholder, signup works with no
   CAPTCHA at all.
 
+## Organisation registration
+
+- `org-admin.html` routes signed-out visitors to `auth.html?context=org`, which shows
+  "Register your organisation" copy and defaults to the create-account tab — same
+  underlying auth as everyone else, just contextual framing.
+- Registering requires an explicit **authorization attestation** checkbox ("I confirm I am
+  authorized to represent this organisation"), enforced both in the UI and as a DB check
+  constraint (`admin_authorized` must be `true`) — can't be skipped by calling the API
+  directly.
+- Optional **website + email-domain match**: if the org provides a website and the
+  admin's own sign-up email is on that same domain, the org page shows an "Admin email
+  matches organisation domain" badge (`admin_email_domain_match`, computed once at
+  registration in `addOrg`). The admin's actual email is never made public — only this
+  boolean. **Honest limitation:** this only proves what email address they typed at
+  signup, not that they control that inbox — real strength requires pairing it with
+  Supabase's "Confirm email" setting, which is currently off (see the CAPTCHA/SMTP notes
+  above for why). Turn confirm-email back on once custom SMTP is set up to make this
+  signal meaningfully stronger.
+
 ## Stack & setup
 
 Static HTML + Tailwind CDN + [Supabase](https://supabase.com) (free tier). No build step.

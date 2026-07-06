@@ -60,8 +60,12 @@
 
   document.getElementById('page').innerHTML = `
     <header class="bg-white border border-stone-100 rounded-2xl p-6">
-      <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">${JN.orgTypeLabel(org.org_type)}</div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">${JN.orgTypeLabel(org.org_type)}</span>
+        ${org.admin_email_domain_match ? '<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-700">Admin email matches organisation domain</span>' : ''}
+      </div>
       <h1 class="text-2xl font-black text-stone-900 mt-1">${JN.esc(org.name)}</h1>
+      ${org.website ? `<a href="${JN.esc(org.website)}" target="_blank" rel="noopener" class="text-xs text-orange-600 underline">${JN.esc(JN.hostname(org.website))} ↗</a>` : ''}
       <p class="mt-2 text-sm text-stone-600 leading-relaxed whitespace-pre-line">${JN.esc(org.description || '')}</p>
       <p class="mt-3 text-[11px] text-stone-400">The workers below are <strong>vouched for by this organisation</strong> — that is the organisation's own statement, not a platform verification. Each worker raises funds on their own page with their own UPI details.</p>
     </header>

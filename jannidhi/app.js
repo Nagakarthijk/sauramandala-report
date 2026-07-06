@@ -196,10 +196,17 @@ const JN = (() => {
     if (!user) return [];
     return _list('orgs', { admin_user_id: user.id });
   }
-  async function addOrg(org) {
+  // Domain match is computed here, not trusted from the caller — compares
+  // the signed-in admin's own email domain to the org's stated website.
+  // Honest caveat: this only proves what email they typed at signup, not
+  // that they control that inbox, unless Supabase's "Confirm email" is on.
+  async function addOrg(org, adminAuthorized) {
     const user = await requireAuth();
     if (!user) return null;
-    return _insert('orgs', { ...org, admin_user_id: user.id });
+    if (!adminAuthorized) throw new Error('You must confirm you are authorized to represent this organisation.');
+    const emailDomain = (user.email || '').split('@')[1]?.toLowerCase();
+    const admin_email_domain_match = !!(org.website && emailDomain && hostname(org.website) === emailDomain);
+    return _insert('orgs', { ...org, admin_user_id: user.id, admin_email_domain_match, admin_authorized: true });
   }
   const getOrgMembers        = (orgId)     => _list('org_members', { org_id: orgId });
   const getMembershipsFor    = (profileId) => _list('org_members', { profile_id: profileId });
@@ -350,7 +357,8 @@ const JN = (() => {
     return { party: 'Political party', residents: 'Residents group', union: 'Union / collective', group: 'Group' }[t] || 'Group';
   }
   function hostname(url) {
-    try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; }
+    try { return new URL(url).hostname.replace(/^www\./, ''); }
+    catch { return String(url || '').replace(/^https?:\/\//i, '').replace(/^www\./i, '').split('/')[0].toLowerCase(); }
   }
   function normalizeLinks(links) {
     // Supabase returns jsonb as parsed JSON already; guard for stringified/legacy values.

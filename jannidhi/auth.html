@@ -20,7 +20,7 @@
 
 <main class="max-w-sm mx-auto px-4 py-14">
   <h1 class="text-2xl font-black text-stone-900" id="heading">Sign in</h1>
-  <p class="text-sm text-stone-500 mt-1 mb-6">Only needed to <em>manage</em> a page — donors never need an account.</p>
+  <p class="text-sm text-stone-500 mt-1 mb-6" id="subhead">Only needed to <em>manage</em> a page — donors never need an account.</p>
 
   <div class="flex gap-1 mb-5 bg-stone-100 rounded-xl p-1 text-sm font-semibold">
     <button id="tab-in"  class="flex-1 py-2 rounded-lg bg-white shadow-sm transition-all">Sign in</button>
@@ -48,11 +48,17 @@
   JN.init();
   const user = await JN.getUser();
   document.getElementById('nav').innerHTML = JN.navHTML('', user);
-  const next = new URLSearchParams(location.search).get('next') || 'create.html';
+  const params = new URLSearchParams(location.search);
+  const next = params.get('next') || 'create.html';
+  const isOrgContext = params.get('context') === 'org';
   if (user) { location.href = next; return; }
 
   const $ = id => document.getElementById(id);
   const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'text-xs text-center min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
+
+  if (isOrgContext) {
+    $('subhead').innerHTML = 'Create an account to <strong>register your party, group or collective</strong> and vouch for your workers.';
+  }
 
   // CAPTCHA (Cloudflare Turnstile) — only renders once configured in config.js.
   // A skipped/unconfigured widget just means captchaToken is undefined, which
@@ -78,7 +84,7 @@
     mode = m;
     $('tab-in').className = 'flex-1 py-2 rounded-lg transition-all ' + (m === 'in' ? 'bg-white shadow-sm' : 'text-stone-500');
     $('tab-up').className = 'flex-1 py-2 rounded-lg transition-all ' + (m === 'up' ? 'bg-white shadow-sm' : 'text-stone-500');
-    $('heading').textContent = m === 'in' ? 'Sign in' : 'Create your account';
+    $('heading').textContent = m === 'in' ? 'Sign in' : (isOrgContext ? 'Register your organisation' : 'Create your account');
     $('submit').textContent = m === 'in' ? 'Sign in' : 'Create account';
     $('password').autocomplete = m === 'in' ? 'current-password' : 'new-password';
     $('forgot').classList.toggle('hidden', m === 'up');
@@ -86,6 +92,7 @@
   }
   $('tab-in').onclick = () => setMode('in');
   $('tab-up').onclick = () => setMode('up');
+  if (isOrgContext) setMode('up'); // most org visitors here are registering for the first time
 
   $('form').onsubmit = async (e) => {
     e.preventDefault();

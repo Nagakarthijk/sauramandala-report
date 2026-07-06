@@ -42,6 +42,14 @@ create table orgs (
   org_type      text default 'group',   -- party | residents | union | group
   description   text default '',
   logo_url      text,
+  website       text,                   -- optional; org's own site, for the domain-match badge below
+  -- Computed once, at registration: does the admin's signup email domain
+  -- match the stated website's domain? A real, honest, free signal —
+  -- but only as strong as knowing the admin controls that inbox, which
+  -- requires Supabase's "Confirm email" to be on (see README). Never
+  -- exposes the admin's actual email publicly, just this boolean.
+  admin_email_domain_match boolean default false,
+  admin_authorized  boolean not null default false, -- explicit attestation at signup, see org-admin.html
   created_at    timestamptz default now()
 );
 
@@ -170,9 +178,11 @@ create policy "owner update profile" on profiles for update
 create policy "owner delete profile" on profiles for delete
   using (auth.uid() = user_id);
 
--- Orgs: admin writes
+-- Orgs: admin writes. admin_authorized must be explicitly true at creation —
+-- the attestation checkbox in org-admin.html, enforced here too so it can't
+-- be skipped by calling the API directly.
 create policy "admin insert org" on orgs for insert
-  with check (auth.uid() = admin_user_id);
+  with check (auth.uid() = admin_user_id and admin_authorized = true);
 create policy "admin update org" on orgs for update
   using (auth.uid() = admin_user_id);
 create policy "admin delete org" on orgs for delete
