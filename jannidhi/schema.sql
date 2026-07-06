@@ -16,6 +16,8 @@ create table profiles (
   bio           text default '',
   location      text default '',
   photo_url     text,
+  cover_url     text,
+  links         jsonb default '[]'::jsonb,   -- [{label, url}, ...] — social/custom links, like a link-in-bio
   -- Payment display (worker-uploaded content, never platform-generated)
   upi_qr_url    text,           -- worker's own QR image
   upi_vpa       text,           -- displayed as text only, never linked

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Sign in — JanNidhi</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -13,43 +13,27 @@
 <div id="nav"></div>
 
 <main class="max-w-sm mx-auto px-4 py-14">
-  <h1 class="text-2xl font-black text-stone-900">Sign in</h1>
-  <p class="text-sm text-stone-500 mt-1 mb-6">Email OTP or password. Signing in is only needed to <em>manage</em> a page — donors never need an account.</p>
+  <h1 class="text-2xl font-black text-stone-900" id="heading">Sign in</h1>
+  <p class="text-sm text-stone-500 mt-1 mb-6">Only needed to <em>manage</em> a page — donors never need an account.</p>
 
   <div class="flex gap-1 mb-5 bg-stone-100 rounded-xl p-1 text-sm font-semibold">
-    <button id="tab-otp" class="flex-1 py-1.5 rounded-lg bg-white shadow-sm">Email OTP</button>
-    <button id="tab-pw"  class="flex-1 py-1.5 rounded-lg text-stone-500">Password</button>
+    <button id="tab-in"  class="flex-1 py-2 rounded-lg bg-white shadow-sm transition-all">Sign in</button>
+    <button id="tab-up"  class="flex-1 py-2 rounded-lg text-stone-500 transition-all">Create account</button>
   </div>
 
-  <div class="bg-white border border-stone-100 rounded-2xl p-5 space-y-3">
+  <form id="form" class="bg-white border border-stone-100 rounded-2xl p-5 space-y-3" autocomplete="on">
     <label class="block text-xs font-semibold text-stone-500">Email
-      <input id="email" type="email" placeholder="you@example.com" autocomplete="email"
-        class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300">
+      <input id="email" type="email" required placeholder="you@example.com" autocomplete="email"
+        class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
     </label>
-
-    <!-- OTP flow -->
-    <div id="panel-otp" class="space-y-3">
-      <div id="otp-step2" class="hidden">
-        <label class="block text-xs font-semibold text-stone-500">6-digit code from your email
-          <input id="otp-code" inputmode="numeric" maxlength="6" placeholder="123456"
-            class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-stone-300">
-        </label>
-      </div>
-      <button id="otp-btn" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-semibold py-2.5 rounded-xl text-sm">Send code</button>
-    </div>
-
-    <!-- Password flow -->
-    <div id="panel-pw" class="hidden space-y-3">
-      <label class="block text-xs font-semibold text-stone-500">Password
-        <input id="password" type="password" autocomplete="current-password"
-          class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300">
-      </label>
-      <button id="pw-signin" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-semibold py-2.5 rounded-xl text-sm">Sign in</button>
-      <button id="pw-signup" class="w-full border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold py-2.5 rounded-xl text-sm">Create account</button>
-    </div>
-
-    <p id="msg" class="text-xs text-stone-500 min-h-[1rem]"></p>
-  </div>
+    <label class="block text-xs font-semibold text-stone-500">Password
+      <input id="password" type="password" required minlength="6" autocomplete="current-password"
+        class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
+    </label>
+    <button id="submit" type="submit" class="w-full bg-stone-900 hover:bg-stone-800 active:scale-[0.99] text-white font-semibold py-3 rounded-xl text-sm transition-all">Sign in</button>
+    <button id="forgot" type="button" class="w-full text-xs text-stone-400 hover:text-stone-600 underline text-center">Forgot password?</button>
+    <p id="msg" class="text-xs text-center min-h-[1rem]"></p>
+  </form>
 </main>
 
 <script>
@@ -61,51 +45,47 @@
   if (user) { location.href = next; return; }
 
   const $ = id => document.getElementById(id);
-  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'text-xs min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'text-xs text-center min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
 
-  function switchTab(otp) {
-    $('panel-otp').classList.toggle('hidden', !otp);
-    $('panel-pw').classList.toggle('hidden', otp);
-    $('tab-otp').className = 'flex-1 py-1.5 rounded-lg ' + (otp ? 'bg-white shadow-sm' : 'text-stone-500');
-    $('tab-pw').className  = 'flex-1 py-1.5 rounded-lg ' + (!otp ? 'bg-white shadow-sm' : 'text-stone-500');
+  let mode = 'in';
+  function setMode(m) {
+    mode = m;
+    $('tab-in').className = 'flex-1 py-2 rounded-lg transition-all ' + (m === 'in' ? 'bg-white shadow-sm' : 'text-stone-500');
+    $('tab-up').className = 'flex-1 py-2 rounded-lg transition-all ' + (m === 'up' ? 'bg-white shadow-sm' : 'text-stone-500');
+    $('heading').textContent = m === 'in' ? 'Sign in' : 'Create your account';
+    $('submit').textContent = m === 'in' ? 'Sign in' : 'Create account';
+    $('password').autocomplete = m === 'in' ? 'current-password' : 'new-password';
+    $('forgot').classList.toggle('hidden', m === 'up');
+    msg('');
   }
-  $('tab-otp').onclick = () => switchTab(true);
-  $('tab-pw').onclick  = () => switchTab(false);
+  $('tab-in').onclick = () => setMode('in');
+  $('tab-up').onclick = () => setMode('up');
 
-  let otpSent = false;
-  $('otp-btn').onclick = async () => {
-    const email = $('email').value.trim();
-    if (!email) return msg('Enter your email first.');
+  $('form').onsubmit = async (e) => {
+    e.preventDefault();
+    const email = $('email').value.trim(), password = $('password').value;
+    $('submit').disabled = true;
+    msg(mode === 'in' ? 'Signing in…' : 'Creating account…', true);
     try {
-      if (!otpSent) {
-        const { error } = await JN.signInWithOtp(email);
-        if (error) return msg(error.message);
-        otpSent = true;
-        $('otp-step2').classList.remove('hidden');
-        $('otp-btn').textContent = 'Verify code';
-        msg('Code sent — check your inbox.', true);
-      } else {
-        const { error } = await JN.verifyOtp(email, $('otp-code').value.trim());
-        if (error) return msg(error.message);
+      if (mode === 'in') {
+        const { error } = await JN.signInWithPassword(email, password);
+        if (error) throw error;
         location.href = next;
+      } else {
+        const { data, error } = await JN.signUpWithPassword(email, password);
+        if (error) throw error;
+        if (data.session) location.href = next;
+        else msg('Account created — check your email to confirm, then sign in.', true);
       }
-    } catch (e) { msg(e.message); }
+    } catch (err) { msg(err.message); }
+    $('submit').disabled = false;
   };
 
-  $('pw-signin').onclick = async () => {
-    try {
-      const { error } = await JN.signInWithPassword($('email').value.trim(), $('password').value);
-      if (error) return msg(error.message);
-      location.href = next;
-    } catch (e) { msg(e.message); }
-  };
-  $('pw-signup').onclick = async () => {
-    try {
-      const { data, error } = await JN.signUpWithPassword($('email').value.trim(), $('password').value);
-      if (error) return msg(error.message);
-      if (data.session) location.href = next;
-      else msg('Account created — check your email to confirm, then sign in.', true);
-    } catch (e) { msg(e.message); }
+  $('forgot').onclick = async () => {
+    const email = $('email').value.trim();
+    if (!email) return msg('Enter your email above first, then tap "Forgot password?" again.');
+    try { await JN.sendPasswordReset(email); msg('If that email has an account, a reset link is on its way.', true); }
+    catch (err) { msg(err.message); }
   };
 })();
 </script>

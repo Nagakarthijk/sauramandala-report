@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>My page — JanNidhi</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 </head>
-<body class="bg-stone-50 text-stone-800 min-h-screen">
+<body class="bg-stone-50 text-stone-800 min-h-screen pb-16">
 <div id="nav"></div>
 
 <main class="max-w-2xl mx-auto px-4 py-8">
@@ -30,18 +30,38 @@
     <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-4">
       <h2 class="font-bold text-stone-900 text-sm">About you</h2>
       <label class="block text-xs font-semibold text-stone-500">Full name *
-        <input id="name" required class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+        <input id="name" required class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
       </label>
       <label class="block text-xs font-semibold text-stone-500">Location (district, state)
-        <input id="location" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+        <input id="location" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
       </label>
       <label class="block text-xs font-semibold text-stone-500">What work do you do? *
-        <textarea id="bio" rows="4" required class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm"
+        <textarea id="bio" rows="4" required class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300"
           placeholder="Booth-level organising, RTI filings, voter awareness…"></textarea>
       </label>
-      <label class="block text-xs font-semibold text-stone-500">Photo
-        <input id="photo" type="file" accept="image/*" class="mt-1 block w-full text-xs text-stone-500">
-      </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block text-xs font-semibold text-stone-500">Profile photo
+          <input id="photo" type="file" accept="image/*" class="mt-1 block w-full text-xs text-stone-500">
+        </label>
+        <label class="block text-xs font-semibold text-stone-500">Cover banner
+          <input id="cover" type="file" accept="image/*" class="mt-1 block w-full text-xs text-stone-500">
+        </label>
+      </div>
+    </section>
+
+    <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-3">
+      <h2 class="font-bold text-stone-900 text-sm">Links</h2>
+      <p class="text-xs text-stone-400 leading-relaxed">Add your socials, WhatsApp channel, YouTube, a website — anything. These show as tappable buttons on your page.</p>
+      <div id="links-list" class="space-y-2"></div>
+      <div class="flex flex-wrap gap-1.5">
+        <button type="button" data-quick="Instagram" class="text-xs border border-stone-200 rounded-full px-3 py-1.5 hover:bg-stone-50">+ Instagram</button>
+        <button type="button" data-quick="X / Twitter" class="text-xs border border-stone-200 rounded-full px-3 py-1.5 hover:bg-stone-50">+ X / Twitter</button>
+        <button type="button" data-quick="Facebook" class="text-xs border border-stone-200 rounded-full px-3 py-1.5 hover:bg-stone-50">+ Facebook</button>
+        <button type="button" data-quick="YouTube" class="text-xs border border-stone-200 rounded-full px-3 py-1.5 hover:bg-stone-50">+ YouTube</button>
+        <button type="button" data-quick="WhatsApp channel" class="text-xs border border-stone-200 rounded-full px-3 py-1.5 hover:bg-stone-50">+ WhatsApp</button>
+        <button type="button" data-quick="Website" class="text-xs border border-stone-200 rounded-full px-3 py-1.5 hover:bg-stone-50">+ Website</button>
+        <button type="button" id="link-custom" class="text-xs border border-dashed border-stone-300 text-stone-500 rounded-full px-3 py-1.5 hover:bg-stone-50">+ Custom link</button>
+      </div>
     </section>
 
     <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-4">
@@ -52,15 +72,15 @@
       </label>
       <div class="grid sm:grid-cols-2 gap-3">
         <label class="block text-xs font-semibold text-stone-500">UPI ID (VPA)
-          <input id="vpa" placeholder="name@bank" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+          <input id="vpa" placeholder="name@bank" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
         </label>
         <label class="block text-xs font-semibold text-stone-500">Name registered on that UPI ID
-          <input id="payee" placeholder="As shown when someone pays you" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+          <input id="payee" placeholder="As shown when someone pays you" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
         </label>
       </div>
       <p class="text-[11px] text-stone-400">The registered name is shown to donors so they can confirm the money is going to <em>you</em> — it's your best protection against impersonation.</p>
       <label class="block text-xs font-semibold text-stone-500">Bank transfer details (optional)
-        <textarea id="bank" rows="2" placeholder="Account no · IFSC · Account holder name" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm"></textarea>
+        <textarea id="bank" rows="2" placeholder="Account no · IFSC · Account holder name" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300"></textarea>
       </label>
     </section>
 
@@ -71,7 +91,7 @@
       <p id="id-status" class="text-xs text-emerald-600 hidden">✓ ID document on file</p>
     </section>
 
-    <button id="save" type="submit" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-semibold py-3 rounded-xl text-sm">Save &amp; publish</button>
+    <button id="save" type="submit" class="w-full bg-stone-900 hover:bg-stone-800 active:scale-[0.99] text-white font-semibold py-3.5 rounded-xl text-sm transition-all">Save &amp; publish</button>
     <p id="msg" class="text-xs text-center min-h-[1rem]"></p>
   </form>
 
@@ -81,15 +101,18 @@
     <p class="text-xs text-stone-400 leading-relaxed">Optional. Request to join an organisation; if its admin vouches for you, your page shows "Vouched by [Org]" and you appear on their page.</p>
     <div id="memberships" class="space-y-2 text-sm"></div>
     <div class="flex gap-2">
-      <select id="org-pick" class="flex-1 border border-stone-200 rounded-xl px-3 py-2 text-sm"></select>
-      <button id="org-join" class="border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-4 rounded-xl text-sm">Request</button>
+      <select id="org-pick" class="flex-1 border border-stone-200 rounded-xl px-3 py-2.5 text-sm"></select>
+      <button id="org-join" class="border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-4 rounded-xl text-sm shrink-0">Request</button>
     </div>
   </section>
 
   <div id="mypage-link" class="hidden mt-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-sm">
     <strong>Your public page:</strong>
     <a id="mypage-a" class="text-emerald-700 underline break-all" href="#"></a>
-    <p class="text-xs text-emerald-700 mt-1">Share this link on WhatsApp status, social bios — anywhere. Manage donations and post work updates from that page while signed in.</p>
+    <div class="flex gap-2 mt-3">
+      <button id="mypage-share" type="button" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2.5 rounded-lg transition-colors">Share page</button>
+      <button id="mypage-copy" type="button" class="flex-1 border border-emerald-300 text-emerald-700 hover:bg-emerald-100 text-xs font-semibold py-2.5 rounded-lg transition-colors">Copy link</button>
+    </div>
   </div>
 </main>
 
@@ -104,6 +127,40 @@
   const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'text-xs text-center min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
 
   let profile = await JN.getMyProfile();
+  let links = profile ? JN.normalizeLinks(profile.links) : [];
+
+  function renderLinks() {
+    $('links-list').innerHTML = links.map((l, i) => `
+      <div class="flex gap-2 items-center">
+        <input data-i="${i}" data-f="label" value="${JN.esc(l.label)}" placeholder="Label" class="w-28 shrink-0 border border-stone-200 rounded-lg px-2.5 py-2 text-sm">
+        <input data-i="${i}" data-f="url" value="${JN.esc(l.url)}" placeholder="https://…" class="flex-1 min-w-0 border border-stone-200 rounded-lg px-2.5 py-2 text-sm">
+        <button type="button" data-remove="${i}" class="text-stone-300 hover:text-red-500 text-lg leading-none px-1">&times;</button>
+      </div>`).join('') || '<p class="text-xs text-stone-300">No links added yet.</p>';
+  }
+  renderLinks();
+
+  $('links-list').addEventListener('input', (e) => {
+    const i = e.target.dataset.i, f = e.target.dataset.f;
+    if (i === undefined) return;
+    links[i][f] = e.target.value;
+  });
+  $('links-list').addEventListener('click', (e) => {
+    if (e.target.dataset.remove === undefined) return;
+    const i = e.target.dataset.remove;
+    if (i === undefined) return;
+    links.splice(Number(i), 1);
+    renderLinks();
+  });
+  document.querySelectorAll('[data-quick]').forEach(btn => btn.onclick = () => {
+    links.push({ label: btn.dataset.quick, url: '' });
+    renderLinks();
+    document.querySelector(`[data-i="${links.length - 1}"][data-f="url"]`)?.focus();
+  });
+  $('link-custom').onclick = () => {
+    links.push({ label: '', url: '' });
+    renderLinks();
+    document.querySelector(`[data-i="${links.length - 1}"][data-f="label"]`)?.focus();
+  };
 
   function showPostSave() {
     $('heading').textContent = 'Edit your page';
@@ -113,6 +170,8 @@
     const url = new URL('profile.html?u=' + encodeURIComponent(profile.slug), location.href).href;
     $('mypage-a').textContent = url;
     $('mypage-a').href = url;
+    $('mypage-share').onclick = () => JN.shareProfile(profile);
+    $('mypage-copy').onclick = () => JN.copyLink(profile);
     if (profile.id_attested) $('id-status').classList.remove('hidden');
     loadOrgs();
   }
@@ -133,9 +192,11 @@
         name: $('name').value.trim(), location: $('location').value.trim(),
         bio: $('bio').value.trim(), upi_vpa: $('vpa').value.trim(),
         upi_payee_name: $('payee').value.trim(), bank_details: $('bank').value.trim(),
+        links: links.filter(l => l.label.trim() && l.url.trim()),
         last_active_at: new Date().toISOString()
       };
       if ($('photo').files[0]) patch.photo_url  = await JN.uploadPublicImage($('photo').files[0]);
+      if ($('cover').files[0]) patch.cover_url  = await JN.uploadPublicImage($('cover').files[0]);
       if ($('qr').files[0])    patch.upi_qr_url = await JN.uploadPublicImage($('qr').files[0]);
       if ($('iddoc').files[0]) {
         patch.id_doc_path = await JN.uploadPrivateDoc($('iddoc').files[0]);
@@ -146,6 +207,8 @@
       } else {
         profile = await JN.addProfile({ ...patch, slug: JN.slugify(patch.name) });
       }
+      links = JN.normalizeLinks(profile.links);
+      renderLinks();
       msg('Saved.', true);
       showPostSave();
     } catch (err) { msg(err.message); }

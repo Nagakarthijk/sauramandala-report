@@ -18,7 +18,8 @@ const JN = (() => {
     const now = Date.now(), day = 86400000;
     const p1 = { id:'d-p1', user_id:'d-u1', slug:'asha-devi', name:'Asha Devi',
       bio:'Booth-level organiser in Ri-Bhoi. I run voter-awareness meetings, help elders access pensions, and document local road and water issues.',
-      location:'Ri-Bhoi, Meghalaya', photo_url:null,
+      location:'Ri-Bhoi, Meghalaya', photo_url:null, cover_url:null,
+      links:[{label:'WhatsApp updates', url:'https://wa.me/911234567890'}, {label:'Instagram', url:'https://instagram.com/ashadevi'}],
       upi_qr_url:null, upi_vpa:'asha.devi@okbank', upi_payee_name:'ASHA D***',
       bank_details:'A/c 1234567890 · IFSC SBIN0000123 · Asha Devi',
       id_attested:true, id_doc_path:null, undeclared_inflow_total:1200,
@@ -26,7 +27,8 @@ const JN = (() => {
       last_active_at:new Date(now-2*day).toISOString() };
     const p2 = { id:'d-p2', user_id:'d-u2', slug:'ravi-kumar', name:'Ravi Kumar',
       bio:'Ward volunteer. Weekly cleanliness drives and RTI filings on street-light contracts.',
-      location:'Shillong', photo_url:null, upi_qr_url:null, upi_vpa:'ravi.k@okbank',
+      location:'Shillong', photo_url:null, cover_url:null, links:[{label:'X / Twitter', url:'https://twitter.com/ravikumar'}],
+      upi_qr_url:null, upi_vpa:'ravi.k@okbank',
       upi_payee_name:'RAVI K***', bank_details:'', id_attested:false, id_doc_path:null,
       undeclared_inflow_total:0, discoverable:true,
       created_at:new Date(now-40*day).toISOString(), last_active_at:new Date(now-20*day).toISOString() };
@@ -79,14 +81,6 @@ const JN = (() => {
     return user;
   }
 
-  async function signInWithOtp(email) {
-    if (DEMO) demoWriteError();
-    return _sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-  }
-  async function verifyOtp(email, token) {
-    if (DEMO) demoWriteError();
-    return _sb.auth.verifyOtp({ email, token, type: 'email' });
-  }
   async function signInWithPassword(email, password) {
     if (DEMO) demoWriteError();
     return _sb.auth.signInWithPassword({ email, password });
@@ -94,6 +88,15 @@ const JN = (() => {
   async function signUpWithPassword(email, password) {
     if (DEMO) demoWriteError();
     return _sb.auth.signUp({ email, password });
+  }
+  async function sendPasswordReset(email) {
+    if (DEMO) demoWriteError();
+    const redirectTo = new URL('reset-password.html', window.location.href).href;
+    return _sb.auth.resetPasswordForEmail(email, { redirectTo });
+  }
+  async function updatePassword(password) {
+    if (DEMO) demoWriteError();
+    return _sb.auth.updateUser({ password });
   }
   async function signOut() { _user = null; return DEMO ? null : _sb.auth.signOut(); }
 
@@ -291,28 +294,72 @@ const JN = (() => {
   function orgTypeLabel(t) {
     return { party: 'Political party', residents: 'Residents group', union: 'Union / collective', group: 'Group' }[t] || 'Group';
   }
+  function hostname(url) {
+    try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; }
+  }
+  function normalizeLinks(links) {
+    // Supabase returns jsonb as parsed JSON already; guard for stringified/legacy values.
+    if (!links) return [];
+    if (typeof links === 'string') { try { links = JSON.parse(links); } catch { return []; } }
+    return Array.isArray(links) ? links.filter(l => l && l.url) : [];
+  }
+
+  // Small transient toast, used for "link copied" etc. Adds its own container once.
+  function toast(msg) {
+    let el = document.getElementById('jn-toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'jn-toast';
+      el.className = 'fixed left-1/2 bottom-20 sm:bottom-6 -translate-x-1/2 bg-stone-900 text-white text-xs font-medium px-4 py-2.5 rounded-full shadow-lg z-50 opacity-0 transition-opacity duration-200 pointer-events-none';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.opacity = '1';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+  }
+
+  // Native share sheet with a copy-link fallback for desktop browsers.
+  async function shareProfile(profile) {
+    const url = new URL('profile.html?u=' + encodeURIComponent(profile.slug), window.location.href).href;
+    const data = { title: profile.name + ' — JanNidhi', text: `Support ${profile.name}'s work directly — no middleman, straight to their UPI.`, url };
+    if (navigator.share) {
+      try { await navigator.share(data); } catch { /* user cancelled — no-op */ }
+      return;
+    }
+    await copyLink(profile);
+  }
+  async function copyLink(profile) {
+    const url = new URL('profile.html?u=' + encodeURIComponent(profile.slug), window.location.href).href;
+    try { await navigator.clipboard.writeText(url); toast('Link copied'); }
+    catch { toast(url); }
+  }
+  function whatsappShareUrl(profile) {
+    const url = new URL('profile.html?u=' + encodeURIComponent(profile.slug), window.location.href).href;
+    return 'https://wa.me/?text=' + encodeURIComponent(`Support ${profile.name}'s work directly: ${url}`);
+  }
 
   // ── Shared chrome ────────────────────────────────────────────────────
   function navHTML(active, user) {
     const authEl = user
       ? `<button onclick="JN.signOut().then(()=>window.location.href='index.html')"
-           class="text-xs border border-stone-200 text-stone-500 px-2.5 py-1 rounded-lg hover:bg-stone-50">Sign out</button>`
+           class="text-xs border border-stone-200 text-stone-500 px-2.5 py-1.5 rounded-lg hover:bg-stone-50 transition-colors shrink-0">Sign out</button>`
       : `<a href="auth.html?next=${encodeURIComponent(window.location.href)}"
-           class="text-sm font-medium text-stone-500 hover:text-stone-800">Sign in</a>`;
+           class="text-sm font-medium text-stone-500 hover:text-stone-800 transition-colors shrink-0 px-1">Sign in</a>`;
     const link = (href, key, label) =>
-      `<a href="${href}" class="text-sm font-medium px-3 py-1.5 rounded-lg ${active === key ? 'text-stone-900 bg-stone-100' : 'text-stone-500 hover:text-stone-800'}">${label}</a>`;
+      `<a href="${href}" class="text-sm font-medium px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors ${active === key ? 'text-stone-900 bg-stone-100' : 'text-stone-500 hover:text-stone-800'}">${label}</a>`;
     return `
-      <nav class="bg-white border-b border-stone-100 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
+      <nav class="bg-white/95 backdrop-blur border-b border-stone-100 sticky top-0 z-40">
+        <div class="max-w-3xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-1">
           <a href="index.html" class="flex items-center gap-1.5 shrink-0">
             <span class="font-black text-stone-900 text-lg tracking-tight">jannidhi</span>
             <span class="w-1.5 h-1.5 rounded-full bg-orange-500 mt-0.5"></span>
           </a>
-          <div class="flex items-center gap-1 ml-auto">
+          <div class="flex items-center gap-0.5 sm:gap-1 ml-auto">
             ${link('index.html', 'explore', 'Explore')}
-            ${link('org-admin.html', 'orgs', 'For orgs')}
+            ${link('org-admin.html', 'orgs', 'Orgs')}
             ${authEl}
-            <a href="create.html" class="bg-stone-900 hover:bg-stone-800 text-white text-sm font-semibold px-4 py-2 rounded-xl shrink-0">My page</a>
+            <a href="create.html" class="bg-stone-900 hover:bg-stone-800 active:scale-95 text-white text-sm font-semibold px-3.5 sm:px-4 py-2 rounded-xl shrink-0 transition-all">My page</a>
           </div>
         </div>
       </nav>
@@ -339,8 +386,8 @@ const JN = (() => {
   }
 
   return {
-    DEMO, init, getUser, requireAuth, signInWithOtp, verifyOtp,
-    signInWithPassword, signUpWithPassword, signOut, isOwner,
+    DEMO, init, getUser, requireAuth,
+    signInWithPassword, signUpWithPassword, sendPasswordReset, updatePassword, signOut, isOwner,
     uploadPublicImage, uploadPrivateDoc,
     getProfiles, getProfileBySlug, getMyProfile, addProfile, updateProfile,
     getOrgs, getOrgBySlug, getMyOrgs, addOrg,
@@ -349,6 +396,7 @@ const JN = (() => {
     getDonationsFor, declareDonation, resolveDonation, fileReport,
     computeScore, scoreBand,
     slugify, formatINR, formatINRFull, relativeTime, initials, esc, orgTypeLabel,
+    hostname, normalizeLinks, toast, shareProfile, copyLink, whatsappShareUrl,
     navHTML, disclaimerHTML
   };
 })();
