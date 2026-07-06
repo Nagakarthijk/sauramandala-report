@@ -224,18 +224,28 @@ const JN = (() => {
   const resolveDonation = (id, status) => _update('donations', id, { status, resolved_at: new Date().toISOString() });
 
   // ── Reports ──────────────────────────────────────────────────────────
-  // Deliberately no public read — see the comment on the reports table in
-  // schema.sql. Only the affected worker can see reports about themselves.
+  // Deliberately no read access via the API for anyone, including the
+  // reported worker — see the comment on the reports table in schema.sql.
   const fileReport = (r) => _insert('reports', r);
-  const getMyReportsFor = (pid) => _list('reports', { profile_id: pid });
 
   // ── Community votes ──────────────────────────────────────────────────
   // Requires a signed-in account. Individual votes are private (RLS); only
-  // the aggregate vote_counts view is public — see schema.sql for why.
+  // the aggregate views (vote_counts, vote_reason_counts) are public.
+  // Reason is a fixed preset vocabulary, not freeform text — enforced by a
+  // DB check constraint too, since a preset list can't defame anyone the
+  // way open text could. Keep this list in sync with schema.sql.
+  const UPVOTE_REASONS = ['Know them personally', 'Verified their work firsthand', 'Fellow volunteer or colleague', 'Reliable in past dealings'];
+  const DOWNVOTE_REASONS = ['Unresolved donation dispute', 'Missing expense proof', 'Suspect impersonation', 'Other transparency concern'];
+
   async function getVoteCounts(pid) {
     if (DEMO) return { upvotes: 0, downvotes: 0 };
     const { data } = await _sb.from('vote_counts').select('upvotes, downvotes').eq('profile_id', pid).maybeSingle();
     return data || { upvotes: 0, downvotes: 0 };
+  }
+  async function getVoteReasonCounts(pid) {
+    if (DEMO) return [];
+    const { data } = await _sb.from('vote_reason_counts').select('value, reason, tally').eq('profile_id', pid);
+    return data || [];
   }
   async function getMyVote(pid) {
     if (DEMO) return null;
@@ -244,11 +254,12 @@ const JN = (() => {
     const { data } = await _sb.from('votes').select('*').eq('profile_id', pid).eq('voter_user_id', user.id).maybeSingle();
     return data || null;
   }
-  async function castVote(pid, value) {
+  async function castVote(pid, value, reason) {
     const user = await requireAuth();
     if (!user) return null;
+    const row = { profile_id: pid, voter_user_id: user.id, value, reason: reason || null };
     const { data, error } = await _sb.from('votes')
-      .upsert({ profile_id: pid, voter_user_id: user.id, value }, { onConflict: 'profile_id,voter_user_id' })
+      .upsert(row, { onConflict: 'profile_id,voter_user_id' })
       .select().single();
     if (error) throw new Error(error.message);
     return data;
@@ -490,8 +501,8 @@ const JN = (() => {
     getOrgs, getOrgBySlug, getMyOrgs, addOrg,
     getOrgMembers, getMembershipsFor, requestMembership, setMembershipStatus, removeMembership,
     getUpdatesFor, addUpdate, deleteUpdate, getExpensesFor, addExpense, deleteExpense,
-    getDonationsFor, declareDonation, resolveDonation, fileReport, getMyReportsFor,
-    getVoteCounts, getMyVote, castVote, removeVote,
+    getDonationsFor, declareDonation, resolveDonation, fileReport,
+    getVoteCounts, getVoteReasonCounts, getMyVote, castVote, removeVote, UPVOTE_REASONS, DOWNVOTE_REASONS,
     computeScore, scoreBand,
     slugify, formatINR, formatINRFull, relativeTime, initials, esc, orgTypeLabel,
     hostname, normalizeLinks, toast, shareProfile, copyLink, whatsappShareUrl,

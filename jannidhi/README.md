@@ -73,15 +73,22 @@ are future work, not implemented.
 
 ## Community features
 
-- **Votes** (`votes` table): any signed-in user can upvote/downvote a profile. Individual
-  votes are never publicly readable — RLS restricts each row to its own voter — only
-  aggregate counts (`vote_counts` view) are public. This protects a downvoter's identity in
-  a political context where that could mean real-world retaliation.
-- **Reports**: anyone (including signed-out visitors) can file one. Report counts and
-  contents are **not public** — an unverified-accusation counter would itself be a
-  brigading vector (mass fake reports to make someone look bad). Only the affected worker
-  can see reports about their own page; full review otherwise happens via the Supabase
-  dashboard with the service role.
+- **Votes** (`votes` table): any signed-in user can endorse (upvote) or flag a concern
+  (downvote) on a profile, optionally with a reason picked from a **fixed preset list**
+  (see `UPVOTE_REASONS`/`DOWNVOTE_REASONS` in `app.js`) — never open text, since a preset
+  list can't defame anyone the way freeform comments about a named political figure could.
+  Individual votes are never publicly readable — RLS restricts each row to its own voter —
+  only aggregate counts and reason tallies (`vote_counts`, `vote_reason_counts` views) are
+  public. This protects a downvoter's identity in a political context where that could mean
+  real-world retaliation. Deliberately separate from the transparency score (popularity ≠
+  disclosure practice) and from reports (public sentiment ≠ private admin escalation).
+- **Reports**: anyone (including signed-out visitors) can file one, for things that need
+  platform action (impersonation, fraud) rather than public disagreement (that's what
+  downvotes are for). Reports are **not readable via the API by anyone — not the public,
+  not the reported worker**. Telling the accused would defeat an impersonation/abuse report
+  and risks retaliation against whoever filed it. The only way to review reports today is
+  the Supabase dashboard (Table Editor) with the service role — there is no dedicated admin
+  UI yet, which is a real gap if report volume ever grows past "check it occasionally."
 - **CAPTCHA on signup** (optional, off by default): set `turnstileSiteKey` in `config.js`
   to a real [Cloudflare Turnstile](https://dash.cloudflare.com) site key, and enable
   CAPTCHA protection with the matching secret key in Supabase's Authentication → Attack

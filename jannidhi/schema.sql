@@ -119,13 +119,27 @@ create table reports (
 -- never publicly readable — only the voter can see their own row — so
 -- a downvoter can't be identified and targeted. Only aggregate counts
 -- (via the vote_counts view below) are public.
+-- reason is optional and constrained to a fixed vocabulary (enforced here,
+-- not just in the UI) — a preset list can't defame anyone, unlike open
+-- text, which is why votes don't take freeform comments.
 create table votes (
   id            uuid primary key default gen_random_uuid(),
   profile_id    uuid not null references profiles(id) on delete cascade,
   voter_user_id uuid not null references auth.users(id) on delete cascade,
   value         smallint not null check (value in (1, -1)),
+  reason        text,
   created_at    timestamptz default now(),
-  unique (profile_id, voter_user_id)
+  unique (profile_id, voter_user_id),
+  constraint votes_reason_check check (reason is null or reason in (
+    'Know them personally',
+    'Verified their work firsthand',
+    'Fellow volunteer or colleague',
+    'Reliable in past dealings',
+    'Unresolved donation dispute',
+    'Missing expense proof',
+    'Suspect impersonation',
+    'Other transparency concern'
+  ))
 );
 
 -- ============================================================
@@ -197,14 +211,12 @@ create policy "anyone declares donation" on donations for insert
 create policy "worker resolves donation" on donations for update
   using (exists (select 1 from profiles p where p.id = profile_id and p.user_id = auth.uid()));
 
--- Reports: anyone can file. Only the affected worker can read reports
--- about their own profile (so they know they've been flagged); nobody
--- else can — deliberately not public, see comment on the table above.
--- Full admin review happens via the Supabase dashboard (service role
--- bypasses RLS).
+-- Reports: anyone can file. Nobody reads via the API — NOT the reported
+-- worker (telling the accused defeats an impersonation/abuse report and
+-- risks retaliation against whoever filed it), not the public. Admin-only
+-- review via the Supabase dashboard (service role bypasses RLS). There is
+-- currently no dedicated admin UI — this is a known gap, not a feature.
 create policy "anyone files report" on reports for insert with check (true);
-create policy "owner reads own reports" on reports for select
-  using (exists (select 1 from profiles p where p.id = profile_id and p.user_id = auth.uid()));
 
 -- Votes: any signed-in user may cast/change/remove their own vote.
 -- Nobody — not even the profile owner — can read another person's
@@ -223,6 +235,14 @@ create view vote_counts as
   from votes
   group by profile_id;
 grant select on vote_counts to anon, authenticated;
+
+-- Same privacy model: aggregate reason tallies only, never who picked which.
+create view vote_reason_counts as
+  select profile_id, value, reason, count(*) as tally
+  from votes
+  where reason is not null
+  group by profile_id, value, reason;
+grant select on vote_reason_counts to anon, authenticated;
 
 -- ============================================================
 -- Storage buckets

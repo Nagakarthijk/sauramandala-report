@@ -106,13 +106,12 @@
   if (!profile) { $('page').innerHTML = '<p class="text-sm text-stone-400 px-4 py-8">Page not found.</p>'; return; }
   document.title = profile.name + ' — JanNidhi';
 
-  const [donations, expenses, updates, memberships, orgs, voteCounts, myVote] = await Promise.all([
+  const [donations, expenses, updates, memberships, orgs, voteCounts, myVote, voteReasons] = await Promise.all([
     JN.getDonationsFor(profile.id), JN.getExpensesFor(profile.id),
     JN.getUpdatesFor(profile.id), JN.getMembershipsFor(profile.id), JN.getOrgs(),
-    JN.getVoteCounts(profile.id), JN.getMyVote(profile.id)
+    JN.getVoteCounts(profile.id), JN.getMyVote(profile.id), JN.getVoteReasonCounts(profile.id)
   ]);
   const owner = JN.isOwner(profile);
-  const myReports = owner ? await JN.getMyReportsFor(profile.id) : [];
   const orgById = Object.fromEntries(orgs.map(o => [o.id, o]));
   const vouches = memberships.filter(m => m.status === 'vouched');
   const links = JN.normalizeLinks(profile.links);
@@ -188,11 +187,15 @@
         <div class="flex items-center gap-3 mt-4 pt-4 border-t border-stone-100">
           <span class="text-[10px] text-stone-400 font-semibold uppercase tracking-wide">Community sentiment</span>
           <div class="flex items-center gap-1 ml-auto">
-            <button id="vote-up" class="flex items-center gap-1 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${myVote?.value === 1 ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'border-stone-200 hover:bg-stone-50'}">▲ <span id="vote-up-count">${voteCounts.upvotes}</span></button>
-            <button id="vote-down" class="flex items-center gap-1 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${myVote?.value === -1 ? 'bg-red-50 border-red-300 text-red-700' : 'border-stone-200 hover:bg-stone-50'}">▼ <span id="vote-down-count">${voteCounts.downvotes}</span></button>
+            <button id="vote-up" class="flex items-center gap-1 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${myVote?.value === 1 ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'border-stone-200 hover:bg-stone-50'}">▲ Endorse <span id="vote-up-count">${voteCounts.upvotes}</span></button>
+            <button id="vote-down" class="flex items-center gap-1 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${myVote?.value === -1 ? 'bg-red-50 border-red-300 text-red-700' : 'border-stone-200 hover:bg-stone-50'}">▼ Concern <span id="vote-down-count">${voteCounts.downvotes}</span></button>
           </div>
         </div>
-        <p class="text-[10px] text-stone-400 mt-1">Votes require a signed-in, human-checked account. This is community sentiment, not part of the disclosure score above.</p>
+        <div id="vote-reason-picker" class="hidden mt-2 flex flex-wrap gap-1.5"></div>
+        <div id="vote-reason-tally" class="flex flex-wrap gap-1.5 mt-2">
+          ${voteReasons.map(r => `<span class="text-[10px] ${r.value === 1 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'} px-2 py-1 rounded-full">${JN.esc(r.reason)} · ${r.tally}</span>`).join('')}
+        </div>
+        <p class="text-[10px] text-stone-400 mt-1">Votes require a signed-in, human-checked account. Reasons are picked from a fixed list, not open text. This is community sentiment, not part of the disclosure score above.</p>
       </div>
     </header>
 
@@ -240,18 +243,6 @@
     <!-- Owner console -->
     <section class="bg-stone-900 text-stone-100 rounded-2xl p-5 mt-4 space-y-4">
       <h2 class="font-bold text-sm">Your console <span class="font-normal text-stone-400">(only you see this)</span></h2>
-      ${myReports.length ? `
-      <details class="bg-stone-800 rounded-xl p-3">
-        <summary class="text-xs font-semibold cursor-pointer py-1 text-amber-400">${myReports.length} report(s) filed about your page</summary>
-        <div class="mt-2 space-y-2">
-          <p class="text-[10px] text-stone-400">Reports are unverified and not shown publicly. They're visible only to you, so you can respond if something's wrong.</p>
-          ${myReports.map(r => `
-            <div class="bg-stone-700 rounded-lg px-3 py-2 text-xs">
-              <div>${JN.esc(r.reason)}</div>
-              <div class="text-[10px] text-stone-400 mt-1">${JN.relativeTime(r.created_at)}${r.contact ? ' · reporter left contact: ' + JN.esc(r.contact) : ''}</div>
-            </div>`).join('')}
-        </div>
-      </details>` : ''}
       <div id="pending-donations" class="space-y-2"></div>
       <details class="bg-stone-800 rounded-xl p-3">
         <summary class="text-xs font-semibold cursor-pointer py-1">+ Post a work update</summary>
@@ -330,15 +321,37 @@
 
   // Votes: toggling the same direction again removes your vote; switching
   // direction updates it. Requires sign-in (requireAuth redirects if not).
+  // After voting, an optional preset-reason picker appears — never open text.
   let currentVote = myVote;
+  async function refreshVoteReasons() {
+    const reasons = await JN.getVoteReasonCounts(profile.id);
+    $('vote-reason-tally').innerHTML = reasons.map(r => `<span class="text-[10px] ${r.value === 1 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'} px-2 py-1 rounded-full">${JN.esc(r.reason)} · ${r.tally}</span>`).join('');
+  }
+  function showReasonPicker(value) {
+    const list = value === 1 ? JN.UPVOTE_REASONS : JN.DOWNVOTE_REASONS;
+    const picker = $('vote-reason-picker');
+    picker.classList.remove('hidden');
+    picker.innerHTML = `<span class="text-[10px] text-stone-400 w-full">Optional — why?</span>` +
+      list.map(r => `<button data-reason="${JN.esc(r)}" class="text-[10px] border border-stone-200 rounded-full px-2.5 py-1 hover:bg-stone-50">${JN.esc(r)}</button>`).join('');
+    picker.querySelectorAll('[data-reason]').forEach(btn => btn.onclick = async () => {
+      try {
+        currentVote = await JN.castVote(profile.id, value, btn.dataset.reason);
+        picker.classList.add('hidden');
+        await refreshVoteReasons();
+        JN.toast('Reason added');
+      } catch (err) { JN.toast(err.message); }
+    });
+  }
   async function handleVote(value) {
     if (!(await JN.getUser())) { location.href = 'auth.html?next=' + encodeURIComponent(location.href); return; }
     try {
       if (currentVote && currentVote.value === value) {
         await JN.removeVote(currentVote.id);
         currentVote = null;
+        $('vote-reason-picker').classList.add('hidden');
       } else {
         currentVote = await JN.castVote(profile.id, value);
+        showReasonPicker(value);
       }
       const counts = await JN.getVoteCounts(profile.id);
       $('vote-up-count').textContent = counts.upvotes;
