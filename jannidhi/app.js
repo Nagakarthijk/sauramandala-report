@@ -212,7 +212,9 @@ const JN = (() => {
   const deleteExpense  = (id)  => _delete('expenses', id);
 
   // ── Donations ────────────────────────────────────────────────────────
-  const getDonationsFor = (pid) => _list('donations', { profile_id: pid });
+  // donations has no created_at column (it uses declared_at) — must say so explicitly,
+  // otherwise the default sort column doesn't exist and the query silently fails.
+  const getDonationsFor = (pid) => _list('donations', { profile_id: pid }, 'declared_at');
   // Donors may be signed out — RLS only allows status='declared' + citizen_declared=true
   const declareDonation = (d) => _insert('donations', { ...d, status: 'declared', citizen_declared: true });
   const resolveDonation = (id, status) => _update('donations', id, { status, resolved_at: new Date().toISOString() });
