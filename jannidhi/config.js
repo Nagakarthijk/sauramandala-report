@@ -9,6 +9,6 @@
 // with sample data so you can preview every page without a backend.
 
 const JN_CONFIG = {
-  supabaseUrl: 'https://YOUR-PROJECT-REF.supabase.co',
-  supabaseKey: 'YOUR_ANON_PUBLIC_KEY_HERE'
+  supabaseUrl: 'https://yjzsdxdqqwaiqvtcbkpf.supabase.co/rest/v1/',
+  supabaseKey: 'sb_publishable_ko9_kTcB791-hZU0sGFeEA_D_3Rj407'
 };
