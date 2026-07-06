@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>My page — JanNidhi</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<style>
+  /* Tailwind sizes are rem-based; scale the root so text reads comfortably on larger/high-DPI screens (e.g. Mac laptops) without touching every class. */
+  @media (min-width: 900px)  { html { font-size: 17px; } }
+  @media (min-width: 1280px) { html { font-size: 18px; } }
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
@@ -207,10 +212,9 @@
       } else {
         profile = await JN.addProfile({ ...patch, slug: JN.slugify(patch.name) });
       }
-      links = JN.normalizeLinks(profile.links);
-      renderLinks();
-      msg('Saved.', true);
-      showPostSave();
+      msg('Saved — taking you to your page…', true);
+      setTimeout(() => { location.href = 'profile.html?u=' + encodeURIComponent(profile.slug); }, 600);
+      return;
     } catch (err) { msg(err.message); }
     $('save').disabled = false;
   };
