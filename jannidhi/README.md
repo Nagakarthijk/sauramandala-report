@@ -32,7 +32,7 @@ Measures **disclosure practice, not truth**. Computed client-side in `app.js` (`
 
 | Points | Component | Why |
 |---|---|---|
-| 35 | % of donor declarations resolved (acknowledged/disputed) | Takes two independent parties — hardest to fake alone |
+| 35 | % of **proof-backed** donor declarations resolved (acknowledged/disputed) | Only declarations with a transfer screenshot count — otherwise anyone could spam-declare fake gifts to tank a rival's score, or collude to inflate one. Proof-less declarations still show publicly, just don't move the number. A disputed donation keeps its proof link visible either way, so a worker can't quietly make a well-evidenced gift disappear from the record by denying it. |
 | 25 | % of expenses with a bill attached | Cost of fabrication, habit of proof |
 | 20 | Declared inflows ≥ declared expenses (reconciliation) | Spending more than you admit receiving is the classic red flag |
 | 10 | Work update within 30/90 days | Live pages over dead ones |

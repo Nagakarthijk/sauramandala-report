@@ -223,28 +223,37 @@ const JN = (() => {
   // ── Transparency score ───────────────────────────────────────────────
   // Scores DISCLOSURE PRACTICE, not truth. Documented in README.md.
   // 100 points:
-  //   35  Donation handshake — % of donor declarations resolved
-  //       (acknowledged or disputed). Neutral 17 if nothing declared yet.
+  //   35  Donation handshake — % of PROOF-BACKED donor declarations resolved
+  //       (acknowledged or disputed). Declarations without a proof screenshot
+  //       are excluded from this math (shown publicly, but can't be used to
+  //       spam-sabotage or collude-inflate the score). Neutral 17 if none yet.
   //   25  Expense proof rate — % of expenses with a bill/receipt attached.
   //       Neutral 12 if no expenses yet.
-  //   20  Reconciliation — declared inflows (acknowledged donations +
-  //       self-declared undeclared-inflow total) covering declared expenses.
+  //   20  Reconciliation — declared inflows (acknowledged PROOF-BACKED
+  //       donations + self-declared undeclared-inflow total) covering
+  //       declared expenses.
   //   10  Activity — last work update within 30d (10), 90d (5), else 0.
   //   10  Profile completeness — bio 2, payee name 2, ID attested 3, QR/VPA 3.
   function computeScore(profile, donations, expenses, updates) {
     const parts = [];
 
-    const resolved = donations.filter(d => d.status !== 'declared').length;
-    parts.push({ key: 'handshake', label: 'Donations acknowledged', max: 35,
-      score: donations.length ? Math.round(35 * resolved / donations.length) : 17,
-      note: donations.length ? `${resolved} of ${donations.length} donor declarations resolved` : 'No donor declarations yet (neutral score)' });
+    // Only proof-backed declarations move the score, in either direction — an
+    // unevidenced declaration can't be used to sabotage (spam) or inflate
+    // (collusion) a worker's number. It still shows publicly either way.
+    const evidenced = donations.filter(d => d.proof_url);
+    const resolved = evidenced.filter(d => d.status !== 'declared').length;
+    parts.push({ key: 'handshake', label: 'Proof-backed donations acknowledged', max: 35,
+      score: evidenced.length ? Math.round(35 * resolved / evidenced.length) : 17,
+      note: evidenced.length
+        ? `${resolved} of ${evidenced.length} proof-backed donor declarations resolved`
+        : 'No proof-backed donor declarations yet (neutral score)' });
 
     const proved = expenses.filter(e => e.proof_url).length;
     parts.push({ key: 'proofs', label: 'Expense proofs', max: 25,
       score: expenses.length ? Math.round(25 * proved / expenses.length) : 12,
       note: expenses.length ? `${proved} of ${expenses.length} expenses have bills attached` : 'No expenses declared yet (neutral score)' });
 
-    const inflow  = donations.filter(d => d.status === 'acknowledged').reduce((s, d) => s + Number(d.amount), 0)
+    const inflow  = evidenced.filter(d => d.status === 'acknowledged').reduce((s, d) => s + Number(d.amount), 0)
                   + Number(profile.undeclared_inflow_total || 0);
     const outflow = expenses.reduce((s, e) => s + Number(e.amount), 0);
     parts.push({ key: 'reconcile', label: 'Inflows cover expenses', max: 20,
