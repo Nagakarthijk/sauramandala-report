@@ -70,33 +70,25 @@ def wait_any(fl, nd, result_name, dest=None):
         "exits": [{"uuid": e(fl, nd, 1), "destination_uuid": dest}]
     }
 
-def wait_timeout(fl, nd, dest=None):
-    """Wait with 10-min timeout — both reply and timeout go to same next node."""
+def wait_timeout(fl, nd, dest=None, seconds=600):
+    """Confirmed-working delay: wait_for_time action (not router timeout, which Glific ignores)."""
     dest = dest or n(fl, nd+1)
     return {
         "uuid": n(fl, nd),
-        "actions": [],
+        "actions": [
+            {"uuid": a(fl, nd), "type": "wait_for_time", "delay": str(seconds)}
+        ],
         "router": {
-            "wait": {
-                "type": "msg",
-                "timeout": {
-                    "seconds": 600,
-                    "category_uuid": c(fl, nd, 2)
-                }
-            },
             "type": "switch",
-            "result_name": "",
             "operand": "@input.text",
             "default_category_uuid": c(fl, nd, 1),
             "categories": [
-                {"uuid": c(fl, nd, 1), "name": "Any Reply", "exit_uuid": e(fl, nd, 1)},
-                {"uuid": c(fl, nd, 2), "name": "No Response", "exit_uuid": e(fl, nd, 2)}
+                {"uuid": c(fl, nd, 1), "name": "Completed", "exit_uuid": e(fl, nd, 1)}
             ],
             "cases": []
         },
         "exits": [
-            {"uuid": e(fl, nd, 1), "destination_uuid": dest},
-            {"uuid": e(fl, nd, 2), "destination_uuid": dest}
+            {"uuid": e(fl, nd, 1), "destination_uuid": dest}
         ]
     }
 
@@ -798,7 +790,7 @@ data = {
                 "uuid": F1,
                 "name": "mPowerClub YF Onboard",
                 "type": "messaging",
-                "spec_version": "13.2.0",
+                "spec_version": "14.3.0",
                 "language": "base",
                 "expire_after_minutes": 10080,
                 "localization": {},
@@ -813,7 +805,7 @@ data = {
                 "uuid": F2,
                 "name": "mPowerClub YF Journey",
                 "type": "messaging",
-                "spec_version": "13.2.0",
+                "spec_version": "14.3.0",
                 "language": "base",
                 "expire_after_minutes": 10080,
                 "localization": {},
@@ -828,7 +820,7 @@ data = {
                 "uuid": F3,
                 "name": "mPowerClub Add Member",
                 "type": "messaging",
-                "spec_version": "13.2.0",
+                "spec_version": "14.3.0",
                 "language": "base",
                 "expire_after_minutes": 10080,
                 "localization": {},
@@ -843,7 +835,7 @@ data = {
                 "uuid": F4,
                 "name": "mPowerClub Attendance",
                 "type": "messaging",
-                "spec_version": "13.2.0",
+                "spec_version": "14.3.0",
                 "language": "base",
                 "expire_after_minutes": 10080,
                 "localization": {},
@@ -858,7 +850,7 @@ data = {
                 "uuid": F5,
                 "name": "mPowerClub Activity Report",
                 "type": "messaging",
-                "spec_version": "13.2.0",
+                "spec_version": "14.3.0",
                 "language": "base",
                 "expire_after_minutes": 10080,
                 "localization": {},

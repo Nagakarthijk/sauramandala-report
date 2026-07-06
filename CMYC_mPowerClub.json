@@ -18,7 +18,7 @@
         "uuid": "f1f1f1f1-f1f1-4f1f-8f1f-f1f1f1f1f1f1",
         "name": "mPowerClub YF Onboard",
         "type": "messaging",
-        "spec_version": "13.2.0",
+        "spec_version": "14.3.0",
         "language": "base",
         "expire_after_minutes": 10080,
         "localization": {},
@@ -271,7 +271,7 @@
         "uuid": "f2f2f2f2-f2f2-4f2f-8f2f-f2f2f2f2f2f2",
         "name": "mPowerClub YF Journey",
         "type": "messaging",
-        "spec_version": "13.2.0",
+        "spec_version": "14.3.0",
         "language": "base",
         "expire_after_minutes": 10080,
         "localization": {},
@@ -302,29 +302,22 @@
           },
           {
             "uuid": "02002000-0000-4000-8000-020020000000",
-            "actions": [],
+            "actions": [
+              {
+                "uuid": "02002000-aaaa-4000-8000-02002000aaaa",
+                "type": "wait_for_time",
+                "delay": "600"
+              }
+            ],
             "router": {
-              "wait": {
-                "type": "msg",
-                "timeout": {
-                  "seconds": 600,
-                  "category_uuid": "02002002-cccc-4000-8000-02002002cccc"
-                }
-              },
               "type": "switch",
-              "result_name": "",
               "operand": "@input.text",
               "default_category_uuid": "02002001-cccc-4000-8000-02002001cccc",
               "categories": [
                 {
                   "uuid": "02002001-cccc-4000-8000-02002001cccc",
-                  "name": "Any Reply",
+                  "name": "Completed",
                   "exit_uuid": "02002001-eeee-4000-8000-02002001eeee"
-                },
-                {
-                  "uuid": "02002002-cccc-4000-8000-02002002cccc",
-                  "name": "No Response",
-                  "exit_uuid": "02002002-eeee-4000-8000-02002002eeee"
                 }
               ],
               "cases": []
@@ -332,10 +325,6 @@
             "exits": [
               {
                 "uuid": "02002001-eeee-4000-8000-02002001eeee",
-                "destination_uuid": "02003000-0000-4000-8000-020030000000"
-              },
-              {
-                "uuid": "02002002-eeee-4000-8000-02002002eeee",
                 "destination_uuid": "02003000-0000-4000-8000-020030000000"
               }
             ]
@@ -361,29 +350,22 @@
           },
           {
             "uuid": "02004000-0000-4000-8000-020040000000",
-            "actions": [],
+            "actions": [
+              {
+                "uuid": "02004000-aaaa-4000-8000-02004000aaaa",
+                "type": "wait_for_time",
+                "delay": "600"
+              }
+            ],
             "router": {
-              "wait": {
-                "type": "msg",
-                "timeout": {
-                  "seconds": 600,
-                  "category_uuid": "02004002-cccc-4000-8000-02004002cccc"
-                }
-              },
               "type": "switch",
-              "result_name": "",
               "operand": "@input.text",
               "default_category_uuid": "02004001-cccc-4000-8000-02004001cccc",
               "categories": [
                 {
                   "uuid": "02004001-cccc-4000-8000-02004001cccc",
-                  "name": "Any Reply",
+                  "name": "Completed",
                   "exit_uuid": "02004001-eeee-4000-8000-02004001eeee"
-                },
-                {
-                  "uuid": "02004002-cccc-4000-8000-02004002cccc",
-                  "name": "No Response",
-                  "exit_uuid": "02004002-eeee-4000-8000-02004002eeee"
                 }
               ],
               "cases": []
@@ -391,10 +373,6 @@
             "exits": [
               {
                 "uuid": "02004001-eeee-4000-8000-02004001eeee",
-                "destination_uuid": "02005000-0000-4000-8000-020050000000"
-              },
-              {
-                "uuid": "02004002-eeee-4000-8000-02004002eeee",
                 "destination_uuid": "02005000-0000-4000-8000-020050000000"
               }
             ]
@@ -552,29 +530,22 @@
           },
           {
             "uuid": "02012000-0000-4000-8000-020120000000",
-            "actions": [],
+            "actions": [
+              {
+                "uuid": "02012000-aaaa-4000-8000-02012000aaaa",
+                "type": "wait_for_time",
+                "delay": "600"
+              }
+            ],
             "router": {
-              "wait": {
-                "type": "msg",
-                "timeout": {
-                  "seconds": 600,
-                  "category_uuid": "02012002-cccc-4000-8000-02012002cccc"
-                }
-              },
               "type": "switch",
-              "result_name": "",
               "operand": "@input.text",
               "default_category_uuid": "02012001-cccc-4000-8000-02012001cccc",
               "categories": [
                 {
                   "uuid": "02012001-cccc-4000-8000-02012001cccc",
-                  "name": "Any Reply",
+                  "name": "Completed",
                   "exit_uuid": "02012001-eeee-4000-8000-02012001eeee"
-                },
-                {
-                  "uuid": "02012002-cccc-4000-8000-02012002cccc",
-                  "name": "No Response",
-                  "exit_uuid": "02012002-eeee-4000-8000-02012002eeee"
                 }
               ],
               "cases": []
@@ -582,10 +553,6 @@
             "exits": [
               {
                 "uuid": "02012001-eeee-4000-8000-02012001eeee",
-                "destination_uuid": "02013000-0000-4000-8000-020130000000"
-              },
-              {
-                "uuid": "02012002-eeee-4000-8000-02012002eeee",
                 "destination_uuid": "02013000-0000-4000-8000-020130000000"
               }
             ]
@@ -611,29 +578,22 @@
           },
           {
             "uuid": "02014000-0000-4000-8000-020140000000",
-            "actions": [],
+            "actions": [
+              {
+                "uuid": "02014000-aaaa-4000-8000-02014000aaaa",
+                "type": "wait_for_time",
+                "delay": "600"
+              }
+            ],
             "router": {
-              "wait": {
-                "type": "msg",
-                "timeout": {
-                  "seconds": 600,
-                  "category_uuid": "02014002-cccc-4000-8000-02014002cccc"
-                }
-              },
               "type": "switch",
-              "result_name": "",
               "operand": "@input.text",
               "default_category_uuid": "02014001-cccc-4000-8000-02014001cccc",
               "categories": [
                 {
                   "uuid": "02014001-cccc-4000-8000-02014001cccc",
-                  "name": "Any Reply",
+                  "name": "Completed",
                   "exit_uuid": "02014001-eeee-4000-8000-02014001eeee"
-                },
-                {
-                  "uuid": "02014002-cccc-4000-8000-02014002cccc",
-                  "name": "No Response",
-                  "exit_uuid": "02014002-eeee-4000-8000-02014002eeee"
                 }
               ],
               "cases": []
@@ -641,10 +601,6 @@
             "exits": [
               {
                 "uuid": "02014001-eeee-4000-8000-02014001eeee",
-                "destination_uuid": "02015000-0000-4000-8000-020150000000"
-              },
-              {
-                "uuid": "02014002-eeee-4000-8000-02014002eeee",
                 "destination_uuid": "02015000-0000-4000-8000-020150000000"
               }
             ]
@@ -843,29 +799,22 @@
           },
           {
             "uuid": "02022000-0000-4000-8000-020220000000",
-            "actions": [],
+            "actions": [
+              {
+                "uuid": "02022000-aaaa-4000-8000-02022000aaaa",
+                "type": "wait_for_time",
+                "delay": "600"
+              }
+            ],
             "router": {
-              "wait": {
-                "type": "msg",
-                "timeout": {
-                  "seconds": 600,
-                  "category_uuid": "02022002-cccc-4000-8000-02022002cccc"
-                }
-              },
               "type": "switch",
-              "result_name": "",
               "operand": "@input.text",
               "default_category_uuid": "02022001-cccc-4000-8000-02022001cccc",
               "categories": [
                 {
                   "uuid": "02022001-cccc-4000-8000-02022001cccc",
-                  "name": "Any Reply",
+                  "name": "Completed",
                   "exit_uuid": "02022001-eeee-4000-8000-02022001eeee"
-                },
-                {
-                  "uuid": "02022002-cccc-4000-8000-02022002cccc",
-                  "name": "No Response",
-                  "exit_uuid": "02022002-eeee-4000-8000-02022002eeee"
                 }
               ],
               "cases": []
@@ -873,10 +822,6 @@
             "exits": [
               {
                 "uuid": "02022001-eeee-4000-8000-02022001eeee",
-                "destination_uuid": "02023000-0000-4000-8000-020230000000"
-              },
-              {
-                "uuid": "02022002-eeee-4000-8000-02022002eeee",
                 "destination_uuid": "02023000-0000-4000-8000-020230000000"
               }
             ]
@@ -948,29 +893,22 @@
           },
           {
             "uuid": "02026000-0000-4000-8000-020260000000",
-            "actions": [],
+            "actions": [
+              {
+                "uuid": "02026000-aaaa-4000-8000-02026000aaaa",
+                "type": "wait_for_time",
+                "delay": "600"
+              }
+            ],
             "router": {
-              "wait": {
-                "type": "msg",
-                "timeout": {
-                  "seconds": 600,
-                  "category_uuid": "02026002-cccc-4000-8000-02026002cccc"
-                }
-              },
               "type": "switch",
-              "result_name": "",
               "operand": "@input.text",
               "default_category_uuid": "02026001-cccc-4000-8000-02026001cccc",
               "categories": [
                 {
                   "uuid": "02026001-cccc-4000-8000-02026001cccc",
-                  "name": "Any Reply",
+                  "name": "Completed",
                   "exit_uuid": "02026001-eeee-4000-8000-02026001eeee"
-                },
-                {
-                  "uuid": "02026002-cccc-4000-8000-02026002cccc",
-                  "name": "No Response",
-                  "exit_uuid": "02026002-eeee-4000-8000-02026002eeee"
                 }
               ],
               "cases": []
@@ -978,10 +916,6 @@
             "exits": [
               {
                 "uuid": "02026001-eeee-4000-8000-02026001eeee",
-                "destination_uuid": "02027000-0000-4000-8000-020270000000"
-              },
-              {
-                "uuid": "02026002-eeee-4000-8000-02026002eeee",
                 "destination_uuid": "02027000-0000-4000-8000-020270000000"
               }
             ]
@@ -1305,7 +1239,7 @@
         "uuid": "f3f3f3f3-f3f3-4f3f-8f3f-f3f3f3f3f3f3",
         "name": "mPowerClub Add Member",
         "type": "messaging",
-        "spec_version": "13.2.0",
+        "spec_version": "14.3.0",
         "language": "base",
         "expire_after_minutes": 10080,
         "localization": {},
@@ -1635,7 +1569,7 @@
         "uuid": "f4f4f4f4-f4f4-4f4f-8f4f-f4f4f4f4f4f4",
         "name": "mPowerClub Attendance",
         "type": "messaging",
-        "spec_version": "13.2.0",
+        "spec_version": "14.3.0",
         "language": "base",
         "expire_after_minutes": 10080,
         "localization": {},
@@ -1813,7 +1747,7 @@
         "uuid": "f5f5f5f5-f5f5-4f5f-8f5f-f5f5f5f5f5f5",
         "name": "mPowerClub Activity Report",
         "type": "messaging",
-        "spec_version": "13.2.0",
+        "spec_version": "14.3.0",
         "language": "base",
         "expire_after_minutes": 10080,
         "localization": {},
