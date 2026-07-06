@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terms &amp; disclaimers — JanNidhi</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</head>
+<body class="bg-stone-50 text-stone-800 min-h-screen">
+<div id="nav"></div>
+
+<main class="max-w-2xl mx-auto px-4 py-10 text-sm leading-relaxed text-stone-600">
+  <h1 class="text-2xl font-black text-stone-900 mb-2">Terms &amp; disclaimers</h1>
+  <p class="text-xs text-stone-400 mb-8">Plain-language draft. Have a lawyer review before public launch. This document is part of the open-source project and you should adapt it to your deployment.</p>
+
+  <h2 class="font-bold text-stone-900 mt-6 mb-1">1. What JanNidhi is</h2>
+  <p>JanNidhi is an open-source <strong>directory and publishing tool</strong>. Grassroots political workers create public pages describing their work and displaying payment details <strong>they themselves upload</strong>. Donors, if they choose, publicly declare gifts they have already sent. That is the entire service.</p>
+
+  <h2 class="font-bold text-stone-900 mt-6 mb-1">2. What JanNidhi is not</h2>
+  <ul class="list-disc pl-5 space-y-1">
+    <li><strong>Not a payment system.</strong> The platform never holds, transmits, routes, collects, escrows or facilitates money. It does not generate payment links or QR codes. A UPI QR image on a page is content uploaded by the page owner, equivalent to a poster on a wall. All payments occur entirely outside the platform, directly between two people.</li>
+    <li><strong>Not a verifier.</strong> "ID self-attested" means only that the page owner states a document exists. "Vouched by [organisation]" is that organisation's statement. The platform checks nothing and endorses no one.</li>
+    <li><strong>Not a charity or political intermediary.</strong> Contributions carry no tax benefit of any kind. The platform is not a political party, electoral trust, or fundraising agent.</li>
+  </ul>
+
+  <h2 class="font-bold text-stone-900 mt-6 mb-1">3. No liability</h2>
+  <p>The platform, its maintainers and hosts accept no liability for: payments sent to anyone listed here; the accuracy of any profile, work update, expense, donation declaration, or transparency score; impersonation or fraud by users; tax, FCRA, election-law or other legal consequences for donors or recipients. <strong>If you send money to someone on this platform, you are handing money to that person as if in cash.</strong> There is no refund, reversal, or recourse through the platform.</p>
+
+  <h2 class="font-bold text-stone-900 mt-6 mb-1">4. Obligations of workers (page owners)</h2>
+  <ul class="list-disc pl-5 space-y-1">
+    <li>You are solely responsible for the truth of everything on your page, and for your own tax treatment. Money received is likely a <strong>personal gift</strong>; gifts exceeding ₹50,000 per financial year from non-relatives are generally taxable as your income (Section 56(2)(x), Income-tax Act). Keep your own records.</li>
+    <li><strong>Do not accept foreign-sourced funds.</strong> Accepting foreign contributions for political activity is prohibited under the Foreign Contribution (Regulation) Act, 2010, and the offence is yours, not the platform's.</li>
+    <li>Acknowledge or dispute donor declarations honestly. Uploading fabricated bills or declarations may expose you to legal consequences.</li>
+    <li>Comply with applicable election law, including any restrictions in force during election periods.</li>
+  </ul>
+
+  <h2 class="font-bold text-stone-900 mt-6 mb-1">5. Obligations of donors</h2>
+  <ul class="list-disc pl-5 space-y-1">
+    <li>Give only your own, Indian-sourced funds, and only if you are an Indian citizen. You confirm this each time you declare a donation.</li>
+    <li>Understand there is no tax benefit and no refund. Verify the payee name in your UPI app matches the name shown on the page before paying.</li>
+    <li>Declaring a donation is voluntary and public (your name can be hidden). Do not declare donations you did not make.</li>
+  </ul>
+
+  <h2 class="font-bold text-stone-900 mt-6 mb-1">6. Obligations of organisations</h2>
+  <p>Registering an organisation and vouching for workers are public statements made in the organisation's name. Vouch only for people you genuinely know and can stand behind. The platform does not verify organisations; anyone relying on a vouch is relying on the organisation, not the platform.</p>
+
+  <h2 class="font-bold text-stone-900 mt-6 mb-1">7. Transparency score</h2>
+  <p>The score is computed mechanically from disclosure behaviour (declarations acknowledged, bills attached, ledger reconciliation, activity, profile completeness). It measures <strong>how much someone discloses, not whether it is true</strong>. A high score is not an endorsement; a low score is not an accusation.</p>
+
+  <h2 class="font-bold text-stone-900 mt-6 mb-1">8. Content, takedowns and reports</h2>
+  <p>Maintainers may remove any page, org or entry at their discretion — particularly for impersonation, fraud, unlawful content or court/authority direction — and may share data where legally required. Use the report button on any page to flag abuse. Repeated or serious abuse leads to removal.</p>
+
+  <h2 class="font-bold text-stone-900 mt-6 mb-1">9. Privacy</h2>
+  <p>Everything you publish is public by design, except: ID documents (private storage, owner-accessible only) and donor contact details (visible to the receiving worker only). Anonymous donors' names are never stored. The project is open source; anyone can run their own instance, and each instance's operator is its own data controller.</p>
+
+  <h2 class="font-bold text-stone-900 mt-6 mb-1">10. Open source</h2>
+  <p>The software is provided "as is", without warranty of any kind, under the MIT License. Instance operators are responsible for their own deployment and legal compliance.</p>
+
+  <div id="disclaimer"></div>
+</main>
+
+<script>
+(async () => {
+  JN.init();
+  const user = await JN.getUser();
+  document.getElementById('nav').innerHTML = JN.navHTML('', user);
+  document.getElementById('disclaimer').innerHTML = JN.disclaimerHTML();
+})();
+</script>
+</body>
+</html>

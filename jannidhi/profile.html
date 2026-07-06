@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Worker page — JanNidhi</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</head>
+<body class="bg-stone-50 text-stone-800 min-h-screen">
+<div id="nav"></div>
+<main class="max-w-2xl mx-auto px-4 py-8" id="page">
+  <p class="text-sm text-stone-400">Loading…</p>
+</main>
+
+<!-- Donation declaration modal -->
+<div id="declare-modal" class="hidden fixed inset-0 bg-black/40 z-50 overflow-y-auto">
+  <div class="max-w-md mx-auto my-8 bg-white rounded-2xl p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="font-black text-stone-900">Declare your donation</h2>
+      <button onclick="document.getElementById('declare-modal').classList.add('hidden')" class="text-stone-400 hover:text-stone-700 text-xl leading-none">&times;</button>
+    </div>
+    <p class="text-xs text-stone-500 leading-relaxed">You already sent the money directly — this just puts it on the public record so the worker can acknowledge it. Declaring is voluntary but powers their transparency score.</p>
+    <label class="block text-xs font-semibold text-stone-500">Amount (₹) *
+      <input id="d-amount" type="number" min="1" required class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+    </label>
+    <label class="flex items-center gap-2 text-xs text-stone-600">
+      <input id="d-anon" type="checkbox" class="rounded"> Keep my name hidden from the public page
+    </label>
+    <label class="block text-xs font-semibold text-stone-500">Your name <span id="d-name-req">*</span>
+      <input id="d-name" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+    </label>
+    <label class="block text-xs font-semibold text-stone-500">Contact (optional — shared with the worker only, for a thank-you)
+      <input id="d-contact" placeholder="Phone or email" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+    </label>
+    <label class="block text-xs font-semibold text-stone-500">Message (optional, public)
+      <input id="d-message" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+    </label>
+    <label class="block text-xs font-semibold text-stone-500">Screenshot of the transfer (optional but recommended)
+      <input id="d-proof" type="file" accept="image/*" class="mt-1 block w-full text-xs text-stone-500">
+    </label>
+    <label class="flex items-start gap-2 text-xs text-stone-600 bg-amber-50 border border-amber-200 rounded-xl p-3">
+      <input id="d-citizen" type="checkbox" class="rounded mt-0.5" required>
+      <span>I am an Indian citizen and these are my own, Indian-sourced funds. I understand this is a <strong>personal gift with no tax benefit</strong>, that foreign-sourced contributions to political activity are prohibited under FCRA, and that JanNidhi never handles or can reverse this payment. *</span>
+    </label>
+    <button id="d-submit" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-semibold py-2.5 rounded-xl text-sm">Declare donation</button>
+    <p id="d-msg" class="text-xs min-h-[1rem]"></p>
+  </div>
+</div>
+
+<!-- Report modal -->
+<div id="report-modal" class="hidden fixed inset-0 bg-black/40 z-50 overflow-y-auto">
+  <div class="max-w-md mx-auto my-16 bg-white rounded-2xl p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="font-black text-stone-900">Report this page</h2>
+      <button onclick="document.getElementById('report-modal').classList.add('hidden')" class="text-stone-400 hover:text-stone-700 text-xl leading-none">&times;</button>
+    </div>
+    <p class="text-xs text-stone-500">Impersonation, fake identity, misuse. Reports go to the platform maintainers.</p>
+    <textarea id="r-reason" rows="3" placeholder="What's wrong?" class="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm"></textarea>
+    <input id="r-contact" placeholder="Your contact (optional)" class="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+    <button id="r-submit" class="w-full bg-stone-900 text-white font-semibold py-2.5 rounded-xl text-sm">Send report</button>
+    <p id="r-msg" class="text-xs min-h-[1rem]"></p>
+  </div>
+</div>
+
+<script>
+(async () => {
+  JN.init();
+  const user = await JN.getUser();
+  document.getElementById('nav').innerHTML = JN.navHTML('', user);
+  const $ = id => document.getElementById(id);
+  const slug = new URLSearchParams(location.search).get('u');
+
+  const profile = slug ? await JN.getProfileBySlug(slug) : null;
+  if (!profile) { $('page').innerHTML = '<p class="text-sm text-stone-400">Page not found.</p>'; return; }
+  document.title = profile.name + ' — JanNidhi';
+
+  const [donations, expenses, updates, memberships, orgs] = await Promise.all([
+    JN.getDonationsFor(profile.id), JN.getExpensesFor(profile.id),
+    JN.getUpdatesFor(profile.id), JN.getMembershipsFor(profile.id), JN.getOrgs()
+  ]);
+  const owner = JN.isOwner(profile);
+  const orgById = Object.fromEntries(orgs.map(o => [o.id, o]));
+  const vouches = memberships.filter(m => m.status === 'vouched');
+  const { total, parts } = JN.computeScore(profile, donations, expenses, updates);
+  const band = JN.scoreBand(total);
+
+  const ackTotal = donations.filter(d => d.status === 'acknowledged').reduce((s, d) => s + Number(d.amount), 0);
+  const expTotal = expenses.reduce((s, e) => s + Number(e.amount), 0);
+
+  function badge(text, cls, title) {
+    return `<span class="text-[10px] font-bold px-2 py-1 rounded-full ${cls}" title="${JN.esc(title || '')}">${text}</span>`;
+  }
+
+  $('page').innerHTML = `
+    <!-- Header -->
+    <header class="bg-white border border-stone-100 rounded-2xl p-5">
+      <div class="flex items-start gap-4">
+        ${profile.photo_url
+          ? `<img src="${JN.esc(profile.photo_url)}" class="w-16 h-16 rounded-full object-cover" alt="">`
+          : `<div class="w-16 h-16 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-500">${JN.initials(profile.name)}</div>`}
+        <div class="min-w-0 flex-1">
+          <h1 class="text-xl font-black text-stone-900">${JN.esc(profile.name)}</h1>
+          <div class="text-xs text-stone-400">${JN.esc(profile.location || '')}</div>
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            ${profile.id_attested ? badge('ID self-attested', 'bg-blue-50 text-blue-700', 'The owner states an ID document is on file. Not checked by the platform.') : ''}
+            ${vouches.map(m => badge('Vouched by ' + JN.esc(orgById[m.org_id]?.name || 'org'), 'bg-violet-50 text-violet-700', 'This organisation vouches for this worker. Not a platform verification.')).join('')}
+          </div>
+        </div>
+        <div class="text-center shrink-0">
+          <div class="text-2xl font-black ${total >= 75 ? 'text-emerald-600' : total >= 45 ? 'text-amber-600' : 'text-stone-400'}">${total}</div>
+          <div class="text-[10px] text-stone-400 leading-tight">transparency<br>score</div>
+        </div>
+      </div>
+      <p class="mt-3 text-sm text-stone-600 leading-relaxed whitespace-pre-line">${JN.esc(profile.bio || '')}</p>
+      <div class="mt-3 flex flex-wrap gap-2 text-xs">
+        ${badge(band.label, band.cls)}
+        <button id="score-toggle" class="text-stone-400 underline">how is this scored?</button>
+        <button id="report-btn" class="ml-auto text-stone-300 hover:text-red-500 underline">report</button>
+      </div>
+      <div id="score-detail" class="hidden mt-3 bg-stone-50 rounded-xl p-3 space-y-1.5">
+        ${parts.map(p => `
+          <div class="flex items-center gap-2 text-xs">
+            <span class="w-40 shrink-0 text-stone-500">${p.label}</span>
+            <div class="flex-1 bg-stone-200 rounded-full h-1.5"><div class="bg-stone-600 h-1.5 rounded-full" style="width:${p.max ? (100 * p.score / p.max) : 0}%"></div></div>
+            <span class="w-12 text-right font-semibold text-stone-600">${p.score}/${p.max}</span>
+          </div>
+          <div class="text-[10px] text-stone-400 pl-1 -mt-1">${JN.esc(p.note)}</div>`).join('')}
+        <p class="text-[10px] text-stone-400 pt-1 border-t border-stone-200">This score measures <strong>disclosure practice</strong> — how much this person declares and reconciles — not the truth of any entry.</p>
+      </div>
+    </header>
+
+    <!-- Payment -->
+    <section class="bg-white border border-stone-100 rounded-2xl p-5 mt-4">
+      <h2 class="font-bold text-stone-900 text-sm mb-1">Support ${JN.esc(profile.name.split(' ')[0])} directly</h2>
+      <p class="text-xs text-stone-400 mb-3">Pay with your own UPI app. Money goes straight to them — JanNidhi never touches it and cannot reverse it.</p>
+      <div class="flex flex-col sm:flex-row gap-4 items-start">
+        ${profile.upi_qr_url
+          ? `<img src="${JN.esc(profile.upi_qr_url)}" class="w-40 h-40 object-contain border border-stone-200 rounded-xl bg-white" alt="UPI QR code uploaded by ${JN.esc(profile.name)}">`
+          : `<div class="w-40 h-40 border border-dashed border-stone-200 rounded-xl flex items-center justify-center text-xs text-stone-300 text-center px-2">No QR uploaded yet</div>`}
+        <div class="text-sm space-y-2 min-w-0">
+          ${profile.upi_vpa ? `<div><span class="text-xs text-stone-400 block">UPI ID</span><span class="font-mono font-semibold select-all">${JN.esc(profile.upi_vpa)}</span></div>` : ''}
+          ${profile.upi_payee_name ? `<div><span class="text-xs text-stone-400 block">Payments should show the name</span><span class="font-bold">${JN.esc(profile.upi_payee_name)}</span><p class="text-[10px] text-amber-600 mt-0.5">If your UPI app shows a different name, stop — this page may be impersonating someone.</p></div>` : ''}
+          ${profile.bank_details ? `<div><span class="text-xs text-stone-400 block">Bank transfer</span><span class="whitespace-pre-line text-xs">${JN.esc(profile.bank_details)}</span></div>` : ''}
+        </div>
+      </div>
+      <button id="declare-btn" class="mt-4 w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2.5 rounded-xl text-sm">I sent money — declare it publicly</button>
+    </section>
+
+    <!-- Ledger summary -->
+    <section class="grid grid-cols-3 gap-3 mt-4 text-center">
+      <div class="bg-white border border-stone-100 rounded-2xl p-3"><div class="font-black text-stone-900">${JN.formatINR(ackTotal)}</div><div class="text-[10px] text-stone-400">acknowledged donations</div></div>
+      <div class="bg-white border border-stone-100 rounded-2xl p-3"><div class="font-black text-stone-900">${JN.formatINR(Number(profile.undeclared_inflow_total || 0))}</div><div class="text-[10px] text-stone-400">self-declared other inflows</div></div>
+      <div class="bg-white border border-stone-100 rounded-2xl p-3"><div class="font-black text-stone-900">${JN.formatINR(expTotal)}</div><div class="text-[10px] text-stone-400">declared expenses</div></div>
+    </section>
+
+    ${owner ? `
+    <!-- Owner console -->
+    <section class="bg-stone-900 text-stone-100 rounded-2xl p-5 mt-4 space-y-4">
+      <h2 class="font-bold text-sm">Your console <span class="font-normal text-stone-400">(only you see this)</span></h2>
+      <div id="pending-donations" class="space-y-2"></div>
+      <details class="bg-stone-800 rounded-xl p-3">
+        <summary class="text-xs font-semibold cursor-pointer">+ Post a work update</summary>
+        <div class="mt-2 space-y-2">
+          <input id="u-title" placeholder="Title" class="w-full rounded-lg px-3 py-2 text-sm text-stone-900">
+          <textarea id="u-body" rows="3" placeholder="What did you do?" class="w-full rounded-lg px-3 py-2 text-sm text-stone-900"></textarea>
+          <input id="u-media" type="file" accept="image/*" class="block w-full text-xs">
+          <button id="u-add" class="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-4 py-2 rounded-lg">Publish update</button>
+        </div>
+      </details>
+      <details class="bg-stone-800 rounded-xl p-3">
+        <summary class="text-xs font-semibold cursor-pointer">+ Declare an expense</summary>
+        <div class="mt-2 space-y-2">
+          <input id="e-amount" type="number" min="1" placeholder="Amount (₹)" class="w-full rounded-lg px-3 py-2 text-sm text-stone-900">
+          <input id="e-desc" placeholder="What was it for?" class="w-full rounded-lg px-3 py-2 text-sm text-stone-900">
+          <input id="e-proof" type="file" accept="image/*" class="block w-full text-xs">
+          <p class="text-[10px] text-stone-400">Attach the bill — expenses with proof score higher.</p>
+          <button id="e-add" class="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-4 py-2 rounded-lg">Publish expense</button>
+        </div>
+      </details>
+      <details class="bg-stone-800 rounded-xl p-3">
+        <summary class="text-xs font-semibold cursor-pointer">Update undeclared inflows total</summary>
+        <div class="mt-2 space-y-2">
+          <p class="text-[10px] text-stone-400">Total you've received from donors who chose not to declare. Keeping this honest keeps your ledger reconciled.</p>
+          <input id="inflow-total" type="number" min="0" value="${Number(profile.undeclared_inflow_total || 0)}" class="w-full rounded-lg px-3 py-2 text-sm text-stone-900">
+          <button id="inflow-save" class="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-4 py-2 rounded-lg">Save</button>
+        </div>
+      </details>
+      <p id="owner-msg" class="text-xs text-stone-400 min-h-[1rem]"></p>
+    </section>` : ''}
+
+    <!-- Work updates -->
+    <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-8 mb-3">Work updates</h2>
+    <div class="space-y-3">${updates.length ? updates.map(u => `
+      <article class="bg-white border border-stone-100 rounded-2xl p-4">
+        <div class="flex items-baseline justify-between gap-2">
+          <h3 class="font-bold text-stone-900 text-sm">${JN.esc(u.title)}</h3>
+          <span class="text-[10px] text-stone-400 shrink-0">${JN.relativeTime(u.created_at)}</span>
+        </div>
+        <p class="mt-1 text-xs text-stone-600 leading-relaxed whitespace-pre-line">${JN.esc(u.body || '')}</p>
+        ${(u.media_urls || []).map(m => `<img src="${JN.esc(m)}" class="mt-2 rounded-xl max-h-64 object-cover" alt="">`).join('')}
+      </article>`).join('') : '<p class="text-xs text-stone-400">No work updates yet.</p>'}</div>
+
+    <!-- Expenses -->
+    <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-8 mb-3">Declared expenses</h2>
+    <div class="bg-white border border-stone-100 rounded-2xl divide-y divide-stone-100">${expenses.length ? expenses.map(e => `
+      <div class="flex items-center gap-3 px-4 py-3 text-sm">
+        <div class="min-w-0 flex-1">
+          <div class="text-stone-700">${JN.esc(e.description)}</div>
+          <div class="text-[10px] text-stone-400">${JN.esc(e.spent_on || '')}</div>
+        </div>
+        ${e.proof_url ? `<a href="${JN.esc(e.proof_url)}" target="_blank" rel="noopener" class="text-[10px] text-blue-600 underline shrink-0">bill</a>` : '<span class="text-[10px] text-stone-300 shrink-0">no bill</span>'}
+        <div class="font-bold text-stone-900 shrink-0">${JN.formatINRFull(e.amount)}</div>
+      </div>`).join('') : '<p class="text-xs text-stone-400 p-4">No expenses declared yet.</p>'}</div>
+
+    <!-- Donations ledger -->
+    <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-8 mb-3">Donation declarations</h2>
+    <div class="bg-white border border-stone-100 rounded-2xl divide-y divide-stone-100">${donations.length ? donations.map(d => `
+      <div class="flex items-center gap-3 px-4 py-3 text-sm">
+        <div class="min-w-0 flex-1">
+          <div class="text-stone-700">${d.anonymous ? '<em class="text-stone-400">Anonymous donor</em>' : JN.esc(d.donor_name || 'Unnamed donor')}</div>
+          ${d.message ? `<div class="text-[10px] text-stone-400 italic">"${JN.esc(d.message)}"</div>` : ''}
+          <div class="text-[10px] text-stone-400">${JN.relativeTime(d.declared_at)}</div>
+        </div>
+        ${d.proof_url ? `<a href="${JN.esc(d.proof_url)}" target="_blank" rel="noopener" class="text-[10px] text-blue-600 underline shrink-0">proof</a>` : ''}
+        <span class="text-[10px] font-bold px-2 py-1 rounded-full shrink-0 ${d.status === 'acknowledged' ? 'bg-emerald-100 text-emerald-700' : d.status === 'disputed' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}">${d.status}</span>
+        <div class="font-bold text-stone-900 shrink-0">${JN.formatINRFull(d.amount)}</div>
+      </div>`).join('') : '<p class="text-xs text-stone-400 p-4">No donations declared yet. If you\'ve sent money, use the declare button above.</p>'}</div>
+
+    <div id="disclaimer">${JN.disclaimerHTML()}</div>`;
+
+  // ── Interactions ─────────────────────────────────────────────────────
+  $('score-toggle').onclick = () => $('score-detail').classList.toggle('hidden');
+  $('report-btn').onclick   = () => $('report-modal').classList.remove('hidden');
+  $('declare-btn').onclick  = () => $('declare-modal').classList.remove('hidden');
+  $('d-anon').onchange = () => { $('d-name-req').textContent = $('d-anon').checked ? '(kept private)' : '*'; };
+
+  $('d-submit').onclick = async () => {
+    const dmsg = (t, ok) => { $('d-msg').textContent = t; $('d-msg').className = 'text-xs min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
+    const amount = Number($('d-amount').value);
+    if (!amount || amount <= 0) return dmsg('Enter the amount you sent.');
+    if (!$('d-anon').checked && !$('d-name').value.trim()) return dmsg('Enter your name, or tick anonymous.');
+    if (!$('d-citizen').checked) return dmsg('You must confirm the citizenship / own-funds declaration.');
+    $('d-submit').disabled = true;
+    try {
+      let proof_url = null;
+      if ($('d-proof').files[0]) proof_url = await JN.uploadPublicImage($('d-proof').files[0]);
+      await JN.declareDonation({
+        profile_id: profile.id, amount,
+        anonymous: $('d-anon').checked,
+        donor_name: $('d-anon').checked ? null : $('d-name').value.trim(),
+        donor_contact: $('d-contact').value.trim(),
+        message: $('d-message').value.trim(), proof_url
+      });
+      dmsg('Declared. The worker will acknowledge it — thank you for keeping the record public.', true);
+      setTimeout(() => location.reload(), 1500);
+    } catch (err) { dmsg(err.message); $('d-submit').disabled = false; }
+  };
+
+  $('r-submit').onclick = async () => {
+    const rmsg = (t, ok) => { $('r-msg').textContent = t; $('r-msg').className = 'text-xs min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
+    if (!$('r-reason').value.trim()) return rmsg('Describe the problem.');
+    try {
+      await JN.fileReport({ profile_id: profile.id, reason: $('r-reason').value.trim(), contact: $('r-contact').value.trim() });
+      rmsg('Report filed. Thank you.', true);
+    } catch (err) { rmsg(err.message); }
+  };
+
+  // ── Owner console ────────────────────────────────────────────────────
+  if (owner) {
+    const omsg = (t, ok) => { $('owner-msg').textContent = t; $('owner-msg').className = 'text-xs min-h-[1rem] ' + (ok ? 'text-emerald-400' : 'text-red-400'); };
+    const pending = donations.filter(d => d.status === 'declared');
+    $('pending-donations').innerHTML = pending.length
+      ? `<p class="text-xs font-semibold text-amber-400">${pending.length} donation(s) awaiting your acknowledgment:</p>` + pending.map(d => `
+        <div class="bg-stone-800 rounded-xl px-3 py-2 flex items-center gap-2 text-xs">
+          <div class="flex-1 min-w-0">
+            <span class="font-bold">${JN.formatINRFull(d.amount)}</span>
+            from ${d.anonymous ? 'anonymous' : JN.esc(d.donor_name || '?')}
+            ${d.donor_contact ? `<span class="text-stone-400">· ${JN.esc(d.donor_contact)}</span>` : ''}
+          </div>
+          <button data-ack="${d.id}" class="bg-emerald-600 hover:bg-emerald-500 px-2.5 py-1 rounded-lg font-semibold">Acknowledge</button>
+          <button data-dispute="${d.id}" class="bg-stone-700 hover:bg-red-600 px-2.5 py-1 rounded-lg">Didn't receive</button>
+        </div>`).join('')
+      : '<p class="text-xs text-stone-500">No donations awaiting acknowledgment.</p>';
+
+    $('pending-donations').addEventListener('click', async (e) => {
+      const ack = e.target.dataset.ack, dis = e.target.dataset.dispute;
+      if (!ack && !dis) return;
+      try { await JN.resolveDonation(ack || dis, ack ? 'acknowledged' : 'disputed'); location.reload(); }
+      catch (err) { omsg(err.message); }
+    });
+
+    $('u-add').onclick = async () => {
+      if (!$('u-title').value.trim()) return omsg('Update needs a title.');
+      try {
+        const media_urls = $('u-media').files[0] ? [await JN.uploadPublicImage($('u-media').files[0])] : [];
+        await JN.addUpdate({ profile_id: profile.id, title: $('u-title').value.trim(), body: $('u-body').value.trim(), media_urls });
+        await JN.updateProfile(profile.id, { last_active_at: new Date().toISOString() });
+        location.reload();
+      } catch (err) { omsg(err.message); }
+    };
+
+    $('e-add').onclick = async () => {
+      const amount = Number($('e-amount').value);
+      if (!amount || !$('e-desc').value.trim()) return omsg('Expense needs an amount and description.');
+      try {
+        const proof_url = $('e-proof').files[0] ? await JN.uploadPublicImage($('e-proof').files[0]) : null;
+        await JN.addExpense({ profile_id: profile.id, amount, description: $('e-desc').value.trim(), proof_url });
+        location.reload();
+      } catch (err) { omsg(err.message); }
+    };
+
+    $('inflow-save').onclick = async () => {
+      try { await JN.updateProfile(profile.id, { undeclared_inflow_total: Number($('inflow-total').value) || 0 }); location.reload(); }
+      catch (err) { omsg(err.message); }
+    };
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For organisations — JanNidhi</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</head>
+<body class="bg-stone-50 text-stone-800 min-h-screen">
+<div id="nav"></div>
+
+<main class="max-w-2xl mx-auto px-4 py-8">
+  <h1 class="text-2xl font-black text-stone-900">For parties &amp; organisations</h1>
+  <p class="text-sm text-stone-500 mt-1 mb-6 leading-relaxed">
+    Register your party, residents group or collective; workers request to join, and you vouch for the ones
+    who are genuinely yours. Your org gets its own public URL hosting all vouched workers.
+    <strong>Vouching is your statement, made in your name</strong> — JanNidhi does not verify organisations
+    or workers, and your members' fundraising remains their own individual responsibility.
+  </p>
+
+  <section id="signed-out" class="hidden bg-white border border-stone-100 rounded-2xl p-5 text-sm">
+    <a href="auth.html?next=org-admin.html" class="text-orange-600 font-semibold underline">Sign in</a> to register or manage an organisation.
+  </section>
+
+  <section id="create-org" class="hidden bg-white border border-stone-100 rounded-2xl p-5 space-y-3">
+    <h2 class="font-bold text-stone-900 text-sm">Register an organisation</h2>
+    <input id="o-name" placeholder="Organisation name" class="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+    <select id="o-type" class="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+      <option value="party">Political party</option>
+      <option value="residents">Residents group</option>
+      <option value="union">Union / collective</option>
+      <option value="group" selected>Other group</option>
+    </select>
+    <textarea id="o-desc" rows="3" placeholder="What does this organisation do? Who are you? The more you disclose here, the more your vouching means." class="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm"></textarea>
+    <button id="o-create" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-semibold py-2.5 rounded-xl text-sm">Register</button>
+    <p id="o-msg" class="text-xs min-h-[1rem]"></p>
+  </section>
+
+  <div id="my-orgs" class="space-y-5 mt-6"></div>
+</main>
+
+<script>
+(async () => {
+  JN.init();
+  const user = await JN.getUser();
+  document.getElementById('nav').innerHTML = JN.navHTML('orgs', user);
+  const $ = id => document.getElementById(id);
+
+  if (!user) { $('signed-out').classList.remove('hidden'); return; }
+  $('create-org').classList.remove('hidden');
+
+  const omsg = (t, ok) => { $('o-msg').textContent = t; $('o-msg').className = 'text-xs min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
+
+  $('o-create').onclick = async () => {
+    const name = $('o-name').value.trim();
+    if (!name) return omsg('Name is required.');
+    try {
+      await JN.addOrg({ name, org_type: $('o-type').value, description: $('o-desc').value.trim(), slug: JN.slugify(name) });
+      render();
+      omsg('Registered.', true);
+    } catch (err) { omsg(err.message); }
+  };
+
+  async function render() {
+    const orgs = await JN.getMyOrgs();
+    if (!orgs.length) { $('my-orgs').innerHTML = ''; return; }
+    const profiles = await JN.getProfiles();
+    const profById = Object.fromEntries(profiles.map(p => [p.id, p]));
+
+    const blocks = await Promise.all(orgs.map(async org => {
+      const members = await JN.getOrgMembers(org.id);
+      const row = m => {
+        const p = profById[m.profile_id];
+        return `
+          <div class="flex items-center gap-2 px-3 py-2 text-sm bg-stone-50 rounded-xl">
+            <a href="profile.html?u=${encodeURIComponent(p?.slug || '')}" class="flex-1 min-w-0 truncate font-semibold text-stone-700 hover:underline">${JN.esc(p?.name || 'Unknown worker')}</a>
+            <span class="text-[10px] font-semibold ${m.status === 'vouched' ? 'text-emerald-600' : m.status === 'pending' ? 'text-amber-600' : 'text-stone-400'}">${m.status}</span>
+            ${m.status === 'pending' ? `<button data-vouch="${m.id}" class="bg-emerald-600 text-white text-[10px] font-semibold px-2.5 py-1 rounded-lg">Vouch</button>` : ''}
+            ${m.status === 'vouched' ? `<button data-revoke="${m.id}" class="border border-stone-300 text-stone-500 text-[10px] px-2.5 py-1 rounded-lg hover:bg-red-50 hover:text-red-600">Revoke</button>` : ''}
+            ${m.status === 'pending' ? `<button data-reject="${m.id}" class="border border-stone-300 text-stone-500 text-[10px] px-2.5 py-1 rounded-lg">Reject</button>` : ''}
+          </div>`;
+      };
+      const url = new URL('org.html?o=' + encodeURIComponent(org.slug), location.href).href;
+      return `
+        <section class="bg-white border border-stone-100 rounded-2xl p-5" data-org="${org.id}">
+          <div class="flex items-baseline justify-between gap-2">
+            <h2 class="font-black text-stone-900">${JN.esc(org.name)}</h2>
+            <span class="text-[10px] text-stone-400">${JN.orgTypeLabel(org.org_type)}</span>
+          </div>
+          <a href="${url}" class="text-xs text-orange-600 underline break-all">${url}</a>
+          <p class="text-[11px] text-stone-400 mt-1">Share this link — it hosts all your vouched workers. Vouch only for people you actually know; the vouch carries your organisation's name.</p>
+          <div class="mt-3 space-y-2">${members.length ? members.map(row).join('') : '<p class="text-xs text-stone-400">No membership requests yet. Workers request to join from their own page editor.</p>'}</div>
+        </section>`;
+    }));
+    $('my-orgs').innerHTML = blocks.join('');
+  }
+
+  $('my-orgs').addEventListener('click', async (e) => {
+    const { vouch, revoke, reject } = e.target.dataset;
+    const id = vouch || revoke || reject;
+    if (!id) return;
+    try {
+      await JN.setMembershipStatus(id, vouch ? 'vouched' : revoke ? 'revoked' : 'revoked');
+      render();
+    } catch (err) { alert(err.message); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

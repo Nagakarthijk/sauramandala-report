@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organisation — JanNidhi</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</head>
+<body class="bg-stone-50 text-stone-800 min-h-screen">
+<div id="nav"></div>
+<main class="max-w-3xl mx-auto px-4 py-8" id="page">
+  <p class="text-sm text-stone-400">Loading…</p>
+</main>
+
+<script>
+(async () => {
+  JN.init();
+  const user = await JN.getUser();
+  document.getElementById('nav').innerHTML = JN.navHTML('', user);
+  const slug = new URLSearchParams(location.search).get('o');
+
+  const org = slug ? await JN.getOrgBySlug(slug) : null;
+  if (!org) { document.getElementById('page').innerHTML = '<p class="text-sm text-stone-400">Organisation not found.</p>'; return; }
+  document.title = org.name + ' — JanNidhi';
+
+  const members = (await JN.getOrgMembers(org.id)).filter(m => m.status === 'vouched');
+  const profiles = await JN.getProfiles();
+  const profById = Object.fromEntries(profiles.map(p => [p.id, p]));
+
+  const cards = await Promise.all(members.map(async m => {
+    const p = profById[m.profile_id];
+    if (!p) return '';
+    const [don, exp, upd] = await Promise.all([JN.getDonationsFor(p.id), JN.getExpensesFor(p.id), JN.getUpdatesFor(p.id)]);
+    const score = JN.computeScore(p, don, exp, upd).total;
+    const band = JN.scoreBand(score);
+    return `
+      <a href="profile.html?u=${encodeURIComponent(p.slug)}" class="bg-white border border-stone-100 rounded-2xl p-4 hover:shadow-md transition-shadow block">
+        <div class="flex items-start gap-3">
+          ${p.photo_url
+            ? `<img src="${JN.esc(p.photo_url)}" class="w-11 h-11 rounded-full object-cover" alt="">`
+            : `<div class="w-11 h-11 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-500 text-sm">${JN.initials(p.name)}</div>`}
+          <div class="min-w-0 flex-1">
+            <div class="font-bold text-stone-900 truncate">${JN.esc(p.name)}</div>
+            <div class="text-[10px] text-violet-600 font-semibold">${JN.esc(m.role_label || 'Worker')}</div>
+            <div class="text-xs text-stone-400 truncate">${JN.esc(p.location || '')}</div>
+          </div>
+          <span class="text-[10px] font-bold px-2 py-1 rounded-full ${band.cls} shrink-0" title="Transparency score ${score}/100">${score}</span>
+        </div>
+        <p class="mt-2 text-xs text-stone-500 line-clamp-2 leading-relaxed">${JN.esc(p.bio || '')}</p>
+      </a>`;
+  }));
+
+  document.getElementById('page').innerHTML = `
+    <header class="bg-white border border-stone-100 rounded-2xl p-6">
+      <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">${JN.orgTypeLabel(org.org_type)}</div>
+      <h1 class="text-2xl font-black text-stone-900 mt-1">${JN.esc(org.name)}</h1>
+      <p class="mt-2 text-sm text-stone-600 leading-relaxed whitespace-pre-line">${JN.esc(org.description || '')}</p>
+      <p class="mt-3 text-[11px] text-stone-400">The workers below are <strong>vouched for by this organisation</strong> — that is the organisation's own statement, not a platform verification. Each worker raises funds on their own page with their own UPI details.</p>
+    </header>
+    <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-8 mb-3">Vouched workers (${members.length})</h2>
+    <div class="grid sm:grid-cols-2 gap-3">${cards.join('') || '<p class="text-sm text-stone-400">No vouched workers yet.</p>'}</div>
+    ${JN.disclaimerHTML()}`;
+})();
+</script>
+</body>
+</html>

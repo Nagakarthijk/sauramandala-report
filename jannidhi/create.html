@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My page — JanNidhi</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</head>
+<body class="bg-stone-50 text-stone-800 min-h-screen">
+<div id="nav"></div>
+
+<main class="max-w-2xl mx-auto px-4 py-8">
+  <h1 class="text-2xl font-black text-stone-900" id="heading">Create your page</h1>
+  <p class="text-sm text-stone-500 mt-1 mb-5">Your public fundraising URL. Everything you enter here is visible to anyone — that's the point.</p>
+
+  <!-- Gift-tax + FCRA notice shown BEFORE the form, not buried in T&Cs -->
+  <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed mb-6">
+    <strong class="block mb-1">Read this before you start — it affects you, not the platform.</strong>
+    Money sent to you here is a <strong>personal gift</strong>. Gifts above ₹50,000 in a financial year from
+    non-relatives are taxable as your income under Section 56(2)(x). Accepting <strong>foreign-sourced money for
+    political activity is prohibited under FCRA</strong> — a criminal offence for you, the recipient. Keep your own
+    records. JanNidhi only displays what you and your donors declare; it cannot protect you from tax or FCRA
+    consequences. <a href="terms.html" class="underline">Full terms</a>.
+  </div>
+
+  <form id="form" class="space-y-5">
+    <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-4">
+      <h2 class="font-bold text-stone-900 text-sm">About you</h2>
+      <label class="block text-xs font-semibold text-stone-500">Full name *
+        <input id="name" required class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+      </label>
+      <label class="block text-xs font-semibold text-stone-500">Location (district, state)
+        <input id="location" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+      </label>
+      <label class="block text-xs font-semibold text-stone-500">What work do you do? *
+        <textarea id="bio" rows="4" required class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm"
+          placeholder="Booth-level organising, RTI filings, voter awareness…"></textarea>
+      </label>
+      <label class="block text-xs font-semibold text-stone-500">Photo
+        <input id="photo" type="file" accept="image/*" class="mt-1 block w-full text-xs text-stone-500">
+      </label>
+    </section>
+
+    <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-4">
+      <h2 class="font-bold text-stone-900 text-sm">How people pay you</h2>
+      <p class="text-xs text-stone-400 leading-relaxed">Upload <strong>your own</strong> UPI QR (screenshot from your UPI app). JanNidhi displays it like a poster — it never creates payment links and can never reverse a payment.</p>
+      <label class="block text-xs font-semibold text-stone-500">UPI QR code image
+        <input id="qr" type="file" accept="image/*" class="mt-1 block w-full text-xs text-stone-500">
+      </label>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <label class="block text-xs font-semibold text-stone-500">UPI ID (VPA)
+          <input id="vpa" placeholder="name@bank" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+        </label>
+        <label class="block text-xs font-semibold text-stone-500">Name registered on that UPI ID
+          <input id="payee" placeholder="As shown when someone pays you" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+        </label>
+      </div>
+      <p class="text-[11px] text-stone-400">The registered name is shown to donors so they can confirm the money is going to <em>you</em> — it's your best protection against impersonation.</p>
+      <label class="block text-xs font-semibold text-stone-500">Bank transfer details (optional)
+        <textarea id="bank" rows="2" placeholder="Account no · IFSC · Account holder name" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm"></textarea>
+      </label>
+    </section>
+
+    <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-3">
+      <h2 class="font-bold text-stone-900 text-sm">ID self-attestation (optional)</h2>
+      <p class="text-xs text-stone-400 leading-relaxed">Upload a government ID to a <strong>private</strong> store only you can access. Your page will then show "ID document self-attested". JanNidhi does not check it — the badge only states that a document exists.</p>
+      <input id="iddoc" type="file" accept="image/*,.pdf" class="block w-full text-xs text-stone-500">
+      <p id="id-status" class="text-xs text-emerald-600 hidden">✓ ID document on file</p>
+    </section>
+
+    <button id="save" type="submit" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-semibold py-3 rounded-xl text-sm">Save &amp; publish</button>
+    <p id="msg" class="text-xs text-center min-h-[1rem]"></p>
+  </form>
+
+  <!-- Org membership, shown after profile exists -->
+  <section id="org-section" class="hidden bg-white border border-stone-100 rounded-2xl p-5 mt-6 space-y-3">
+    <h2 class="font-bold text-stone-900 text-sm">Party / organisation membership</h2>
+    <p class="text-xs text-stone-400 leading-relaxed">Optional. Request to join an organisation; if its admin vouches for you, your page shows "Vouched by [Org]" and you appear on their page.</p>
+    <div id="memberships" class="space-y-2 text-sm"></div>
+    <div class="flex gap-2">
+      <select id="org-pick" class="flex-1 border border-stone-200 rounded-xl px-3 py-2 text-sm"></select>
+      <button id="org-join" class="border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-4 rounded-xl text-sm">Request</button>
+    </div>
+  </section>
+
+  <div id="mypage-link" class="hidden mt-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-sm">
+    <strong>Your public page:</strong>
+    <a id="mypage-a" class="text-emerald-700 underline break-all" href="#"></a>
+    <p class="text-xs text-emerald-700 mt-1">Share this link on WhatsApp status, social bios — anywhere. Manage donations and post work updates from that page while signed in.</p>
+  </div>
+</main>
+
+<script>
+(async () => {
+  JN.init();
+  const user = await JN.requireAuth();
+  if (!user) return;
+  document.getElementById('nav').innerHTML = JN.navHTML('', user);
+
+  const $ = id => document.getElementById(id);
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'text-xs text-center min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
+
+  let profile = await JN.getMyProfile();
+
+  function showPostSave() {
+    $('heading').textContent = 'Edit your page';
+    $('save').textContent = 'Save changes';
+    $('org-section').classList.remove('hidden');
+    $('mypage-link').classList.remove('hidden');
+    const url = new URL('profile.html?u=' + encodeURIComponent(profile.slug), location.href).href;
+    $('mypage-a').textContent = url;
+    $('mypage-a').href = url;
+    if (profile.id_attested) $('id-status').classList.remove('hidden');
+    loadOrgs();
+  }
+
+  if (profile) {
+    $('name').value = profile.name; $('location').value = profile.location || '';
+    $('bio').value = profile.bio || ''; $('vpa').value = profile.upi_vpa || '';
+    $('payee').value = profile.upi_payee_name || ''; $('bank').value = profile.bank_details || '';
+    showPostSave();
+  }
+
+  $('form').onsubmit = async (e) => {
+    e.preventDefault();
+    $('save').disabled = true;
+    msg('Saving…', true);
+    try {
+      const patch = {
+        name: $('name').value.trim(), location: $('location').value.trim(),
+        bio: $('bio').value.trim(), upi_vpa: $('vpa').value.trim(),
+        upi_payee_name: $('payee').value.trim(), bank_details: $('bank').value.trim(),
+        last_active_at: new Date().toISOString()
+      };
+      if ($('photo').files[0]) patch.photo_url  = await JN.uploadPublicImage($('photo').files[0]);
+      if ($('qr').files[0])    patch.upi_qr_url = await JN.uploadPublicImage($('qr').files[0]);
+      if ($('iddoc').files[0]) {
+        patch.id_doc_path = await JN.uploadPrivateDoc($('iddoc').files[0]);
+        patch.id_attested = true;
+      }
+      if (profile) {
+        profile = await JN.updateProfile(profile.id, patch);
+      } else {
+        profile = await JN.addProfile({ ...patch, slug: JN.slugify(patch.name) });
+      }
+      msg('Saved.', true);
+      showPostSave();
+    } catch (err) { msg(err.message); }
+    $('save').disabled = false;
+  };
+
+  async function loadOrgs() {
+    const [orgs, memberships] = await Promise.all([JN.getOrgs(), JN.getMembershipsFor(profile.id)]);
+    const orgById = Object.fromEntries(orgs.map(o => [o.id, o]));
+    $('memberships').innerHTML = memberships.length
+      ? memberships.map(m => `
+          <div class="flex items-center justify-between bg-stone-50 rounded-xl px-3 py-2">
+            <span>${JN.esc(orgById[m.org_id]?.name || 'Organisation')}</span>
+            <span class="text-xs font-semibold ${m.status === 'vouched' ? 'text-emerald-600' : m.status === 'pending' ? 'text-amber-600' : 'text-stone-400'}">${m.status}</span>
+          </div>`).join('')
+      : '<p class="text-xs text-stone-400">No memberships yet.</p>';
+    const memberOf = new Set(memberships.map(m => m.org_id));
+    $('org-pick').innerHTML = orgs.filter(o => !memberOf.has(o.id))
+      .map(o => `<option value="${o.id}">${JN.esc(o.name)}</option>`).join('') || '<option value="">No organisations available</option>';
+  }
+
+  $('org-join').onclick = async () => {
+    const orgId = $('org-pick').value;
+    if (!orgId) return;
+    try { await JN.requestMembership(orgId, profile.id); loadOrgs(); }
+    catch (err) { msg(err.message); }
+  };
+})();
+</script>
+</body>
+</html>
