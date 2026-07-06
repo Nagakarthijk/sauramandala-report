@@ -350,6 +350,59 @@ const JN = (() => {
     return 'https://wa.me/?text=' + encodeURIComponent(`Support ${profile.name}'s work directly: ${url}`);
   }
 
+  // ── QR self-consistency check ───────────────────────────────────────
+  // Reads whatever text is encoded in a UPI QR image and parses the pa
+  // (VPA) / pn (payee name) fields. This does NOT verify anyone's real
+  // identity — a fabricated QR with a matching fake VPA would sail
+  // through. It only catches the two much more common problems: a
+  // mismatched/wrong QR upload, or a non-UPI image mistakenly used as
+  // the QR. Requires the jsQR CDN script; degrades to null (silently
+  // skipped) if that script failed to load or the image can't be read.
+  function parseUpiQrText(text) {
+    if (!text || !/^upi:\/\/pay\?/i.test(text)) return null;
+    const params = new URLSearchParams(text.split('?')[1] || '');
+    const pa = params.get('pa'), pn = params.get('pn');
+    if (!pa) return null;
+    return { pa, pn: pn || null };
+  }
+
+  function decodeQrFromImageElement(img) {
+    if (typeof jsQR !== 'function') return null; // CDN blocked/unavailable — skip silently
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    if (!canvas.width || !canvas.height) return null;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    let imageData;
+    try { imageData = ctx.getImageData(0, 0, canvas.width, canvas.height); }
+    catch { return null; } // CORS-tainted canvas — skip silently
+    const result = jsQR(imageData.data, canvas.width, canvas.height);
+    return result ? result.data : null;
+  }
+
+  // Decode a QR from a local File (used while editing, before upload)
+  function decodeQrFromFile(file) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => { const text = decodeQrFromImageElement(img); URL.revokeObjectURL(url); resolve(parseUpiQrText(text)); };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    });
+  }
+
+  // Decode a QR already hosted at a public URL (used on the public profile page)
+  function decodeQrFromUrl(url) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(parseUpiQrText(decodeQrFromImageElement(img)));
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  }
+
   // ── Shared chrome ────────────────────────────────────────────────────
   function navHTML(active, user) {
     const authEl = user
@@ -408,6 +461,7 @@ const JN = (() => {
     computeScore, scoreBand,
     slugify, formatINR, formatINRFull, relativeTime, initials, esc, orgTypeLabel,
     hostname, normalizeLinks, toast, shareProfile, copyLink, whatsappShareUrl,
+    decodeQrFromFile, decodeQrFromUrl,
     navHTML, disclaimerHTML
   };
 })();

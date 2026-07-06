@@ -11,6 +11,7 @@
   @media (min-width: 1280px) { html { font-size: 18px; } }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 </head>
@@ -189,10 +190,13 @@
       <p class="text-xs text-stone-400 mb-3">Pay with your own UPI app. Money goes straight to them — JanNidhi never touches it and cannot reverse it.</p>
       <div class="flex flex-col sm:flex-row gap-4 items-start">
         ${profile.upi_qr_url
-          ? `<button type="button" id="qr-zoom" class="w-full sm:w-56 shrink-0">
-               <img src="${JN.esc(profile.upi_qr_url)}" class="w-full aspect-square object-contain border border-stone-200 rounded-xl bg-white" alt="UPI QR code uploaded by ${JN.esc(profile.name)}">
+          ? `<div class="w-full sm:w-56 shrink-0">
+               <button type="button" id="qr-zoom" class="block w-full">
+                 <img src="${JN.esc(profile.upi_qr_url)}" class="w-full aspect-square object-contain border border-stone-200 rounded-xl bg-white" alt="UPI QR code uploaded by ${JN.esc(profile.name)}">
+               </button>
                <span class="text-[10px] text-stone-400 block mt-1">Tap to enlarge for scanning</span>
-             </button>`
+               <p id="qr-consistency" class="text-[10px] mt-1 min-h-[1em]"></p>
+             </div>`
           : `<div class="w-full sm:w-56 aspect-square shrink-0 border border-dashed border-stone-200 rounded-xl flex items-center justify-center text-xs text-stone-300 text-center px-2">No QR uploaded yet</div>`}
         <div class="text-sm space-y-2 min-w-0 w-full">
           ${profile.upi_vpa ? `<div><span class="text-xs text-stone-400 block">UPI ID</span><span class="font-mono font-semibold select-all break-all">${JN.esc(profile.upi_vpa)}</span></div>` : ''}
@@ -289,6 +293,25 @@
 
   // ── Interactions ─────────────────────────────────────────────────────
   $('score-toggle').onclick = () => $('score-detail').classList.toggle('hidden');
+
+  // Self-consistency check, not identity verification: does the uploaded QR
+  // actually encode the VPA this page states? Catches wrong/mismatched QR
+  // uploads. A fabricated QR with a matching fake VPA would not be caught.
+  if (profile.upi_qr_url) {
+    JN.decodeQrFromUrl(profile.upi_qr_url).then(parsed => {
+      const el = $('qr-consistency');
+      if (!el) return;
+      if (!parsed) { el.className = 'text-[10px] mt-1 min-h-[1em] text-amber-600'; el.textContent = "⚠ Couldn't confirm this is a valid UPI QR."; return; }
+      if (profile.upi_vpa && parsed.pa.toLowerCase() !== profile.upi_vpa.toLowerCase()) {
+        el.className = 'text-[10px] mt-1 min-h-[1em] text-red-600 font-semibold';
+        el.textContent = `⚠ This QR encodes a different UPI ID (${parsed.pa}) than the one listed below.`;
+        return;
+      }
+      el.className = 'text-[10px] mt-1 min-h-[1em] text-emerald-600';
+      el.textContent = '✓ QR content matches the UPI ID listed below.';
+    });
+  }
+
   $('qr-zoom')?.addEventListener('click', () => {
     $('qr-lightbox-img').src = profile.upi_qr_url;
     $('qr-lightbox').classList.remove('hidden');
