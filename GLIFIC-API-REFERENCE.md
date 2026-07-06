@@ -119,6 +119,55 @@ Webhook returns `{"key1": "value1"}` → accessible as `@results.webhookname.key
 }
 ```
 
+### UUIDs Must Be Strictly Valid (LEARNED 2026-07-06, the hard way)
+Every UUID in a flow JSON (node, action, exit, category, case, flow) must be a
+strictly valid v4-shaped UUID: `8-4-4-4-12` hex characters. Our generated
+mPowerClub flows had 11 chars in the last segment — Glific **imported and
+"published" them without any error**, but the keyword never triggered the flow
+and preview did not work either. **Silent failure, no error message anywhere.**
+
+Rule: after generating any flow JSON, validate every UUID:
+```bash
+grep -oE '[0-9a-f-]{30,40}' file.json | awk -F'-' \
+  '{if (length($1)!=8||length($2)!=4||length($3)!=4||length($4)!=4||length($5)!=12) print "BAD:", $0}'
+```
+
+### Router Wait timeout — NOT confirmed working in Glific (LEARNED 2026-07-06)
+The RapidPro 13.2.0 spec supports
+`"wait": {"type": "msg", "timeout": {"seconds": N, "category_uuid": "..."}}`
+to auto-advance after N seconds of no reply. **Tested in Glific (smf.glific.com,
+July 2026): the timeout did NOT fire.** Flow just waited for a reply.
+
+Glific's own answer for delays is the **"Wait for time" node in the flow
+editor UI**. We have not yet captured its JSON export. Method to learn any
+UI-only node's JSON: build a tiny flow in the editor with just that node,
+then `exportFlow` via GraphQL and inspect the definition. Do this before
+hand-writing such nodes into generated JSON.
+
+Alternative for scheduled/timed sends: **Triggers** (GraphQL `createTrigger`)
+start a flow for a group at a fixed time / repeating schedule (daily, weekly,
+etc.). Good for drip content; minimum granularity is not seconds/minutes.
+
+### Google Sheets Integration (native in Glific)
+Glific can read a row from a published Google Sheet inside a flow:
+1. Glific UI → **Sheets** screen → *Add Sheet* → paste the sheet's published link.
+2. In the flow editor add a **"Link Google Sheet"** node, pick the sheet.
+3. Set a **row key** — a value (e.g. `@calendar.day` or a contact field) matched
+   against the sheet's **first column**.
+4. Set a result name, e.g. `linked_sheet`. Columns become variables:
+   column `tip_text` → `@results.linked_sheet.tip_text`.
+Writing to sheets is also supported (row append) in newer Glific versions.
+JSON action type not yet captured — build one in the editor and export to learn
+the exact JSON before generating it programmatically.
+Docs: https://glific.org/integrating-google-sheets-in-glific/
+
+### Debugging Checklist When a Keyword Doesn't Start a Flow
+1. Validate all UUIDs in the JSON (see above) — malformed UUIDs fail silently.
+2. Flow published? Drafts respond in simulator only, never in live chat.
+3. Keyword saved on the flow (Flows → edit → keywords) and not claimed by another flow.
+4. Contact status VALID and opted in (opt-out locks the contact).
+5. Check Flows → flow → Runs tab, and contact's Activity history.
+
 ---
 
 ## Flows — GraphQL Operations
