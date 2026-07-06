@@ -12,6 +12,10 @@ const JN = (() => {
   const _sb  = DEMO ? null : supabase.createClient(JN_CONFIG.supabaseUrl, JN_CONFIG.supabaseKey);
   let _user  = null;
 
+  // CAPTCHA is optional — only on once a real Turnstile site key is configured,
+  // so this doesn't block signups before you've set it up.
+  const CAPTCHA_ENABLED = !!(JN_CONFIG.turnstileSiteKey && !JN_CONFIG.turnstileSiteKey.includes('YOUR_'));
+
   const D = demoData(); // in-memory sample data (read-only)
 
   function demoData() {
@@ -81,18 +85,18 @@ const JN = (() => {
     return user;
   }
 
-  async function signInWithPassword(email, password) {
+  async function signInWithPassword(email, password, captchaToken) {
     if (DEMO) demoWriteError();
-    return _sb.auth.signInWithPassword({ email, password });
+    return _sb.auth.signInWithPassword({ email, password, options: captchaToken ? { captchaToken } : undefined });
   }
-  async function signUpWithPassword(email, password) {
+  async function signUpWithPassword(email, password, captchaToken) {
     if (DEMO) demoWriteError();
-    return _sb.auth.signUp({ email, password });
+    return _sb.auth.signUp({ email, password, options: captchaToken ? { captchaToken } : undefined });
   }
-  async function sendPasswordReset(email) {
+  async function sendPasswordReset(email, captchaToken) {
     if (DEMO) demoWriteError();
     const redirectTo = new URL('reset-password.html', window.location.href).href;
-    return _sb.auth.resetPasswordForEmail(email, { redirectTo });
+    return _sb.auth.resetPasswordForEmail(email, { redirectTo, captchaToken });
   }
   async function updatePassword(password) {
     if (DEMO) demoWriteError();
@@ -220,7 +224,36 @@ const JN = (() => {
   const resolveDonation = (id, status) => _update('donations', id, { status, resolved_at: new Date().toISOString() });
 
   // ── Reports ──────────────────────────────────────────────────────────
+  // Deliberately no public read — see the comment on the reports table in
+  // schema.sql. Only the affected worker can see reports about themselves.
   const fileReport = (r) => _insert('reports', r);
+  const getMyReportsFor = (pid) => _list('reports', { profile_id: pid });
+
+  // ── Community votes ──────────────────────────────────────────────────
+  // Requires a signed-in account. Individual votes are private (RLS); only
+  // the aggregate vote_counts view is public — see schema.sql for why.
+  async function getVoteCounts(pid) {
+    if (DEMO) return { upvotes: 0, downvotes: 0 };
+    const { data } = await _sb.from('vote_counts').select('upvotes, downvotes').eq('profile_id', pid).maybeSingle();
+    return data || { upvotes: 0, downvotes: 0 };
+  }
+  async function getMyVote(pid) {
+    if (DEMO) return null;
+    const user = await getUser();
+    if (!user) return null;
+    const { data } = await _sb.from('votes').select('*').eq('profile_id', pid).eq('voter_user_id', user.id).maybeSingle();
+    return data || null;
+  }
+  async function castVote(pid, value) {
+    const user = await requireAuth();
+    if (!user) return null;
+    const { data, error } = await _sb.from('votes')
+      .upsert({ profile_id: pid, voter_user_id: user.id, value }, { onConflict: 'profile_id,voter_user_id' })
+      .select().single();
+    if (error) throw new Error(error.message);
+    return data;
+  }
+  const removeVote = (id) => _delete('votes', id);
 
   // ── Transparency score ───────────────────────────────────────────────
   // Scores DISCLOSURE PRACTICE, not truth. Documented in README.md.
@@ -450,14 +483,15 @@ const JN = (() => {
   }
 
   return {
-    DEMO, init, getUser, requireAuth,
+    DEMO, CAPTCHA_ENABLED, init, getUser, requireAuth,
     signInWithPassword, signUpWithPassword, sendPasswordReset, updatePassword, signOut, isOwner,
     uploadPublicImage, uploadPrivateDoc,
     getProfiles, getProfileBySlug, getMyProfile, addProfile, updateProfile,
     getOrgs, getOrgBySlug, getMyOrgs, addOrg,
     getOrgMembers, getMembershipsFor, requestMembership, setMembershipStatus, removeMembership,
     getUpdatesFor, addUpdate, deleteUpdate, getExpensesFor, addExpense, deleteExpense,
-    getDonationsFor, declareDonation, resolveDonation, fileReport,
+    getDonationsFor, declareDonation, resolveDonation, fileReport, getMyReportsFor,
+    getVoteCounts, getMyVote, castVote, removeVote,
     computeScore, scoreBand,
     slugify, formatINR, formatINRFull, relativeTime, initials, esc, orgTypeLabel,
     hostname, normalizeLinks, toast, shareProfile, copyLink, whatsappShareUrl,

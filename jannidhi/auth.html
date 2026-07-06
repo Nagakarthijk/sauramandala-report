@@ -13,6 +13,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body class="bg-stone-50 text-stone-800 min-h-screen">
 <div id="nav"></div>
@@ -35,6 +36,7 @@
       <input id="password" type="password" required minlength="6" autocomplete="current-password"
         class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
     </label>
+    <div id="turnstile-box" class="hidden flex justify-center"></div>
     <button id="submit" type="submit" class="w-full bg-stone-900 hover:bg-stone-800 active:scale-[0.99] text-white font-semibold py-3 rounded-xl text-sm transition-all">Sign in</button>
     <button id="forgot" type="button" class="w-full text-xs text-stone-400 hover:text-stone-600 underline text-center">Forgot password?</button>
     <p id="msg" class="text-xs text-center min-h-[1rem]"></p>
@@ -52,6 +54,25 @@
   const $ = id => document.getElementById(id);
   const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'text-xs text-center min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
 
+  // CAPTCHA (Cloudflare Turnstile) — only renders once configured in config.js.
+  // A skipped/unconfigured widget just means captchaToken is undefined, which
+  // Supabase treats as "no CAPTCHA required" until you enable it server-side.
+  let turnstileWidgetId = null, turnstileToken = null;
+  function renderTurnstile() {
+    if (!JN.CAPTCHA_ENABLED || typeof turnstile === 'undefined') return;
+    $('turnstile-box').classList.remove('hidden');
+    turnstileWidgetId = turnstile.render('#turnstile-box', {
+      sitekey: JN_CONFIG.turnstileSiteKey,
+      callback: (token) => { turnstileToken = token; },
+      'expired-callback': () => { turnstileToken = null; }
+    });
+  }
+  if (JN.CAPTCHA_ENABLED) {
+    // Turnstile's script loads async — poll briefly until it's ready.
+    const wait = setInterval(() => { if (typeof turnstile !== 'undefined') { clearInterval(wait); renderTurnstile(); } }, 100);
+    setTimeout(() => clearInterval(wait), 5000);
+  }
+
   let mode = 'in';
   function setMode(m) {
     mode = m;
@@ -68,28 +89,32 @@
 
   $('form').onsubmit = async (e) => {
     e.preventDefault();
+    if (JN.CAPTCHA_ENABLED && !turnstileToken) return msg('Please complete the human-check above.');
     const email = $('email').value.trim(), password = $('password').value;
     $('submit').disabled = true;
     msg(mode === 'in' ? 'Signing in…' : 'Creating account…', true);
     try {
       if (mode === 'in') {
-        const { error } = await JN.signInWithPassword(email, password);
+        const { error } = await JN.signInWithPassword(email, password, turnstileToken);
         if (error) throw error;
         location.href = next;
       } else {
-        const { data, error } = await JN.signUpWithPassword(email, password);
+        const { data, error } = await JN.signUpWithPassword(email, password, turnstileToken);
         if (error) throw error;
         if (data.session) location.href = next;
         else msg('Account created — check your email to confirm, then sign in.', true);
       }
-    } catch (err) { msg(err.message); }
+    } catch (err) {
+      msg(err.message);
+      if (turnstileWidgetId !== null) { turnstile.reset(turnstileWidgetId); turnstileToken = null; }
+    }
     $('submit').disabled = false;
   };
 
   $('forgot').onclick = async () => {
     const email = $('email').value.trim();
     if (!email) return msg('Enter your email above first, then tap "Forgot password?" again.');
-    try { await JN.sendPasswordReset(email); msg('If that email has an account, a reset link is on its way.', true); }
+    try { await JN.sendPasswordReset(email, turnstileToken); msg('If that email has an account, a reset link is on its way.', true); }
     catch (err) { msg(err.message); }
   };
 })();

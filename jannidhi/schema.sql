@@ -99,6 +99,10 @@ create table donations (
 );
 
 -- ── Reports (impersonation / abuse flags) ────────────────────
+-- Report counts are NOT shown publicly — an unverified accusation count
+-- would itself be a brigading vector (mass fake reports to make someone
+-- look bad). The affected worker can see their own reports; full review
+-- otherwise happens via the Supabase dashboard.
 create table reports (
   id          uuid primary key default gen_random_uuid(),
   profile_id  uuid references profiles(id) on delete cascade,
@@ -106,6 +110,22 @@ create table reports (
   reason      text not null,
   contact     text,
   created_at  timestamptz default now()
+);
+
+-- ── Community votes ──────────────────────────────────────────
+-- Signed-in users only (accounts gated by CAPTCHA at signup — see
+-- README). Sentiment, NOT part of the transparency score, which
+-- measures disclosure practice, not popularity. Individual votes are
+-- never publicly readable — only the voter can see their own row — so
+-- a downvoter can't be identified and targeted. Only aggregate counts
+-- (via the vote_counts view below) are public.
+create table votes (
+  id            uuid primary key default gen_random_uuid(),
+  profile_id    uuid not null references profiles(id) on delete cascade,
+  voter_user_id uuid not null references auth.users(id) on delete cascade,
+  value         smallint not null check (value in (1, -1)),
+  created_at    timestamptz default now(),
+  unique (profile_id, voter_user_id)
 );
 
 -- ============================================================
@@ -118,6 +138,7 @@ alter table work_updates enable row level security;
 alter table expenses     enable row level security;
 alter table donations    enable row level security;
 alter table reports      enable row level security;
+alter table votes        enable row level security;
 
 -- Public read (this is a transparency platform)
 create policy "public read profiles"     on profiles     for select using (true);
@@ -176,8 +197,32 @@ create policy "anyone declares donation" on donations for insert
 create policy "worker resolves donation" on donations for update
   using (exists (select 1 from profiles p where p.id = profile_id and p.user_id = auth.uid()));
 
--- Reports: anyone can file; nobody reads via the API (admin reads in dashboard)
+-- Reports: anyone can file. Only the affected worker can read reports
+-- about their own profile (so they know they've been flagged); nobody
+-- else can — deliberately not public, see comment on the table above.
+-- Full admin review happens via the Supabase dashboard (service role
+-- bypasses RLS).
 create policy "anyone files report" on reports for insert with check (true);
+create policy "owner reads own reports" on reports for select
+  using (exists (select 1 from profiles p where p.id = profile_id and p.user_id = auth.uid()));
+
+-- Votes: any signed-in user may cast/change/remove their own vote.
+-- Nobody — not even the profile owner — can read another person's
+-- individual vote; only the aggregate view below is public.
+create policy "signed-in user manages own vote" on votes for all
+  using (auth.uid() = voter_user_id) with check (auth.uid() = voter_user_id);
+
+-- Public aggregate — counts only, never who voted which way. Views
+-- run with the privileges of their owner by default (not the caller's
+-- RLS), which is exactly what lets this aggregate across all rows while
+-- the underlying table stays locked down above.
+create view vote_counts as
+  select profile_id,
+         count(*) filter (where value = 1)  as upvotes,
+         count(*) filter (where value = -1) as downvotes
+  from votes
+  group by profile_id;
+grant select on vote_counts to anon, authenticated;
 
 -- ============================================================
 -- Storage buckets

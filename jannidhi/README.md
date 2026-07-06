@@ -52,6 +52,42 @@ Components with no data yet score neutral (half), so new pages aren't punished o
   name, stop").
 - `terms.html` is a plain-language draft — **have a lawyer review it before launch.**
 
+## Trust signals — what each one actually proves
+
+None of these are identity verification. Each closes a specific, narrow gap; none should
+ever be described as "verified" in copy or code, since none of them can survive a
+determined, coordinated fake:
+
+| Signal | What it actually proves | What it does NOT prove |
+|---|---|---|
+| QR self-consistency check (`decodeQrFromFile`/`decodeQrFromUrl` in `app.js`) | The uploaded QR encodes the same UPI ID the worker typed | The UPI ID belongs to a real, named person |
+| "ID document uploaded" | A file exists in the private bucket | Anything about its contents or authenticity |
+| Org vouching | The organisation is willing to publicly attach its name to this worker | The organisation itself is who it claims to be |
+| CAPTCHA at signup (Turnstile) | A human solved a challenge once, at account creation | That account isn't later scripted, or that one human didn't just make several accounts |
+| Community votes | Signed-in users' sentiment | Truthfulness of anything on the page — deliberately kept out of the transparency score |
+
+Real identity verification in India requires either DigiLocker (free, government-backed,
+requires registering as a DigiLocker Requester — not yet built) or a paid KYC vendor
+(Digio/Signzy/HyperVerge/Karza — costs per check, requires business registration). Both
+are future work, not implemented.
+
+## Community features
+
+- **Votes** (`votes` table): any signed-in user can upvote/downvote a profile. Individual
+  votes are never publicly readable — RLS restricts each row to its own voter — only
+  aggregate counts (`vote_counts` view) are public. This protects a downvoter's identity in
+  a political context where that could mean real-world retaliation.
+- **Reports**: anyone (including signed-out visitors) can file one. Report counts and
+  contents are **not public** — an unverified-accusation counter would itself be a
+  brigading vector (mass fake reports to make someone look bad). Only the affected worker
+  can see reports about their own page; full review otherwise happens via the Supabase
+  dashboard with the service role.
+- **CAPTCHA on signup** (optional, off by default): set `turnstileSiteKey` in `config.js`
+  to a real [Cloudflare Turnstile](https://dash.cloudflare.com) site key, and enable
+  CAPTCHA protection with the matching secret key in Supabase's Authentication → Attack
+  Protection settings. Free at this scale. Left as the placeholder, signup works with no
+  CAPTCHA at all.
+
 ## Stack & setup
 
 Static HTML + Tailwind CDN + [Supabase](https://supabase.com) (free tier). No build step.

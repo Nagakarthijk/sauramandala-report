@@ -106,11 +106,13 @@
   if (!profile) { $('page').innerHTML = '<p class="text-sm text-stone-400 px-4 py-8">Page not found.</p>'; return; }
   document.title = profile.name + ' — JanNidhi';
 
-  const [donations, expenses, updates, memberships, orgs] = await Promise.all([
+  const [donations, expenses, updates, memberships, orgs, voteCounts, myVote] = await Promise.all([
     JN.getDonationsFor(profile.id), JN.getExpensesFor(profile.id),
-    JN.getUpdatesFor(profile.id), JN.getMembershipsFor(profile.id), JN.getOrgs()
+    JN.getUpdatesFor(profile.id), JN.getMembershipsFor(profile.id), JN.getOrgs(),
+    JN.getVoteCounts(profile.id), JN.getMyVote(profile.id)
   ]);
   const owner = JN.isOwner(profile);
+  const myReports = owner ? await JN.getMyReportsFor(profile.id) : [];
   const orgById = Object.fromEntries(orgs.map(o => [o.id, o]));
   const vouches = memberships.filter(m => m.status === 'vouched');
   const links = JN.normalizeLinks(profile.links);
@@ -180,6 +182,15 @@
             <div class="text-[10px] text-stone-400 pl-1 -mt-1">${JN.esc(p.note)}</div>`).join('')}
           <p class="text-[10px] text-stone-400 pt-1 border-t border-stone-200">This score measures <strong>disclosure practice</strong> — how much this person declares and reconciles — not the truth of any entry.</p>
         </div>
+
+        <div class="flex items-center gap-3 mt-4 pt-4 border-t border-stone-100">
+          <span class="text-[10px] text-stone-400 font-semibold uppercase tracking-wide">Community sentiment</span>
+          <div class="flex items-center gap-1 ml-auto">
+            <button id="vote-up" class="flex items-center gap-1 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${myVote?.value === 1 ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'border-stone-200 hover:bg-stone-50'}">▲ <span id="vote-up-count">${voteCounts.upvotes}</span></button>
+            <button id="vote-down" class="flex items-center gap-1 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${myVote?.value === -1 ? 'bg-red-50 border-red-300 text-red-700' : 'border-stone-200 hover:bg-stone-50'}">▼ <span id="vote-down-count">${voteCounts.downvotes}</span></button>
+          </div>
+        </div>
+        <p class="text-[10px] text-stone-400 mt-1">Votes require a signed-in, human-checked account. This is community sentiment, not part of the disclosure score above.</p>
       </div>
     </header>
 
@@ -218,6 +229,18 @@
     <!-- Owner console -->
     <section class="bg-stone-900 text-stone-100 rounded-2xl p-5 mt-4 space-y-4">
       <h2 class="font-bold text-sm">Your console <span class="font-normal text-stone-400">(only you see this)</span></h2>
+      ${myReports.length ? `
+      <details class="bg-stone-800 rounded-xl p-3">
+        <summary class="text-xs font-semibold cursor-pointer py-1 text-amber-400">${myReports.length} report(s) filed about your page</summary>
+        <div class="mt-2 space-y-2">
+          <p class="text-[10px] text-stone-400">Reports are unverified and not shown publicly. They're visible only to you, so you can respond if something's wrong.</p>
+          ${myReports.map(r => `
+            <div class="bg-stone-700 rounded-lg px-3 py-2 text-xs">
+              <div>${JN.esc(r.reason)}</div>
+              <div class="text-[10px] text-stone-400 mt-1">${JN.relativeTime(r.created_at)}${r.contact ? ' · reporter left contact: ' + JN.esc(r.contact) : ''}</div>
+            </div>`).join('')}
+        </div>
+      </details>` : ''}
       <div id="pending-donations" class="space-y-2"></div>
       <details class="bg-stone-800 rounded-xl p-3">
         <summary class="text-xs font-semibold cursor-pointer py-1">+ Post a work update</summary>
@@ -293,6 +316,29 @@
 
   // ── Interactions ─────────────────────────────────────────────────────
   $('score-toggle').onclick = () => $('score-detail').classList.toggle('hidden');
+
+  // Votes: toggling the same direction again removes your vote; switching
+  // direction updates it. Requires sign-in (requireAuth redirects if not).
+  let currentVote = myVote;
+  async function handleVote(value) {
+    if (!(await JN.getUser())) { location.href = 'auth.html?next=' + encodeURIComponent(location.href); return; }
+    try {
+      if (currentVote && currentVote.value === value) {
+        await JN.removeVote(currentVote.id);
+        currentVote = null;
+      } else {
+        currentVote = await JN.castVote(profile.id, value);
+      }
+      const counts = await JN.getVoteCounts(profile.id);
+      $('vote-up-count').textContent = counts.upvotes;
+      $('vote-down-count').textContent = counts.downvotes;
+      $('vote-up').className = 'flex items-center gap-1 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ' + (currentVote?.value === 1 ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'border-stone-200 hover:bg-stone-50');
+      $('vote-down').className = 'flex items-center gap-1 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ' + (currentVote?.value === -1 ? 'bg-red-50 border-red-300 text-red-700' : 'border-stone-200 hover:bg-stone-50');
+    } catch (err) { JN.toast(err.message); }
+  }
+  $('vote-up').onclick = () => handleVote(1);
+  $('vote-down').onclick = () => handleVote(-1);
+
 
   // Self-consistency check, not identity verification: does the uploaded QR
   // actually encode the VPA this page states? Catches wrong/mismatched QR
