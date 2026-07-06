@@ -9,6 +9,6 @@
 // with sample data so you can preview every page without a backend.
 
 const JN_CONFIG = {
-  supabaseUrl: 'https://yjzsdxdqqwaiqvtcbkpf.supabase.co/rest/v1/',
+  supabaseUrl: 'https://yjzsdxdqqwaiqvtcbkpf.supabase.co',
   supabaseKey: 'sb_publishable_ko9_kTcB791-hZU0sGFeEA_D_3Rj407'
 };
