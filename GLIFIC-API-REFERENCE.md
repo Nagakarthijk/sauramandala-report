@@ -138,28 +138,76 @@ The RapidPro 13.2.0 spec supports
 to auto-advance after N seconds of no reply. **Tested in Glific (smf.glific.com,
 July 2026): the timeout did NOT fire.** Flow just waited for a reply.
 
-Glific's own answer for delays is the **"Wait for time" node in the flow
-editor UI**. We have not yet captured its JSON export. Method to learn any
-UI-only node's JSON: build a tiny flow in the editor with just that node,
-then `exportFlow` via GraphQL and inspect the definition. Do this before
-hand-writing such nodes into generated JSON.
+Glific's real mechanism is the **`wait_for_time` action** — captured by exporting
+a real test flow (`test_wait`, keyword `waitmadi`) from the Glific editor.
+**This flow used `"spec_version": "14.3.0"`, not 13.2.0** — Glific's live spec
+version is newer than what we'd been targeting; re-check spec_version on future
+exports before hand-building flows.
+
+`wait_for_time` JSON — an action inside a normal node (NOT inside `router.wait`):
+```json
+{
+  "uuid": "<node-uuid>",
+  "actions": [
+    {"uuid": "<action-uuid>", "type": "wait_for_time", "delay": "600"}
+  ],
+  "router": {
+    "type": "switch",
+    "operand": "@input.text",
+    "default_category_uuid": "<cat-uuid>",
+    "categories": [
+      {"uuid": "<cat-uuid>", "name": "Completed", "exit_uuid": "<exit-uuid>"}
+    ],
+    "cases": []
+  },
+  "exits": [{"uuid": "<exit-uuid>", "destination_uuid": "<next-node>"}]
+}
+```
+- `delay` is **seconds, as a string**.
+- The router has no `wait` key at all — it's a plain switch that free-routes to
+  "Completed" once the delay actions finish executing. `_ui` node type for this
+  is `wait_for_time`.
+- There's also a `wait_for_result` action (same node shape, `"delay"` in
+  seconds) — used after a Google Sheet read to pause before continuing;
+  purpose vs `wait_for_time` not yet fully distinguished, but it appeared
+  right after a `link_google_sheet` success branch in the captured export.
 
 Alternative for scheduled/timed sends: **Triggers** (GraphQL `createTrigger`)
 start a flow for a group at a fixed time / repeating schedule (daily, weekly,
 etc.). Good for drip content; minimum granularity is not seconds/minutes.
 
-### Google Sheets Integration (native in Glific)
-Glific can read a row from a published Google Sheet inside a flow:
+### Google Sheets Integration (native in Glific) — JSON confirmed 2026-07-06
+Glific can read (and write) a row from a published Google Sheet inside a flow:
 1. Glific UI → **Sheets** screen → *Add Sheet* → paste the sheet's published link.
+   Glific assigns an internal integer `sheet_id` (e.g. `2216`) — get this from
+   the Sheets screen or by exporting a flow that uses it.
 2. In the flow editor add a **"Link Google Sheet"** node, pick the sheet.
-3. Set a **row key** — a value (e.g. `@calendar.day` or a contact field) matched
-   against the sheet's **first column**.
-4. Set a result name, e.g. `linked_sheet`. Columns become variables:
-   column `tip_text` → `@results.linked_sheet.tip_text`.
-Writing to sheets is also supported (row append) in newer Glific versions.
-JSON action type not yet captured — build one in the editor and export to learn
-the exact JSON before generating it programmatically.
+3. Set a **row** — e.g. `"1"` (a literal row number) or a dynamic key.
+4. Set a result name, e.g. `sheet`. Success/failure is checked via
+   `@results.sheet` (category "Success"/"Failure"), and column values come back
+   as `@results.sheet.<column_name>`.
+
+Captured `link_google_sheet` action JSON:
+```json
+{
+  "uuid": "<action-uuid>",
+  "type": "link_google_sheet",
+  "url": "https://docs.google.com/spreadsheets/d/<SHEET_ID>/edit?usp=sharing",
+  "sheet_id": 2216,
+  "row": "1",
+  "result_name": "sheet",
+  "name": "SMF sheet test",
+  "action_type": "READ"
+}
+```
+This sits inside a node whose router is a switch on `@results.sheet`
+(`has_category` "Success") with Success → continue, Failure → fallback path.
+`action_type` is presumably also `"WRITE"` for appends — not yet captured.
 Docs: https://glific.org/integrating-google-sheets-in-glific/
+
+**Before generating sheet-driven flows**: register the actual content sheet in
+Glific's Sheets UI first to get its real `sheet_id` and share URL — these are
+per-org values, not guessable.
 
 ### Debugging Checklist When a Keyword Doesn't Start a Flow
 1. Validate all UUIDs in the JSON (see above) — malformed UUIDs fail silently.
