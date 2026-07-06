@@ -83,6 +83,11 @@
   </div>
 </div>
 
+<!-- QR zoom lightbox — for actually scanning, full screen and full brightness -->
+<div id="qr-lightbox" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-6" onclick="this.classList.add('hidden')">
+  <img id="qr-lightbox-img" src="" class="max-w-full max-h-full bg-white rounded-2xl p-4" alt="UPI QR code, enlarged">
+</div>
+
 <script>
 (async () => {
   JN.init();
@@ -118,16 +123,16 @@
     <header class="bg-white sm:border sm:border-stone-100 sm:rounded-2xl overflow-hidden">
       <div class="h-28 sm:h-36 ${profile.cover_url ? '' : 'bg-gradient-to-br from-orange-100 via-stone-100 to-stone-200'} relative">
         ${profile.cover_url ? `<img src="${JN.esc(profile.cover_url)}" class="w-full h-full object-cover" alt="">` : ''}
+        <div class="absolute top-3 right-3 bg-white/95 backdrop-blur rounded-xl px-3 py-1.5 shadow-sm text-center" title="Transparency score ${total}/100">
+          <div class="text-lg font-black leading-none ${total >= 75 ? 'text-emerald-600' : total >= 45 ? 'text-amber-600' : 'text-stone-400'}">${total}</div>
+          <div class="text-[9px] text-stone-400 leading-tight">score</div>
+        </div>
       </div>
       <div class="px-4 sm:px-5 pb-5">
-        <div class="flex items-end justify-between -mt-8 sm:-mt-10">
+        <div class="-mt-8 sm:-mt-10">
           ${profile.photo_url
             ? `<img src="${JN.esc(profile.photo_url)}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover ring-4 ring-white" alt="">`
             : `<div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-stone-300 ring-4 ring-white flex items-center justify-center font-bold text-stone-600 text-lg">${JN.initials(profile.name)}</div>`}
-          <div class="text-center shrink-0 mb-1">
-            <div class="text-2xl font-black ${total >= 75 ? 'text-emerald-600' : total >= 45 ? 'text-amber-600' : 'text-stone-400'}">${total}</div>
-            <div class="text-[10px] text-stone-400 leading-tight">transparency<br>score</div>
-          </div>
         </div>
         <h1 class="text-xl font-black text-stone-900 mt-2">${JN.esc(profile.name)}</h1>
         <div class="text-xs text-stone-400">${JN.esc(profile.location || '')}</div>
@@ -176,8 +181,11 @@
       <p class="text-xs text-stone-400 mb-3">Pay with your own UPI app. Money goes straight to them — JanNidhi never touches it and cannot reverse it.</p>
       <div class="flex flex-col sm:flex-row gap-4 items-start">
         ${profile.upi_qr_url
-          ? `<img src="${JN.esc(profile.upi_qr_url)}" class="w-40 h-40 object-contain border border-stone-200 rounded-xl bg-white mx-auto sm:mx-0" alt="UPI QR code uploaded by ${JN.esc(profile.name)}">`
-          : `<div class="w-40 h-40 border border-dashed border-stone-200 rounded-xl flex items-center justify-center text-xs text-stone-300 text-center px-2 mx-auto sm:mx-0">No QR uploaded yet</div>`}
+          ? `<button type="button" id="qr-zoom" class="w-full sm:w-56 shrink-0">
+               <img src="${JN.esc(profile.upi_qr_url)}" class="w-full aspect-square object-contain border border-stone-200 rounded-xl bg-white" alt="UPI QR code uploaded by ${JN.esc(profile.name)}">
+               <span class="text-[10px] text-stone-400 block mt-1">Tap to enlarge for scanning</span>
+             </button>`
+          : `<div class="w-full sm:w-56 aspect-square shrink-0 border border-dashed border-stone-200 rounded-xl flex items-center justify-center text-xs text-stone-300 text-center px-2">No QR uploaded yet</div>`}
         <div class="text-sm space-y-2 min-w-0 w-full">
           ${profile.upi_vpa ? `<div><span class="text-xs text-stone-400 block">UPI ID</span><span class="font-mono font-semibold select-all break-all">${JN.esc(profile.upi_vpa)}</span></div>` : ''}
           ${profile.upi_payee_name ? `<div><span class="text-xs text-stone-400 block">Payments should show the name</span><span class="font-bold">${JN.esc(profile.upi_payee_name)}</span><p class="text-[10px] text-amber-600 mt-0.5">If your UPI app shows a different name, stop — this page may be impersonating someone.</p></div>` : ''}
@@ -272,6 +280,10 @@
 
   // ── Interactions ─────────────────────────────────────────────────────
   $('score-toggle').onclick = () => $('score-detail').classList.toggle('hidden');
+  $('qr-zoom')?.addEventListener('click', () => {
+    $('qr-lightbox-img').src = profile.upi_qr_url;
+    $('qr-lightbox').classList.remove('hidden');
+  });
   $('report-btn').onclick   = () => $('report-modal').classList.remove('hidden');
   $('declare-btn').onclick  = () => $('declare-modal').classList.remove('hidden');
   $('d-anon').onchange = () => { $('d-name-req').textContent = $('d-anon').checked ? '(kept private)' : '*'; };
