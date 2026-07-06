@@ -5,23 +5,23 @@ import json
 
 def n(flow, node):
     """Node UUID"""
-    return f"{flow:02d}{node:03d}000-0000-4000-8000-{flow:02d}{node:03d}000000"
+    return f"{flow:02d}{node:03d}000-0000-4000-8000-{flow:02d}{node:03d}0000000"
 
 def a(flow, node, sub=0):
     """Action UUID"""
-    return f"{flow:02d}{node:03d}{sub:03d}-aaaa-4000-8000-{flow:02d}{node:03d}{sub:03d}aaa"
+    return f"{flow:02d}{node:03d}{sub:03d}-aaaa-4000-8000-{flow:02d}{node:03d}{sub:03d}aaaa"
 
 def e(flow, node, sub=0):
     """Exit UUID"""
-    return f"{flow:02d}{node:03d}{sub:03d}-eeee-4000-8000-{flow:02d}{node:03d}{sub:03d}eee"
+    return f"{flow:02d}{node:03d}{sub:03d}-eeee-4000-8000-{flow:02d}{node:03d}{sub:03d}eeee"
 
 def c(flow, node, sub=0):
     """Category UUID"""
-    return f"{flow:02d}{node:03d}{sub:03d}-cccc-4000-8000-{flow:02d}{node:03d}{sub:03d}ccc"
+    return f"{flow:02d}{node:03d}{sub:03d}-cccc-4000-8000-{flow:02d}{node:03d}{sub:03d}cccc"
 
 def cas(flow, node, sub=0):
     """Case UUID"""
-    return f"{flow:02d}{node:03d}{sub:03d}-ca00-4000-8000-{flow:02d}{node:03d}{sub:03d}c00"
+    return f"{flow:02d}{node:03d}{sub:03d}-ca00-4000-8000-{flow:02d}{node:03d}{sub:03d}ca00"
 
 def flow_uuid(f):
     return f"f{f:01d}f{f:01d}f{f:01d}f{f:01d}-f{f:01d}f{f:01d}-4{f:01d}f{f:01d}-8{f:01d}f{f:01d}-f{f:01d}f{f:01d}f{f:01d}f{f:01d}f{f:01d}f{f:01d}f{f:01d}f{f:01d}f{f:01d}f{f:01d}f{f:01d}f{f:01d}"
