@@ -209,6 +209,101 @@ Docs: https://glific.org/integrating-google-sheets-in-glific/
 Glific's Sheets UI first to get its real `sheet_id` and share URL — these are
 per-org values, not guessable.
 
+### Interactive Messages — JSON confirmed 2026-07-15
+Captured from a real export (`test_list.json`, spec_version 14.3.0) with two
+Quick Reply templates. Interactive templates live in a **top-level array**
+(`interactive_templates`), sibling to `flows`, not nested inside a flow. Each
+flow action just references one by `id`/`source_id`.
+
+Top-level entry:
+```json
+{
+  "source_id": 38745,
+  "type": "quick_reply",
+  "label": "CMYC Role",
+  "language_id": 1,
+  "send_with_title": false,
+  "interactive_content": {
+    "type": "quick_reply",
+    "content": {"type": "text", "header": "Your Role — CMYC", "text": "What is your role at the youth centre?"},
+    "options": [{"type": "text", "title": "Centre Coordinator"}, {"type": "text", "title": "Youth Member"}, {"type": "text", "title": "Volunteer"}]
+  },
+  "translations": { "1": { /* same shape as interactive_content, per language_id */ } }
+}
+```
+Flow action referencing it (`text` is the interactive_content object **serialized
+as a JSON string**, not a nested object — easy to get wrong):
+```json
+{
+  "uuid": "<action-uuid>",
+  "type": "send_interactive_msg",
+  "id": 38745,
+  "name": "CMYC Role",
+  "text": "{\"content\":{\"header\":\"...\",\"text\":\"...\",\"type\":\"text\"},\"options\":[{\"title\":\"Centre Coordinator\",\"type\":\"text\"},...],\"type\":\"quick_reply\"}",
+  "labels": [],
+  "attachment_url": "",
+  "attachment_type": ""
+}
+```
+- Quick replies: **max 3 options**. Lists: max 10 items (not yet captured in JSON form).
+- The node after it routes on `@input.text` matching each option's exact `title`
+  text via `has_only_phrase`, plus an `Other` fallback category — i.e. Glific
+  sends the button, but the reply still arrives as plain text matched against
+  the button label. Always include an `Other`/retry branch; users can still type.
+- `id` on the action must match a `source_id` in the top-level array — pick a
+  unique high integer per generated template to avoid colliding with real
+  org template IDs already in Glific.
+
+### send_broadcast — push a message/template to a group or contact list
+```json
+{
+  "uuid": "<action-uuid>",
+  "type": "send_broadcast",
+  "text": "",
+  "groups": [],
+  "contacts": [{"uuid": "2520569", "name": "..."}],
+  "attachments": [],
+  "templating": {
+    "uuid": "...",
+    "template": {"uuid": "<session-template-uuid>", "name": "verify_otp"},
+    "variables": ["..."]
+  }
+}
+```
+Use `groups: [{"uuid": "...", "name": "..."}]` to broadcast to a whole Glific
+group (e.g. a club's WhatsApp group collection) instead of `contacts`. This is
+the mechanism for "push an idea to the whole club" — group must already exist
+in Glific (create via UI or `createGroup` mutation) and its real UUID is
+per-org, not guessable.
+
+### start_session — start a flow for specific contacts (vs enter_flow)
+```json
+{
+  "uuid": "<action-uuid>",
+  "type": "start_session",
+  "flow": {"uuid": "<target-flow-uuid>", "name": "..."},
+  "contacts": [{"uuid": "2520569", "name": "..."}],
+  "groups": [],
+  "create_contact": false,
+  "exclusions": {"in_a_flow": false}
+}
+```
+Difference from `enter_flow`: `enter_flow` continues the *current* contact's
+run into a sub-flow (this run pauses); `start_session` kicks off a *separate*
+run, optionally for other contacts/groups (e.g. an admin action triggering the
+Journey flow for a whole batch of new YFs, or a CC's flow starting a flow for
+their club's contact group).
+
+### Other actions seen in captures (not yet used, noting for later)
+- `set_contact_profile` — creates/switches a Glific "profile" (multi-persona
+  contact) — `profile_type: "Create Profile"`.
+- `open_ticket` — opens a support ticket against a topic, e.g. for escalations.
+- `call_webhook` with `url: "parse_via_chat_gpt"` — a **named Glific webhook
+  function** (not a raw URL) that appears to route to an LLM parsing step
+  server-side with a `{"question_text","gpt_model","prompt"}` body. This may be
+  Glific's built-in hook for the "AI-generated contextual content" idea —
+  worth testing directly instead of building a custom webhook service first.
+
 ### Debugging Checklist When a Keyword Doesn't Start a Flow
 1. Validate all UUIDs in the JSON (see above) — malformed UUIDs fail silently.
 2. Flow published? Drafts respond in simulator only, never in live chat.
