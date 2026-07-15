@@ -1,11 +1,634 @@
 {
-  "interactive_templates": [],
+  "interactive_templates": [
+    {
+      "source_id": 9103005,
+      "type": "quick_reply",
+      "label": "Member Gender",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "Member Gender",
+          "text": "Member's gender?"
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "Female"
+          },
+          {
+            "type": "text",
+            "title": "Male"
+          },
+          {
+            "type": "text",
+            "title": "Prefer not to say"
+          }
+        ]
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "Member Gender",
+            "text": "Member's gender?"
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "Female"
+            },
+            {
+              "type": "text",
+              "title": "Male"
+            },
+            {
+              "type": "text",
+              "title": "Prefer not to say"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source_id": 9103007,
+      "type": "quick_reply",
+      "label": "Member WhatsApp",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "Does this member have WhatsApp?",
+          "text": "Do they have WhatsApp? If yes, they can register themselves next time by sending *smjoin*."
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "Yes"
+          },
+          {
+            "type": "text",
+            "title": "No"
+          }
+        ]
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "Does this member have WhatsApp?",
+            "text": "Do they have WhatsApp? If yes, they can register themselves next time by sending *smjoin*."
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "Yes"
+            },
+            {
+              "type": "text",
+              "title": "No"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source_id": 9104005,
+      "type": "quick_reply",
+      "label": "Session Notable",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "Anything notable?",
+          "text": "Anything worth flagging from this session?"
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "New member joined"
+          },
+          {
+            "type": "text",
+            "title": "Something came up"
+          },
+          {
+            "type": "text",
+            "title": "All routine"
+          }
+        ]
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "Anything notable?",
+            "text": "Anything worth flagging from this session?"
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "New member joined"
+            },
+            {
+              "type": "text",
+              "title": "Something came up"
+            },
+            {
+              "type": "text",
+              "title": "All routine"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source_id": 9105011,
+      "type": "quick_reply",
+      "label": "Support Needed",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "Need support?",
+          "text": "Do you need any support from your Centre Coordinator?"
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "Yes, contact me"
+          },
+          {
+            "type": "text",
+            "title": "No, all good"
+          }
+        ]
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "Need support?",
+            "text": "Do you need any support from your Centre Coordinator?"
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "Yes, contact me"
+            },
+            {
+              "type": "text",
+              "title": "No, all good"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source_id": 9106002,
+      "type": "quick_reply",
+      "label": "Club Theme",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "Club Theme",
+          "text": "Pick your club's theme:"
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "Arts & Culture"
+          },
+          {
+            "type": "text",
+            "title": "Sports & Wellness"
+          },
+          {
+            "type": "text",
+            "title": "Community Action"
+          }
+        ]
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "Club Theme",
+            "text": "Pick your club's theme:"
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "Arts & Culture"
+            },
+            {
+              "type": "text",
+              "title": "Sports & Wellness"
+            },
+            {
+              "type": "text",
+              "title": "Community Action"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source_id": 9106011,
+      "type": "quick_reply",
+      "label": "Club Size",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "How big is your club?",
+          "text": "Roughly how many young people are involved so far?"
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "1–8"
+          },
+          {
+            "type": "text",
+            "title": "9–15"
+          },
+          {
+            "type": "text",
+            "title": "16+"
+          }
+        ]
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "How big is your club?",
+            "text": "Roughly how many young people are involved so far?"
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "1–8"
+            },
+            {
+              "type": "text",
+              "title": "9–15"
+            },
+            {
+              "type": "text",
+              "title": "16+"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source_id": 9107011,
+      "type": "quick_reply",
+      "label": "Idea Action 10",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "What now?",
+          "text": "What would you like to do?"
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "Try this idea"
+          },
+          {
+            "type": "text",
+            "title": "See another idea"
+          },
+          {
+            "type": "text",
+            "title": "Skip for now"
+          }
+        ]
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "What now?",
+            "text": "What would you like to do?"
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "Try this idea"
+            },
+            {
+              "type": "text",
+              "title": "See another idea"
+            },
+            {
+              "type": "text",
+              "title": "Skip for now"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source_id": 9107014,
+      "type": "quick_reply",
+      "label": "Idea Action 10b",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "What now?",
+          "text": "What would you like to do?"
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "Try this idea"
+          },
+          {
+            "type": "text",
+            "title": "Skip for now"
+          },
+          {
+            "type": "text",
+            "title": "Skip for now"
+          }
+        ]
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "What now?",
+            "text": "What would you like to do?"
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "Try this idea"
+            },
+            {
+              "type": "text",
+              "title": "Skip for now"
+            },
+            {
+              "type": "text",
+              "title": "Skip for now"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source_id": 9107021,
+      "type": "quick_reply",
+      "label": "Idea Action 20",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "What now?",
+          "text": "What would you like to do?"
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "Try this idea"
+          },
+          {
+            "type": "text",
+            "title": "See another idea"
+          },
+          {
+            "type": "text",
+            "title": "Skip for now"
+          }
+        ]
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "What now?",
+            "text": "What would you like to do?"
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "Try this idea"
+            },
+            {
+              "type": "text",
+              "title": "See another idea"
+            },
+            {
+              "type": "text",
+              "title": "Skip for now"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source_id": 9107024,
+      "type": "quick_reply",
+      "label": "Idea Action 20b",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "What now?",
+          "text": "What would you like to do?"
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "Try this idea"
+          },
+          {
+            "type": "text",
+            "title": "Skip for now"
+          },
+          {
+            "type": "text",
+            "title": "Skip for now"
+          }
+        ]
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "What now?",
+            "text": "What would you like to do?"
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "Try this idea"
+            },
+            {
+              "type": "text",
+              "title": "Skip for now"
+            },
+            {
+              "type": "text",
+              "title": "Skip for now"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source_id": 9107031,
+      "type": "quick_reply",
+      "label": "Idea Action 30",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "What now?",
+          "text": "What would you like to do?"
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "Try this idea"
+          },
+          {
+            "type": "text",
+            "title": "See another idea"
+          },
+          {
+            "type": "text",
+            "title": "Skip for now"
+          }
+        ]
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "What now?",
+            "text": "What would you like to do?"
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "Try this idea"
+            },
+            {
+              "type": "text",
+              "title": "See another idea"
+            },
+            {
+              "type": "text",
+              "title": "Skip for now"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source_id": 9107034,
+      "type": "quick_reply",
+      "label": "Idea Action 30b",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "What now?",
+          "text": "What would you like to do?"
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "Try this idea"
+          },
+          {
+            "type": "text",
+            "title": "Skip for now"
+          },
+          {
+            "type": "text",
+            "title": "Skip for now"
+          }
+        ]
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "What now?",
+            "text": "What would you like to do?"
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "Try this idea"
+            },
+            {
+              "type": "text",
+              "title": "Skip for now"
+            },
+            {
+              "type": "text",
+              "title": "Skip for now"
+            }
+          ]
+        }
+      }
+    }
+  ],
   "contact_field": [
     "full_name",
     "cmyc_role",
     "centre_name",
     "club_name",
     "club_area",
+    "club_theme",
+    "club_size",
     "yf_status"
   ],
   "collections": [],
@@ -34,7 +657,7 @@
               {
                 "uuid": "01001000-aaaa-4000-8000-01001000aaaa",
                 "type": "send_msg",
-                "text": "🌱 *mPowerClub — Youth Facilitator Simulation*\n\nThis flow simulates the digital journey of a Youth Facilitator (YF) in Sauramandala's CMYC programme.\n\n👤 *Who is a Youth Facilitator?*\nA YF is a trained community youth worker who:\n• Forms and runs mPowerClubs in their community\n• Recruits young people (14–25 yrs) as club members\n• Plans and conducts activities (discussions, games, skills)\n• Reports to a Centre Coordinator (CC)\n\n🎭 *You are playing the role of a YF.*\nLines marked [REAL] show what happens in live deployment.\n\nReply anything to begin 👇",
+                "text": "🌱 *mPowerClub — Youth Facilitator Simulation*\n\nThis flow simulates the digital journey of a Youth Facilitator (YF) in Sauramandala's CMYC programme.\n\n👤 *Who is a Youth Facilitator?*\nA YF is a trained community youth worker who:\n• Forms and runs mPowerClubs in their community\n• Recruits young people (14–25 yrs) as club members\n• Plans and conducts activities (discussions, games, skills)\n• Reports to a Centre Coordinator (CC)\n\n🎭 *You are playing the role of a YF.*\nLines marked [REAL] show what happens in live deployment. Lines marked [SIMULATION] show what this test flow is standing in for.\n\n🧑‍🤝‍🧑 A reminder: mPowerClubs are *real, in-person* youth groups. Everything here — the club, the members, the sessions — represents real community work. WhatsApp is just how you and Sauramandala stay coordinated between meetings.\n\nReply anything to begin 👇",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -230,7 +853,7 @@
               {
                 "uuid": "01009000-aaaa-4000-8000-01009000aaaa",
                 "type": "send_msg",
-                "text": "✅ *YF Profile saved!*\n\n👤 *Name:* @results.yf_name\n🏢 *Centre:* @results.centre_input\n🎯 *Role:* Youth Facilitator\n\nYou are now registered as an mPowerClub Youth Facilitator.\n\n🚀 Starting your orientation journey...\n\n[SIMULATION] You will receive tips and prompts every 10 minutes. Reply to any message to move faster, or just wait.",
+                "text": "✅ *YF Profile saved!*\n\n👤 *Name:* @results.yf_name\n🏢 *Centre:* @results.centre_input\n🎯 *Role:* Youth Facilitator\n\nYou are now registered as an mPowerClub Youth Facilitator.\n\n🚀 Let's form your first club...",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -287,7 +910,7 @@
               {
                 "uuid": "02001000-aaaa-4000-8000-02001000aaaa",
                 "type": "send_msg",
-                "text": "🎓 *Welcome to your YF Orientation!*\n\nHere is what you can do as a Youth Facilitator on WhatsApp:\n\n📋 *Your keywords (use anytime):*\n• *addmember* — Register a new club member\n• *attendance* — Record session attendance\n• *report* — Submit an activity report\n\nYou will also receive:\n📌 Facilitation tips\n📚 Activity ideas and session plans\n📊 Weekly report prompts\n🗓 Session reminders from your CC\n\n[REAL] In live deployment you would also receive calls to action from your Centre Coordinator and see your club's progress on a dashboard.\n\n⏳ First tip in 10 minutes... (or reply anything to receive it now)",
+                "text": "🎓 *Welcome to your YF Orientation!*\n\nFirst, let's form your mPowerClub — the real, in-person group you'll be running. Everything after that (adding members, attendance, reports) happens on top of a club that actually exists in your community.\n\nReply anything to start forming your club 👇",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -302,21 +925,19 @@
           },
           {
             "uuid": "02002000-0000-4000-8000-020020000000",
-            "actions": [
-              {
-                "uuid": "02002000-aaaa-4000-8000-02002000aaaa",
-                "type": "wait_for_time",
-                "delay": "600"
-              }
-            ],
+            "actions": [],
             "router": {
+              "wait": {
+                "type": "msg"
+              },
               "type": "switch",
+              "result_name": "ready_form",
               "operand": "@input.text",
               "default_category_uuid": "02002001-cccc-4000-8000-02002001cccc",
               "categories": [
                 {
                   "uuid": "02002001-cccc-4000-8000-02002001cccc",
-                  "name": "Completed",
+                  "name": "Any",
                   "exit_uuid": "02002001-eeee-4000-8000-02002001eeee"
                 }
               ],
@@ -334,11 +955,11 @@
             "actions": [
               {
                 "uuid": "02003000-aaaa-4000-8000-02003000aaaa",
-                "type": "send_msg",
-                "text": "💡 *Tip #1 — The mPowerClub Way*\n\nmPowerClubs are youth-led spaces. Your job as YF is to:\n\n1️⃣ *Invite, not recruit* — Let youth choose to join\n2️⃣ *Facilitate, not teach* — Ask questions, don't lecture\n3️⃣ *Document, don't just do* — Every session is a data point\n\n🏆 A strong mPowerClub has:\n• 8–15 regular members\n• Weekly or bi-weekly meetings\n• At least one activity per session\n• A safe, consistent meeting space\n\n[REAL] This tip would reach you 2 days after onboarding. You will get 8 tips over 4 weeks.\n\n⏳ Next: Setting up your first club... (10 min or reply to continue)",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
+                "type": "enter_flow",
+                "flow": {
+                  "uuid": "f6f6f6f6-f6f6-4f6f-8f6f-f6f6f6f6f6f6",
+                  "name": "mPowerClub Form Club"
+                }
               }
             ],
             "exits": [
@@ -350,32 +971,35 @@
           },
           {
             "uuid": "02004000-0000-4000-8000-020040000000",
-            "actions": [
-              {
-                "uuid": "02004000-aaaa-4000-8000-02004000aaaa",
-                "type": "wait_for_time",
-                "delay": "600"
-              }
-            ],
             "router": {
               "type": "switch",
-              "operand": "@input.text",
+              "operand": "@child.status",
               "default_category_uuid": "02004001-cccc-4000-8000-02004001cccc",
               "categories": [
                 {
                   "uuid": "02004001-cccc-4000-8000-02004001cccc",
-                  "name": "Completed",
+                  "name": "Complete",
                   "exit_uuid": "02004001-eeee-4000-8000-02004001eeee"
                 }
               ],
-              "cases": []
+              "cases": [
+                {
+                  "uuid": "02004001-ca00-4000-8000-02004001ca00",
+                  "type": "has_only_text",
+                  "category_uuid": "02004001-cccc-4000-8000-02004001cccc",
+                  "arguments": [
+                    "completed"
+                  ]
+                }
+              ]
             },
             "exits": [
               {
                 "uuid": "02004001-eeee-4000-8000-02004001eeee",
                 "destination_uuid": "02005000-0000-4000-8000-020050000000"
               }
-            ]
+            ],
+            "actions": []
           },
           {
             "uuid": "02005000-0000-4000-8000-020050000000",
@@ -383,7 +1007,7 @@
               {
                 "uuid": "02005000-aaaa-4000-8000-02005000aaaa",
                 "type": "send_msg",
-                "text": "🏗️ *Let's set up your first mPowerClub!*\n\n[REAL] Club formation means bringing 8–15 young people together from your community, holding a first meeting, and choosing a name together.\n\n[SIMULATION] We will create your club here to show how it works in the system.\n\n*What will you name your club?*\n(e.g. \"Rising Stars Club\", \"Green Valley Youth\", \"New Horizon Club\")",
+                "text": "🎉 Club formed! Here's your toolkit — use these keywords *any time*, not just now:\n\n📋 *Your keywords:*\n• *addmember* — Register a new club member\n• *attendance* — Record session attendance\n• *clubideas* — Get a themed activity idea for your club, and share what you made\n• *report* — Submit a session report\n\n[REAL] You'd also get reminders from your CC and periodic tips. This orientation shows you each keyword once so you know what to expect.\n\n⏳ In 2 minutes, let's try adding your first club member... (or reply now to skip ahead)",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -398,19 +1022,21 @@
           },
           {
             "uuid": "02006000-0000-4000-8000-020060000000",
-            "actions": [],
+            "actions": [
+              {
+                "uuid": "02006000-aaaa-4000-8000-02006000aaaa",
+                "type": "wait_for_time",
+                "delay": "120"
+              }
+            ],
             "router": {
-              "wait": {
-                "type": "msg"
-              },
               "type": "switch",
-              "result_name": "club_name",
               "operand": "@input.text",
               "default_category_uuid": "02006001-cccc-4000-8000-02006001cccc",
               "categories": [
                 {
                   "uuid": "02006001-cccc-4000-8000-02006001cccc",
-                  "name": "Any",
+                  "name": "Completed",
                   "exit_uuid": "02006001-eeee-4000-8000-02006001eeee"
                 }
               ],
@@ -428,12 +1054,11 @@
             "actions": [
               {
                 "uuid": "02007000-aaaa-4000-8000-02007000aaaa",
-                "type": "set_contact_field",
-                "field": {
-                  "key": "club_name",
-                  "name": "club_name"
-                },
-                "value": "@results.club_name"
+                "type": "send_msg",
+                "text": "👥 *Let's simulate adding a member.*\n\n[REAL] In live deployment you'd share the bot number directly with a young person in your community and they'd register themselves by sending *smjoin*. This flow (*addmember*) is for when a member doesn't have WhatsApp and you're registering them on their behalf.\n\nSend *addmember* now to try it, or reply anything to continue this orientation without it.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
               }
             ],
             "exits": [
@@ -445,77 +1070,38 @@
           },
           {
             "uuid": "02008000-0000-4000-8000-020080000000",
-            "actions": [
-              {
-                "uuid": "02008000-aaaa-4000-8000-02008000aaaa",
-                "type": "send_msg",
-                "text": "Great name! 👏\n\n*Which community or area is this club based in?*\n(e.g. \"Mawphlang village\", \"Upper Shillong ward 5\", \"Nongkynmaw\")",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
+            "actions": [],
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "member_orient_ack",
+              "operand": "@input.text",
+              "default_category_uuid": "02008001-cccc-4000-8000-02008001cccc",
+              "categories": [
+                {
+                  "uuid": "02008001-cccc-4000-8000-02008001cccc",
+                  "name": "Any",
+                  "exit_uuid": "02008001-eeee-4000-8000-02008001eeee"
+                }
+              ],
+              "cases": []
+            },
             "exits": [
               {
-                "uuid": "02008000-eeee-4000-8000-02008000eeee",
+                "uuid": "02008001-eeee-4000-8000-02008001eeee",
                 "destination_uuid": "02009000-0000-4000-8000-020090000000"
               }
             ]
           },
           {
             "uuid": "02009000-0000-4000-8000-020090000000",
-            "actions": [],
-            "router": {
-              "wait": {
-                "type": "msg"
-              },
-              "type": "switch",
-              "result_name": "club_area_input",
-              "operand": "@input.text",
-              "default_category_uuid": "02009001-cccc-4000-8000-02009001cccc",
-              "categories": [
-                {
-                  "uuid": "02009001-cccc-4000-8000-02009001cccc",
-                  "name": "Any",
-                  "exit_uuid": "02009001-eeee-4000-8000-02009001eeee"
-                }
-              ],
-              "cases": []
-            },
-            "exits": [
-              {
-                "uuid": "02009001-eeee-4000-8000-02009001eeee",
-                "destination_uuid": "02010000-0000-4000-8000-020100000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02010000-0000-4000-8000-020100000000",
             "actions": [
               {
-                "uuid": "02010000-aaaa-4000-8000-02010000aaaa",
-                "type": "set_contact_field",
-                "field": {
-                  "key": "club_area",
-                  "name": "club_area"
-                },
-                "value": "@results.club_area_input"
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "02010000-eeee-4000-8000-02010000eeee",
-                "destination_uuid": "02011000-0000-4000-8000-020110000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02011000-0000-4000-8000-020110000000",
-            "actions": [
-              {
-                "uuid": "02011000-aaaa-4000-8000-02011000aaaa",
+                "uuid": "02009000-aaaa-4000-8000-02009000aaaa",
                 "type": "send_msg",
-                "text": "✅ *Club Registered!*\n\n🏆 *Club Name:* @results.club_name\n📍 *Area:* @results.club_area_input\n👤 *YF:* @contact.fields.full_name.value\n\n[REAL] In live deployment, this club would appear on your Centre Coordinator's dashboard. You would receive a club ID to use in all reports.\n\n⏳ Tip #2 coming in 10 minutes... (or reply to continue)",
+                "text": "👍 Whenever you're ready, here's the rest of the toolkit:\n\n*attendance* — after every real session, log how many showed up. Takes under a minute.\n\n*clubideas* — when you need a fresh activity, ask here first. It's themed to your club and gives you something to actually run, not just read.\n\n*report* — after you run an idea, tell us how it went and share a link or photo if you have one.\n\n🎉 *That's the full mPowerClub toolkit.* Nothing here is graded — it exists so your on-the-ground work is visible to your CC and the programme team, and so you get useful ideas back, not just forms to fill.\n\nWelcome to mPowerClub, @contact.fields.full_name.value! 🌱",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -523,707 +1109,7 @@
             ],
             "exits": [
               {
-                "uuid": "02011000-eeee-4000-8000-02011000eeee",
-                "destination_uuid": "02012000-0000-4000-8000-020120000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02012000-0000-4000-8000-020120000000",
-            "actions": [
-              {
-                "uuid": "02012000-aaaa-4000-8000-02012000aaaa",
-                "type": "wait_for_time",
-                "delay": "600"
-              }
-            ],
-            "router": {
-              "type": "switch",
-              "operand": "@input.text",
-              "default_category_uuid": "02012001-cccc-4000-8000-02012001cccc",
-              "categories": [
-                {
-                  "uuid": "02012001-cccc-4000-8000-02012001cccc",
-                  "name": "Completed",
-                  "exit_uuid": "02012001-eeee-4000-8000-02012001eeee"
-                }
-              ],
-              "cases": []
-            },
-            "exits": [
-              {
-                "uuid": "02012001-eeee-4000-8000-02012001eeee",
-                "destination_uuid": "02013000-0000-4000-8000-020130000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02013000-0000-4000-8000-020130000000",
-            "actions": [
-              {
-                "uuid": "02013000-aaaa-4000-8000-02013000aaaa",
-                "type": "send_msg",
-                "text": "💡 *Tip #2 — Planning Your First Session*\n\nA great first session:\n\n🕐 *Duration:* 60–90 minutes\n👥 *Opening:* Names game / icebreaker (15 min)\n🗣️ *Main:* Discussion or activity (30–40 min)\n📋 *Closing:* Reflections + next meeting date (10 min)\n\n*3 things to prepare:*\n1. A simple icebreaker game\n2. One open discussion question\n3. A notebook to record attendance\n\n[REAL] You would receive a full session plan from your CC 3 days before your first session.\n\n⏳ Next: Adding a club member... (10 min or reply to continue)",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "02013000-eeee-4000-8000-02013000eeee",
-                "destination_uuid": "02014000-0000-4000-8000-020140000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02014000-0000-4000-8000-020140000000",
-            "actions": [
-              {
-                "uuid": "02014000-aaaa-4000-8000-02014000aaaa",
-                "type": "wait_for_time",
-                "delay": "600"
-              }
-            ],
-            "router": {
-              "type": "switch",
-              "operand": "@input.text",
-              "default_category_uuid": "02014001-cccc-4000-8000-02014001cccc",
-              "categories": [
-                {
-                  "uuid": "02014001-cccc-4000-8000-02014001cccc",
-                  "name": "Completed",
-                  "exit_uuid": "02014001-eeee-4000-8000-02014001eeee"
-                }
-              ],
-              "cases": []
-            },
-            "exits": [
-              {
-                "uuid": "02014001-eeee-4000-8000-02014001eeee",
-                "destination_uuid": "02015000-0000-4000-8000-020150000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02015000-0000-4000-8000-020150000000",
-            "actions": [
-              {
-                "uuid": "02015000-aaaa-4000-8000-02015000aaaa",
-                "type": "send_msg",
-                "text": "👥 *Adding a Club Member*\n\n[REAL] In live deployment you share the bot number with youth in your community. They send *smjoin* and register as Club Members — selecting CMYC → Youth Member. They join your club's WhatsApp group automatically.\n\n[SIMULATION] We will collect one member's details here to show how it works.\n\n*Member's full name?*",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "02015000-eeee-4000-8000-02015000eeee",
-                "destination_uuid": "02016000-0000-4000-8000-020160000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02016000-0000-4000-8000-020160000000",
-            "actions": [],
-            "router": {
-              "wait": {
-                "type": "msg"
-              },
-              "type": "switch",
-              "result_name": "member_name_sim",
-              "operand": "@input.text",
-              "default_category_uuid": "02016001-cccc-4000-8000-02016001cccc",
-              "categories": [
-                {
-                  "uuid": "02016001-cccc-4000-8000-02016001cccc",
-                  "name": "Any",
-                  "exit_uuid": "02016001-eeee-4000-8000-02016001eeee"
-                }
-              ],
-              "cases": []
-            },
-            "exits": [
-              {
-                "uuid": "02016001-eeee-4000-8000-02016001eeee",
-                "destination_uuid": "02017000-0000-4000-8000-020170000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02017000-0000-4000-8000-020170000000",
-            "actions": [
-              {
-                "uuid": "02017000-aaaa-4000-8000-02017000aaaa",
-                "type": "send_msg",
-                "text": "*How old are they?* (e.g. \"17\")",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "02017000-eeee-4000-8000-02017000eeee",
-                "destination_uuid": "02018000-0000-4000-8000-020180000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02018000-0000-4000-8000-020180000000",
-            "actions": [],
-            "router": {
-              "wait": {
-                "type": "msg"
-              },
-              "type": "switch",
-              "result_name": "member_age_sim",
-              "operand": "@input.text",
-              "default_category_uuid": "02018001-cccc-4000-8000-02018001cccc",
-              "categories": [
-                {
-                  "uuid": "02018001-cccc-4000-8000-02018001cccc",
-                  "name": "Any",
-                  "exit_uuid": "02018001-eeee-4000-8000-02018001eeee"
-                }
-              ],
-              "cases": []
-            },
-            "exits": [
-              {
-                "uuid": "02018001-eeee-4000-8000-02018001eeee",
-                "destination_uuid": "02019000-0000-4000-8000-020190000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02019000-0000-4000-8000-020190000000",
-            "actions": [
-              {
-                "uuid": "02019000-aaaa-4000-8000-02019000aaaa",
-                "type": "send_msg",
-                "text": "*Do they have WhatsApp?*\n\n1 - Yes\n2 - No\n\n[REAL] If yes, they will be invited to message the bot and register directly. If no, the YF submits their data.",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "02019000-eeee-4000-8000-02019000eeee",
-                "destination_uuid": "02020000-0000-4000-8000-020200000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02020000-0000-4000-8000-020200000000",
-            "actions": [],
-            "router": {
-              "wait": {
-                "type": "msg"
-              },
-              "type": "switch",
-              "result_name": "member_whatsapp",
-              "operand": "@input.text",
-              "default_category_uuid": "02020003-cccc-4000-8000-02020003cccc",
-              "categories": [
-                {
-                  "uuid": "02020001-cccc-4000-8000-02020001cccc",
-                  "name": "Yes",
-                  "exit_uuid": "02020001-eeee-4000-8000-02020001eeee"
-                },
-                {
-                  "uuid": "02020002-cccc-4000-8000-02020002cccc",
-                  "name": "No",
-                  "exit_uuid": "02020002-eeee-4000-8000-02020002eeee"
-                },
-                {
-                  "uuid": "02020003-cccc-4000-8000-02020003cccc",
-                  "name": "Other",
-                  "exit_uuid": "02020003-eeee-4000-8000-02020003eeee"
-                }
-              ],
-              "cases": [
-                {
-                  "uuid": "02020001-ca00-4000-8000-02020001ca00",
-                  "type": "has_any_word",
-                  "category_uuid": "02020001-cccc-4000-8000-02020001cccc",
-                  "arguments": [
-                    "1"
-                  ]
-                },
-                {
-                  "uuid": "02020002-ca00-4000-8000-02020002ca00",
-                  "type": "has_any_word",
-                  "category_uuid": "02020002-cccc-4000-8000-02020002cccc",
-                  "arguments": [
-                    "2"
-                  ]
-                }
-              ]
-            },
-            "exits": [
-              {
-                "uuid": "02020001-eeee-4000-8000-02020001eeee",
-                "destination_uuid": "02021000-0000-4000-8000-020210000000"
-              },
-              {
-                "uuid": "02020002-eeee-4000-8000-02020002eeee",
-                "destination_uuid": "02021000-0000-4000-8000-020210000000"
-              },
-              {
-                "uuid": "02020003-eeee-4000-8000-02020003eeee",
-                "destination_uuid": "02035000-0000-4000-8000-020350000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02021000-0000-4000-8000-020210000000",
-            "actions": [
-              {
-                "uuid": "02021000-aaaa-4000-8000-02021000aaaa",
-                "type": "send_msg",
-                "text": "✅ *Member noted!*\n\n*Name:* @results.member_name_sim\n*Age:* @results.member_age_sim\n*WhatsApp:* @results.member_whatsapp\n\n[REAL] In deployment this would:\n• Register them as a contact in the system\n• Add them to your club's group\n• Send them a welcome message\n• Track their attendance over time\n\n⏳ Attendance recording in 10 minutes... (or reply to continue)",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "02021000-eeee-4000-8000-02021000eeee",
-                "destination_uuid": "02022000-0000-4000-8000-020220000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02022000-0000-4000-8000-020220000000",
-            "actions": [
-              {
-                "uuid": "02022000-aaaa-4000-8000-02022000aaaa",
-                "type": "wait_for_time",
-                "delay": "600"
-              }
-            ],
-            "router": {
-              "type": "switch",
-              "operand": "@input.text",
-              "default_category_uuid": "02022001-cccc-4000-8000-02022001cccc",
-              "categories": [
-                {
-                  "uuid": "02022001-cccc-4000-8000-02022001cccc",
-                  "name": "Completed",
-                  "exit_uuid": "02022001-eeee-4000-8000-02022001eeee"
-                }
-              ],
-              "cases": []
-            },
-            "exits": [
-              {
-                "uuid": "02022001-eeee-4000-8000-02022001eeee",
-                "destination_uuid": "02023000-0000-4000-8000-020230000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02023000-0000-4000-8000-020230000000",
-            "actions": [
-              {
-                "uuid": "02023000-aaaa-4000-8000-02023000aaaa",
-                "type": "send_msg",
-                "text": "📋 *Session Attendance*\n\n[SIMULATION] Imagine you just ran your first mPowerClub session!\n\n[REAL] After every session, you record attendance here. Your CC sees this in real time and follows up if attendance is low or a member is absent repeatedly.\n\n*How many youth attended your (simulated) first session?*\n(Type a number, e.g. \"12\")",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "02023000-eeee-4000-8000-02023000eeee",
-                "destination_uuid": "02024000-0000-4000-8000-020240000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02024000-0000-4000-8000-020240000000",
-            "actions": [],
-            "router": {
-              "wait": {
-                "type": "msg"
-              },
-              "type": "switch",
-              "result_name": "attendance_count_sim",
-              "operand": "@input.text",
-              "default_category_uuid": "02024001-cccc-4000-8000-02024001cccc",
-              "categories": [
-                {
-                  "uuid": "02024001-cccc-4000-8000-02024001cccc",
-                  "name": "Any",
-                  "exit_uuid": "02024001-eeee-4000-8000-02024001eeee"
-                }
-              ],
-              "cases": []
-            },
-            "exits": [
-              {
-                "uuid": "02024001-eeee-4000-8000-02024001eeee",
-                "destination_uuid": "02025000-0000-4000-8000-020250000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02025000-0000-4000-8000-020250000000",
-            "actions": [
-              {
-                "uuid": "02025000-aaaa-4000-8000-02025000aaaa",
-                "type": "send_msg",
-                "text": "✅ *Attendance recorded: @results.attendance_count_sim youth*\n\nGreat work running your first session! 🎉\n\n[REAL] This data feeds into Sauramandala's monitoring system. Clubs with consistent attendance receive more resources and facilitator support.\n\n⏳ Activity report in 10 minutes... (or reply to continue)",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "02025000-eeee-4000-8000-02025000eeee",
-                "destination_uuid": "02026000-0000-4000-8000-020260000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02026000-0000-4000-8000-020260000000",
-            "actions": [
-              {
-                "uuid": "02026000-aaaa-4000-8000-02026000aaaa",
-                "type": "wait_for_time",
-                "delay": "600"
-              }
-            ],
-            "router": {
-              "type": "switch",
-              "operand": "@input.text",
-              "default_category_uuid": "02026001-cccc-4000-8000-02026001cccc",
-              "categories": [
-                {
-                  "uuid": "02026001-cccc-4000-8000-02026001cccc",
-                  "name": "Completed",
-                  "exit_uuid": "02026001-eeee-4000-8000-02026001eeee"
-                }
-              ],
-              "cases": []
-            },
-            "exits": [
-              {
-                "uuid": "02026001-eeee-4000-8000-02026001eeee",
-                "destination_uuid": "02027000-0000-4000-8000-020270000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02027000-0000-4000-8000-020270000000",
-            "actions": [
-              {
-                "uuid": "02027000-aaaa-4000-8000-02027000aaaa",
-                "type": "send_msg",
-                "text": "📊 *Activity Report*\n\n[REAL] After each session you submit a short report. This helps Sauramandala track what activities work best across all clubs.\n\n*What activity did you do in this session?*\n\n1 - Icebreaker / introductions\n2 - Group discussion\n3 - Creative (art, drama, music)\n4 - Outdoor / physical\n5 - Community service / action",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "02027000-eeee-4000-8000-02027000eeee",
-                "destination_uuid": "02028000-0000-4000-8000-020280000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02028000-0000-4000-8000-020280000000",
-            "actions": [],
-            "router": {
-              "wait": {
-                "type": "msg"
-              },
-              "type": "switch",
-              "result_name": "activity_type_sim",
-              "operand": "@input.text",
-              "default_category_uuid": "02028006-cccc-4000-8000-02028006cccc",
-              "categories": [
-                {
-                  "uuid": "02028001-cccc-4000-8000-02028001cccc",
-                  "name": "1",
-                  "exit_uuid": "02028001-eeee-4000-8000-02028001eeee"
-                },
-                {
-                  "uuid": "02028002-cccc-4000-8000-02028002cccc",
-                  "name": "2",
-                  "exit_uuid": "02028002-eeee-4000-8000-02028002eeee"
-                },
-                {
-                  "uuid": "02028003-cccc-4000-8000-02028003cccc",
-                  "name": "3",
-                  "exit_uuid": "02028003-eeee-4000-8000-02028003eeee"
-                },
-                {
-                  "uuid": "02028004-cccc-4000-8000-02028004cccc",
-                  "name": "4",
-                  "exit_uuid": "02028004-eeee-4000-8000-02028004eeee"
-                },
-                {
-                  "uuid": "02028005-cccc-4000-8000-02028005cccc",
-                  "name": "5",
-                  "exit_uuid": "02028005-eeee-4000-8000-02028005eeee"
-                },
-                {
-                  "uuid": "02028006-cccc-4000-8000-02028006cccc",
-                  "name": "Other",
-                  "exit_uuid": "02028006-eeee-4000-8000-02028006eeee"
-                }
-              ],
-              "cases": [
-                {
-                  "uuid": "02028001-ca00-4000-8000-02028001ca00",
-                  "type": "has_any_word",
-                  "category_uuid": "02028001-cccc-4000-8000-02028001cccc",
-                  "arguments": [
-                    "1"
-                  ]
-                },
-                {
-                  "uuid": "02028002-ca00-4000-8000-02028002ca00",
-                  "type": "has_any_word",
-                  "category_uuid": "02028002-cccc-4000-8000-02028002cccc",
-                  "arguments": [
-                    "2"
-                  ]
-                },
-                {
-                  "uuid": "02028003-ca00-4000-8000-02028003ca00",
-                  "type": "has_any_word",
-                  "category_uuid": "02028003-cccc-4000-8000-02028003cccc",
-                  "arguments": [
-                    "3"
-                  ]
-                },
-                {
-                  "uuid": "02028004-ca00-4000-8000-02028004ca00",
-                  "type": "has_any_word",
-                  "category_uuid": "02028004-cccc-4000-8000-02028004cccc",
-                  "arguments": [
-                    "4"
-                  ]
-                },
-                {
-                  "uuid": "02028005-ca00-4000-8000-02028005ca00",
-                  "type": "has_any_word",
-                  "category_uuid": "02028005-cccc-4000-8000-02028005cccc",
-                  "arguments": [
-                    "5"
-                  ]
-                }
-              ]
-            },
-            "exits": [
-              {
-                "uuid": "02028001-eeee-4000-8000-02028001eeee",
-                "destination_uuid": "02029000-0000-4000-8000-020290000000"
-              },
-              {
-                "uuid": "02028002-eeee-4000-8000-02028002eeee",
-                "destination_uuid": "02029000-0000-4000-8000-020290000000"
-              },
-              {
-                "uuid": "02028003-eeee-4000-8000-02028003eeee",
-                "destination_uuid": "02029000-0000-4000-8000-020290000000"
-              },
-              {
-                "uuid": "02028004-eeee-4000-8000-02028004eeee",
-                "destination_uuid": "02029000-0000-4000-8000-020290000000"
-              },
-              {
-                "uuid": "02028005-eeee-4000-8000-02028005eeee",
-                "destination_uuid": "02029000-0000-4000-8000-020290000000"
-              },
-              {
-                "uuid": "02028006-eeee-4000-8000-02028006eeee",
-                "destination_uuid": "02028000-0000-4000-8000-020280000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02029000-0000-4000-8000-020290000000",
-            "actions": [
-              {
-                "uuid": "02029000-aaaa-4000-8000-02029000aaaa",
-                "type": "send_msg",
-                "text": "*How did the session go?*\n\n1 - 😰 Very challenging\n2 - 😕 Struggled a bit\n3 - 😐 It was okay\n4 - 😊 Went well\n5 - 🌟 Excellent!",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "02029000-eeee-4000-8000-02029000eeee",
-                "destination_uuid": "02030000-0000-4000-8000-020300000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02030000-0000-4000-8000-020300000000",
-            "actions": [],
-            "router": {
-              "wait": {
-                "type": "msg"
-              },
-              "type": "switch",
-              "result_name": "activity_rating_sim",
-              "operand": "@input.text",
-              "default_category_uuid": "02030001-cccc-4000-8000-02030001cccc",
-              "categories": [
-                {
-                  "uuid": "02030001-cccc-4000-8000-02030001cccc",
-                  "name": "Any",
-                  "exit_uuid": "02030001-eeee-4000-8000-02030001eeee"
-                }
-              ],
-              "cases": []
-            },
-            "exits": [
-              {
-                "uuid": "02030001-eeee-4000-8000-02030001eeee",
-                "destination_uuid": "02031000-0000-4000-8000-020310000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02031000-0000-4000-8000-020310000000",
-            "actions": [
-              {
-                "uuid": "02031000-aaaa-4000-8000-02031000aaaa",
-                "type": "send_msg",
-                "text": "*What was one thing that worked well?*\n\n(Type freely — this goes directly to the programme team)",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "02031000-eeee-4000-8000-02031000eeee",
-                "destination_uuid": "02032000-0000-4000-8000-020320000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02032000-0000-4000-8000-020320000000",
-            "actions": [],
-            "router": {
-              "wait": {
-                "type": "msg"
-              },
-              "type": "switch",
-              "result_name": "activity_win_sim",
-              "operand": "@input.text",
-              "default_category_uuid": "02032001-cccc-4000-8000-02032001cccc",
-              "categories": [
-                {
-                  "uuid": "02032001-cccc-4000-8000-02032001cccc",
-                  "name": "Any",
-                  "exit_uuid": "02032001-eeee-4000-8000-02032001eeee"
-                }
-              ],
-              "cases": []
-            },
-            "exits": [
-              {
-                "uuid": "02032001-eeee-4000-8000-02032001eeee",
-                "destination_uuid": "02033000-0000-4000-8000-020330000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02033000-0000-4000-8000-020330000000",
-            "actions": [
-              {
-                "uuid": "02033000-aaaa-4000-8000-02033000aaaa",
-                "type": "send_msg",
-                "text": "*What was one challenge or difficulty you faced?*",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "02033000-eeee-4000-8000-02033000eeee",
-                "destination_uuid": "02034000-0000-4000-8000-020340000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02034000-0000-4000-8000-020340000000",
-            "actions": [],
-            "router": {
-              "wait": {
-                "type": "msg"
-              },
-              "type": "switch",
-              "result_name": "activity_challenge_sim",
-              "operand": "@input.text",
-              "default_category_uuid": "02034001-cccc-4000-8000-02034001cccc",
-              "categories": [
-                {
-                  "uuid": "02034001-cccc-4000-8000-02034001cccc",
-                  "name": "Any",
-                  "exit_uuid": "02034001-eeee-4000-8000-02034001eeee"
-                }
-              ],
-              "cases": []
-            },
-            "exits": [
-              {
-                "uuid": "02034001-eeee-4000-8000-02034001eeee",
-                "destination_uuid": "02036000-0000-4000-8000-020360000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02035000-0000-4000-8000-020350000000",
-            "actions": [
-              {
-                "uuid": "02035000-aaaa-4000-8000-02035000aaaa",
-                "type": "send_msg",
-                "text": "Please reply 1 (Yes) or 2 (No).",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "02035000-eeee-4000-8000-02035000eeee",
-                "destination_uuid": "02020000-0000-4000-8000-020200000000"
-              }
-            ]
-          },
-          {
-            "uuid": "02036000-0000-4000-8000-020360000000",
-            "actions": [
-              {
-                "uuid": "02036000-aaaa-4000-8000-02036000aaaa",
-                "type": "send_msg",
-                "text": "🎉 *Simulation Complete!*\n\nYou have experienced the full mPowerClub YF journey:\n\n✅ Onboarded as Youth Facilitator\n✅ Received orientation tips\n✅ Set up club: @contact.fields.club_name.value\n✅ Added a club member (simulated)\n✅ Recorded attendance\n✅ Submitted activity report\n\n📋 *Your keywords — use anytime:*\n• *addmember* — Add a new member\n• *attendance* — Record a session\n• *report* — Submit activity report\n\n[REAL] In live deployment you would also:\n📅 Receive session reminders from your CC\n📚 Get 8 tips over 4 weeks\n📊 Submit weekly summary reports\n🏆 Track your club's growth over time\n\nWelcome to mPowerClub, @contact.fields.full_name.value! 🌱\n\nSauramandala CMYC Programme",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "02036000-eeee-4000-8000-02036000eeee",
+                "uuid": "02009000-eeee-4000-8000-02009000eeee",
                 "destination_uuid": null
               }
             ]
@@ -1255,7 +1141,7 @@
               {
                 "uuid": "03001000-aaaa-4000-8000-03001000aaaa",
                 "type": "send_msg",
-                "text": "👥 *Register a Club Member*\n\n[REAL] In live deployment, you share the bot number with youth and they register themselves. This flow lets you register a member on their behalf — for example if they don't have WhatsApp.\n\n[SIMULATION] Registering a member for your club: @contact.fields.club_name.value\n\n*Member's full name?*",
+                "text": "👥 *Register a Club Member*\n\n[REAL] Youth with WhatsApp register themselves by sending *smjoin*. Use this flow for members who don't have WhatsApp, or to keep your own roster.\n\n[SIMULATION] Registering a member for your club: @contact.fields.club_name.value\n\n*Member's full name?*",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -1346,11 +1232,13 @@
             "actions": [
               {
                 "uuid": "03005000-aaaa-4000-8000-03005000aaaa",
-                "type": "send_msg",
-                "text": "*Member's gender?*\n\n1 - Female\n2 - Male\n3 - Prefer not to say",
-                "quick_replies": [],
+                "type": "send_interactive_msg",
+                "id": 9103005,
+                "name": "Member Gender",
+                "text": "{\"type\": \"quick_reply\", \"content\": {\"type\": \"text\", \"header\": \"Member Gender\", \"text\": \"Member's gender?\"}, \"options\": [{\"type\": \"text\", \"title\": \"Female\"}, {\"type\": \"text\", \"title\": \"Male\"}, {\"type\": \"text\", \"title\": \"Prefer not to say\"}]}",
                 "labels": [],
-                "attachments": []
+                "attachment_url": "",
+                "attachment_type": ""
               }
             ],
             "exits": [
@@ -1362,7 +1250,6 @@
           },
           {
             "uuid": "03006000-0000-4000-8000-030060000000",
-            "actions": [],
             "router": {
               "wait": {
                 "type": "msg"
@@ -1384,7 +1271,7 @@
                 },
                 {
                   "uuid": "03006003-cccc-4000-8000-03006003cccc",
-                  "name": "NotSay",
+                  "name": "Prefer not to say",
                   "exit_uuid": "03006003-eeee-4000-8000-03006003eeee"
                 },
                 {
@@ -1396,26 +1283,26 @@
               "cases": [
                 {
                   "uuid": "03006001-ca00-4000-8000-03006001ca00",
-                  "type": "has_any_word",
+                  "type": "has_only_phrase",
                   "category_uuid": "03006001-cccc-4000-8000-03006001cccc",
                   "arguments": [
-                    "1"
+                    "Female"
                   ]
                 },
                 {
                   "uuid": "03006002-ca00-4000-8000-03006002ca00",
-                  "type": "has_any_word",
+                  "type": "has_only_phrase",
                   "category_uuid": "03006002-cccc-4000-8000-03006002cccc",
                   "arguments": [
-                    "2"
+                    "Male"
                   ]
                 },
                 {
                   "uuid": "03006003-ca00-4000-8000-03006003ca00",
-                  "type": "has_any_word",
+                  "type": "has_only_phrase",
                   "category_uuid": "03006003-cccc-4000-8000-03006003cccc",
                   "arguments": [
-                    "3"
+                    "Prefer not to say"
                   ]
                 }
               ]
@@ -1435,20 +1322,23 @@
               },
               {
                 "uuid": "03006004-eeee-4000-8000-03006004eeee",
-                "destination_uuid": "03006000-0000-4000-8000-030060000000"
+                "destination_uuid": "03005000-0000-4000-8000-030050000000"
               }
-            ]
+            ],
+            "actions": []
           },
           {
             "uuid": "03007000-0000-4000-8000-030070000000",
             "actions": [
               {
                 "uuid": "03007000-aaaa-4000-8000-03007000aaaa",
-                "type": "send_msg",
-                "text": "*Do they have WhatsApp?*\n\n1 - Yes (they can message the bot directly)\n2 - No (YF registers on their behalf)",
-                "quick_replies": [],
+                "type": "send_interactive_msg",
+                "id": 9103007,
+                "name": "Member WhatsApp",
+                "text": "{\"type\": \"quick_reply\", \"content\": {\"type\": \"text\", \"header\": \"Does this member have WhatsApp?\", \"text\": \"Do they have WhatsApp? If yes, they can register themselves next time by sending *smjoin*.\"}, \"options\": [{\"type\": \"text\", \"title\": \"Yes\"}, {\"type\": \"text\", \"title\": \"No\"}]}",
                 "labels": [],
-                "attachments": []
+                "attachment_url": "",
+                "attachment_type": ""
               }
             ],
             "exits": [
@@ -1460,26 +1350,6 @@
           },
           {
             "uuid": "03008000-0000-4000-8000-030080000000",
-            "actions": [
-              {
-                "uuid": "03008000-aaaa-4000-8000-03008000aaaa",
-                "type": "send_msg",
-                "text": "Please reply 1 (Yes) or 2 (No).",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "03008000-eeee-4000-8000-03008000eeee",
-                "destination_uuid": "03009000-0000-4000-8000-030090000000"
-              }
-            ]
-          },
-          {
-            "uuid": "03009000-0000-4000-8000-030090000000",
-            "actions": [],
             "router": {
               "wait": {
                 "type": "msg"
@@ -1487,65 +1357,66 @@
               "type": "switch",
               "result_name": "member_has_whatsapp",
               "operand": "@input.text",
-              "default_category_uuid": "03009003-cccc-4000-8000-03009003cccc",
+              "default_category_uuid": "03008003-cccc-4000-8000-03008003cccc",
               "categories": [
                 {
-                  "uuid": "03009001-cccc-4000-8000-03009001cccc",
+                  "uuid": "03008001-cccc-4000-8000-03008001cccc",
                   "name": "Yes",
-                  "exit_uuid": "03009001-eeee-4000-8000-03009001eeee"
+                  "exit_uuid": "03008001-eeee-4000-8000-03008001eeee"
                 },
                 {
-                  "uuid": "03009002-cccc-4000-8000-03009002cccc",
+                  "uuid": "03008002-cccc-4000-8000-03008002cccc",
                   "name": "No",
-                  "exit_uuid": "03009002-eeee-4000-8000-03009002eeee"
+                  "exit_uuid": "03008002-eeee-4000-8000-03008002eeee"
                 },
                 {
-                  "uuid": "03009003-cccc-4000-8000-03009003cccc",
+                  "uuid": "03008003-cccc-4000-8000-03008003cccc",
                   "name": "Other",
-                  "exit_uuid": "03009003-eeee-4000-8000-03009003eeee"
+                  "exit_uuid": "03008003-eeee-4000-8000-03008003eeee"
                 }
               ],
               "cases": [
                 {
-                  "uuid": "03009001-ca00-4000-8000-03009001ca00",
-                  "type": "has_any_word",
-                  "category_uuid": "03009001-cccc-4000-8000-03009001cccc",
+                  "uuid": "03008001-ca00-4000-8000-03008001ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "03008001-cccc-4000-8000-03008001cccc",
                   "arguments": [
-                    "1"
+                    "Yes"
                   ]
                 },
                 {
-                  "uuid": "03009002-ca00-4000-8000-03009002ca00",
-                  "type": "has_any_word",
-                  "category_uuid": "03009002-cccc-4000-8000-03009002cccc",
+                  "uuid": "03008002-ca00-4000-8000-03008002ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "03008002-cccc-4000-8000-03008002cccc",
                   "arguments": [
-                    "2"
+                    "No"
                   ]
                 }
               ]
             },
             "exits": [
               {
-                "uuid": "03009001-eeee-4000-8000-03009001eeee",
-                "destination_uuid": "03010000-0000-4000-8000-030100000000"
+                "uuid": "03008001-eeee-4000-8000-03008001eeee",
+                "destination_uuid": "03009000-0000-4000-8000-030090000000"
               },
               {
-                "uuid": "03009002-eeee-4000-8000-03009002eeee",
-                "destination_uuid": "03010000-0000-4000-8000-030100000000"
+                "uuid": "03008002-eeee-4000-8000-03008002eeee",
+                "destination_uuid": "03009000-0000-4000-8000-030090000000"
               },
               {
-                "uuid": "03009003-eeee-4000-8000-03009003eeee",
-                "destination_uuid": "03008000-0000-4000-8000-030080000000"
+                "uuid": "03008003-eeee-4000-8000-03008003eeee",
+                "destination_uuid": "03007000-0000-4000-8000-030070000000"
               }
-            ]
+            ],
+            "actions": []
           },
           {
-            "uuid": "03010000-0000-4000-8000-030100000000",
+            "uuid": "03009000-0000-4000-8000-030090000000",
             "actions": [
               {
-                "uuid": "03010000-aaaa-4000-8000-03010000aaaa",
+                "uuid": "03009000-aaaa-4000-8000-03009000aaaa",
                 "type": "send_msg",
-                "text": "✅ *Member Registered!*\n\n👤 *Name:* @results.member_name\n🎂 *Age:* @results.member_age\n♀️ *Gender:* @results.member_gender\n📱 *WhatsApp:* @results.member_has_whatsapp\n🏆 *Club:* @contact.fields.club_name.value\n\n[REAL] This member is now added to your club record. If they have WhatsApp, they will receive a welcome message and can access the programme independently.\n\nSend *addmember* to register another member.",
+                "text": "✅ *Member Registered!*\n\n👤 *Name:* @results.member_name\n🎂 *Age:* @results.member_age\n♀️ *Gender:* @results.member_gender\n📱 *WhatsApp:* @results.member_has_whatsapp\n🏆 *Club:* @contact.fields.club_name.value\n\n[REAL] This member is now part of your club record. If they have WhatsApp, they'd be invited to join your club's WhatsApp group directly.\n\nSend *addmember* to register another member.",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -1553,7 +1424,7 @@
             ],
             "exits": [
               {
-                "uuid": "03010000-eeee-4000-8000-03010000eeee",
+                "uuid": "03009000-eeee-4000-8000-03009000eeee",
                 "destination_uuid": null
               }
             ]
@@ -1585,7 +1456,7 @@
               {
                 "uuid": "04001000-aaaa-4000-8000-04001000aaaa",
                 "type": "send_msg",
-                "text": "📋 *Record Session Attendance*\n\nClub: @contact.fields.club_name.value\nYF: @contact.fields.full_name.value\n\n[REAL] This goes to your Centre Coordinator and Sauramandala's monitoring dashboard in real time.\n\n*Which session is this?*\n(e.g. \"Session 1\", \"Week 3 meeting\", \"28 June session\")",
+                "text": "📋 *Record Session Attendance*\n\nClub: @contact.fields.club_name.value\nYF: @contact.fields.full_name.value\n\n[REAL] This goes to your Centre Coordinator in real time — a quick log, not a form to dread.\n\n*Which session is this?*\n(e.g. \"Session 1\", \"Week 3 meeting\")",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -1676,11 +1547,13 @@
             "actions": [
               {
                 "uuid": "04005000-aaaa-4000-8000-04005000aaaa",
-                "type": "send_msg",
-                "text": "*Any notable moments from this session?*\n\n(e.g. \"New member joined\", \"Discussion got heated but resolved well\", or type *skip* to skip)",
-                "quick_replies": [],
+                "type": "send_interactive_msg",
+                "id": 9104005,
+                "name": "Session Notable",
+                "text": "{\"type\": \"quick_reply\", \"content\": {\"type\": \"text\", \"header\": \"Anything notable?\", \"text\": \"Anything worth flagging from this session?\"}, \"options\": [{\"type\": \"text\", \"title\": \"New member joined\"}, {\"type\": \"text\", \"title\": \"Something came up\"}, {\"type\": \"text\", \"title\": \"All routine\"}]}",
                 "labels": [],
-                "attachments": []
+                "attachment_url": "",
+                "attachment_type": ""
               }
             ],
             "exits": [
@@ -1692,30 +1565,82 @@
           },
           {
             "uuid": "04006000-0000-4000-8000-040060000000",
-            "actions": [],
             "router": {
               "wait": {
                 "type": "msg"
               },
               "type": "switch",
-              "result_name": "attendance_notes",
+              "result_name": "attendance_flag",
               "operand": "@input.text",
-              "default_category_uuid": "04006001-cccc-4000-8000-04006001cccc",
+              "default_category_uuid": "04006004-cccc-4000-8000-04006004cccc",
               "categories": [
                 {
                   "uuid": "04006001-cccc-4000-8000-04006001cccc",
-                  "name": "Any",
+                  "name": "New member joined",
                   "exit_uuid": "04006001-eeee-4000-8000-04006001eeee"
+                },
+                {
+                  "uuid": "04006002-cccc-4000-8000-04006002cccc",
+                  "name": "Something came up",
+                  "exit_uuid": "04006002-eeee-4000-8000-04006002eeee"
+                },
+                {
+                  "uuid": "04006003-cccc-4000-8000-04006003cccc",
+                  "name": "All routine",
+                  "exit_uuid": "04006003-eeee-4000-8000-04006003eeee"
+                },
+                {
+                  "uuid": "04006004-cccc-4000-8000-04006004cccc",
+                  "name": "Other",
+                  "exit_uuid": "04006004-eeee-4000-8000-04006004eeee"
                 }
               ],
-              "cases": []
+              "cases": [
+                {
+                  "uuid": "04006001-ca00-4000-8000-04006001ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "04006001-cccc-4000-8000-04006001cccc",
+                  "arguments": [
+                    "New member joined"
+                  ]
+                },
+                {
+                  "uuid": "04006002-ca00-4000-8000-04006002ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "04006002-cccc-4000-8000-04006002cccc",
+                  "arguments": [
+                    "Something came up"
+                  ]
+                },
+                {
+                  "uuid": "04006003-ca00-4000-8000-04006003ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "04006003-cccc-4000-8000-04006003cccc",
+                  "arguments": [
+                    "All routine"
+                  ]
+                }
+              ]
             },
             "exits": [
               {
                 "uuid": "04006001-eeee-4000-8000-04006001eeee",
                 "destination_uuid": "04007000-0000-4000-8000-040070000000"
+              },
+              {
+                "uuid": "04006002-eeee-4000-8000-04006002eeee",
+                "destination_uuid": "04007000-0000-4000-8000-040070000000"
+              },
+              {
+                "uuid": "04006003-eeee-4000-8000-04006003eeee",
+                "destination_uuid": "04007000-0000-4000-8000-040070000000"
+              },
+              {
+                "uuid": "04006004-eeee-4000-8000-04006004eeee",
+                "destination_uuid": "04005000-0000-4000-8000-040050000000"
               }
-            ]
+            ],
+            "actions": []
           },
           {
             "uuid": "04007000-0000-4000-8000-040070000000",
@@ -1723,7 +1648,7 @@
               {
                 "uuid": "04007000-aaaa-4000-8000-04007000aaaa",
                 "type": "send_msg",
-                "text": "✅ *Attendance Recorded!*\n\n📋 *Session:* @results.session_desc\n👥 *Present:* @results.attendance_count\n📝 *Notes:* @results.attendance_notes\n🏆 *Club:* @contact.fields.club_name.value\n\n[REAL] Your CC has been notified. Keep up the consistency — regular attendance builds stronger clubs! 💪\n\nSend *report* to submit an activity report for this session.",
+                "text": "Tell us more in a line or two (or type *skip*):",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -1732,6 +1657,52 @@
             "exits": [
               {
                 "uuid": "04007000-eeee-4000-8000-04007000eeee",
+                "destination_uuid": "04008000-0000-4000-8000-040080000000"
+              }
+            ]
+          },
+          {
+            "uuid": "04008000-0000-4000-8000-040080000000",
+            "actions": [],
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "attendance_notes",
+              "operand": "@input.text",
+              "default_category_uuid": "04008001-cccc-4000-8000-04008001cccc",
+              "categories": [
+                {
+                  "uuid": "04008001-cccc-4000-8000-04008001cccc",
+                  "name": "Any",
+                  "exit_uuid": "04008001-eeee-4000-8000-04008001eeee"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "04008001-eeee-4000-8000-04008001eeee",
+                "destination_uuid": "04009000-0000-4000-8000-040090000000"
+              }
+            ]
+          },
+          {
+            "uuid": "04009000-0000-4000-8000-040090000000",
+            "actions": [
+              {
+                "uuid": "04009000-aaaa-4000-8000-04009000aaaa",
+                "type": "send_msg",
+                "text": "✅ *Attendance Recorded!*\n\n📋 *Session:* @results.session_desc\n👥 *Present:* @results.attendance_count\n🏷️ *Flag:* @results.attendance_flag\n📝 *Notes:* @results.attendance_notes\n🏆 *Club:* @contact.fields.club_name.value\n\nYour CC has been notified. Keep it up — regular attendance builds stronger clubs 💪\n\nWant a fresh activity? Send *clubideas*.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "04009000-eeee-4000-8000-04009000eeee",
                 "destination_uuid": null
               }
             ]
@@ -1763,7 +1734,7 @@
               {
                 "uuid": "05001000-aaaa-4000-8000-05001000aaaa",
                 "type": "send_msg",
-                "text": "📊 *Activity Report*\n\nClub: @contact.fields.club_name.value\nYF: @contact.fields.full_name.value\n\n[REAL] This report goes to Sauramandala's programme team. It helps them understand what is working, send you better resources, and support struggling clubs.\n\n*What activity did your club do?*\n\n1 - Icebreaker / introductions\n2 - Group discussion\n3 - Creative (art, drama, music)\n4 - Outdoor / physical\n5 - Community service / action",
+                "text": "📊 *Activity Report*\n\nClub: @contact.fields.club_name.value\nYF: @contact.fields.full_name.value\n\n[REAL] This helps the programme team see what's working on the ground and get you better ideas and resources — not just paperwork.\n\n*What activity did your club do?*\n\n1 - Icebreaker / introductions\n2 - Group discussion\n3 - Creative (art, drama, music)\n4 - Outdoor / physical\n5 - Community service / action\n6 - An idea from *clubideas*",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -1786,7 +1757,7 @@
               "type": "switch",
               "result_name": "report_activity",
               "operand": "@input.text",
-              "default_category_uuid": "05002006-cccc-4000-8000-05002006cccc",
+              "default_category_uuid": "05002007-cccc-4000-8000-05002007cccc",
               "categories": [
                 {
                   "uuid": "05002001-cccc-4000-8000-05002001cccc",
@@ -1815,8 +1786,13 @@
                 },
                 {
                   "uuid": "05002006-cccc-4000-8000-05002006cccc",
-                  "name": "Other",
+                  "name": "6",
                   "exit_uuid": "05002006-eeee-4000-8000-05002006eeee"
+                },
+                {
+                  "uuid": "05002007-cccc-4000-8000-05002007cccc",
+                  "name": "Other",
+                  "exit_uuid": "05002007-eeee-4000-8000-05002007eeee"
                 }
               ],
               "cases": [
@@ -1859,6 +1835,14 @@
                   "arguments": [
                     "5"
                   ]
+                },
+                {
+                  "uuid": "05002006-ca00-4000-8000-05002006ca00",
+                  "type": "has_any_word",
+                  "category_uuid": "05002006-cccc-4000-8000-05002006cccc",
+                  "arguments": [
+                    "6"
+                  ]
                 }
               ]
             },
@@ -1885,6 +1869,10 @@
               },
               {
                 "uuid": "05002006-eeee-4000-8000-05002006eeee",
+                "destination_uuid": "05003000-0000-4000-8000-050030000000"
+              },
+              {
+                "uuid": "05002007-eeee-4000-8000-05002007eeee",
                 "destination_uuid": "05002000-0000-4000-8000-050020000000"
               }
             ]
@@ -1918,20 +1906,106 @@
               "type": "switch",
               "result_name": "report_rating",
               "operand": "@input.text",
-              "default_category_uuid": "05004001-cccc-4000-8000-05004001cccc",
+              "default_category_uuid": "05004006-cccc-4000-8000-05004006cccc",
               "categories": [
                 {
                   "uuid": "05004001-cccc-4000-8000-05004001cccc",
-                  "name": "Any",
+                  "name": "1",
                   "exit_uuid": "05004001-eeee-4000-8000-05004001eeee"
+                },
+                {
+                  "uuid": "05004002-cccc-4000-8000-05004002cccc",
+                  "name": "2",
+                  "exit_uuid": "05004002-eeee-4000-8000-05004002eeee"
+                },
+                {
+                  "uuid": "05004003-cccc-4000-8000-05004003cccc",
+                  "name": "3",
+                  "exit_uuid": "05004003-eeee-4000-8000-05004003eeee"
+                },
+                {
+                  "uuid": "05004004-cccc-4000-8000-05004004cccc",
+                  "name": "4",
+                  "exit_uuid": "05004004-eeee-4000-8000-05004004eeee"
+                },
+                {
+                  "uuid": "05004005-cccc-4000-8000-05004005cccc",
+                  "name": "5",
+                  "exit_uuid": "05004005-eeee-4000-8000-05004005eeee"
+                },
+                {
+                  "uuid": "05004006-cccc-4000-8000-05004006cccc",
+                  "name": "Other",
+                  "exit_uuid": "05004006-eeee-4000-8000-05004006eeee"
                 }
               ],
-              "cases": []
+              "cases": [
+                {
+                  "uuid": "05004001-ca00-4000-8000-05004001ca00",
+                  "type": "has_any_word",
+                  "category_uuid": "05004001-cccc-4000-8000-05004001cccc",
+                  "arguments": [
+                    "1"
+                  ]
+                },
+                {
+                  "uuid": "05004002-ca00-4000-8000-05004002ca00",
+                  "type": "has_any_word",
+                  "category_uuid": "05004002-cccc-4000-8000-05004002cccc",
+                  "arguments": [
+                    "2"
+                  ]
+                },
+                {
+                  "uuid": "05004003-ca00-4000-8000-05004003ca00",
+                  "type": "has_any_word",
+                  "category_uuid": "05004003-cccc-4000-8000-05004003cccc",
+                  "arguments": [
+                    "3"
+                  ]
+                },
+                {
+                  "uuid": "05004004-ca00-4000-8000-05004004ca00",
+                  "type": "has_any_word",
+                  "category_uuid": "05004004-cccc-4000-8000-05004004cccc",
+                  "arguments": [
+                    "4"
+                  ]
+                },
+                {
+                  "uuid": "05004005-ca00-4000-8000-05004005ca00",
+                  "type": "has_any_word",
+                  "category_uuid": "05004005-cccc-4000-8000-05004005cccc",
+                  "arguments": [
+                    "5"
+                  ]
+                }
+              ]
             },
             "exits": [
               {
                 "uuid": "05004001-eeee-4000-8000-05004001eeee",
                 "destination_uuid": "05005000-0000-4000-8000-050050000000"
+              },
+              {
+                "uuid": "05004002-eeee-4000-8000-05004002eeee",
+                "destination_uuid": "05005000-0000-4000-8000-050050000000"
+              },
+              {
+                "uuid": "05004003-eeee-4000-8000-05004003eeee",
+                "destination_uuid": "05005000-0000-4000-8000-050050000000"
+              },
+              {
+                "uuid": "05004004-eeee-4000-8000-05004004eeee",
+                "destination_uuid": "05005000-0000-4000-8000-050050000000"
+              },
+              {
+                "uuid": "05004005-eeee-4000-8000-05004005eeee",
+                "destination_uuid": "05005000-0000-4000-8000-050050000000"
+              },
+              {
+                "uuid": "05004006-eeee-4000-8000-05004006eeee",
+                "destination_uuid": "05004000-0000-4000-8000-050040000000"
               }
             ]
           },
@@ -1941,7 +2015,7 @@
               {
                 "uuid": "05005000-aaaa-4000-8000-05005000aaaa",
                 "type": "send_msg",
-                "text": "*What was one thing that worked well?*\n\n(This goes directly to your programme team — be honest and specific)",
+                "text": "*What was one thing that worked well?*\n\n(Be honest and specific — it goes to the programme team)",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -1987,7 +2061,7 @@
               {
                 "uuid": "05007000-aaaa-4000-8000-05007000aaaa",
                 "type": "send_msg",
-                "text": "*What was one challenge or difficulty?*\n\n(e.g. \"Low turnout\", \"Topic was too complex\", \"Venue issue\")",
+                "text": "*What was one challenge or difficulty?*\n(e.g. \"Low turnout\", \"Topic was too complex\")",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -2033,7 +2107,7 @@
               {
                 "uuid": "05009000-aaaa-4000-8000-05009000aaaa",
                 "type": "send_msg",
-                "text": "*Do you need any support from your Centre Coordinator?*\n\n1 - Yes, please contact me\n2 - No, all good",
+                "text": "📸 *Got a link or photo from this session?*\n\nPaste a link to a reel/post you made, or send a photo now. Type *skip* if you don't have one.\n\n[REAL] These get shared (with consent) to show other clubs what's possible.",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -2054,57 +2128,22 @@
                 "type": "msg"
               },
               "type": "switch",
-              "result_name": "report_support_needed",
+              "result_name": "report_media",
               "operand": "@input.text",
-              "default_category_uuid": "05010003-cccc-4000-8000-05010003cccc",
+              "default_category_uuid": "05010001-cccc-4000-8000-05010001cccc",
               "categories": [
                 {
                   "uuid": "05010001-cccc-4000-8000-05010001cccc",
-                  "name": "Yes",
+                  "name": "Any",
                   "exit_uuid": "05010001-eeee-4000-8000-05010001eeee"
-                },
-                {
-                  "uuid": "05010002-cccc-4000-8000-05010002cccc",
-                  "name": "No",
-                  "exit_uuid": "05010002-eeee-4000-8000-05010002eeee"
-                },
-                {
-                  "uuid": "05010003-cccc-4000-8000-05010003cccc",
-                  "name": "Other",
-                  "exit_uuid": "05010003-eeee-4000-8000-05010003eeee"
                 }
               ],
-              "cases": [
-                {
-                  "uuid": "05010001-ca00-4000-8000-05010001ca00",
-                  "type": "has_any_word",
-                  "category_uuid": "05010001-cccc-4000-8000-05010001cccc",
-                  "arguments": [
-                    "1"
-                  ]
-                },
-                {
-                  "uuid": "05010002-ca00-4000-8000-05010002ca00",
-                  "type": "has_any_word",
-                  "category_uuid": "05010002-cccc-4000-8000-05010002cccc",
-                  "arguments": [
-                    "2"
-                  ]
-                }
-              ]
+              "cases": []
             },
             "exits": [
               {
                 "uuid": "05010001-eeee-4000-8000-05010001eeee",
                 "destination_uuid": "05011000-0000-4000-8000-050110000000"
-              },
-              {
-                "uuid": "05010002-eeee-4000-8000-05010002eeee",
-                "destination_uuid": "05011000-0000-4000-8000-050110000000"
-              },
-              {
-                "uuid": "05010003-eeee-4000-8000-05010003eeee",
-                "destination_uuid": "05010000-0000-4000-8000-050100000000"
               }
             ]
           },
@@ -2113,8 +2152,91 @@
             "actions": [
               {
                 "uuid": "05011000-aaaa-4000-8000-05011000aaaa",
+                "type": "send_interactive_msg",
+                "id": 9105011,
+                "name": "Support Needed",
+                "text": "{\"type\": \"quick_reply\", \"content\": {\"type\": \"text\", \"header\": \"Need support?\", \"text\": \"Do you need any support from your Centre Coordinator?\"}, \"options\": [{\"type\": \"text\", \"title\": \"Yes, contact me\"}, {\"type\": \"text\", \"title\": \"No, all good\"}]}",
+                "labels": [],
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "05011000-eeee-4000-8000-05011000eeee",
+                "destination_uuid": "05012000-0000-4000-8000-050120000000"
+              }
+            ]
+          },
+          {
+            "uuid": "05012000-0000-4000-8000-050120000000",
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "report_support_needed",
+              "operand": "@input.text",
+              "default_category_uuid": "05012003-cccc-4000-8000-05012003cccc",
+              "categories": [
+                {
+                  "uuid": "05012001-cccc-4000-8000-05012001cccc",
+                  "name": "Yes, contact me",
+                  "exit_uuid": "05012001-eeee-4000-8000-05012001eeee"
+                },
+                {
+                  "uuid": "05012002-cccc-4000-8000-05012002cccc",
+                  "name": "No, all good",
+                  "exit_uuid": "05012002-eeee-4000-8000-05012002eeee"
+                },
+                {
+                  "uuid": "05012003-cccc-4000-8000-05012003cccc",
+                  "name": "Other",
+                  "exit_uuid": "05012003-eeee-4000-8000-05012003eeee"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "05012001-ca00-4000-8000-05012001ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "05012001-cccc-4000-8000-05012001cccc",
+                  "arguments": [
+                    "Yes, contact me"
+                  ]
+                },
+                {
+                  "uuid": "05012002-ca00-4000-8000-05012002ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "05012002-cccc-4000-8000-05012002cccc",
+                  "arguments": [
+                    "No, all good"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "05012001-eeee-4000-8000-05012001eeee",
+                "destination_uuid": "05013000-0000-4000-8000-050130000000"
+              },
+              {
+                "uuid": "05012002-eeee-4000-8000-05012002eeee",
+                "destination_uuid": "05013000-0000-4000-8000-050130000000"
+              },
+              {
+                "uuid": "05012003-eeee-4000-8000-05012003eeee",
+                "destination_uuid": "05011000-0000-4000-8000-050110000000"
+              }
+            ],
+            "actions": []
+          },
+          {
+            "uuid": "05013000-0000-4000-8000-050130000000",
+            "actions": [
+              {
+                "uuid": "05013000-aaaa-4000-8000-05013000aaaa",
                 "type": "send_msg",
-                "text": "✅ *Report Submitted!*\n\n📊 *Activity:* @results.report_activity\n⭐ *Rating:* @results.report_rating\n💚 *What worked:* @results.report_win\n⚠️ *Challenge:* @results.report_challenge\n🆘 *Support needed:* @results.report_support_needed\n\n[REAL] Your CC and the programme team have received this. If you requested support, expect a call within 24 hours.\n\nKeep going — you are building something important. 🌱",
+                "text": "✅ *Report Submitted!*\n\n📊 *Activity:* @results.report_activity\n⭐ *Rating:* @results.report_rating\n💚 *What worked:* @results.report_win\n⚠️ *Challenge:* @results.report_challenge\n📸 *Link/photo:* @results.report_media\n🆘 *Support needed:* @results.report_support_needed\n\n[REAL] Your CC and the programme team have this now. If you asked for support, expect a call within 24 hours.\n\nKeep going — you're building something real. 🌱",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -2122,7 +2244,1454 @@
             ],
             "exits": [
               {
-                "uuid": "05011000-eeee-4000-8000-05011000eeee",
+                "uuid": "05013000-eeee-4000-8000-05013000eeee",
+                "destination_uuid": null
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "keywords": [],
+      "definition": {
+        "uuid": "f6f6f6f6-f6f6-4f6f-8f6f-f6f6f6f6f6f6",
+        "name": "mPowerClub Form Club",
+        "type": "messaging",
+        "spec_version": "14.3.0",
+        "language": "base",
+        "expire_after_minutes": 10080,
+        "localization": {},
+        "_ui": {
+          "nodes": {},
+          "stickies": {}
+        },
+        "vars": [],
+        "nodes": [
+          {
+            "uuid": "06001000-0000-4000-8000-060010000000",
+            "actions": [
+              {
+                "uuid": "06001000-aaaa-4000-8000-06001000aaaa",
+                "type": "send_msg",
+                "text": "🏗️ *Let's form your mPowerClub!*\n\n[REAL] Club formation means bringing 8–15 young people together from your community, holding a first meeting, and choosing a name and focus together. It's real, in-person work — this flow just helps you register what you've built so Sauramandala can support it.\n\nFirst — every mPowerClub has a theme that shapes the kind of activities it runs. What fits your group best?",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "06001000-eeee-4000-8000-06001000eeee",
+                "destination_uuid": "06002000-0000-4000-8000-060020000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06002000-0000-4000-8000-060020000000",
+            "actions": [
+              {
+                "uuid": "06002000-aaaa-4000-8000-06002000aaaa",
+                "type": "send_interactive_msg",
+                "id": 9106002,
+                "name": "Club Theme",
+                "text": "{\"type\": \"quick_reply\", \"content\": {\"type\": \"text\", \"header\": \"Club Theme\", \"text\": \"Pick your club's theme:\"}, \"options\": [{\"type\": \"text\", \"title\": \"Arts & Culture\"}, {\"type\": \"text\", \"title\": \"Sports & Wellness\"}, {\"type\": \"text\", \"title\": \"Community Action\"}]}",
+                "labels": [],
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "06002000-eeee-4000-8000-06002000eeee",
+                "destination_uuid": "06003000-0000-4000-8000-060030000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06003000-0000-4000-8000-060030000000",
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "club_theme_choice",
+              "operand": "@input.text",
+              "default_category_uuid": "06003004-cccc-4000-8000-06003004cccc",
+              "categories": [
+                {
+                  "uuid": "06003001-cccc-4000-8000-06003001cccc",
+                  "name": "Arts & Culture",
+                  "exit_uuid": "06003001-eeee-4000-8000-06003001eeee"
+                },
+                {
+                  "uuid": "06003002-cccc-4000-8000-06003002cccc",
+                  "name": "Sports & Wellness",
+                  "exit_uuid": "06003002-eeee-4000-8000-06003002eeee"
+                },
+                {
+                  "uuid": "06003003-cccc-4000-8000-06003003cccc",
+                  "name": "Community Action",
+                  "exit_uuid": "06003003-eeee-4000-8000-06003003eeee"
+                },
+                {
+                  "uuid": "06003004-cccc-4000-8000-06003004cccc",
+                  "name": "Other",
+                  "exit_uuid": "06003004-eeee-4000-8000-06003004eeee"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "06003001-ca00-4000-8000-06003001ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "06003001-cccc-4000-8000-06003001cccc",
+                  "arguments": [
+                    "Arts & Culture"
+                  ]
+                },
+                {
+                  "uuid": "06003002-ca00-4000-8000-06003002ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "06003002-cccc-4000-8000-06003002cccc",
+                  "arguments": [
+                    "Sports & Wellness"
+                  ]
+                },
+                {
+                  "uuid": "06003003-ca00-4000-8000-06003003ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "06003003-cccc-4000-8000-06003003cccc",
+                  "arguments": [
+                    "Community Action"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "06003001-eeee-4000-8000-06003001eeee",
+                "destination_uuid": "06004000-0000-4000-8000-060040000000"
+              },
+              {
+                "uuid": "06003002-eeee-4000-8000-06003002eeee",
+                "destination_uuid": "06004000-0000-4000-8000-060040000000"
+              },
+              {
+                "uuid": "06003003-eeee-4000-8000-06003003eeee",
+                "destination_uuid": "06004000-0000-4000-8000-060040000000"
+              },
+              {
+                "uuid": "06003004-eeee-4000-8000-06003004eeee",
+                "destination_uuid": "06002000-0000-4000-8000-060020000000"
+              }
+            ],
+            "actions": []
+          },
+          {
+            "uuid": "06004000-0000-4000-8000-060040000000",
+            "actions": [
+              {
+                "uuid": "06004000-aaaa-4000-8000-06004000aaaa",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "club_theme",
+                  "name": "club_theme"
+                },
+                "value": "@results.club_theme_choice"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "06004000-eeee-4000-8000-06004000eeee",
+                "destination_uuid": "06005000-0000-4000-8000-060050000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06005000-0000-4000-8000-060050000000",
+            "actions": [
+              {
+                "uuid": "06005000-aaaa-4000-8000-06005000aaaa",
+                "type": "send_msg",
+                "text": "*What will you name your club?*\n(e.g. \"Rising Stars Club\", \"Green Valley Youth\")",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "06005000-eeee-4000-8000-06005000eeee",
+                "destination_uuid": "06006000-0000-4000-8000-060060000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06006000-0000-4000-8000-060060000000",
+            "actions": [],
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "club_name",
+              "operand": "@input.text",
+              "default_category_uuid": "06006001-cccc-4000-8000-06006001cccc",
+              "categories": [
+                {
+                  "uuid": "06006001-cccc-4000-8000-06006001cccc",
+                  "name": "Any",
+                  "exit_uuid": "06006001-eeee-4000-8000-06006001eeee"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "06006001-eeee-4000-8000-06006001eeee",
+                "destination_uuid": "06007000-0000-4000-8000-060070000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06007000-0000-4000-8000-060070000000",
+            "actions": [
+              {
+                "uuid": "06007000-aaaa-4000-8000-06007000aaaa",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "club_name",
+                  "name": "club_name"
+                },
+                "value": "@results.club_name"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "06007000-eeee-4000-8000-06007000eeee",
+                "destination_uuid": "06008000-0000-4000-8000-060080000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06008000-0000-4000-8000-060080000000",
+            "actions": [
+              {
+                "uuid": "06008000-aaaa-4000-8000-06008000aaaa",
+                "type": "send_msg",
+                "text": "*Which community or area is this club based in?*\n(e.g. \"Mawphlang village\", \"Nongkynmaw\")",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "06008000-eeee-4000-8000-06008000eeee",
+                "destination_uuid": "06009000-0000-4000-8000-060090000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06009000-0000-4000-8000-060090000000",
+            "actions": [],
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "club_area_input",
+              "operand": "@input.text",
+              "default_category_uuid": "06009001-cccc-4000-8000-06009001cccc",
+              "categories": [
+                {
+                  "uuid": "06009001-cccc-4000-8000-06009001cccc",
+                  "name": "Any",
+                  "exit_uuid": "06009001-eeee-4000-8000-06009001eeee"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "06009001-eeee-4000-8000-06009001eeee",
+                "destination_uuid": "06010000-0000-4000-8000-060100000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06010000-0000-4000-8000-060100000000",
+            "actions": [
+              {
+                "uuid": "06010000-aaaa-4000-8000-06010000aaaa",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "club_area",
+                  "name": "club_area"
+                },
+                "value": "@results.club_area_input"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "06010000-eeee-4000-8000-06010000eeee",
+                "destination_uuid": "06011000-0000-4000-8000-060110000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06011000-0000-4000-8000-060110000000",
+            "actions": [
+              {
+                "uuid": "06011000-aaaa-4000-8000-06011000aaaa",
+                "type": "send_interactive_msg",
+                "id": 9106011,
+                "name": "Club Size",
+                "text": "{\"type\": \"quick_reply\", \"content\": {\"type\": \"text\", \"header\": \"How big is your club?\", \"text\": \"Roughly how many young people are involved so far?\"}, \"options\": [{\"type\": \"text\", \"title\": \"1–8\"}, {\"type\": \"text\", \"title\": \"9–15\"}, {\"type\": \"text\", \"title\": \"16+\"}]}",
+                "labels": [],
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "06011000-eeee-4000-8000-06011000eeee",
+                "destination_uuid": "06012000-0000-4000-8000-060120000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06012000-0000-4000-8000-060120000000",
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "club_size_choice",
+              "operand": "@input.text",
+              "default_category_uuid": "06012004-cccc-4000-8000-06012004cccc",
+              "categories": [
+                {
+                  "uuid": "06012001-cccc-4000-8000-06012001cccc",
+                  "name": "1–8",
+                  "exit_uuid": "06012001-eeee-4000-8000-06012001eeee"
+                },
+                {
+                  "uuid": "06012002-cccc-4000-8000-06012002cccc",
+                  "name": "9–15",
+                  "exit_uuid": "06012002-eeee-4000-8000-06012002eeee"
+                },
+                {
+                  "uuid": "06012003-cccc-4000-8000-06012003cccc",
+                  "name": "16+",
+                  "exit_uuid": "06012003-eeee-4000-8000-06012003eeee"
+                },
+                {
+                  "uuid": "06012004-cccc-4000-8000-06012004cccc",
+                  "name": "Other",
+                  "exit_uuid": "06012004-eeee-4000-8000-06012004eeee"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "06012001-ca00-4000-8000-06012001ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "06012001-cccc-4000-8000-06012001cccc",
+                  "arguments": [
+                    "1–8"
+                  ]
+                },
+                {
+                  "uuid": "06012002-ca00-4000-8000-06012002ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "06012002-cccc-4000-8000-06012002cccc",
+                  "arguments": [
+                    "9–15"
+                  ]
+                },
+                {
+                  "uuid": "06012003-ca00-4000-8000-06012003ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "06012003-cccc-4000-8000-06012003cccc",
+                  "arguments": [
+                    "16+"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "06012001-eeee-4000-8000-06012001eeee",
+                "destination_uuid": "06013000-0000-4000-8000-060130000000"
+              },
+              {
+                "uuid": "06012002-eeee-4000-8000-06012002eeee",
+                "destination_uuid": "06013000-0000-4000-8000-060130000000"
+              },
+              {
+                "uuid": "06012003-eeee-4000-8000-06012003eeee",
+                "destination_uuid": "06013000-0000-4000-8000-060130000000"
+              },
+              {
+                "uuid": "06012004-eeee-4000-8000-06012004eeee",
+                "destination_uuid": "06011000-0000-4000-8000-060110000000"
+              }
+            ],
+            "actions": []
+          },
+          {
+            "uuid": "06013000-0000-4000-8000-060130000000",
+            "actions": [
+              {
+                "uuid": "06013000-aaaa-4000-8000-06013000aaaa",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "club_size",
+                  "name": "club_size"
+                },
+                "value": "@results.club_size_choice"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "06013000-eeee-4000-8000-06013000eeee",
+                "destination_uuid": "06014000-0000-4000-8000-060140000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06014000-0000-4000-8000-060140000000",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "operand": "@contact.fields.club_theme.value",
+              "default_category_uuid": "06014004-cccc-4000-8000-06014004cccc",
+              "categories": [
+                {
+                  "uuid": "06014001-cccc-4000-8000-06014001cccc",
+                  "name": "Arts",
+                  "exit_uuid": "06014001-eeee-4000-8000-06014001eeee"
+                },
+                {
+                  "uuid": "06014002-cccc-4000-8000-06014002cccc",
+                  "name": "Sports",
+                  "exit_uuid": "06014002-eeee-4000-8000-06014002eeee"
+                },
+                {
+                  "uuid": "06014003-cccc-4000-8000-06014003cccc",
+                  "name": "Community",
+                  "exit_uuid": "06014003-eeee-4000-8000-06014003eeee"
+                },
+                {
+                  "uuid": "06014004-cccc-4000-8000-06014004cccc",
+                  "name": "Other",
+                  "exit_uuid": "06014004-eeee-4000-8000-06014004eeee"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "06014001-ca00-4000-8000-06014001ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "06014001-cccc-4000-8000-06014001cccc",
+                  "arguments": [
+                    "Arts & Culture"
+                  ]
+                },
+                {
+                  "uuid": "06014002-ca00-4000-8000-06014002ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "06014002-cccc-4000-8000-06014002cccc",
+                  "arguments": [
+                    "Sports & Wellness"
+                  ]
+                },
+                {
+                  "uuid": "06014003-ca00-4000-8000-06014003ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "06014003-cccc-4000-8000-06014003cccc",
+                  "arguments": [
+                    "Community Action"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "06014001-eeee-4000-8000-06014001eeee",
+                "destination_uuid": "06015000-0000-4000-8000-060150000000"
+              },
+              {
+                "uuid": "06014002-eeee-4000-8000-06014002eeee",
+                "destination_uuid": "06016000-0000-4000-8000-060160000000"
+              },
+              {
+                "uuid": "06014003-eeee-4000-8000-06014003eeee",
+                "destination_uuid": "06017000-0000-4000-8000-060170000000"
+              },
+              {
+                "uuid": "06014004-eeee-4000-8000-06014004eeee",
+                "destination_uuid": "06015000-0000-4000-8000-060150000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06015000-0000-4000-8000-060150000000",
+            "actions": [
+              {
+                "uuid": "06015000-aaaa-4000-8000-06015000aaaa",
+                "type": "send_msg",
+                "text": "🎨 *First Session Kit — Arts & Culture*\n\nTry this for your first meeting: each member brings one object that represents \"home\" (a photo, a small item, even a drawing) and tells its story in 2 minutes. Close by picking your first group project — a mural, a short skit, or a photo series.\n\n⏭️ Continuing your orientation...",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "06015000-eeee-4000-8000-06015000eeee",
+                "destination_uuid": "06018000-0000-4000-8000-060180000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06016000-0000-4000-8000-060160000000",
+            "actions": [
+              {
+                "uuid": "06016000-aaaa-4000-8000-06016000aaaa",
+                "type": "send_msg",
+                "text": "🏃 *First Session Kit — Sports & Wellness*\n\nTry this for your first meeting: a simple team game everyone can play regardless of skill (tag variants work well), followed by a group check-in — one word for how everyone's feeling. Close by agreeing on a regular practice day and time.\n\n⏭️ Continuing your orientation...",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "06016000-eeee-4000-8000-06016000eeee",
+                "destination_uuid": "06018000-0000-4000-8000-060180000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06017000-0000-4000-8000-060170000000",
+            "actions": [
+              {
+                "uuid": "06017000-aaaa-4000-8000-06017000aaaa",
+                "type": "send_msg",
+                "text": "🤝 *First Session Kit — Community Action*\n\nTry this for your first meeting: map one real problem in your area everyone cares about (water, waste, safety — anything), and brainstorm one small action the club could take in the next month. Close by picking who does what.\n\n⏭️ Continuing your orientation...",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "06017000-eeee-4000-8000-06017000eeee",
+                "destination_uuid": "06018000-0000-4000-8000-060180000000"
+              }
+            ]
+          },
+          {
+            "uuid": "06018000-0000-4000-8000-060180000000",
+            "actions": [
+              {
+                "uuid": "06018000-aaaa-4000-8000-06018000aaaa",
+                "type": "send_msg",
+                "text": "✅ *Club Registered!*\n\n🏆 *Name:* @contact.fields.club_name.value\n🎨 *Theme:* @contact.fields.club_theme.value\n📍 *Area:* @contact.fields.club_area.value\n👥 *Size:* @contact.fields.club_size.value\n🧑‍🏫 *YF:* @contact.fields.full_name.value\n\n[REAL] Your Centre Coordinator would now set up a WhatsApp group for your club's members, so you can broadcast ideas straight to them via *clubideas*. Until that group exists, *clubideas* sends suggestions to you directly.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "06018000-eeee-4000-8000-06018000eeee",
+                "destination_uuid": null
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "keywords": [
+        "clubideas"
+      ],
+      "definition": {
+        "uuid": "f7f7f7f7-f7f7-4f7f-8f7f-f7f7f7f7f7f7",
+        "name": "mPowerClub Club Ideas",
+        "type": "messaging",
+        "spec_version": "14.3.0",
+        "language": "base",
+        "expire_after_minutes": 10080,
+        "localization": {},
+        "_ui": {
+          "nodes": {},
+          "stickies": {}
+        },
+        "vars": [],
+        "nodes": [
+          {
+            "uuid": "07001000-0000-4000-8000-070010000000",
+            "actions": [
+              {
+                "uuid": "07001000-aaaa-4000-8000-07001000aaaa",
+                "type": "send_msg",
+                "text": "💡 *Club Ideas*\n\n[REAL] Ideally your CC pushes ideas straight to your club's WhatsApp group. Since your club's group isn't set up yet, this comes to you directly — pass it on to your members however works for your club.\n\nFinding an idea for: @contact.fields.club_name.value (@contact.fields.club_theme.value)",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07001000-eeee-4000-8000-07001000eeee",
+                "destination_uuid": "07002000-0000-4000-8000-070020000000"
+              }
+            ]
+          },
+          {
+            "uuid": "07002000-0000-4000-8000-070020000000",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "operand": "@contact.fields.club_theme.value",
+              "default_category_uuid": "07002004-cccc-4000-8000-07002004cccc",
+              "categories": [
+                {
+                  "uuid": "07002001-cccc-4000-8000-07002001cccc",
+                  "name": "Arts",
+                  "exit_uuid": "07002001-eeee-4000-8000-07002001eeee"
+                },
+                {
+                  "uuid": "07002002-cccc-4000-8000-07002002cccc",
+                  "name": "Sports",
+                  "exit_uuid": "07002002-eeee-4000-8000-07002002eeee"
+                },
+                {
+                  "uuid": "07002003-cccc-4000-8000-07002003cccc",
+                  "name": "Community",
+                  "exit_uuid": "07002003-eeee-4000-8000-07002003eeee"
+                },
+                {
+                  "uuid": "07002004-cccc-4000-8000-07002004cccc",
+                  "name": "Other",
+                  "exit_uuid": "07002004-eeee-4000-8000-07002004eeee"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "07002001-ca00-4000-8000-07002001ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07002001-cccc-4000-8000-07002001cccc",
+                  "arguments": [
+                    "Arts & Culture"
+                  ]
+                },
+                {
+                  "uuid": "07002002-ca00-4000-8000-07002002ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07002002-cccc-4000-8000-07002002cccc",
+                  "arguments": [
+                    "Sports & Wellness"
+                  ]
+                },
+                {
+                  "uuid": "07002003-ca00-4000-8000-07002003ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07002003-cccc-4000-8000-07002003cccc",
+                  "arguments": [
+                    "Community Action"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "07002001-eeee-4000-8000-07002001eeee",
+                "destination_uuid": "07010000-0000-4000-8000-070100000000"
+              },
+              {
+                "uuid": "07002002-eeee-4000-8000-07002002eeee",
+                "destination_uuid": "07020000-0000-4000-8000-070200000000"
+              },
+              {
+                "uuid": "07002003-eeee-4000-8000-07002003eeee",
+                "destination_uuid": "07030000-0000-4000-8000-070300000000"
+              },
+              {
+                "uuid": "07002004-eeee-4000-8000-07002004eeee",
+                "destination_uuid": "07030000-0000-4000-8000-070300000000"
+              }
+            ]
+          },
+          {
+            "uuid": "07010000-0000-4000-8000-070100000000",
+            "actions": [
+              {
+                "uuid": "07010000-aaaa-4000-8000-07010000aaaa",
+                "type": "send_msg",
+                "text": "🎯 *Idea: A 2-minute story circle*\n\nEach member tells a 2-minute true story about a moment that changed them. No feedback, just listening. End by asking: what's one story worth turning into a skit?",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07010000-eeee-4000-8000-07010000eeee",
+                "destination_uuid": "07011000-0000-4000-8000-070110000000"
+              }
+            ]
+          },
+          {
+            "uuid": "07011000-0000-4000-8000-070110000000",
+            "actions": [
+              {
+                "uuid": "07011000-aaaa-4000-8000-07011000aaaa",
+                "type": "send_interactive_msg",
+                "id": 9107011,
+                "name": "Idea Action 10",
+                "text": "{\"type\": \"quick_reply\", \"content\": {\"type\": \"text\", \"header\": \"What now?\", \"text\": \"What would you like to do?\"}, \"options\": [{\"type\": \"text\", \"title\": \"Try this idea\"}, {\"type\": \"text\", \"title\": \"See another idea\"}, {\"type\": \"text\", \"title\": \"Skip for now\"}]}",
+                "labels": [],
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07011000-eeee-4000-8000-07011000eeee",
+                "destination_uuid": "07012000-0000-4000-8000-070120000000"
+              }
+            ]
+          },
+          {
+            "uuid": "07012000-0000-4000-8000-070120000000",
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "idea_action",
+              "operand": "@input.text",
+              "default_category_uuid": "07012004-cccc-4000-8000-07012004cccc",
+              "categories": [
+                {
+                  "uuid": "07012001-cccc-4000-8000-07012001cccc",
+                  "name": "Try this idea",
+                  "exit_uuid": "07012001-eeee-4000-8000-07012001eeee"
+                },
+                {
+                  "uuid": "07012002-cccc-4000-8000-07012002cccc",
+                  "name": "See another idea",
+                  "exit_uuid": "07012002-eeee-4000-8000-07012002eeee"
+                },
+                {
+                  "uuid": "07012003-cccc-4000-8000-07012003cccc",
+                  "name": "Skip for now",
+                  "exit_uuid": "07012003-eeee-4000-8000-07012003eeee"
+                },
+                {
+                  "uuid": "07012004-cccc-4000-8000-07012004cccc",
+                  "name": "Other",
+                  "exit_uuid": "07012004-eeee-4000-8000-07012004eeee"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "07012001-ca00-4000-8000-07012001ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07012001-cccc-4000-8000-07012001cccc",
+                  "arguments": [
+                    "Try this idea"
+                  ]
+                },
+                {
+                  "uuid": "07012002-ca00-4000-8000-07012002ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07012002-cccc-4000-8000-07012002cccc",
+                  "arguments": [
+                    "See another idea"
+                  ]
+                },
+                {
+                  "uuid": "07012003-ca00-4000-8000-07012003ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07012003-cccc-4000-8000-07012003cccc",
+                  "arguments": [
+                    "Skip for now"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "07012001-eeee-4000-8000-07012001eeee",
+                "destination_uuid": "07019000-0000-4000-8000-070190000000"
+              },
+              {
+                "uuid": "07012002-eeee-4000-8000-07012002eeee",
+                "destination_uuid": "07013000-0000-4000-8000-070130000000"
+              },
+              {
+                "uuid": "07012003-eeee-4000-8000-07012003eeee",
+                "destination_uuid": "07019000-0000-4000-8000-070190000000"
+              },
+              {
+                "uuid": "07012004-eeee-4000-8000-07012004eeee",
+                "destination_uuid": "07011000-0000-4000-8000-070110000000"
+              }
+            ],
+            "actions": []
+          },
+          {
+            "uuid": "07013000-0000-4000-8000-070130000000",
+            "actions": [
+              {
+                "uuid": "07013000-aaaa-4000-8000-07013000aaaa",
+                "type": "send_msg",
+                "text": "🎯 *Idea: Found-object photo challenge*\n\nEveryone photographs one object in their home/neighbourhood that tells a story about your community. Share and discuss as a group next session.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07013000-eeee-4000-8000-07013000eeee",
+                "destination_uuid": "07014000-0000-4000-8000-070140000000"
+              }
+            ]
+          },
+          {
+            "uuid": "07014000-0000-4000-8000-070140000000",
+            "actions": [
+              {
+                "uuid": "07014000-aaaa-4000-8000-07014000aaaa",
+                "type": "send_interactive_msg",
+                "id": 9107014,
+                "name": "Idea Action 10b",
+                "text": "{\"type\": \"quick_reply\", \"content\": {\"type\": \"text\", \"header\": \"What now?\", \"text\": \"What would you like to do?\"}, \"options\": [{\"type\": \"text\", \"title\": \"Try this idea\"}, {\"type\": \"text\", \"title\": \"Skip for now\"}, {\"type\": \"text\", \"title\": \"Skip for now\"}]}",
+                "labels": [],
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07014000-eeee-4000-8000-07014000eeee",
+                "destination_uuid": "07015000-0000-4000-8000-070150000000"
+              }
+            ]
+          },
+          {
+            "uuid": "07015000-0000-4000-8000-070150000000",
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "idea_action_2",
+              "operand": "@input.text",
+              "default_category_uuid": "07015004-cccc-4000-8000-07015004cccc",
+              "categories": [
+                {
+                  "uuid": "07015001-cccc-4000-8000-07015001cccc",
+                  "name": "Try this idea",
+                  "exit_uuid": "07015001-eeee-4000-8000-07015001eeee"
+                },
+                {
+                  "uuid": "07015002-cccc-4000-8000-07015002cccc",
+                  "name": "Skip for now",
+                  "exit_uuid": "07015002-eeee-4000-8000-07015002eeee"
+                },
+                {
+                  "uuid": "07015003-cccc-4000-8000-07015003cccc",
+                  "name": "Skip for now",
+                  "exit_uuid": "07015003-eeee-4000-8000-07015003eeee"
+                },
+                {
+                  "uuid": "07015004-cccc-4000-8000-07015004cccc",
+                  "name": "Other",
+                  "exit_uuid": "07015004-eeee-4000-8000-07015004eeee"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "07015001-ca00-4000-8000-07015001ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07015001-cccc-4000-8000-07015001cccc",
+                  "arguments": [
+                    "Try this idea"
+                  ]
+                },
+                {
+                  "uuid": "07015002-ca00-4000-8000-07015002ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07015002-cccc-4000-8000-07015002cccc",
+                  "arguments": [
+                    "Skip for now"
+                  ]
+                },
+                {
+                  "uuid": "07015003-ca00-4000-8000-07015003ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07015003-cccc-4000-8000-07015003cccc",
+                  "arguments": [
+                    "Skip for now"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "07015001-eeee-4000-8000-07015001eeee",
+                "destination_uuid": "07019000-0000-4000-8000-070190000000"
+              },
+              {
+                "uuid": "07015002-eeee-4000-8000-07015002eeee",
+                "destination_uuid": "07019000-0000-4000-8000-070190000000"
+              },
+              {
+                "uuid": "07015003-eeee-4000-8000-07015003eeee",
+                "destination_uuid": "07019000-0000-4000-8000-070190000000"
+              },
+              {
+                "uuid": "07015004-eeee-4000-8000-07015004eeee",
+                "destination_uuid": "07014000-0000-4000-8000-070140000000"
+              }
+            ],
+            "actions": []
+          },
+          {
+            "uuid": "07019000-0000-4000-8000-070190000000",
+            "actions": [
+              {
+                "uuid": "07019000-aaaa-4000-8000-07019000aaaa",
+                "type": "send_msg",
+                "text": "Got it! When you've run it with your club:\n\n📊 Send *report* to log how it went and share a link or photo\n👥 Send *addmember* if anyone new joined in\n\nCome back to *clubideas* any time you need a fresh one.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07019000-eeee-4000-8000-07019000eeee",
+                "destination_uuid": null
+              }
+            ]
+          },
+          {
+            "uuid": "07020000-0000-4000-8000-070200000000",
+            "actions": [
+              {
+                "uuid": "07020000-aaaa-4000-8000-07020000aaaa",
+                "type": "send_msg",
+                "text": "🎯 *Idea: Peer-led warmup rotation*\n\nEach session, a different member leads the warmup game. Builds leadership and keeps energy fresh. Rotate through the whole club over a month.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07020000-eeee-4000-8000-07020000eeee",
+                "destination_uuid": "07021000-0000-4000-8000-070210000000"
+              }
+            ]
+          },
+          {
+            "uuid": "07021000-0000-4000-8000-070210000000",
+            "actions": [
+              {
+                "uuid": "07021000-aaaa-4000-8000-07021000aaaa",
+                "type": "send_interactive_msg",
+                "id": 9107021,
+                "name": "Idea Action 20",
+                "text": "{\"type\": \"quick_reply\", \"content\": {\"type\": \"text\", \"header\": \"What now?\", \"text\": \"What would you like to do?\"}, \"options\": [{\"type\": \"text\", \"title\": \"Try this idea\"}, {\"type\": \"text\", \"title\": \"See another idea\"}, {\"type\": \"text\", \"title\": \"Skip for now\"}]}",
+                "labels": [],
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07021000-eeee-4000-8000-07021000eeee",
+                "destination_uuid": "07022000-0000-4000-8000-070220000000"
+              }
+            ]
+          },
+          {
+            "uuid": "07022000-0000-4000-8000-070220000000",
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "idea_action",
+              "operand": "@input.text",
+              "default_category_uuid": "07022004-cccc-4000-8000-07022004cccc",
+              "categories": [
+                {
+                  "uuid": "07022001-cccc-4000-8000-07022001cccc",
+                  "name": "Try this idea",
+                  "exit_uuid": "07022001-eeee-4000-8000-07022001eeee"
+                },
+                {
+                  "uuid": "07022002-cccc-4000-8000-07022002cccc",
+                  "name": "See another idea",
+                  "exit_uuid": "07022002-eeee-4000-8000-07022002eeee"
+                },
+                {
+                  "uuid": "07022003-cccc-4000-8000-07022003cccc",
+                  "name": "Skip for now",
+                  "exit_uuid": "07022003-eeee-4000-8000-07022003eeee"
+                },
+                {
+                  "uuid": "07022004-cccc-4000-8000-07022004cccc",
+                  "name": "Other",
+                  "exit_uuid": "07022004-eeee-4000-8000-07022004eeee"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "07022001-ca00-4000-8000-07022001ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07022001-cccc-4000-8000-07022001cccc",
+                  "arguments": [
+                    "Try this idea"
+                  ]
+                },
+                {
+                  "uuid": "07022002-ca00-4000-8000-07022002ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07022002-cccc-4000-8000-07022002cccc",
+                  "arguments": [
+                    "See another idea"
+                  ]
+                },
+                {
+                  "uuid": "07022003-ca00-4000-8000-07022003ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07022003-cccc-4000-8000-07022003cccc",
+                  "arguments": [
+                    "Skip for now"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "07022001-eeee-4000-8000-07022001eeee",
+                "destination_uuid": "07029000-0000-4000-8000-070290000000"
+              },
+              {
+                "uuid": "07022002-eeee-4000-8000-07022002eeee",
+                "destination_uuid": "07023000-0000-4000-8000-070230000000"
+              },
+              {
+                "uuid": "07022003-eeee-4000-8000-07022003eeee",
+                "destination_uuid": "07029000-0000-4000-8000-070290000000"
+              },
+              {
+                "uuid": "07022004-eeee-4000-8000-07022004eeee",
+                "destination_uuid": "07021000-0000-4000-8000-070210000000"
+              }
+            ],
+            "actions": []
+          },
+          {
+            "uuid": "07023000-0000-4000-8000-070230000000",
+            "actions": [
+              {
+                "uuid": "07023000-aaaa-4000-8000-07023000aaaa",
+                "type": "send_msg",
+                "text": "🎯 *Idea: Community fitness challenge*\n\nDesign a simple weekly challenge (steps, a stretch routine) the whole club tracks together, not individually — win or lose as a team.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07023000-eeee-4000-8000-07023000eeee",
+                "destination_uuid": "07024000-0000-4000-8000-070240000000"
+              }
+            ]
+          },
+          {
+            "uuid": "07024000-0000-4000-8000-070240000000",
+            "actions": [
+              {
+                "uuid": "07024000-aaaa-4000-8000-07024000aaaa",
+                "type": "send_interactive_msg",
+                "id": 9107024,
+                "name": "Idea Action 20b",
+                "text": "{\"type\": \"quick_reply\", \"content\": {\"type\": \"text\", \"header\": \"What now?\", \"text\": \"What would you like to do?\"}, \"options\": [{\"type\": \"text\", \"title\": \"Try this idea\"}, {\"type\": \"text\", \"title\": \"Skip for now\"}, {\"type\": \"text\", \"title\": \"Skip for now\"}]}",
+                "labels": [],
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07024000-eeee-4000-8000-07024000eeee",
+                "destination_uuid": "07025000-0000-4000-8000-070250000000"
+              }
+            ]
+          },
+          {
+            "uuid": "07025000-0000-4000-8000-070250000000",
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "idea_action_2",
+              "operand": "@input.text",
+              "default_category_uuid": "07025004-cccc-4000-8000-07025004cccc",
+              "categories": [
+                {
+                  "uuid": "07025001-cccc-4000-8000-07025001cccc",
+                  "name": "Try this idea",
+                  "exit_uuid": "07025001-eeee-4000-8000-07025001eeee"
+                },
+                {
+                  "uuid": "07025002-cccc-4000-8000-07025002cccc",
+                  "name": "Skip for now",
+                  "exit_uuid": "07025002-eeee-4000-8000-07025002eeee"
+                },
+                {
+                  "uuid": "07025003-cccc-4000-8000-07025003cccc",
+                  "name": "Skip for now",
+                  "exit_uuid": "07025003-eeee-4000-8000-07025003eeee"
+                },
+                {
+                  "uuid": "07025004-cccc-4000-8000-07025004cccc",
+                  "name": "Other",
+                  "exit_uuid": "07025004-eeee-4000-8000-07025004eeee"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "07025001-ca00-4000-8000-07025001ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07025001-cccc-4000-8000-07025001cccc",
+                  "arguments": [
+                    "Try this idea"
+                  ]
+                },
+                {
+                  "uuid": "07025002-ca00-4000-8000-07025002ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07025002-cccc-4000-8000-07025002cccc",
+                  "arguments": [
+                    "Skip for now"
+                  ]
+                },
+                {
+                  "uuid": "07025003-ca00-4000-8000-07025003ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07025003-cccc-4000-8000-07025003cccc",
+                  "arguments": [
+                    "Skip for now"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "07025001-eeee-4000-8000-07025001eeee",
+                "destination_uuid": "07029000-0000-4000-8000-070290000000"
+              },
+              {
+                "uuid": "07025002-eeee-4000-8000-07025002eeee",
+                "destination_uuid": "07029000-0000-4000-8000-070290000000"
+              },
+              {
+                "uuid": "07025003-eeee-4000-8000-07025003eeee",
+                "destination_uuid": "07029000-0000-4000-8000-070290000000"
+              },
+              {
+                "uuid": "07025004-eeee-4000-8000-07025004eeee",
+                "destination_uuid": "07024000-0000-4000-8000-070240000000"
+              }
+            ],
+            "actions": []
+          },
+          {
+            "uuid": "07029000-0000-4000-8000-070290000000",
+            "actions": [
+              {
+                "uuid": "07029000-aaaa-4000-8000-07029000aaaa",
+                "type": "send_msg",
+                "text": "Got it! When you've run it with your club:\n\n📊 Send *report* to log how it went and share a link or photo\n👥 Send *addmember* if anyone new joined in\n\nCome back to *clubideas* any time you need a fresh one.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07029000-eeee-4000-8000-07029000eeee",
+                "destination_uuid": null
+              }
+            ]
+          },
+          {
+            "uuid": "07030000-0000-4000-8000-070300000000",
+            "actions": [
+              {
+                "uuid": "07030000-aaaa-4000-8000-07030000aaaa",
+                "type": "send_msg",
+                "text": "🎯 *Idea: Micro-survey*\n\nIn pairs, ask 5 neighbours one question about a local issue your club cares about. Bring answers back next session to spot patterns.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07030000-eeee-4000-8000-07030000eeee",
+                "destination_uuid": "07031000-0000-4000-8000-070310000000"
+              }
+            ]
+          },
+          {
+            "uuid": "07031000-0000-4000-8000-070310000000",
+            "actions": [
+              {
+                "uuid": "07031000-aaaa-4000-8000-07031000aaaa",
+                "type": "send_interactive_msg",
+                "id": 9107031,
+                "name": "Idea Action 30",
+                "text": "{\"type\": \"quick_reply\", \"content\": {\"type\": \"text\", \"header\": \"What now?\", \"text\": \"What would you like to do?\"}, \"options\": [{\"type\": \"text\", \"title\": \"Try this idea\"}, {\"type\": \"text\", \"title\": \"See another idea\"}, {\"type\": \"text\", \"title\": \"Skip for now\"}]}",
+                "labels": [],
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07031000-eeee-4000-8000-07031000eeee",
+                "destination_uuid": "07032000-0000-4000-8000-070320000000"
+              }
+            ]
+          },
+          {
+            "uuid": "07032000-0000-4000-8000-070320000000",
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "idea_action",
+              "operand": "@input.text",
+              "default_category_uuid": "07032004-cccc-4000-8000-07032004cccc",
+              "categories": [
+                {
+                  "uuid": "07032001-cccc-4000-8000-07032001cccc",
+                  "name": "Try this idea",
+                  "exit_uuid": "07032001-eeee-4000-8000-07032001eeee"
+                },
+                {
+                  "uuid": "07032002-cccc-4000-8000-07032002cccc",
+                  "name": "See another idea",
+                  "exit_uuid": "07032002-eeee-4000-8000-07032002eeee"
+                },
+                {
+                  "uuid": "07032003-cccc-4000-8000-07032003cccc",
+                  "name": "Skip for now",
+                  "exit_uuid": "07032003-eeee-4000-8000-07032003eeee"
+                },
+                {
+                  "uuid": "07032004-cccc-4000-8000-07032004cccc",
+                  "name": "Other",
+                  "exit_uuid": "07032004-eeee-4000-8000-07032004eeee"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "07032001-ca00-4000-8000-07032001ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07032001-cccc-4000-8000-07032001cccc",
+                  "arguments": [
+                    "Try this idea"
+                  ]
+                },
+                {
+                  "uuid": "07032002-ca00-4000-8000-07032002ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07032002-cccc-4000-8000-07032002cccc",
+                  "arguments": [
+                    "See another idea"
+                  ]
+                },
+                {
+                  "uuid": "07032003-ca00-4000-8000-07032003ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07032003-cccc-4000-8000-07032003cccc",
+                  "arguments": [
+                    "Skip for now"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "07032001-eeee-4000-8000-07032001eeee",
+                "destination_uuid": "07039000-0000-4000-8000-070390000000"
+              },
+              {
+                "uuid": "07032002-eeee-4000-8000-07032002eeee",
+                "destination_uuid": "07033000-0000-4000-8000-070330000000"
+              },
+              {
+                "uuid": "07032003-eeee-4000-8000-07032003eeee",
+                "destination_uuid": "07039000-0000-4000-8000-070390000000"
+              },
+              {
+                "uuid": "07032004-eeee-4000-8000-07032004eeee",
+                "destination_uuid": "07031000-0000-4000-8000-070310000000"
+              }
+            ],
+            "actions": []
+          },
+          {
+            "uuid": "07033000-0000-4000-8000-070330000000",
+            "actions": [
+              {
+                "uuid": "07033000-aaaa-4000-8000-07033000aaaa",
+                "type": "send_msg",
+                "text": "🎯 *Idea: One-day clean-up or fix-up*\n\nPick one small, doable local task (a shared space, a path, a wall) your club can complete together in a single afternoon.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07033000-eeee-4000-8000-07033000eeee",
+                "destination_uuid": "07034000-0000-4000-8000-070340000000"
+              }
+            ]
+          },
+          {
+            "uuid": "07034000-0000-4000-8000-070340000000",
+            "actions": [
+              {
+                "uuid": "07034000-aaaa-4000-8000-07034000aaaa",
+                "type": "send_interactive_msg",
+                "id": 9107034,
+                "name": "Idea Action 30b",
+                "text": "{\"type\": \"quick_reply\", \"content\": {\"type\": \"text\", \"header\": \"What now?\", \"text\": \"What would you like to do?\"}, \"options\": [{\"type\": \"text\", \"title\": \"Try this idea\"}, {\"type\": \"text\", \"title\": \"Skip for now\"}, {\"type\": \"text\", \"title\": \"Skip for now\"}]}",
+                "labels": [],
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07034000-eeee-4000-8000-07034000eeee",
+                "destination_uuid": "07035000-0000-4000-8000-070350000000"
+              }
+            ]
+          },
+          {
+            "uuid": "07035000-0000-4000-8000-070350000000",
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "idea_action_2",
+              "operand": "@input.text",
+              "default_category_uuid": "07035004-cccc-4000-8000-07035004cccc",
+              "categories": [
+                {
+                  "uuid": "07035001-cccc-4000-8000-07035001cccc",
+                  "name": "Try this idea",
+                  "exit_uuid": "07035001-eeee-4000-8000-07035001eeee"
+                },
+                {
+                  "uuid": "07035002-cccc-4000-8000-07035002cccc",
+                  "name": "Skip for now",
+                  "exit_uuid": "07035002-eeee-4000-8000-07035002eeee"
+                },
+                {
+                  "uuid": "07035003-cccc-4000-8000-07035003cccc",
+                  "name": "Skip for now",
+                  "exit_uuid": "07035003-eeee-4000-8000-07035003eeee"
+                },
+                {
+                  "uuid": "07035004-cccc-4000-8000-07035004cccc",
+                  "name": "Other",
+                  "exit_uuid": "07035004-eeee-4000-8000-07035004eeee"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "07035001-ca00-4000-8000-07035001ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07035001-cccc-4000-8000-07035001cccc",
+                  "arguments": [
+                    "Try this idea"
+                  ]
+                },
+                {
+                  "uuid": "07035002-ca00-4000-8000-07035002ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07035002-cccc-4000-8000-07035002cccc",
+                  "arguments": [
+                    "Skip for now"
+                  ]
+                },
+                {
+                  "uuid": "07035003-ca00-4000-8000-07035003ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "07035003-cccc-4000-8000-07035003cccc",
+                  "arguments": [
+                    "Skip for now"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "07035001-eeee-4000-8000-07035001eeee",
+                "destination_uuid": "07039000-0000-4000-8000-070390000000"
+              },
+              {
+                "uuid": "07035002-eeee-4000-8000-07035002eeee",
+                "destination_uuid": "07039000-0000-4000-8000-070390000000"
+              },
+              {
+                "uuid": "07035003-eeee-4000-8000-07035003eeee",
+                "destination_uuid": "07039000-0000-4000-8000-070390000000"
+              },
+              {
+                "uuid": "07035004-eeee-4000-8000-07035004eeee",
+                "destination_uuid": "07034000-0000-4000-8000-070340000000"
+              }
+            ],
+            "actions": []
+          },
+          {
+            "uuid": "07039000-0000-4000-8000-070390000000",
+            "actions": [
+              {
+                "uuid": "07039000-aaaa-4000-8000-07039000aaaa",
+                "type": "send_msg",
+                "text": "Got it! When you've run it with your club:\n\n📊 Send *report* to log how it went and share a link or photo\n👥 Send *addmember* if anyone new joined in\n\nCome back to *clubideas* any time you need a fresh one.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "07039000-eeee-4000-8000-07039000eeee",
                 "destination_uuid": null
               }
             ]
