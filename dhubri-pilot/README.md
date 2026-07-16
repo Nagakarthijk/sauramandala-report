@@ -10,12 +10,14 @@ A coordination layer for high-risk pregnancy (HRP) and maternal emergencies on t
 
 ## Files
 
-- [`CONCEPT.md`](./CONCEPT.md) — system design: actors, registries, trigger flows, sequence diagrams, data model draft, Glific implementation notes, and the open questions/gaps (with four key architecture decisions now locked in).
+- [`CONCEPT.md`](./CONCEPT.md) — system design: actors, registries, trigger flows, sequence diagrams, data model draft, and the open questions/gaps. §6a covers the corrected Gupshup (WhatsApp)/Exotel (SMS/IVR) architecture.
 - [`SOP.md`](./SOP.md) — the standard operating procedures each flow follows, with pilot-default parameters (escalation timers, verification timeout, payment approach) explicitly flagged as placeholders pending real answers.
 - [`FLOWS.md`](./FLOWS.md) — build-ready Glific flow specs (triggers, message nodes, webhook payloads, HSM templates to submit early) for each of the six flows: worker report, family report + verification, boatman broadcast, facility alert, 104/CNES dispatch, case close.
-- [`schema.sql`](./schema.sql) — draft Postgres/Supabase schema for the channel-agnostic case/registry backend that both Glific and the SMS/IVR gateway write into.
+- [`GLIFIC_SETUP.md`](./GLIFIC_SETUP.md) — concrete Gupshup (WhatsApp BSP) and Exotel (missed-call bridge + direct Voice/SMS API) configuration steps, plus a node-by-node build of `FLOW-W1` in the Glific Flow Editor.
+- [`schema.sql`](./schema.sql) — Postgres/Supabase schema for the channel-agnostic case/registry backend that both Glific and Exotel write into.
+- [`backend/`](./backend/) — reference implementation: Supabase Edge Functions (Deno/TypeScript) implementing the webhook endpoints from `FLOWS.md` against `schema.sql`, including the Glific `startContactFlow` client, the direct Exotel Voice/SMS client, and the atomic first-accept-wins boatman logic. Type-checks cleanly; not yet deployed or run against a real account.
 - [`dhubri-data.js`](./dhubri-data.js) + [`dashboard.html`](./dashboard.html) — a demo case-tracker dashboard prototype with placeholder sample data (open `dashboard.html` in a browser to walk through it — nothing in it is real).
 
 ## Status
 
-Concept, SOP, flow specs, schema, and a demo dashboard are drafted. Nothing is deployed or connected to a real Glific instance, SMS/IVR gateway, or database yet — nine open questions remain in `CONCEPT.md` §7 (facility-side channel, payment mechanism, patient-data-sharing consent, real registry data, char→facility mapping stability, dashboard audience, language, pilot scale, SMS/IVR provider selection) before this moves from spec to a real build.
+Concept, SOP, flow specs, schema, Glific/Gupshup/Exotel setup guide, a reference backend, and a demo dashboard all exist. Nothing is deployed or connected to a real Glific/Gupshup/Exotel/Supabase account yet — the remaining open questions in `CONCEPT.md` §7 (real registry data, facility-side channel, payment mechanism, patient-data-sharing consent, char→facility mapping stability, dashboard audience, language, pilot scale, manual-fallback ownership, existing-system interfacing, and actual Exotel account access) block standing this up and testing it end-to-end.

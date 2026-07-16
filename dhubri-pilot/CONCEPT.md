@@ -1,6 +1,6 @@
-# Dhubri Pilot — Concept & System Design (Draft v0.2)
+# Dhubri Pilot — Concept & System Design (Draft v0.3)
 
-**Status:** Discovery — not yet validated with field partners
+**Status:** Discovery → early build — not yet validated with field partners
 **Purpose:** Organise the problem into actors, flows, data, and a Glific-based implementation shape, and surface the gaps that need answers before anything gets built.
 
 ## Decisions Log
@@ -11,8 +11,9 @@
 | v0.2 | 104/CNES integration | **WhatsApp alerts to 104/CNES too** (not just a phone call) — but boats must be classified by capability (day / night / day+night-with-support) and matched to case severity, not just "notify them and hope" (see §2, §5). |
 | v0.2 | Boatman assignment | **Pool with round-robin/first-accept**, not single-primary (see §3, §6). |
 | v0.2 | Channel reality | **WhatsApp + SMS + IVR voice, at scale** — this is no longer a WhatsApp-only build; Glific alone doesn't cover SMS/IVR, so the architecture needs an omnichannel layer (see §6a, new). |
+| v0.3 | SMS/IVR provider (was §7 q9) | **Exotel**, integrated alongside Glific's Gupshup-based WhatsApp channel. This is *not* a simple "Glific does SMS/IVR too now" swap — see the corrected §6a below for what Glific's native Exotel integration actually covers vs. what needs a direct Exotel API integration in the backend. |
 
-These four are now locked for design purposes; the rest of §7's open questions still stand.
+These are now locked for design purposes; the rest of §7's open questions still stand.
 
 ---
 
@@ -142,16 +143,23 @@ Applying general Glific platform knowledge to this specific problem:
 - **Broadcast + escalation**: pool assignment means the request goes out to *every* capability-matched boatman in the char's pool at once — first "Accept" wins, everyone else auto-gets an "already assigned, thank you" reply. If nobody in the pool accepts within N minutes, escalate to 104/CNES. This wait/branch timer is webhook-driven state, not something Glific's flow editor holds on its own.
 - **Dashboard**: Glific's built-in analytics won't cover case-tracking. The case registry (webhook-fed) needs its own lightweight dashboard UI — same shape as the existing Supabase-backed pages in this repo (`tl-*.html` for the trust ledger) could be a reusable pattern.
 
-## 6a. Omnichannel: WhatsApp + SMS + IVR
+## 6a. Omnichannel: Gupshup (WhatsApp) + Exotel (SMS/IVR) — corrected v0.3
 
-Glific is fundamentally a WhatsApp Business API platform (via a BSP like Gupshup) — it does not natively run SMS or IVR. Given the confirmed reality (workers/boatmen need WhatsApp *and* SMS *and* voice IVR at scale), Glific can't be the whole system; it's the WhatsApp piece of a broader messaging layer. Implication for the architecture:
+Glific is fundamentally a WhatsApp Business API platform, connected via a BSP (Business Solution Provider) — **Gupshup** is the standard choice and what this pilot uses. Gupshup is where the actual WhatsApp Business number lives, where HSM/template messages get submitted for approval, and where Glific's Flow Editor ultimately sends/receives every WhatsApp message.
 
-- The **case/registry backend is the source of truth**, and it's channel-agnostic — a case doesn't care whether the boat request reached a boatman via WhatsApp, SMS, or an IVR call.
-- Each contact's **preferred/available channel** becomes a registry field (`boatman.channel: whatsapp|sms|ivr`), since a feature-phone boatman literally cannot receive a WhatsApp message.
-- SMS and IVR need their own gateway (e.g. an SMS API provider, and an IVR/voice provider for outbound call-and-play-message or DTMF "press 1 to accept the job") sitting alongside Glific, both driven by the same backend that fires Glific flows.
-- "Accept the job" has to work identically across channels: a WhatsApp button tap, an SMS reply keyword ("YES 123"), and an IVR DTMF press (1 = accept) all need to resolve to the same `boatman.status = accepted` state transition.
-- This is a materially bigger build than "a Glific flow" — it's Glific + an SMS/IVR gateway + a backend that unifies both into one case state machine. Worth sizing this properly rather than assuming Glific alone covers it (§7 still has open questions on exact provider/scale).
-- IVR in particular matters for the *voice note* requirement too — note that receiving a voice note in a flow (WhatsApp) is a different mechanism from IVR (a live phone call); the two shouldn't be conflated when scoping this.
+Glific *does* have a native **Exotel** integration, but it is narrower than "Glific also does SMS/IVR." What it actually is, confirmed from Glific's own docs:
+
+- It's an **inbound missed-call bridge**: someone gives a missed call to a dedicated Exotel virtual number → Exotel's own call-flow builder (an "App" using their Passthrough applet) hits a fixed Glific webhook URL (`.../webhook/exotel/optin`) → Glific starts one specific pre-configured Flow ID for that caller's number, typically to opt them into WhatsApp and kick off onboarding.
+- Configuration lives in Glific under **Settings → Exotel**: Flow ID, call direction (set to `Inbound`), and the Exotel virtual number. There's no "outbound campaign" or live in-call IVR menu ("press 1 for X") on the Glific side of this integration — it's a one-way trigger, not a conversation engine.
+- Useful for us specifically as a **low-friction onboarding/re-engagement path**: a boatman or worker with no data balance at that moment can still give a free missed call to opt in or re-trigger a flow, rather than needing to type a WhatsApp message.
+
+**What this means it does *not* solve:** the SOP-3 requirement (broadcast a job to a pool of boatmen, some of whom may only have SMS/voice, and get an "accept" back via DTMF) needs a live outbound call with a menu and a DTMF response — that's Exotel's own **Voice API + call-flow Applets** (Play, Gather, Passthrough), used directly, not through Glific's missed-call bridge. Concretely:
+
+- **Outbound**: our backend (not Glific) calls Exotel's Voice API to place a call to a boatman's number into a pre-built Exotel App (an IVR menu: "Emergency case at [char]. Press 1 to accept."), and calls Exotel's SMS API directly for boatmen who prefer/only have SMS.
+- **Inbound response**: the Exotel App's own Passthrough applet posts the DTMF digit (or inbound SMS reply) to **our backend's** webhook — a separate endpoint from Glific's, since this call/SMS never touches Glific at all.
+- **Reconciliation**: both paths — a WhatsApp button tap via Glific's webhook, and a DTMF/SMS reply via Exotel's webhook — resolve to the exact same backend state transition (`case_boatman_requests.status = accepted`), which is why the case/registry backend (`schema.sql`) has to be channel-agnostic and sit *below* both Glific and Exotel rather than being driven by either.
+- Each contact's **preferred/available channel** stays a registry field (`boatman.channel: whatsapp|sms|ivr`) — it decides which of the two integration paths above the backend uses for that contact, per broadcast.
+- This is a materially bigger build than "a Glific flow": it's Glific+Gupshup (WhatsApp) + a direct Exotel Voice/SMS integration in the backend + Glific's own Exotel missed-call bridge for onboarding — three integration points, not one. See `GLIFIC_SETUP.md` for the concrete configuration steps and `backend/` for the reference webhook implementation tying them together.
 
 ---
 
@@ -167,13 +175,13 @@ Four of the original architecture-defining questions are resolved — see the De
 6. **Dashboard audience**: Who actually looks at this — block/district health officer, Sauramandala field team, CNES ops, all three? Does it need to be real-time, or is end-of-day review sufficient for the pilot?
 7. **Language**: Dhubri has a mixed Assamese/Bengali-speaking population — what languages/scripts do button labels, SMS text, and IVR voice prompts need to support?
 8. **Pilot scope/scale**: How many chars, how many frontline workers, how many boatmen (and their day/night capability split) in the pilot phase? This sizes both the registries and the escalation logic (a 3-boatman pool behaves very differently from a 15-boatman pool).
-9. **SMS/IVR provider**: Given the confirmed need for SMS + IVR at scale (§6a), which gateway/provider is in scope — is there an existing vendor relationship (e.g. via CNES or the health dept), or does this need to be selected fresh for the pilot?
-10. **Family-verification timeout**: When a family-reported case needs worker confirmation (§3, §7 decisions), how long does the system wait before escalating past an unreachable worker — and escalating to whom (another worker covering the char? straight to boat dispatch with an admin flag)?
-11. **Manual fallback ownership**: When the digital path stalls (nobody accepts, worker unreachable), who is the human in the loop watching the dashboard and empowered to just pick up a phone and call someone directly?
-12. **Existing systems**: Does this need to interface with any existing maternal health record system (RCH register, ANMOL, etc.) for patient identity/history, or is the pilot deliberately a standalone coordination layer with its own minimal case record?
+9. **Family-verification timeout**: When a family-reported case needs worker confirmation (§3, §7 decisions), how long does the system wait before escalating past an unreachable worker — and escalating to whom (another worker covering the char? straight to boat dispatch with an admin flag)?
+10. **Manual fallback ownership**: When the digital path stalls (nobody accepts, worker unreachable), who is the human in the loop watching the dashboard and empowered to just pick up a phone and call someone directly?
+11. **Existing systems**: Does this need to interface with any existing maternal health record system (RCH register, ANMOL, etc.) for patient identity/history, or is the pilot deliberately a standalone coordination layer with its own minimal case record?
+12. **Exotel account details**: an Exotel account/subdomain, ExoPhone number(s), and API credentials need to actually exist before any of §6a's outbound Voice/SMS integration can be wired up and tested — is there already an Exotel relationship (e.g. via CNES) to build against, or does this need setting up fresh?
 
 ---
 
-## 8. What's Deliberately Not Decided Yet
+## 8. What's Built vs. Not Decided Yet
 
-No Glific flows, webhook backend, or dashboard code exists yet. This document is meant to get the shape of the problem right and surface the above questions before committing to a build — building the wrong sequence (e.g., sequential instead of parallel dispatch, or over-restricting who can trigger) is expensive to unwind once frontline workers are trained on it.
+`SOP.md`, `FLOWS.md`, `schema.sql`, `GLIFIC_SETUP.md`, and a reference webhook backend (`backend/`) now exist — see those files for the build-ready spec and a working code scaffold for the Gupshup (WhatsApp) + Exotel (SMS/IVR) integration. None of it is deployed against a real Glific/Gupshup/Exotel account yet, and the open questions above (particularly #4 real registries, #8 pilot scale, and #12 Exotel account access) block actually standing it up and testing it end-to-end. Building the wrong sequence (e.g., sequential instead of parallel dispatch, or over-restricting who can trigger) is expensive to unwind once frontline workers are trained on it — that's still the reason to get sign-off on the open questions before a live pilot, even though the spec and scaffold are ready.

@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS facilities (
   type         TEXT CHECK (type IN ('phc','chc','sdh','district-hospital')),
   contact_whatsapp TEXT,
   contact_sms      TEXT,
+  glific_contact_id TEXT,                         -- Glific's contact ID for this facility's WhatsApp number; backend needs this to call startContactFlow (GLIFIC_SETUP.md §3.4)
   on_duty_rotates  BOOLEAN DEFAULT true,
   created_at   TIMESTAMPTZ DEFAULT now()
 );
@@ -40,6 +41,7 @@ CREATE TABLE IF NOT EXISTS frontline_workers (
   facility_id  TEXT REFERENCES facilities(id),
   channel      TEXT NOT NULL DEFAULT 'whatsapp' CHECK (channel IN ('whatsapp','sms','ivr')),
   phone        TEXT NOT NULL,
+  glific_contact_id TEXT,                         -- set once the worker has messaged in at least once; null until then
   opted_in     BOOLEAN DEFAULT true,
   created_at   TIMESTAMPTZ DEFAULT now()
 );
@@ -55,6 +57,7 @@ CREATE TABLE IF NOT EXISTS boatmen (
   rate_card       TEXT,                           -- reference to rate agreed with govt/CNES
   availability    TEXT NOT NULL DEFAULT 'available' CHECK (availability IN ('available','on-job','off-duty')),
   active_case_id  TEXT,                           -- set while on-job; FK added below after cases exists
+  glific_contact_id TEXT,                         -- null for sms/ivr-channel boatmen, who are never a Glific contact at all
   created_at      TIMESTAMPTZ DEFAULT now()
 );
 
@@ -86,6 +89,11 @@ CREATE TABLE IF NOT EXISTS cases (
                           'pending-verification','open','boat-assigned','in-transit',
                           'arrived','closed','escalated-manual'
                         )),
+
+  -- set atomically on first-accept-wins (backend/functions/boatman-accept) — the WHERE
+  -- boatman_id IS NULL guard on that update is what makes "first response wins" race-safe
+  boatman_id           TEXT REFERENCES boatmen(id),
+  boatman_assigned_at  TIMESTAMPTZ,
 
   ambulance_type       TEXT CHECK (ambulance_type IN ('104','cnes','none')),
   ambulance_channel    TEXT CHECK (ambulance_channel IN ('whatsapp','sms','ivr')),
