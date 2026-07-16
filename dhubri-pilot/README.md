@@ -10,8 +10,12 @@ A coordination layer for high-risk pregnancy (HRP) and maternal emergencies on t
 
 ## Files
 
-- [`CONCEPT.md`](./CONCEPT.md) — system design: actors, registries, trigger flows, sequence diagrams, data model draft, Glific implementation notes, SOP considerations, and the open questions/gaps this concept still needs answered before build starts.
+- [`CONCEPT.md`](./CONCEPT.md) — system design: actors, registries, trigger flows, sequence diagrams, data model draft, Glific implementation notes, and the open questions/gaps (with four key architecture decisions now locked in).
+- [`SOP.md`](./SOP.md) — the standard operating procedures each flow follows, with pilot-default parameters (escalation timers, verification timeout, payment approach) explicitly flagged as placeholders pending real answers.
+- [`FLOWS.md`](./FLOWS.md) — build-ready Glific flow specs (triggers, message nodes, webhook payloads, HSM templates to submit early) for each of the six flows: worker report, family report + verification, boatman broadcast, facility alert, 104/CNES dispatch, case close.
+- [`schema.sql`](./schema.sql) — draft Postgres/Supabase schema for the channel-agnostic case/registry backend that both Glific and the SMS/IVR gateway write into.
+- [`dhubri-data.js`](./dhubri-data.js) + [`dashboard.html`](./dashboard.html) — a demo case-tracker dashboard prototype with placeholder sample data (open `dashboard.html` in a browser to walk through it — nothing in it is real).
 
 ## Status
 
-Nothing has been built yet. This folder currently holds the discovery/concept document only, per the "organise thoughts, surface questions and gaps first" instruction. Implementation (Glific flows, webhook backend, dashboard) starts once the open questions in `CONCEPT.md` are resolved.
+Concept, SOP, flow specs, schema, and a demo dashboard are drafted. Nothing is deployed or connected to a real Glific instance, SMS/IVR gateway, or database yet — nine open questions remain in `CONCEPT.md` §7 (facility-side channel, payment mechanism, patient-data-sharing consent, real registry data, char→facility mapping stability, dashboard audience, language, pilot scale, SMS/IVR provider selection) before this moves from spec to a real build.
