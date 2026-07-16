@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Full Case Journey — WhatsApp JSON (Dhubri Pilot Demo)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <script src="whatsapp-journey.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .bubble-in { animation: pop .2s ease-out; }
+    @keyframes pop { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
+    .scroll::-webkit-scrollbar { width: 6px; }
+    .scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+  <div class="container mx-auto px-4 py-6 max-w-6xl">
+
+    <div class="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl px-4 py-3 mb-5">
+      ⚠️ <strong>Scripted demo, not a live system.</strong> This is the complete case-to-facility journey (SOP-1 → SOP-3 → SOP-4 → SOP-6) as one continuous transcript, in <code>whatsapp-journey.json</code>. Every message's <code>message</code> field is a real WhatsApp Cloud API / Gupshup message shape (<code>text</code> / <code>interactive</code> / <code>image</code> / <code>audio</code> / <code>location</code> / <code>template</code>) — click "raw WhatsApp JSON" under any bubble to see the exact payload shape that flow would actually send or receive.
+    </div>
+
+    <div class="mb-5">
+      <h1 class="text-3xl font-bold text-slate-900">Full Case Journey</h1>
+      <p class="text-slate-500 mt-1 max-w-3xl">One case, start to close, across every contact — worker report through facility discharge outcome. WhatsApp only, every message feature from the brief: keyword trigger, buttons, lists, voice note, photo, location (including live-location pings mid-transit), and HSM template messages for business-initiated sends.</p>
+    </div>
+
+    <div id="contact-legend" class="flex flex-wrap gap-2 mb-4"></div>
+
+    <div class="flex flex-wrap items-center gap-3 mb-6 bg-white rounded-2xl p-3 shadow-sm border border-slate-100">
+      <button id="btn-play" class="bg-teal-600 hover:bg-teal-500 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors">▶ Play</button>
+      <button id="btn-pause" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm transition-colors">⏸ Pause</button>
+      <button id="btn-step" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm transition-colors">⏭ Step</button>
+      <button id="btn-reset" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm transition-colors">⟲ Reset</button>
+      <div class="flex items-center gap-2 ml-auto">
+        <label class="text-xs text-slate-400">Speed</label>
+        <select id="speed" class="text-sm border border-slate-200 rounded-lg px-2 py-1.5">
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+          <option value="4">4×</option>
+        </select>
+      </div>
+      <div id="progress-label" class="text-xs text-slate-400 shrink-0">0 / 0 steps</div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
+      <div id="transcript" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 h-[70vh] overflow-y-auto scroll"></div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-[70vh]">
+        <div class="bg-slate-900 text-white px-4 py-3 text-sm font-semibold flex items-center gap-2">
+          <span>🖥️</span><span>Control Room Dashboard</span>
+        </div>
+        <div class="px-4 py-3 border-b border-slate-100">
+          <span id="dash-status" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500">No case yet</span>
+        </div>
+        <div id="dash-timeline" class="scroll flex-1 overflow-y-auto p-3 space-y-1.5 bg-slate-50"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const journey = WHATSAPP_JOURNEY.journey;
+    const contacts = Object.fromEntries(WHATSAPP_JOURNEY.contacts.map(c => [c.id, c]));
+    let idx = 0, playing = false, timer = null, speed = 1;
+
+    const CONTACT_COLOR = { worker: 'bg-teal-600', boat1: 'bg-blue-600', boat2: 'bg-slate-500', facility: 'bg-purple-600' };
+
+    const STATUS_STYLE = {
+      'pending-verification': { label: 'Pending Verification', cls: 'bg-amber-100 text-amber-700' },
+      'open':                 { label: 'Open',                 cls: 'bg-sky-100 text-sky-700' },
+      'boat-assigned':        { label: 'Boat Assigned',        cls: 'bg-indigo-100 text-indigo-700' },
+      'in-transit':           { label: 'In Transit',           cls: 'bg-blue-100 text-blue-700' },
+      'arrived':              { label: 'Arrived',              cls: 'bg-teal-100 text-teal-700' },
+      'closed':               { label: 'Closed',               cls: 'bg-green-100 text-green-700' },
+      'escalated-manual':     { label: 'Escalated',            cls: 'bg-red-100 text-red-700' }
+    };
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function renderLegend() {
+      document.getElementById('contact-legend').innerHTML = WHATSAPP_JOURNEY.contacts.map(c => `
+        <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-full px-2.5 py-1">
+          <span class="w-2 h-2 rounded-full ${CONTACT_COLOR[c.id] || 'bg-slate-400'}"></span>${escapeHtml(c.label)}
+        </span>`).join('');
+    }
+
+    function renderMessageBody(m) {
+      switch (m.type) {
+        case 'text':
+          return escapeHtml(m.text.body);
+        case 'interactive': {
+          const it = m.interactive;
+          if (it.type === 'button') {
+            const opts = it.action.buttons.map(b => `<span class="text-xs bg-slate-100 border border-slate-200 rounded-lg px-2 py-1">${escapeHtml(b.reply.title)}</span>`).join(' ');
+            return `${escapeHtml(it.body.text)}<div class="flex flex-wrap gap-1 mt-1.5">${opts}</div>`;
+          }
+          if (it.type === 'list') {
+            const rows = it.action.sections.flatMap(s => s.rows).map(r => `<span class="text-xs bg-slate-100 border border-slate-200 rounded-lg px-2 py-1">${escapeHtml(r.title)}</span>`).join(' ');
+            return `${escapeHtml(it.body.text)}<div class="flex flex-wrap gap-1 mt-1.5">${rows}</div>`;
+          }
+          if (it.type === 'button_reply') return `✅ ${escapeHtml(it.button_reply.title)}`;
+          if (it.type === 'list_reply') return `✅ ${escapeHtml(it.list_reply.title)}`;
+          return escapeHtml(JSON.stringify(it));
+        }
+        case 'audio':
+          return `🎙️ Voice note`;
+        case 'image':
+          return `📷 Photo${m.image.caption ? ' — ' + escapeHtml(m.image.caption) : ''}`;
+        case 'location':
+          return `📍 ${escapeHtml(m.location.name || 'Location shared')} <span class="text-[10px] text-slate-400">(${m.location.latitude.toFixed(4)}, ${m.location.longitude.toFixed(4)})</span>`;
+        case 'template': {
+          const bodyComp = m.template.components.find(c => c.type === 'body');
+          const params = bodyComp ? bodyComp.parameters.map(p => p.text).join(' · ') : '';
+          return `📩 <strong>${escapeHtml(m.template.name)}</strong> template — ${escapeHtml(params)}`;
+        }
+        default:
+          return escapeHtml(JSON.stringify(m));
+      }
+    }
+
+    function stepHTML(entry) {
+      const c = contacts[entry.contact_id];
+      const isOutbound = entry.direction === 'outbound';
+      const align = isOutbound ? 'items-end' : 'items-start';
+      const bubbleCls = isOutbound ? 'bg-[#DCF8C6]' : 'bg-white border border-slate-100';
+      const dirLabel = isOutbound ? `Bot → ${escapeHtml(c.label)}` : `${escapeHtml(c.label)} → Bot`;
+      const rawJson = JSON.stringify(entry.message, null, 2);
+
+      return `
+        <div class="mb-4 flex flex-col ${align} bubble-in">
+          <div class="flex items-center gap-1.5 text-[11px] text-slate-400 mb-1 px-1">
+            <span class="w-1.5 h-1.5 rounded-full ${CONTACT_COLOR[c.id] || 'bg-slate-400'}"></span>
+            <span>${dirLabel} · step ${entry.step}</span>
+          </div>
+          <div class="${bubbleCls} rounded-2xl px-3 py-2 text-sm max-w-[80%] shadow-sm">
+            ${renderMessageBody(entry.message)}
+          </div>
+          ${entry.sop_ref ? `<div class="text-[10px] text-slate-400 italic mt-1 px-1 max-w-[80%]">${escapeHtml(entry.sop_ref)}</div>` : ''}
+          <details class="mt-1 max-w-[80%] text-[11px]">
+            <summary class="cursor-pointer text-slate-400 hover:text-slate-600 px-1">raw WhatsApp JSON</summary>
+            <pre class="bg-slate-900 text-teal-300 text-[10px] rounded-lg p-2 mt-1 overflow-x-auto">${escapeHtml(rawJson)}</pre>
+          </details>
+        </div>`;
+    }
+
+    function applyStep(entry) {
+      document.getElementById('transcript').insertAdjacentHTML('beforeend', stepHTML(entry));
+      document.getElementById('transcript').scrollTop = document.getElementById('transcript').scrollHeight;
+
+      if (entry.dashboard) {
+        if (entry.dashboard.note) {
+          document.getElementById('dash-timeline').insertAdjacentHTML('beforeend', `
+            <div class="text-xs text-slate-600 border-l-2 border-teal-500 pl-2 py-0.5 bubble-in">
+              <span class="text-slate-400">🔄</span> ${escapeHtml(entry.dashboard.note)}
+            </div>`);
+          document.getElementById('dash-timeline').scrollTop = document.getElementById('dash-timeline').scrollHeight;
+        }
+        if (entry.dashboard.status) {
+          const s = STATUS_STYLE[entry.dashboard.status] || { label: entry.dashboard.status, cls: 'bg-slate-100 text-slate-600' };
+          const el = document.getElementById('dash-status');
+          el.textContent = s.label;
+          el.className = 'text-xs font-semibold px-2.5 py-1 rounded-full ' + s.cls;
+        }
+      }
+    }
+
+    function updateProgress() {
+      document.getElementById('progress-label').textContent = `${idx} / ${journey.length} steps`;
+    }
+
+    function scheduleNext() {
+      if (!playing || idx >= journey.length) { playing = false; return; }
+      const entry = journey[idx];
+      const prevAt = idx === 0 ? 0 : journey[idx - 1].at;
+      const delay = Math.max(150, (entry.at - prevAt) / speed);
+      timer = setTimeout(() => {
+        applyStep(entry);
+        idx++;
+        updateProgress();
+        scheduleNext();
+      }, delay);
+    }
+
+    function play() { if (playing) return; playing = true; scheduleNext(); }
+    function pause() { playing = false; clearTimeout(timer); }
+    function step() {
+      pause();
+      if (idx < journey.length) { applyStep(journey[idx]); idx++; updateProgress(); }
+    }
+    function reset() {
+      pause();
+      idx = 0;
+      document.getElementById('transcript').innerHTML = '';
+      document.getElementById('dash-timeline').innerHTML = '';
+      document.getElementById('dash-status').textContent = 'No case yet';
+      document.getElementById('dash-status').className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500';
+      updateProgress();
+    }
+
+    document.getElementById('btn-play').onclick = play;
+    document.getElementById('btn-pause').onclick = pause;
+    document.getElementById('btn-step').onclick = step;
+    document.getElementById('btn-reset').onclick = reset;
+    document.getElementById('speed').onchange = (e) => { speed = +e.target.value; };
+
+    renderLegend();
+    updateProgress();
+  </script>
+</body>
+</html>
