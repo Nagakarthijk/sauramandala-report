@@ -1,0 +1,168 @@
+// simulator-scenarios.js — browser-loadable copy of simulator-scenarios.json
+// Local file:// pages cannot fetch() a sibling JSON file (CORS blocks it without a server),
+// so this assigns the identical JSON content to a global for a plain <script src> include —
+// same pattern dhubri-data.js already uses. Keep byte-identical to simulator-scenarios.json;
+// regenerate with: node -e "require('fs').writeFileSync(...)" rather than hand-editing both.
+
+const SIMULATOR_SCENARIOS = {
+  "version": "0.1",
+  "description": "Dhubri Pilot — WhatsApp/SMS/IVR chat simulation scenarios. Each scenario is a scripted sequence of 'beats' (timed message events) across simulated phone windows for each actor, plus a live case/dashboard panel. This drives simulator.html — a standalone, no-backend demo of how the coordination flow plays out, per CONCEPT.md/SOP.md/FLOWS.md. Nothing here talks to a real Glific/Gupshup/Exotel/Supabase account; it's a scripted walkthrough for demonstrating the design to someone before the full build.",
+  "beatSchema": {
+    "at": "milliseconds offset from scenario start, used for demo pacing (compressed vs. real elapsed time)",
+    "actor": "which window this beat renders into — an actor id from this scenario's actors[], or 'dashboard'",
+    "from": "'bot' (automated system message to that actor) | an actor id (that persona's own outgoing message) | 'system' (dashboard/note entries)",
+    "kind": "text | buttons | list | voice | photo | location | case_update | note",
+    "body": "message text, or the note/case_update annotation",
+    "options": "for kind=buttons|list — the choices shown",
+    "status": "for kind=case_update — the case's new status",
+    "caseId": "for kind=case_update — which case (optional, defaults to the scenario's running case)"
+  },
+  "scenarios": [
+    {
+      "id": "SCN-01",
+      "title": "Happy path — worker-reported night emergency",
+      "summary": "The primary flow (SOP-1): a frontline worker reports directly, no verification gate needed. Shows the core fix this system exists for — boat dispatch and facility alert firing in parallel, not sequentially — plus pool broadcast with first-accept-wins.",
+      "actors": [
+        { "id": "worker", "label": "Rina — ASHA (Worker)", "channel": "whatsapp", "role": "worker" },
+        { "id": "boat1", "label": "Abdul — Boatman (night-capable)", "channel": "whatsapp", "role": "boatman" },
+        { "id": "boat2", "label": "Salim — Boatman (day-only)", "channel": "whatsapp", "role": "boatman" },
+        { "id": "facility", "label": "Sample PHC — Facility", "channel": "whatsapp", "role": "facility" }
+      ],
+      "beats": [
+        { "at": 0, "actor": "worker", "from": "worker", "kind": "text", "body": "EMERGENCY" },
+        { "at": 800, "actor": "worker", "from": "bot", "kind": "buttons", "body": "Risk level?", "options": ["HRP", "Emergency", "Planned Referral"] },
+        { "at": 1600, "actor": "worker", "from": "worker", "kind": "text", "body": "Emergency" },
+        { "at": 2200, "actor": "worker", "from": "bot", "kind": "text", "body": "Which char?" },
+        { "at": 2800, "actor": "worker", "from": "worker", "kind": "text", "body": "Char A" },
+        { "at": 3400, "actor": "worker", "from": "bot", "kind": "text", "body": "Patient reference (name/ID as you track it)?" },
+        { "at": 4200, "actor": "worker", "from": "worker", "kind": "text", "body": "Amina — 2nd pregnancy, labour pain since 2am, HRP flagged" },
+        { "at": 5000, "actor": "worker", "from": "bot", "kind": "text", "body": "Send a voice note, photo, or location — or type SKIP" },
+        { "at": 5800, "actor": "worker", "from": "worker", "kind": "voice", "body": "Voice note · 0:22" },
+        { "at": 6400, "actor": "worker", "from": "bot", "kind": "text", "body": "Case DHU-2026-000501 created. Dispatching a boat and alerting the facility now — I'll update you as soon as a boatman accepts." },
+        { "at": 6400, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "open", "body": "Case created — worker report, night, emergency" },
+        { "at": 6700, "actor": "boat1", "from": "bot", "kind": "buttons", "body": "🚨 Emergency case at Char A (night). Can you go?", "options": ["Accept"] },
+        { "at": 6700, "actor": "boat2", "from": "bot", "kind": "buttons", "body": "🚨 Emergency case at Char A (night). Can you go?", "options": ["Accept"] },
+        { "at": 6700, "actor": "facility", "from": "bot", "kind": "text", "body": "Incoming case DHU-2026-000501 from Char A. Risk: Emergency. ETA ~35 min once a boat is assigned. Reply READY when prepped." },
+        { "at": 6700, "actor": "dashboard", "from": "system", "kind": "note", "body": "Boat broadcast (2 boatmen, capability-matched) + facility alert fired in parallel — not sequential" },
+        { "at": 9500, "actor": "boat1", "from": "boat1", "kind": "text", "body": "Accept" },
+        { "at": 9800, "actor": "boat2", "from": "bot", "kind": "text", "body": "Already assigned, thank you." },
+        { "at": 9800, "actor": "worker", "from": "bot", "kind": "text", "body": "Boatman Abdul accepted (night-capable boat). ETA ~35 min." },
+        { "at": 9800, "actor": "facility", "from": "bot", "kind": "text", "body": "Boatman Abdul assigned. ETA ~35 min." },
+        { "at": 9800, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "boat-assigned", "body": "Abdul (BOAT-001) accepted — Salim auto-notified 'already assigned'" },
+        { "at": 11500, "actor": "facility", "from": "facility", "kind": "text", "body": "READY" },
+        { "at": 11800, "actor": "dashboard", "from": "system", "kind": "note", "body": "Facility acknowledged ready" },
+        { "at": 16000, "actor": "boat1", "from": "boat1", "kind": "text", "body": "Departed" },
+        { "at": 16300, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "in-transit", "body": "Boatman departed char" },
+        { "at": 22000, "actor": "boat1", "from": "boat1", "kind": "text", "body": "Reached facility" },
+        { "at": 22300, "actor": "facility", "from": "bot", "kind": "text", "body": "Patient arriving now." },
+        { "at": 24000, "actor": "facility", "from": "facility", "kind": "text", "body": "RECEIVED" },
+        { "at": 24300, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "arrived", "body": "Patient received at facility" },
+        { "at": 25000, "actor": "facility", "from": "bot", "kind": "list", "body": "Case DHU-2026-000501 — outcome?", "options": ["Admitted", "Referred further", "Managed & discharged"] },
+        { "at": 26000, "actor": "facility", "from": "facility", "kind": "text", "body": "Admitted" },
+        { "at": 26300, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "closed", "body": "Case closed — Admitted. Payment reconciliation now runs async (SOP-8), doesn't block anything above." }
+      ]
+    },
+    {
+      "id": "SCN-02",
+      "title": "Family report — worker confirms, proceeds normally",
+      "summary": "SOP-2's main path: an unregistered family member raises a case on the public line, but it stays pending-verification until the char's frontline worker confirms — only then does boat/facility dispatch fire.",
+      "actors": [
+        { "id": "family", "label": "Family member (unregistered)", "channel": "whatsapp", "role": "family" },
+        { "id": "worker", "label": "Meena — Anganwadi (Worker, Char B)", "channel": "whatsapp", "role": "worker" },
+        { "id": "boat1", "label": "Karim — Boatman", "channel": "whatsapp", "role": "boatman" },
+        { "id": "facility", "label": "Sample PHC — Facility", "channel": "whatsapp", "role": "facility" }
+      ],
+      "beats": [
+        { "at": 0, "actor": "family", "from": "family", "kind": "text", "body": "Please help, my sister is in labour on the char, no one is picking up" },
+        { "at": 900, "actor": "family", "from": "bot", "kind": "text", "body": "This is the Dhubri emergency line. Which char? Is this labour/delivery or something else?" },
+        { "at": 1800, "actor": "family", "from": "family", "kind": "text", "body": "Char B — labour started, water broke" },
+        { "at": 2600, "actor": "family", "from": "bot", "kind": "text", "body": "Thank you — help is being coordinated. We'll update you here." },
+        { "at": 2600, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "pending-verification", "body": "Unverified family report, Char B — verification requested from assigned worker" },
+        { "at": 2900, "actor": "worker", "from": "bot", "kind": "buttons", "body": "Unverified emergency report from Char B — can you confirm?", "options": ["Confirm", "Not aware, checking", "False alarm"] },
+        { "at": 5000, "actor": "worker", "from": "worker", "kind": "text", "body": "Confirm" },
+        { "at": 5300, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "open", "body": "Worker confirmed — verification_status: confirmed. Dispatch now fires exactly as in the worker-reported path." },
+        { "at": 5300, "actor": "family", "from": "bot", "kind": "text", "body": "Confirmed — a boat and the facility are being alerted now." },
+        { "at": 5600, "actor": "boat1", "from": "bot", "kind": "buttons", "body": "🚨 Emergency case at Char B. Can you go?", "options": ["Accept"] },
+        { "at": 5600, "actor": "facility", "from": "bot", "kind": "text", "body": "Incoming case from Char B. Risk: Emergency. Reply READY when prepped." },
+        { "at": 8000, "actor": "boat1", "from": "boat1", "kind": "text", "body": "Accept" },
+        { "at": 8300, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "boat-assigned", "body": "Karim accepted. (Rest of the flow — departure, arrival, outcome, close — proceeds exactly as in Scenario 1.)" }
+      ]
+    },
+    {
+      "id": "SCN-03",
+      "title": "Family report — worker unreachable, timeout auto-escalates",
+      "summary": "SOP-2 step 5's harder case: nobody confirms the family report in time. The pilot-default tradeoff errs toward dispatching anyway rather than risking a delayed real emergency — but flags the case for control-room review either way.",
+      "actors": [
+        { "id": "family", "label": "Family member (unregistered)", "channel": "whatsapp", "role": "family" },
+        { "id": "worker", "label": "Farida — ANM (Worker, Char C)", "channel": "whatsapp", "role": "worker" },
+        { "id": "boat1", "label": "Nasir — Boatman", "channel": "whatsapp", "role": "boatman" }
+      ],
+      "beats": [
+        { "at": 0, "actor": "family", "from": "family", "kind": "text", "body": "Emergency, please send help, Char C, my wife" },
+        { "at": 900, "actor": "family", "from": "bot", "kind": "text", "body": "This is the Dhubri emergency line. Which char? Is this labour/delivery or something else?" },
+        { "at": 1700, "actor": "family", "from": "family", "kind": "text", "body": "Char C — bleeding a lot" },
+        { "at": 2400, "actor": "family", "from": "bot", "kind": "text", "body": "Thank you — help is being coordinated. We'll update you here." },
+        { "at": 2400, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "pending-verification", "body": "Unverified family report, Char C — verification requested from FLW-003" },
+        { "at": 2700, "actor": "worker", "from": "bot", "kind": "buttons", "body": "Unverified emergency report from Char C — can you confirm?", "options": ["Confirm", "Not aware, checking", "False alarm"] },
+        { "at": 3200, "actor": "dashboard", "from": "system", "kind": "note", "body": "⏳ No response from Farida yet — 5 min pilot-default verification timeout running (SOP.md SOP-2)" },
+        { "at": 6500, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "open", "body": "Timeout — no worker response. Case auto-opened, flagged escalated-unverified. Control room notified to keep an eye on this one." },
+        { "at": 6800, "actor": "family", "from": "bot", "kind": "text", "body": "Help is on the way." },
+        { "at": 7100, "actor": "boat1", "from": "bot", "kind": "buttons", "body": "🚨 Emergency case at Char C. Can you go?", "options": ["Accept"] },
+        { "at": 9500, "actor": "boat1", "from": "boat1", "kind": "text", "body": "Accept" },
+        { "at": 9800, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "boat-assigned", "body": "Nasir accepted. Case stays flagged escalated-unverified on the dashboard even after resolution, for post-hoc review." }
+      ]
+    },
+    {
+      "id": "SCN-04",
+      "title": "Boatman pool doesn't respond — escalates to 104/CNES",
+      "summary": "SOP-3 step 4: nobody in the private boatman pool accepts within the escalation window, so the case automatically escalates to the 104/CNES ambulance channel and gets flagged for control-room attention.",
+      "actors": [
+        { "id": "worker", "label": "Rina — ASHA (Worker)", "channel": "whatsapp", "role": "worker" },
+        { "id": "boat1", "label": "Abdul — Boatman", "channel": "whatsapp", "role": "boatman" },
+        { "id": "boat2", "label": "Salim — Boatman", "channel": "whatsapp", "role": "boatman" },
+        { "id": "ambulance", "label": "104/CNES Dispatch", "channel": "whatsapp", "role": "ambulance" }
+      ],
+      "beats": [
+        { "at": 0, "actor": "worker", "from": "worker", "kind": "text", "body": "EMERGENCY" },
+        { "at": 700, "actor": "worker", "from": "bot", "kind": "text", "body": "Case DHU-2026-000512 created for Char A. Dispatching a boat now." },
+        { "at": 700, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "open", "body": "Case created — dispatching to boatman pool (2 available, capability-matched)" },
+        { "at": 1000, "actor": "boat1", "from": "bot", "kind": "buttons", "body": "🚨 Emergency case at Char A. Can you go?", "options": ["Accept"] },
+        { "at": 1000, "actor": "boat2", "from": "bot", "kind": "buttons", "body": "🚨 Emergency case at Char A. Can you go?", "options": ["Accept"] },
+        { "at": 2000, "actor": "dashboard", "from": "system", "kind": "note", "body": "⏳ 10 min pilot-default escalation window running — no acceptance yet from either boatman" },
+        { "at": 6000, "actor": "dashboard", "from": "system", "kind": "note", "body": "Still no response. Window continuing..." },
+        { "at": 9500, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "escalated-manual", "body": "Timeout — neither boatman accepted. Escalating to 104/CNES. Flagged on dashboard for control-room follow-up on why the private pool didn't respond." },
+        { "at": 9800, "actor": "ambulance", "from": "bot", "kind": "buttons", "body": "🚨 Ambulance-level case DHU-2026-000512 at Char A. Private boatman pool did not respond. Required: day+night-with-support.", "options": ["Accept"] },
+        { "at": 11500, "actor": "ambulance", "from": "ambulance", "kind": "text", "body": "Accept" },
+        { "at": 11800, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "boat-assigned", "body": "104/CNES dispatched. Rest of flow (facility, arrival, close) proceeds as in Scenario 1." },
+        { "at": 12100, "actor": "boat1", "from": "bot", "kind": "text", "body": "This case has been reassigned to 104/CNES." },
+        { "at": 12100, "actor": "boat2", "from": "bot", "kind": "text", "body": "This case has been reassigned to 104/CNES." }
+      ]
+    },
+    {
+      "id": "SCN-05",
+      "title": "Omnichannel — SMS and IVR boatmen, no WhatsApp needed",
+      "summary": "CONCEPT.md §6a in action: the pool for this char has a WhatsApp boatman, an SMS-only boatman, and an IVR/feature-phone boatman. All three get the same broadcast simultaneously over their own channel; the IVR boatman accepts by pressing a digit on a live call — none of this touches Glific for the non-WhatsApp contacts.",
+      "actors": [
+        { "id": "worker", "label": "Rina — ASHA (Worker)", "channel": "whatsapp", "role": "worker" },
+        { "id": "boat_wa", "label": "Abdul — Boatman (WhatsApp)", "channel": "whatsapp", "role": "boatman" },
+        { "id": "boat_sms", "label": "Jamal — Boatman (SMS only)", "channel": "sms", "role": "boatman" },
+        { "id": "boat_ivr", "label": "Hasan — Boatman (feature phone, IVR)", "channel": "ivr", "role": "boatman" }
+      ],
+      "beats": [
+        { "at": 0, "actor": "worker", "from": "worker", "kind": "text", "body": "EMERGENCY" },
+        { "at": 700, "actor": "worker", "from": "bot", "kind": "text", "body": "Case DHU-2026-000530 created for Char D. Dispatching now — pool has WhatsApp, SMS, and IVR-only boatmen." },
+        { "at": 700, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "open", "body": "Broadcasting across three channels simultaneously — same case, three different delivery paths" },
+        { "at": 1000, "actor": "boat_wa", "from": "bot", "kind": "buttons", "body": "🚨 Emergency case at Char D. Can you go?", "options": ["Accept"] },
+        { "at": 1000, "actor": "boat_sms", "from": "bot", "kind": "text", "body": "Emergency case DHU-2026-000530 at Char D. Reply YES 000530 to accept." },
+        { "at": 1000, "actor": "boat_ivr", "from": "bot", "kind": "text", "body": "📞 Incoming call from Dhubri Emergency Line..." },
+        { "at": 1800, "actor": "boat_ivr", "from": "bot", "kind": "text", "body": "🔊 \"Emergency case at Char D. Press 1 to accept the job.\"" },
+        { "at": 4500, "actor": "boat_ivr", "from": "boat_ivr", "kind": "text", "body": "🔢 Pressed: 1 (Accept)" },
+        { "at": 4800, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "boat-assigned", "body": "Hasan accepted via IVR DTMF — resolves to the exact same case state as a WhatsApp button tap would (accept-boat.ts is shared across both paths)" },
+        { "at": 5100, "actor": "boat_wa", "from": "bot", "kind": "text", "body": "Already assigned, thank you." },
+        { "at": 5100, "actor": "boat_sms", "from": "bot", "kind": "text", "body": "Already assigned to another boatman, thank you." },
+        { "at": 5400, "actor": "worker", "from": "bot", "kind": "text", "body": "Boatman Hasan (IVR) accepted. ETA ~40 min." }
+      ]
+    }
+  ]
+}
+;

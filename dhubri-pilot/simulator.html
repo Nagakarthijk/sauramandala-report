@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scenario Simulator — Dhubri Pilot (Demo)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <script src="simulator-scenarios.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .bubble-in { animation: pop .2s ease-out; }
+    @keyframes pop { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
+    .phone-scroll::-webkit-scrollbar { width: 6px; }
+    .phone-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+  <div class="container mx-auto px-4 py-6 max-w-7xl">
+
+    <div class="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl px-4 py-3 mb-5">
+      ⚠️ <strong>Scripted demo, not a live system.</strong> Every message below is pre-written in <code>simulator-scenarios.json</code> to walk through how the design in <code>CONCEPT.md</code> / <code>SOP.md</code> / <code>FLOWS.md</code> is meant to play out — nothing here talks to a real Glific/Gupshup/Exotel account.
+    </div>
+
+    <div class="mb-5">
+      <h1 class="text-3xl font-bold text-slate-900">Scenario Simulator</h1>
+      <p id="scenario-summary" class="text-slate-500 mt-1 max-w-3xl"></p>
+    </div>
+
+    <div id="scenario-picker" class="flex gap-2 mb-4 overflow-x-auto pb-1"></div>
+
+    <div class="flex flex-wrap items-center gap-3 mb-6 bg-white rounded-2xl p-3 shadow-sm border border-slate-100">
+      <button id="btn-play" class="bg-teal-600 hover:bg-teal-500 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors">▶ Play</button>
+      <button id="btn-pause" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm transition-colors">⏸ Pause</button>
+      <button id="btn-step" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm transition-colors">⏭ Step</button>
+      <button id="btn-reset" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm transition-colors">⟲ Reset</button>
+      <div class="flex items-center gap-2 ml-auto">
+        <label class="text-xs text-slate-400">Speed</label>
+        <select id="speed" class="text-sm border border-slate-200 rounded-lg px-2 py-1.5">
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+          <option value="4">4×</option>
+        </select>
+      </div>
+      <div id="progress-label" class="text-xs text-slate-400 shrink-0">0 / 0 beats</div>
+    </div>
+
+    <div id="windows-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+  </div>
+
+  <script>
+    const SCENARIOS = SIMULATOR_SCENARIOS.scenarios;
+    let current = null, idx = 0, playing = false, timer = null, speed = 1;
+
+    const CHANNEL_STYLE = {
+      whatsapp: { header: 'bg-[#075E54]', bubbleIn: 'bg-white text-slate-800', bubbleOut: 'bg-[#DCF8C6] text-slate-800', icon: '💬' },
+      sms:      { header: 'bg-indigo-600', bubbleIn: 'bg-white text-slate-800', bubbleOut: 'bg-indigo-100 text-slate-800', icon: '✉️' },
+      ivr:      { header: 'bg-purple-700', bubbleIn: 'bg-white text-slate-800', bubbleOut: 'bg-purple-100 text-slate-800', icon: '📞' }
+    };
+
+    const STATUS_STYLE = {
+      'pending-verification': { label: 'Pending Verification', cls: 'bg-amber-100 text-amber-700' },
+      'open':                 { label: 'Open',                 cls: 'bg-sky-100 text-sky-700' },
+      'boat-assigned':        { label: 'Boat Assigned',        cls: 'bg-indigo-100 text-indigo-700' },
+      'in-transit':           { label: 'In Transit',           cls: 'bg-blue-100 text-blue-700' },
+      'arrived':              { label: 'Arrived',              cls: 'bg-teal-100 text-teal-700' },
+      'closed':               { label: 'Closed',               cls: 'bg-green-100 text-green-700' },
+      'escalated-manual':     { label: 'Escalated',            cls: 'bg-red-100 text-red-700' }
+    };
+
+    function renderPicker() {
+      const el = document.getElementById('scenario-picker');
+      el.innerHTML = SCENARIOS.map((s, i) => `
+        <button data-i="${i}" class="scn-btn shrink-0 px-4 py-2 rounded-xl font-semibold text-sm border transition-all ${current === s ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-600 border-slate-200'}">
+          ${s.id} — ${s.title}
+        </button>`).join('');
+      el.querySelectorAll('.scn-btn').forEach(b => b.onclick = () => loadScenario(SCENARIOS[+b.dataset.i]));
+    }
+
+    function loadScenario(s) {
+      pause();
+      current = s;
+      idx = 0;
+      document.getElementById('scenario-summary').textContent = s.summary;
+      renderPicker();
+      buildWindows();
+      updateProgress();
+    }
+
+    function buildWindows() {
+      const grid = document.getElementById('windows-grid');
+      grid.innerHTML = current.actors.map(a => actorWindowHTML(a)).join('') + dashboardWindowHTML();
+    }
+
+    function actorWindowHTML(a) {
+      const style = CHANNEL_STYLE[a.channel] || CHANNEL_STYLE.whatsapp;
+      return `
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-[420px]">
+          <div class="${style.header} text-white px-4 py-3 text-sm font-semibold flex items-center gap-2">
+            <span>${style.icon}</span><span>${escapeHtml(a.label)}</span>
+          </div>
+          <div id="win-${a.id}" class="phone-scroll flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50"></div>
+        </div>`;
+    }
+
+    function dashboardWindowHTML() {
+      return `
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-[420px]">
+          <div class="bg-slate-900 text-white px-4 py-3 text-sm font-semibold flex items-center gap-2">
+            <span>🖥️</span><span>Control Room Dashboard</span>
+          </div>
+          <div class="px-4 py-3 border-b border-slate-100">
+            <span id="dash-status" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500">No case yet</span>
+          </div>
+          <div id="win-dashboard" class="phone-scroll flex-1 overflow-y-auto p-3 space-y-1.5 bg-slate-50"></div>
+        </div>`;
+    }
+
+    function bubbleHTML(a, beat) {
+      const style = CHANNEL_STYLE[a.channel] || CHANNEL_STYLE.whatsapp;
+      const isOut = beat.from === a.id;
+      const align = isOut ? 'items-end' : 'items-start';
+      const bubbleCls = isOut ? style.bubbleOut : style.bubbleIn;
+
+      let content = escapeHtml(beat.body);
+      if (beat.kind === 'voice') content = `🎙️ ${content}`;
+      if (beat.kind === 'photo') content = `📷 ${content}`;
+      if (beat.kind === 'location') content = `📍 ${content}`;
+
+      let optionsHtml = '';
+      if ((beat.kind === 'buttons' || beat.kind === 'list') && beat.options) {
+        optionsHtml = `<div class="flex flex-wrap gap-1 mt-1.5">${beat.options.map(o => `<span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-lg border border-slate-200">${escapeHtml(o)}</span>`).join('')}</div>`;
+      }
+
+      return `
+        <div class="flex flex-col ${align} bubble-in">
+          <div class="${bubbleCls} rounded-2xl px-3 py-2 text-sm max-w-[85%] shadow-sm">
+            ${content}
+            ${optionsHtml}
+          </div>
+        </div>`;
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function applyBeat(beat) {
+      if (beat.actor === 'dashboard') {
+        appendTimeline(beat);
+        if (beat.status) {
+          const s = STATUS_STYLE[beat.status] || { label: beat.status, cls: 'bg-slate-100 text-slate-600' };
+          const el = document.getElementById('dash-status');
+          el.textContent = s.label;
+          el.className = 'text-xs font-semibold px-2.5 py-1 rounded-full ' + s.cls;
+        }
+        return;
+      }
+      const actor = current.actors.find(a => a.id === beat.actor);
+      if (!actor) return;
+      const win = document.getElementById('win-' + actor.id);
+      win.insertAdjacentHTML('beforeend', bubbleHTML(actor, beat));
+      win.scrollTop = win.scrollHeight;
+    }
+
+    function appendTimeline(beat) {
+      const win = document.getElementById('win-dashboard');
+      const icon = beat.kind === 'case_update' ? '🔄' : '•';
+      win.insertAdjacentHTML('beforeend', `
+        <div class="text-xs text-slate-600 border-l-2 border-teal-500 pl-2 py-0.5 bubble-in">
+          <span class="text-slate-400">${icon}</span> ${escapeHtml(beat.body)}
+        </div>`);
+      win.scrollTop = win.scrollHeight;
+    }
+
+    function updateProgress() {
+      document.getElementById('progress-label').textContent = `${idx} / ${current ? current.beats.length : 0} beats`;
+    }
+
+    function scheduleNext() {
+      if (!playing || !current || idx >= current.beats.length) { playing = false; return; }
+      const beat = current.beats[idx];
+      const prevAt = idx === 0 ? 0 : current.beats[idx - 1].at;
+      const delay = Math.max(150, (beat.at - prevAt) / speed);
+      timer = setTimeout(() => {
+        applyBeat(beat);
+        idx++;
+        updateProgress();
+        scheduleNext();
+      }, delay);
+    }
+
+    function play() {
+      if (!current || playing) return;
+      playing = true;
+      scheduleNext();
+    }
+
+    function pause() {
+      playing = false;
+      clearTimeout(timer);
+    }
+
+    function step() {
+      pause();
+      if (current && idx < current.beats.length) {
+        applyBeat(current.beats[idx]);
+        idx++;
+        updateProgress();
+      }
+    }
+
+    function reset() {
+      pause();
+      idx = 0;
+      buildWindows();
+      updateProgress();
+    }
+
+    document.getElementById('btn-play').onclick = play;
+    document.getElementById('btn-pause').onclick = pause;
+    document.getElementById('btn-step').onclick = step;
+    document.getElementById('btn-reset').onclick = reset;
+    document.getElementById('speed').onchange = (e) => { speed = +e.target.value; };
+
+    loadScenario(SCENARIOS[0]);
+  </script>
+</body>
+</html>
