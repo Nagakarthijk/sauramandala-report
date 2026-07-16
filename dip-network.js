@@ -2,14 +2,30 @@
 // v0.1.0 | Sauramandala Foundation | #noruralentrepreneurleftbehind
 
 const DIP = (() => {
-  const GEMINI_API_KEY = 'AIzaSyA2kInA66mxn_ETJb5wI4FPdJRWW3EpW6w';
-
   const KEYS = {
     entrepreneurs: 'dip_entrepreneurs',
     matches: 'dip_matches',
     agentName: 'dip_agent_name',
-    seeded: 'dip_seeded_v1'
+    seeded: 'dip_seeded_v1',
+    geminiApiKey: 'dip_gemini_api_key'
   };
+
+  function getApiKey() {
+    let key = localStorage.getItem(KEYS.geminiApiKey);
+    if (!key) {
+      key = window.prompt(
+        'AI Match needs a free Gemini API key (get one at aistudio.google.com/apikey).\n' +
+        'It is stored only in this browser — never sent anywhere but Google\'s API.'
+      );
+      if (key) localStorage.setItem(KEYS.geminiApiKey, key.trim());
+    }
+    return key;
+  }
+
+  function setApiKey(key) {
+    if (key) localStorage.setItem(KEYS.geminiApiKey, key.trim());
+    else localStorage.removeItem(KEYS.geminiApiKey);
+  }
 
   // ─── Vendor Network (Platform / API / In-Person / Government / Financial) ───
   const SEED_VENDORS = [
@@ -306,7 +322,9 @@ const DIP = (() => {
   }
 
   async function callGemini(prompt) {
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const apiKey = getApiKey();
+    if (!apiKey) throw new Error('A Gemini API key is required to use AI Match.');
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     const payload = { contents: [{ role: 'user', parts: [{ text: prompt }] }] };
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -348,10 +366,11 @@ const DIP = (() => {
   }
 
   return {
-    GEMINI_API_KEY, SEED_VENDORS, SEED_ENTREPRENEURS,
+    SEED_VENDORS, SEED_ENTREPRENEURS,
     init, getEntrepreneurs, addEntrepreneur, updateEntrepreneurStatus,
     getVendors, getMatches, addMatch,
     getAgentName, setAgentName,
+    getApiKey, setApiKey,
     getStats, generateId,
     sectorLabel, statusBadge, vendorTypeBadge,
     callGemini, navHTML

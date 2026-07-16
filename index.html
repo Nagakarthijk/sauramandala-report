@@ -203,14 +203,17 @@
             geminiAskBtn.disabled = true;
             geminiResponseContainer.classList.add('hidden');
             
-            // =========================================================================
-            //  IMPORTANT: PASTE YOUR GEMINI API KEY HERE
-            // =========================================================================
-            const apiKey = "AIzaSyA2kInA66mxn_ETJb5wI4FPdJRWW3EpW6w";
-            // =========================================================================
+            let apiKey = localStorage.getItem('sf_gemini_api_key');
+            if (!apiKey) {
+                apiKey = window.prompt(
+                    'This feature needs a free Gemini API key (get one at aistudio.google.com/apikey).\n' +
+                    'It is stored only in this browser — never sent anywhere but Google\'s API.'
+                );
+                if (apiKey) localStorage.setItem('sf_gemini_api_key', apiKey.trim());
+            }
 
-            if (apiKey === "YOUR_GEMINI_API_KEY_GOES_HERE") {
-                geminiResponseContainer.innerText = "API Key not found. Please add your key to the index.html file.";
+            if (!apiKey) {
+                geminiResponseContainer.innerText = "A Gemini API key is required to use this feature.";
                 geminiResponseContainer.classList.remove('hidden');
                 askBtnText.classList.remove('hidden');
                 askLoader.classList.add('hidden');
