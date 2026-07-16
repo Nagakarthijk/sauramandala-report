@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play — Dhubri Emergency Run</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="game-engine.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .bubble-in { animation: pop .2s ease-out; }
+    @keyframes pop { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
+    .scroll::-webkit-scrollbar { width: 6px; }
+    .scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+  <div class="container mx-auto px-4 py-6 max-w-lg">
+
+    <div class="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl px-3 py-2 mb-4">
+      ⚠️ Training game — a shared activity feed, not each contact's private thread (real system: everyone only sees their own messages).
+    </div>
+
+    <!-- JOIN -->
+    <div id="view-join">
+      <h1 class="text-2xl font-bold text-slate-900 mb-4">Join the game</h1>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3">
+        <div>
+          <label class="text-xs text-slate-400">Room code (from the game master's screen)</label>
+          <input id="in-room" class="w-full border border-slate-200 rounded-xl px-3 py-2 mt-1" placeholder="dhubri-1234">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400">Your name</label>
+          <input id="in-name" class="w-full border border-slate-200 rounded-xl px-3 py-2 mt-1" placeholder="Rina">
+        </div>
+        <button id="btn-join" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-2.5 rounded-xl">Connect →</button>
+        <div id="join-status" class="text-xs text-slate-400"></div>
+      </div>
+    </div>
+
+    <!-- ROLE PICK -->
+    <div id="view-roles" class="hidden">
+      <h1 class="text-2xl font-bold text-slate-900 mb-4">Pick your role</h1>
+      <div id="role-buttons" class="space-y-2"></div>
+    </div>
+
+    <!-- CHAT -->
+    <div id="view-chat" class="hidden">
+      <div class="bg-[#075E54] text-white rounded-t-2xl px-4 py-3 text-sm font-semibold" id="chat-header"></div>
+      <div id="chat-log" class="bg-slate-50 border-x border-slate-100 p-3 space-y-2 h-[55vh] overflow-y-auto scroll"></div>
+      <div class="bg-white rounded-b-2xl border border-slate-100 p-3">
+        <div id="action-buttons" class="flex flex-wrap gap-2"></div>
+        <div id="outcome-banner" class="hidden mt-2 text-center font-bold"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let myRole = null, myName = null, hostConn = null, state = null;
+
+    const ROLE_LABEL = { worker: '👩‍⚕️ Worker', boat1: '🚤 Boatman 1 (night-capable)', boat2: '🚤 Boatman 2 (day-only)', facility: '🏥 Facility' };
+    const ACTION_LABEL = {
+      TRIGGER: '🚨 Report Emergency', ACCEPT: '✅ Accept Job', DEPART: '⛴️ Depart',
+      REFUEL: '⛽ Refuel', ARRIVED: '🏥 Reached Facility', READY: '✅ Mark Ready', RECEIVED: '📥 Patient Received'
+    };
+
+    document.getElementById('btn-join').onclick = () => {
+      const room = document.getElementById('in-room').value.trim();
+      myName = document.getElementById('in-name').value.trim() || 'Player';
+      if (!room) return;
+
+      if (typeof Peer === 'undefined') {
+        document.getElementById('join-status').textContent = "⚠️ PeerJS didn't load — check your internet connection and reload.";
+        return;
+      }
+      document.getElementById('join-status').textContent = 'Connecting…';
+      try {
+        const peer = new Peer();
+        peer.on('open', () => {
+          hostConn = peer.connect(room);
+          hostConn.on('open', () => { document.getElementById('join-status').textContent = 'Connected. Choose a role.'; });
+          hostConn.on('data', handleHostMessage);
+          hostConn.on('error', e => { document.getElementById('join-status').textContent = 'Connection error: ' + e; });
+        });
+        peer.on('error', e => { document.getElementById('join-status').textContent = 'Peer error: ' + e; });
+      } catch (e) {
+        document.getElementById('join-status').textContent = 'Networking failed to initialise: ' + e.message;
+      }
+    };
+
+    function handleHostMessage(msg) {
+      if (msg.type === 'ROLES') {
+        renderRolePicker(msg.available, msg.taken);
+        switchView('roles');
+      } else if (msg.type === 'ROLE_ASSIGNED') {
+        myRole = msg.role;
+        document.getElementById('chat-header').textContent = ROLE_LABEL[myRole] + ' — ' + myName;
+        switchView('chat');
+      } else if (msg.type === 'ROLE_TAKEN') {
+        alert('That role was just taken — pick another.');
+      } else if (msg.type === 'STATE') {
+        state = msg.state;
+        if (myRole) renderChat();
+      } else if (msg.type === 'ERROR') {
+        appendSystemBubble('⚠️ ' + msg.message);
+      }
+    }
+
+    function renderRolePicker(available, taken) {
+      const el = document.getElementById('role-buttons');
+      const all = Object.keys(ROLE_LABEL);
+      el.innerHTML = all.map(role => {
+        const isTaken = taken[role] !== undefined;
+        return `<button ${isTaken ? 'disabled' : ''} data-role="${role}"
+          class="w-full text-left px-4 py-3 rounded-xl border font-semibold ${isTaken ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white border-teal-200 hover:bg-teal-50 text-slate-800'}">
+          ${ROLE_LABEL[role]} ${isTaken ? `<span class="text-xs font-normal">— taken (${taken[role]})</span>` : ''}
+        </button>`;
+      }).join('');
+      el.querySelectorAll('button:not([disabled])').forEach(btn => {
+        btn.onclick = () => hostConn.send({ type: 'CLAIM_ROLE', role: btn.dataset.role, name: myName });
+      });
+    }
+
+    function switchView(name) {
+      ['join', 'roles', 'chat'].forEach(v => document.getElementById('view-' + v).classList.toggle('hidden', v !== name));
+    }
+
+    function appendSystemBubble(text) {
+      const log = document.getElementById('chat-log');
+      log.insertAdjacentHTML('beforeend', `<div class="text-xs text-center text-slate-400 italic bubble-in">${text}</div>`);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function renderChat() {
+      const log = document.getElementById('chat-log');
+      log.innerHTML = '';
+
+      if (state.phase === 'briefing') {
+        log.insertAdjacentHTML('beforeend', `<div class="text-xs text-center text-slate-400 italic mb-2">Scenario: ${state.scenario.dayNight}${state.scenario.flooding ? ' · flooding' : ''}${state.scenario.fuelShortage ? ' · fuel-constrained' : ''}</div>`);
+      }
+
+      (state.log || []).forEach(e => {
+        const isOwn = e.actor === myRole;
+        log.insertAdjacentHTML('beforeend', `
+          <div class="flex flex-col ${isOwn ? 'items-end' : 'items-start'} bubble-in">
+            <div class="${isOwn ? 'bg-[#DCF8C6]' : 'bg-white border border-slate-100'} rounded-2xl px-3 py-2 text-sm max-w-[85%] shadow-sm">
+              <div class="text-[10px] text-slate-400 mb-0.5">${e.actor}</div>
+              ${e.event}
+            </div>
+          </div>`);
+      });
+      log.scrollTop = log.scrollHeight;
+
+      const actions = state ? availableActions(state, myRole) : [];
+      document.getElementById('action-buttons').innerHTML = actions.map(a => `
+        <button data-action="${a}" class="bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold px-3 py-2 rounded-xl">${ACTION_LABEL[a] || a}</button>
+      `).join('') || '<span class="text-xs text-slate-400">Waiting…</span>';
+      document.querySelectorAll('#action-buttons button').forEach(btn => {
+        btn.onclick = () => hostConn.send({ type: 'ACTION', role: myRole, action: btn.dataset.action });
+      });
+
+      const outcomeBanner = document.getElementById('outcome-banner');
+      if (state.phase === 'debrief' && state.case?.outcome) {
+        const label = OUTCOME_LABEL[state.case.outcome];
+        outcomeBanner.classList.remove('hidden');
+        outcomeBanner.textContent = label.title;
+        outcomeBanner.className = 'mt-2 text-center font-bold ' + (state.case.outcome === 'safe' ? 'text-green-600' : state.case.outcome === 'complication' ? 'text-amber-600' : 'text-red-600');
+      } else {
+        outcomeBanner.classList.add('hidden');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Master — Dhubri Emergency Run</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="game-engine.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .river-day { background: linear-gradient(180deg, #bae6fd 0%, #7dd3fc 100%); }
+    .river-night { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); }
+    .flood-overlay { background: rgba(37, 99, 235, 0.35); }
+    .boat-icon { transition: left 900ms ease-out; }
+    .scroll::-webkit-scrollbar { width: 6px; }
+    .scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .toggle.active { background: #0f766e; color: white; border-color: #0f766e; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+  <div class="container mx-auto px-4 py-6 max-w-5xl">
+
+    <div class="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl px-4 py-3 mb-5">
+      ⚠️ <strong>Training game, not a live system.</strong> Peer-to-peer via WebRTC/PeerJS's public broker — no account, no server deployed by us. Needs normal internet access to PeerJS's broker (blocked in the sandbox this was built in, so live multi-device connectivity hasn't been tested end-to-end here — test with two real devices before running a group session). Condition-meter pacing is tuned for a training session, not real clinical timelines.
+    </div>
+
+    <h1 class="text-3xl font-bold text-slate-900 mb-1">Game Master</h1>
+    <p class="text-slate-500 mb-2">Show this screen to the room. Each player joins on their own phone via <code>player.html</code>.</p>
+    <div id="net-status" class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 mb-4">Connecting…</div>
+
+    <!-- LOBBY -->
+    <div id="view-lobby">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
+        <div class="text-xs text-slate-400 mb-1">Room code — read this out loud</div>
+        <div id="room-code" class="text-4xl font-black text-teal-700 tracking-wide">…</div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
+        <div class="text-sm font-semibold text-slate-700 mb-2">Players</div>
+        <div id="player-list" class="grid grid-cols-2 md:grid-cols-4 gap-2"></div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
+        <div class="text-sm font-semibold text-slate-700 mb-3">Scenario</div>
+        <div class="flex flex-wrap gap-2 mb-3">
+          <button class="toggle daynight px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200" data-val="day">☀️ Day</button>
+          <button class="toggle daynight px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200" data-val="night">🌙 Night</button>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="toggle-flooding" class="toggle px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200">🌊 Flooding</button>
+          <button id="toggle-fuel" class="toggle px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200">⛽ Fuel shortage</button>
+        </div>
+      </div>
+
+      <button id="btn-begin" class="bg-teal-600 hover:bg-teal-500 text-white font-bold px-6 py-3 rounded-xl">Begin Briefing →</button>
+    </div>
+
+    <!-- BRIEFING -->
+    <div id="view-briefing" class="hidden">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center">
+        <div class="text-2xl font-bold text-slate-900 mb-2">Waiting for the worker to report…</div>
+        <p class="text-slate-500" id="briefing-summary"></p>
+      </div>
+    </div>
+
+    <!-- IN PROGRESS -->
+    <div id="view-game" class="hidden">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="text-sm font-semibold text-slate-600">Case <span id="game-case-id"></span></div>
+        <div class="text-sm font-mono text-slate-500">⏱ <span id="game-elapsed">0:00</span></div>
+      </div>
+
+      <div id="river" class="river-day relative rounded-2xl h-40 overflow-hidden mb-4 border border-slate-200">
+        <div id="flood-fill" class="hidden flood-overlay absolute bottom-0 left-0 right-0 h-0 transition-all"></div>
+        <div class="absolute left-3 top-3 text-3xl">🏝️</div>
+        <div class="absolute right-3 top-3 text-3xl">🏥</div>
+        <div id="boat" class="boat-icon absolute bottom-6 text-3xl" style="left:2%">🚤</div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+          <div class="text-xs text-slate-400 mb-1">Patient condition</div>
+          <div class="w-full bg-slate-100 rounded-full h-4">
+            <div id="condition-bar" class="h-4 rounded-full bg-green-500 transition-all" style="width:100%"></div>
+          </div>
+        </div>
+        <div id="fuel-card" class="hidden bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+          <div class="text-xs text-slate-400 mb-1">Assigned boat fuel</div>
+          <div class="w-full bg-slate-100 rounded-full h-4">
+            <div id="fuel-bar" class="h-4 rounded-full bg-blue-500 transition-all" style="width:100%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 h-56 overflow-y-auto scroll" id="game-log"></div>
+    </div>
+
+    <!-- DEBRIEF -->
+    <div id="view-debrief" class="hidden">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center mb-4">
+        <div id="debrief-title" class="text-3xl font-black mb-2"></div>
+        <p id="debrief-desc" class="text-slate-500 max-w-xl mx-auto"></p>
+        <div class="mt-4 text-sm text-slate-400">Total elapsed: <span id="debrief-elapsed" class="font-semibold text-slate-700"></span></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 h-56 overflow-y-auto scroll mb-4" id="debrief-log"></div>
+      <button id="btn-replay" class="bg-teal-600 hover:bg-teal-500 text-white font-bold px-6 py-3 rounded-xl">Play Again →</button>
+    </div>
+  </div>
+
+  <script>
+    // All local game logic/UI below works standalone on this one device, whether
+    // or not PeerJS actually connects — networking is wired up separately at the
+    // bottom (initNetworking()) behind a try/catch, so a blocked/unreachable
+    // PeerJS broker degrades to an offline single-device demo instead of breaking
+    // the whole page (this matters beyond just this sandbox: any player's flaky
+    // wifi should fail the same graceful way, not take the game master's screen down).
+    let scenarioChoice = { dayNight: 'day', flooding: false, fuelShortage: false };
+    let state = createInitialState(scenarioChoice, Date.now());
+    const connections = {}; // peerId -> { conn, role, name }
+    let networkingAvailable = false;
+
+    const ROLE_LABEL = { worker: '👩‍⚕️ Worker', boat1: '🚤 Boatman 1 (night-capable)', boat2: '🚤 Boatman 2 (day-only)', facility: '🏥 Facility' };
+
+    function openRoles() {
+      return Object.keys(state.players).filter(r => !state.players[r].connected);
+    }
+    function takenRolesSummary() {
+      return Object.fromEntries(Object.entries(state.players).filter(([, p]) => p.connected).map(([r, p]) => [r, p.name]));
+    }
+
+    function handleClientMessage(conn, msg) {
+      if (msg.type === 'CLAIM_ROLE') {
+        if (state.players[msg.role]?.connected) {
+          conn.send({ type: 'ROLE_TAKEN', role: msg.role });
+          return;
+        }
+        connections[conn.peer].role = msg.role;
+        connections[conn.peer].name = msg.name;
+        state.players[msg.role] = { peerId: conn.peer, name: msg.name, connected: true };
+        conn.send({ type: 'ROLE_ASSIGNED', role: msg.role });
+        renderLobby();
+        broadcastState();
+        return;
+      }
+      if (msg.type === 'ACTION') {
+        const entry = connections[conn.peer];
+        if (!entry || entry.role !== msg.role) {
+          conn.send({ type: 'ERROR', message: 'Role mismatch.' });
+          return;
+        }
+        const result = applyAction(state, { role: msg.role, action: msg.action, now: Date.now() });
+        state = result.state;
+        if (result.error) conn.send({ type: 'ERROR', message: result.error });
+        renderAll();
+        broadcastState();
+      }
+    }
+
+    function broadcastState() {
+      Object.values(connections).forEach(({ conn }) => { if (conn.open) conn.send({ type: 'STATE', state }); });
+    }
+
+    // ── Lobby UI ──────────────────────────────────────────────────────────────
+    function renderLobby() {
+      const list = document.getElementById('player-list');
+      list.innerHTML = Object.entries(state.players).map(([role, p]) => `
+        <div class="rounded-xl border px-3 py-2 text-xs ${p.connected ? 'border-teal-200 bg-teal-50 text-teal-700' : 'border-slate-200 bg-slate-50 text-slate-400'}">
+          <div class="font-semibold">${ROLE_LABEL[role]}</div>
+          <div>${p.connected ? p.name : 'waiting…'}</div>
+        </div>`).join('');
+    }
+
+    document.querySelectorAll('.daynight').forEach(btn => btn.onclick = () => {
+      scenarioChoice.dayNight = btn.dataset.val;
+      document.querySelectorAll('.daynight').forEach(b => b.classList.toggle('active', b === btn));
+    });
+    document.getElementById('toggle-flooding').onclick = (e) => {
+      scenarioChoice.flooding = !scenarioChoice.flooding;
+      e.target.classList.toggle('active', scenarioChoice.flooding);
+    };
+    document.getElementById('toggle-fuel').onclick = (e) => {
+      scenarioChoice.fuelShortage = !scenarioChoice.fuelShortage;
+      e.target.classList.toggle('active', scenarioChoice.fuelShortage);
+    };
+    document.querySelector('.daynight[data-val="day"]').classList.add('active');
+
+    document.getElementById('btn-begin').onclick = () => {
+      state.scenario = { ...scenarioChoice };
+      state = beginBriefing(state, Date.now());
+      document.getElementById('briefing-summary').textContent =
+        `${state.scenario.dayNight === 'night' ? '🌙 Night' : '☀️ Day'}${state.scenario.flooding ? ' · 🌊 Flooding' : ''}${state.scenario.fuelShortage ? ' · ⛽ Fuel-constrained' : ''}`;
+      switchView('briefing');
+      broadcastState();
+    };
+
+    document.getElementById('btn-replay').onclick = () => {
+      state = resetForReplay(state, Date.now());
+      switchView('lobby');
+      renderLobby();
+      broadcastState();
+    };
+
+    // ── View switching ────────────────────────────────────────────────────────
+    function switchView(name) {
+      ['lobby', 'briefing', 'game', 'debrief'].forEach(v => {
+        document.getElementById('view-' + v).classList.toggle('hidden', v !== name);
+      });
+    }
+
+    // ── Game board rendering ──────────────────────────────────────────────────
+    function fmtElapsed(ms) {
+      const s = Math.floor(ms / 1000);
+      return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    }
+
+    function renderGame() {
+      if (!state.case) return;
+      const c = state.case;
+      const now = Date.now();
+
+      document.getElementById('game-case-id').textContent = c.id;
+      document.getElementById('game-elapsed').textContent = fmtElapsed(now - c.startedAt);
+
+      const river = document.getElementById('river');
+      river.className = 'relative rounded-2xl h-40 overflow-hidden mb-4 border border-slate-200 ' + (state.scenario.dayNight === 'night' ? 'river-night' : 'river-day');
+
+      const floodEl = document.getElementById('flood-fill');
+      if (state.scenario.flooding) {
+        floodEl.classList.remove('hidden');
+        floodEl.style.height = '35%';
+      } else {
+        floodEl.classList.add('hidden');
+      }
+
+      const progress = boatProgressFraction(state, now);
+      document.getElementById('boat').style.left = `calc(${2 + progress * 88}% )`;
+
+      const condPct = Math.round(c.conditionMeter);
+      const condBar = document.getElementById('condition-bar');
+      condBar.style.width = condPct + '%';
+      condBar.className = 'h-4 rounded-full transition-all ' + (condPct >= 70 ? 'bg-green-500' : condPct >= 30 ? 'bg-amber-500' : 'bg-red-500');
+
+      const fuelCard = document.getElementById('fuel-card');
+      if (state.scenario.fuelShortage && c.boatAssigned) {
+        fuelCard.classList.remove('hidden');
+        const fuelPct = Math.round(c.fuel[c.boatAssigned]);
+        const fuelBar = document.getElementById('fuel-bar');
+        fuelBar.style.width = fuelPct + '%';
+        fuelBar.className = 'h-4 rounded-full transition-all ' + (fuelPct >= 40 ? 'bg-blue-500' : 'bg-red-500');
+      } else {
+        fuelCard.classList.add('hidden');
+      }
+
+      renderLog('game-log', state.log, c.startedAt);
+    }
+
+    function renderLog(elId, entries, since) {
+      const el = document.getElementById(elId);
+      el.innerHTML = entries.map(e => `
+        <div class="text-xs text-slate-600 border-l-2 border-teal-500 pl-2 py-0.5 mb-1">
+          <span class="text-slate-400">${since ? fmtElapsed(e.at - since) : ''}</span> · <strong>${e.actor}</strong> — ${e.event}
+        </div>`).join('');
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function renderDebrief() {
+      const c = state.case;
+      const label = OUTCOME_LABEL[c.outcome];
+      const titleColor = c.outcome === 'safe' ? 'text-green-600' : c.outcome === 'complication' ? 'text-amber-600' : 'text-red-600';
+      const el = document.getElementById('debrief-title');
+      el.textContent = label.title;
+      el.className = 'text-3xl font-black mb-2 ' + titleColor;
+      document.getElementById('debrief-desc').textContent = label.desc;
+      document.getElementById('debrief-elapsed').textContent = fmtElapsed((state.log[state.log.length - 1]?.at ?? Date.now()) - c.startedAt);
+      renderLog('debrief-log', state.log, c.startedAt);
+    }
+
+    function renderAll() {
+      if (state.phase === 'lobby') { switchView('lobby'); renderLobby(); }
+      else if (state.phase === 'briefing') { switchView('briefing'); }
+      else if (state.phase === 'in-progress') { switchView('game'); renderGame(); }
+      else if (state.phase === 'debrief') { switchView('debrief'); renderDebrief(); }
+    }
+
+    setInterval(() => {
+      if (state.phase === 'in-progress') {
+        state = tick(state, Date.now());
+        renderGame();
+        broadcastState();
+        if (state.phase === 'debrief') { renderAll(); }
+      }
+    }, 1000);
+
+    renderLobby();
+
+    // ── Networking (isolated so it can fail without breaking the game above) ──
+    function setNetStatus(text, cls) {
+      const el = document.getElementById('net-status');
+      el.textContent = text;
+      el.className = 'inline-block text-xs font-semibold px-2.5 py-1 rounded-full mb-4 ' + cls;
+    }
+
+    function initNetworking() {
+      if (typeof Peer === 'undefined') {
+        setNetStatus('⚠️ Offline demo mode — PeerJS didn\'t load (no internet to its CDN/broker)', 'bg-amber-100 text-amber-700');
+        return;
+      }
+      try {
+        const code = 'dhubri-' + Math.floor(1000 + Math.random() * 9000);
+        document.getElementById('room-code').textContent = code;
+        const peer = new Peer(code);
+
+        peer.on('open', id => {
+          document.getElementById('room-code').textContent = id;
+          networkingAvailable = true;
+          setNetStatus('🟢 Online — share this room code', 'bg-teal-100 text-teal-700');
+        });
+        peer.on('error', err => {
+          console.error('PeerJS error:', err);
+          setNetStatus('⚠️ Offline demo mode — connection to PeerJS broker failed', 'bg-amber-100 text-amber-700');
+        });
+        peer.on('connection', conn => {
+          connections[conn.peer] = { conn, role: null, name: null };
+          conn.on('data', data => handleClientMessage(conn, data));
+          conn.on('close', () => {
+            const entry = connections[conn.peer];
+            if (entry && entry.role) {
+              state.players[entry.role] = { peerId: null, name: null, connected: false };
+            }
+            delete connections[conn.peer];
+            renderLobby();
+            broadcastState();
+          });
+          conn.on('open', () => {
+            conn.send({ type: 'ROLES', available: openRoles(), taken: takenRolesSummary() });
+          });
+        });
+      } catch (e) {
+        console.error('Networking init failed:', e);
+        setNetStatus('⚠️ Offline demo mode — networking failed to initialise', 'bg-amber-100 text-amber-700');
+      }
+    }
+
+    initNetworking();
+  </script>
+</body>
+</html>
