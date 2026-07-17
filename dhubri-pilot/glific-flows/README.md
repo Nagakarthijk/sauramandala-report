@@ -59,7 +59,7 @@ See [`DEMO_ON_WHATSAPP.md`](./DEMO_ON_WHATSAPP.md) — a zero-infrastructure pat
 
 ## The demo flows feel too limited — want to test the real ones instead?
 
-See [`TEST-REAL-FLOWS.md`](./TEST-REAL-FLOWS.md) — same no-code, no-backend approach, but pointed at `FLOW-W1.json`/`FLOW-B1.json`/`FLOW-BRC1.json` themselves: a free mock-webhook trick for a real dynamic case id, and `start-flow-for-contact.js` for manually firing the two flows that are never keyword-triggered by design.
+See [`TEST-REAL-FLOWS.md`](./TEST-REAL-FLOWS.md) — `FLOW-W1.json`/`FLOW-B1.json` now generate with **zero external services needed** by default (the not-yet-existing webhook calls are simply left out), so importing and testing them is exactly as easy as the `-DEMO` files. `start-flow-for-contact.js` handles manually firing `FLOW-B1.json`/`FLOW-BRC1.json`, which are never keyword-triggered by design. A dynamic case number via a free mock webhook is covered too, purely as an optional extra.
 
 ## Files
 

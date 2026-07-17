@@ -10,18 +10,24 @@
 //
 // Run: node generate-flow-w1.js  →  writes FLOW-W1.json alongside this script.
 //
-// To test the REAL flow (not FLOW-W1-DEMO.json) without a deployed backend, point
-// the two webhook calls at a free no-code mock JSON responder (e.g. mocky.io) via
-// env vars instead of hand-editing the JSON — see TEST-REAL-FLOWS.md:
+// By default (no env vars set) this file needs ZERO external services to import
+// and test — the webhook calls are simply left out, and the confirmation message
+// says "Case created" instead of showing a dynamic case number. That's the only
+// difference from a fully-wired backend; everything else (real triage buttons,
+// the Google Sheets lookup, the follow-up questions) is the real thing.
+//
+// If you later want a dynamic-looking case number instead, and are comfortable
+// standing up a free no-code mock JSON responder (e.g. mocky.io) for it, set:
 //   export WEBHOOK_CASES_CREATE_URL=https://run.mocky.io/v3/<your-mock-id>
 //   export WEBHOOK_CASE_DETAILS_URL=https://run.mocky.io/v3/<your-mock-id>
 //   node generate-flow-w1.js
+// This is optional — skip it entirely if it's not worth the hassle. See TEST-REAL-FLOWS.md.
 
 const fs = require('fs');
 const { uuid, actionNode, msgAction, interactiveAction, webhookAction, waitAnyNode, waitOptionsNode, interactiveTemplate, wrapFlow, assemble } = require('./_lib');
 
-const CASES_CREATE_URL = process.env.WEBHOOK_CASES_CREATE_URL || 'https://YOUR-BACKEND-DOMAIN/functions/v1/cases-create';
-const CASE_DETAILS_URL = process.env.WEBHOOK_CASE_DETAILS_URL || 'https://YOUR-BACKEND-DOMAIN/functions/v1/case-details';
+const CASES_CREATE_URL = process.env.WEBHOOK_CASES_CREATE_URL || null;
+const CASE_DETAILS_URL = process.env.WEBHOOK_CASE_DETAILS_URL || null;
 
 const flowUuid = uuid();
 const triageTemplateId = 900001;
@@ -89,10 +95,13 @@ const nodes = [
 
   // N2 — dispatch fires immediately. Two actions, no wait needed between them, so
   // they share one node (confirmed fine — only message-then-user-reply needs splitting).
+  // Webhook only included if a real (or mock) URL was provided — see header comment.
   actionNode([
-    webhookAction('POST', CASES_CREATE_URL, 'webhook',
-      '{ "reported_by_type": "worker", "reported_by_id": @(json(contact.uuid)), "char_id": @(json(contact.fields.char_id)), "triage": @(json(lower(results.triage))), "facility_id_hint": @(json(results.facility_lookup.facility_id)) }'),
-    msgAction("Case @results.webhook.case_id created. Dispatching a boat and alerting the facility and block coordinator now — I'll update you as soon as a boatman accepts.")
+    ...(CASES_CREATE_URL ? [webhookAction('POST', CASES_CREATE_URL, 'webhook',
+      '{ "reported_by_type": "worker", "reported_by_id": @(json(contact.uuid)), "char_id": @(json(contact.fields.char_id)), "triage": @(json(lower(results.triage))), "facility_id_hint": @(json(results.facility_lookup.facility_id)) }')] : []),
+    msgAction(CASES_CREATE_URL
+      ? "Case @results.webhook.case_id created. Dispatching a boat and alerting the facility and block coordinator now — I'll update you as soon as a boatman accepts."
+      : "Case created. Dispatching a boat and alerting the facility and block coordinator now — I'll update you as soon as a boatman accepts.")
   ], ids.n3_msg, ids.n2),
 
   // N3 — follow-up: patient reference (does not delay N2's dispatch, already fired).
@@ -104,10 +113,14 @@ const nodes = [
   waitAnyNode('attachment', ids.n5, ids.n4_wait),
 
   // N5 — sends the follow-up detail to the already-open case, not cases-create again.
-  actionNode([
-    webhookAction('POST', CASE_DETAILS_URL, 'webhook2',
-      '{ "case_id": @(json(results.webhook.case_id)), "patient_ref": @(json(results.patient_ref)), "attachments": [] }')
-  ], null, ids.n5)
+  // No-op message if no webhook URL configured — still closes the loop conversationally.
+  actionNode(
+    CASE_DETAILS_URL
+      ? [webhookAction('POST', CASE_DETAILS_URL, 'webhook2',
+          '{ "case_id": @(json(results.webhook.case_id)), "patient_ref": @(json(results.patient_ref)), "attachments": [] }')]
+      : [msgAction('Got it, thank you.')],
+    null, ids.n5
+  )
 ];
 
 const flow = wrapFlow({ uuid: flowUuid, name: 'Worker Emergency Report', keywords: ['emergency'], nodes });

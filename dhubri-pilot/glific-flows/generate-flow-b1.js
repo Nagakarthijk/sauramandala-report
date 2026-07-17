@@ -13,17 +13,23 @@
 //
 // Run: node generate-flow-b1.js  →  writes FLOW-B1.json alongside this script.
 //
-// To test against a working webhook instead of erroring on the placeholder URL:
+// By default (no env var set) the webhook call is left out entirely — there's no
+// downside to that for testing, since this flow sends no confirmation message
+// either way (see below). Needs ZERO external services to import and test.
+//
+// This flow was never meant to be tested in isolation regardless — it's started
+// by the backend, with no keyword. See TEST-REAL-FLOWS.md and
+// start-flow-for-contact.js for how to actually fire it on a real contact.
+//
+// Optional, only if you want the webhook call itself to succeed rather than be
+// skipped (doesn't change anything visible in the chat either way):
 //   export WEBHOOK_BOATMAN_ACCEPT_URL=https://run.mocky.io/v3/<your-mock-id>
 //   node generate-flow-b1.js
-// See TEST-REAL-FLOWS.md — this flow was never meant to be tested in isolation
-// (it's started by the backend, with no keyword, and sends no confirmation of
-// its own by design), so that doc also covers using start-flow-for-contact.js.
 
 const fs = require('fs');
 const { uuid, actionNode, interactiveAction, webhookAction, waitOptionsNode, interactiveTemplate, wrapFlow, assemble } = require('./_lib');
 
-const BOATMAN_ACCEPT_URL = process.env.WEBHOOK_BOATMAN_ACCEPT_URL || 'https://YOUR-BACKEND-DOMAIN/functions/v1/boatman-accept';
+const BOATMAN_ACCEPT_URL = process.env.WEBHOOK_BOATMAN_ACCEPT_URL || null;
 
 const flowUuid = uuid();
 const acceptTemplateId = 900002;
@@ -41,14 +47,15 @@ const nodes = [
   // parameter with {case_id, char_name, risk_flag} (FLOWS.md FLOW-B1) — never keyword-triggered.
   actionNode([interactiveAction(acceptTemplateId, 'Boatman Accept', acceptContent)], ids.n1_wait, ids.n1_msg),
   // Anything but "Accept" ends the run here (destination_uuid: null) — this boatman just
-  // doesn't take the job. "Accept" proceeds to N2.
-  waitOptionsNode('response', [{ title: 'Accept', destUuid: ids.n2 }], null, ids.n1_wait),
+  // doesn't take the job. "Accept" proceeds to N2 if there's a webhook to call, otherwise
+  // ends the run directly — no confirmation message either way (see file header).
+  waitOptionsNode('response', [{ title: 'Accept', destUuid: BOATMAN_ACCEPT_URL ? ids.n2 : null }], null, ids.n1_wait),
   // No confirmation message here on purpose — the backend's acceptBoatJob() sends the
   // actual "you're assigned" or "already assigned" message via a separate startContactFlow call.
-  actionNode([
+  ...(BOATMAN_ACCEPT_URL ? [actionNode([
     webhookAction('POST', BOATMAN_ACCEPT_URL, 'webhook',
       '{ "case_id": @(json(results.case_id)), "boatman_id": @(json(contact.uuid)) }')
-  ], null, ids.n2)
+  ], null, ids.n2)] : [])
 ];
 
 const flow = wrapFlow({ uuid: flowUuid, name: 'Boatman Broadcast & Accept', keywords: [], nodes });
