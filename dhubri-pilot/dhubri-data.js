@@ -86,12 +86,12 @@ const DHUBRI = (() => {
       id: 'DHU-2026-000104', charId: 'CHAR-01', facilityId: 'FAC-01',
       reportedBy: { type: 'worker', id: 'FLW-001' },
       riskFlag: 'emergency', timeOfDay: 'day', requiredCapability: 'day-only',
-      boatmanId: null, ambulanceType: '104',
+      boatmanId: null, ambulanceType: '108',
       status: 'escalated-manual',
       timeline: [
         { at: '2026-07-16T07:00:00+05:30', actor: 'FLW-001', channel: 'whatsapp', event: 'Case reported — emergency, day' },
         { at: '2026-07-16T07:01:00+05:30', actor: 'system', channel: 'whatsapp', event: 'Boat request broadcast to char pool' },
-        { at: '2026-07-16T07:11:00+05:30', actor: 'system', channel: 'whatsapp', event: 'No boatman accepted within 10 min — escalated to 104' },
+        { at: '2026-07-16T07:11:00+05:30', actor: 'system', channel: 'whatsapp', event: 'No boatman accepted within 10 min — escalated to 108' },
         { at: '2026-07-16T07:01:30+05:30', actor: 'system', channel: 'whatsapp', event: 'Facility alerted (parallel to boat dispatch)' }
       ]
     }

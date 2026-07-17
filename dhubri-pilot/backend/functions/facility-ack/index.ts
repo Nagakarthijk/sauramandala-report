@@ -5,7 +5,7 @@
 // outcome-capture prompt (SOP-6) — see dispatch below.
 //
 // Request body: { case_id, ack_status: 'ready' | 'received' }
-// Response: { case_id, facility_ack_status }
+// Response: { case_id, facility_status }
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
 import { getServiceClient, generateId, jsonResponse } from '../_shared/db.ts'
@@ -23,9 +23,9 @@ serve(async (req) => {
 
   const db = getServiceClient()
 
-  const update: Record<string, unknown> = { facility_ack_status: ack_status }
+  const update: Record<string, unknown> = { facility_status: ack_status }
   if (ack_status === 'received') {
-    update.facility_ack_at = new Date().toISOString()
+    update.facility_status_at = new Date().toISOString()
     update.status = 'arrived'
   }
 
@@ -44,5 +44,5 @@ serve(async (req) => {
     }
   }
 
-  return jsonResponse({ case_id, facility_ack_status: ack_status })
+  return jsonResponse({ case_id, facility_status: ack_status })
 })

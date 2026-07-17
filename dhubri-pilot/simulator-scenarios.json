@@ -108,13 +108,13 @@
     },
     {
       "id": "SCN-04",
-      "title": "Boatman pool doesn't respond — escalates to 104/CNES",
-      "summary": "SOP-3 step 4: nobody in the private boatman pool accepts within the escalation window, so the case automatically escalates to the 104/CNES ambulance channel and gets flagged for control-room attention.",
+      "title": "Boatman pool doesn't respond — escalates to 108/CNES",
+      "summary": "SOP-3 step 4: nobody in the private boatman pool accepts within the escalation window, so the case automatically escalates to the 108/CNES ambulance channel and gets flagged for control-room attention.",
       "actors": [
         { "id": "worker", "label": "Rina — ASHA (Worker)", "channel": "whatsapp", "role": "worker" },
         { "id": "boat1", "label": "Abdul — Boatman", "channel": "whatsapp", "role": "boatman" },
         { "id": "boat2", "label": "Salim — Boatman", "channel": "whatsapp", "role": "boatman" },
-        { "id": "ambulance", "label": "104/CNES Dispatch", "channel": "whatsapp", "role": "ambulance" }
+        { "id": "ambulance", "label": "108/CNES Dispatch", "channel": "whatsapp", "role": "ambulance" }
       ],
       "beats": [
         { "at": 0, "actor": "worker", "from": "worker", "kind": "text", "body": "EMERGENCY" },
@@ -124,12 +124,12 @@
         { "at": 1000, "actor": "boat2", "from": "bot", "kind": "buttons", "body": "🚨 Emergency case at Char A. Can you go?", "options": ["Accept"] },
         { "at": 2000, "actor": "dashboard", "from": "system", "kind": "note", "body": "⏳ 10 min pilot-default escalation window running — no acceptance yet from either boatman" },
         { "at": 6000, "actor": "dashboard", "from": "system", "kind": "note", "body": "Still no response. Window continuing..." },
-        { "at": 9500, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "escalated-manual", "body": "Timeout — neither boatman accepted. Escalating to 104/CNES. Flagged on dashboard for control-room follow-up on why the private pool didn't respond." },
+        { "at": 9500, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "escalated-manual", "body": "Timeout — neither boatman accepted. Escalating to 108/CNES. Flagged on dashboard for control-room follow-up on why the private pool didn't respond." },
         { "at": 9800, "actor": "ambulance", "from": "bot", "kind": "buttons", "body": "🚨 Ambulance-level case DHU-2026-000512 at Char A. Private boatman pool did not respond. Required: day+night-with-support.", "options": ["Accept"] },
         { "at": 11500, "actor": "ambulance", "from": "ambulance", "kind": "text", "body": "Accept" },
-        { "at": 11800, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "boat-assigned", "body": "104/CNES dispatched. Rest of flow (facility, arrival, close) proceeds as in Scenario 1." },
-        { "at": 12100, "actor": "boat1", "from": "bot", "kind": "text", "body": "This case has been reassigned to 104/CNES." },
-        { "at": 12100, "actor": "boat2", "from": "bot", "kind": "text", "body": "This case has been reassigned to 104/CNES." }
+        { "at": 11800, "actor": "dashboard", "from": "system", "kind": "case_update", "status": "boat-assigned", "body": "108/CNES dispatched. Rest of flow (facility, arrival, close) proceeds as in Scenario 1." },
+        { "at": 12100, "actor": "boat1", "from": "bot", "kind": "text", "body": "This case has been reassigned to 108/CNES." },
+        { "at": 12100, "actor": "boat2", "from": "bot", "kind": "text", "body": "This case has been reassigned to 108/CNES." }
       ]
     },
     {

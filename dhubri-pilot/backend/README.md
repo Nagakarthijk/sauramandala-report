@@ -14,7 +14,7 @@ Supabase Edge Functions (Deno/TypeScript) implementing the webhook endpoints spe
 | `exotel-ivr-response` | Exotel's Passthrough applet (IVR DTMF) or inbound-SMS callback | SOP-3 (SMS/IVR path) — resolves to the same state transition as `boatman-accept` via the shared `_shared/accept-boat.ts` |
 | `facility-ack` | Facility's READY / RECEIVED reply | SOP-4 |
 | `case-close` | Facility's outcome-capture reply | SOP-6 |
-| `escalate-check` | A scheduled cron trigger (see below) | SOP-2 step 5 (verification timeout) and SOP-3 step 4 (boatman pool timeout → 104/CNES) |
+| `escalate-check` | A scheduled cron trigger (see below) | SOP-2 step 5 (verification timeout) and SOP-3 step 4 (boatman pool timeout → 108/CNES) |
 
 `_shared/` holds the code these all share: `db.ts` (Supabase client + ID helper), `glific-client.ts` (Glific REST auth + `startContactFlow`), `exotel-client.ts` (direct Exotel Voice/SMS calls), `dispatch.ts` (the parallel boat-broadcast + facility-alert logic, used by both `cases-create` and `escalate-check`), `accept-boat.ts` (the atomic first-accept-wins logic, used by both `boatman-accept` and `exotel-ivr-response`).
 
@@ -41,4 +41,4 @@ Everything flagged inline in the code and in `GLIFIC_SETUP.md` §5 — most impo
 - The Glific REST auth (`/api/v1/session`) request/response shape in `glific-client.ts`.
 - The exact Exotel outbound-call trigger shape in `exotel-client.ts`, matched to the App you actually build (GLIFIC_SETUP.md §2b).
 - The `deriveRequiredCapability` heuristic in `cases-create/index.ts` — a placeholder business rule, not a signed-off one.
-- The 104/CNES dispatch registry in `escalate-check/index.ts`'s `dispatchAmbulance` — currently reuses the `boatmen` table filtered by `operator`, since no separate ambulance registry exists yet (`CONCEPT.md` §7 q4/q8).
+- The 108/CNES dispatch registry in `escalate-check/index.ts`'s `dispatchAmbulance` — currently reuses the `boatmen` table filtered by `operator`, since no separate ambulance registry exists yet (`CONCEPT.md` §7 q4/q8).

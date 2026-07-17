@@ -33,6 +33,20 @@ CREATE TABLE IF NOT EXISTS facilities (
 ALTER TABLE chars ADD CONSTRAINT chars_facility_fk
   FOREIGN KEY (facility_id) REFERENCES facilities(id);
 
+-- Block-level coordinator who receives the case brief and every readiness/ETA
+-- update in parallel with the facility — the "control room" role CONCEPT.md §7
+-- left open; SERVICE_BLUEPRINT.md names it explicitly. Never a Glific contact
+-- unless channel = 'whatsapp'.
+CREATE TABLE IF NOT EXISTS block_referral_coordinators (
+  id                TEXT PRIMARY KEY,               -- e.g. 'BRC-01'
+  name              TEXT NOT NULL,
+  facility_id       TEXT REFERENCES facilities(id), -- block-level, but scoped to a facility for the pilot's single-facility-per-char shape
+  channel           TEXT NOT NULL DEFAULT 'whatsapp' CHECK (channel IN ('whatsapp','sms','ivr')),
+  phone             TEXT NOT NULL,
+  glific_contact_id TEXT,
+  created_at        TIMESTAMPTZ DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS frontline_workers (
   id           TEXT PRIMARY KEY,                  -- e.g. 'FLW-001'
   name         TEXT NOT NULL,
@@ -53,7 +67,7 @@ CREATE TABLE IF NOT EXISTS boatmen (
   phone           TEXT NOT NULL,
   channel         TEXT NOT NULL DEFAULT 'whatsapp' CHECK (channel IN ('whatsapp','sms','ivr')),
   capability      TEXT NOT NULL CHECK (capability IN ('day-only','night-capable','day+night-with-support')),
-  operator        TEXT NOT NULL DEFAULT 'private' CHECK (operator IN ('private','104','cnes')),
+  operator        TEXT NOT NULL DEFAULT 'private' CHECK (operator IN ('private','108','cnes')),
   rate_card       TEXT,                           -- reference to rate agreed with govt/CNES
   availability    TEXT NOT NULL DEFAULT 'available' CHECK (availability IN ('available','on-job','off-duty')),
   active_case_id  TEXT,                           -- set while on-job; FK added below after cases exists
@@ -72,6 +86,11 @@ CREATE TABLE IF NOT EXISTS cases (
   reported_by_id       TEXT,                      -- frontline_workers.id / boatmen.id / null for family+admin
 
   risk_flag            TEXT NOT NULL CHECK (risk_flag IN ('hrp','emergency','planned-referral')),
+  -- SERVICE_BLUEPRINT.md's field-facing triage vocabulary — what the ASHA actually
+  -- assesses and taps, per NHM ASHA guidelines' danger-signs criteria. risk_flag
+  -- above is the system's internal categorization for capability-matching; triage
+  -- is what should actually drive it (mapping TBD — see SERVICE_BLUEPRINT.md).
+  triage               TEXT CHECK (triage IN ('red','green','labour-started')),
   time_of_day          TEXT NOT NULL CHECK (time_of_day IN ('day','night')),
   required_capability  TEXT NOT NULL CHECK (required_capability IN ('day-only','night-capable','day+night-with-support')),
 
@@ -95,12 +114,23 @@ CREATE TABLE IF NOT EXISTS cases (
   boatman_id           TEXT REFERENCES boatmen(id),
   boatman_assigned_at  TIMESTAMPTZ,
 
-  ambulance_type       TEXT CHECK (ambulance_type IN ('104','cnes','none')),
+  ambulance_type       TEXT CHECK (ambulance_type IN ('108','cnes','none')),
   ambulance_channel    TEXT CHECK (ambulance_channel IN ('whatsapp','sms','ivr')),
   ambulance_status     TEXT CHECK (ambulance_status IN ('requested','dispatched','arrived')),
+  -- SERVICE_BLUEPRINT.md: the 108 coordinator calculates TWO etas, not one —
+  -- to the pickup point ("arrival ghat") and separately from pickup to facility.
+  ambulance_eta_pickup_min   INTEGER,
+  ambulance_eta_facility_min INTEGER,
 
-  facility_ack_status  TEXT DEFAULT 'not-notified' CHECK (facility_ack_status IN ('not-notified','notified','ready','received')),
-  facility_ack_at      TIMESTAMPTZ,
+  -- overall facility-side lifecycle milestone (drives SOP-4/SOP-6 status flow,
+  -- unchanged from before); the two granular checklists below are the
+  -- SERVICE_BLUEPRINT.md addition captured alongside it, not a replacement for it
+  facility_status      TEXT DEFAULT 'not-notified' CHECK (facility_status IN ('not-notified','notified','ready','received')),
+  facility_status_at   TIMESTAMPTZ,
+  facility_readiness_ready BOOLEAN DEFAULT false,  -- Facility Readiness Checklist result
+  facility_readiness_at   TIMESTAMPTZ,
+  clinical_readiness_ready BOOLEAN DEFAULT false,  -- Clinical Readiness Checklist result
+  clinical_readiness_at   TIMESTAMPTZ,
 
   payment_status       TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending','settled')),
   payment_amount       INTEGER,

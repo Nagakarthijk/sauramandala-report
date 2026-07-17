@@ -25,7 +25,7 @@ export async function dispatchCase(db: any, case_id: string, char: any, required
       case_id, char_name: char.name, eta_min: char.indicative_eta_min
     })
   }
-  await db.from('cases').update({ facility_ack_status: 'notified' }).eq('id', case_id)
+  await db.from('cases').update({ facility_status: 'notified' }).eq('id', case_id)
   await logEvent(db, case_id, 'facility_alerted', {})
 
   const { data: pool } = await db

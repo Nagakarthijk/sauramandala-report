@@ -1,17 +1,21 @@
-# Dhubri Pilot — Concept & System Design (Draft v0.3)
+# Dhubri Pilot — Concept & System Design (Draft v0.4)
 
 **Status:** Discovery → early build — not yet validated with field partners
 **Purpose:** Organise the problem into actors, flows, data, and a Glific-based implementation shape, and surface the gaps that need answers before anything gets built.
+
+**v0.4 note:** `SERVICE_BLUEPRINT.md` — a real service-blueprint diagram from the project team — is now the authoritative source for several mechanics this file previously guessed at. Where the two disagree, the blueprint wins. See that file for the full transcription; the changes below are what's been folded in here so far (schema.sql and SOP.md are updated too; FLOWS.md, the Glific flow JSON, and the demo scenario JSON files are **not yet** reconciled — see `SERVICE_BLUEPRINT.md`'s reconciliation notes).
 
 ## Decisions Log
 
 | Date | Decision | Answer |
 |---|---|---|
 | v0.2 | Trigger scope | **Workers + verified family.** Family can raise a case on a public/shared number, but a frontline worker confirmation step gates it before a boat is actually dispatched (see §3, §7). |
-| v0.2 | 104/CNES integration | **WhatsApp alerts to 104/CNES too** (not just a phone call) — but boats must be classified by capability (day / night / day+night-with-support) and matched to case severity, not just "notify them and hope" (see §2, §5). |
+| v0.2 | 108/CNES integration | **WhatsApp alerts to 108/CNES too** (not just a phone call) — but boats must be classified by capability (day / night / day+night-with-support) and matched to case severity, not just "notify them and hope" (see §2, §5). |
 | v0.2 | Boatman assignment | **Pool with round-robin/first-accept**, not single-primary (see §3, §6). |
 | v0.2 | Channel reality | **WhatsApp + SMS + IVR voice, at scale** — this is no longer a WhatsApp-only build; Glific alone doesn't cover SMS/IVR, so the architecture needs an omnichannel layer (see §6a, new). |
 | v0.3 | SMS/IVR provider (was §7 q9) | **Exotel**, integrated alongside Glific's Gupshup-based WhatsApp channel. This is *not* a simple "Glific does SMS/IVR too now" swap — see the corrected §6a below for what Glific's native Exotel integration actually covers vs. what needs a direct Exotel API integration in the backend. |
+| v0.4 | Ambulance number correction | **108, not 104** — corrected everywhere in this folder per `SERVICE_BLUEPRINT.md`; 104 was carried over from the original request without verification and was wrong. |
+| v0.4 | Control-room role, named | **Block Referral Coordinator (BRC)** — `SERVICE_BLUEPRINT.md` answers §7's open "who's actually watching the dashboard" question with a concrete role that receives real-time SMS/WhatsApp updates in parallel with the facility, not just dashboard visibility after the fact. |
 
 These are now locked for design purposes; the rest of §7's open questions still stand.
 
@@ -23,7 +27,7 @@ A maternal emergency (labour, HRP complication, obstructed delivery, PPH risk, e
 
 1. Someone notices (family, or the frontline worker who's been tracking the HRP case).
 2. Word reaches the frontline worker informally (if not already involved).
-3. The worker or the family *personally* tries to find a boat — their own contacts, a known boatman, sometimes the 104 or CNES boat ambulance if anyone thinks to call it.
+3. The worker or the family *personally* tries to find a boat — their own contacts, a known boatman, sometimes the 108 or CNES boat ambulance if anyone thinks to call it.
 4. The boat happens, eventually, but nobody told the facility. So when the patient arrives, the facility hasn't prepped a bed/staff/blood, and has zero patient history.
 5. There is no record of any of this — no timestamps, no way to know where the delay was, no way to improve the process.
 
@@ -38,17 +42,19 @@ The fix is not "make a chatbot" — it's **collapse steps 2–4 into one trigger
 | **Pregnant woman / family** | Beneficiary, sometimes the trigger | Usually not a direct system contact — the frontline worker is the interface. Family-direct trigger is an open question (§7). |
 | **Frontline health worker** | ASHA / Anganwadi worker (AWW) / ANM | Opted-in WhatsApp number. Tied to one or more chars and to the HRP case she's tracking. First to know, first to trigger. |
 | **Boatman** | Registered per char | Opted-in number. Accepts/declines a job. Gets paid (govt/CNES rate) against the job. Needs an availability state. |
-| **104 / CNES boat ambulance** | Formal ambulance dispatch | Reachable via WhatsApp alert (not just a phone call), same as any other contact. Each boat/vessel is classified by operating capability — **day-only / night-capable / day+night with support crew** — so dispatch logic can match boat capability to case timing and severity rather than notifying whichever boat is nearest and hoping it can actually run the job. |
-| **Facility (PHC/CHC/SDH)** | Receiving health facility | Each char maps to a specific designated facility. Needs the case brief *before* the patient arrives. |
-| **Admin / control room** | Sauramandala + health dept + CNES ops | Dashboard visibility, can manually intervene at any point, monitors SLA (e.g., "no boatman accepted in 10 min"). |
+| **108 / CNES boat ambulance** | Formal ambulance dispatch | Reachable via WhatsApp alert (not just a phone call), same as any other contact. Each boat/vessel is classified by operating capability — **day-only / night-capable / day+night with support crew** — so dispatch logic can match boat capability to case timing and severity rather than notifying whichever boat is nearest and hoping it can actually run the job. |
+| **Facility (PHC/CHC/SDH)** | Receiving health facility | Each char maps to a specific designated facility. Needs the case brief *before* the patient arrives. Fills out **two separate checklists** — Facility Readiness and Clinical Readiness — not one combined "ready" reply (SERVICE_BLUEPRINT.md). |
+| **Block Referral Coordinator (BRC)** | Block-level coordinator | Added per `SERVICE_BLUEPRINT.md` — this is the concrete answer to what used to be an open "admin/control room" question below. Receives the case brief and every readiness/ETA update **in parallel with the facility**, not just a dashboard view after the fact. |
+| **Admin / control room** | Sauramandala + health dept ops | Dashboard visibility, can manually intervene at any point, monitors SLA (e.g., "no boatman accepted in 10 min"). Distinct from the BRC — the BRC gets pushed real-time SMS/WhatsApp updates as a named role in the flow itself; admin/control room is the broader dashboard-watching function described in SOP-7, which the BRC may or may not be the same person as depending on how the pilot staffs it. |
 
 ### Registries (the static data this all hangs off)
 
 - **Char registry** — char name/ID, river route, nearest landing point, mapped facility, list of boatmen assigned to it, indicative travel time.
 - **Facility registry** — name, chars it serves, contact number(s), on-duty contact if it rotates.
 - **Frontline worker registry** — name, role, char(s), linked facility, WhatsApp number, opt-in status.
-- **Boatman registry** — name, char, phone, availability status, rate card, track record, and **operating capability**: day-only / night-capable / day+night-with-support. This classification is what the assignment logic actually matches against (a night emergency can't go to a day-only boat, private or 104/CNES) — see §6a.
-- **Case registry** — the living record: case ID, HRP flag, char, reporting worker, assigned boatman, facility notified, ambulance dispatched (if any), status timeline, outcome.
+- **Boatman registry** — name, char, phone, availability status, rate card, track record, and **operating capability**: day-only / night-capable / day+night-with-support. This classification is what the assignment logic actually matches against (a night emergency can't go to a day-only boat, private or 108/CNES) — see §6a.
+- **Block Referral Coordinator registry** — name, facility/block, phone, channel. New per `SERVICE_BLUEPRINT.md` (`schema.sql`'s `block_referral_coordinators` table).
+- **Case registry** — the living record: case ID, triage (RED/GREEN/labour-started — see below) + HRP flag, char, reporting worker, assigned boatman, facility notified, ambulance dispatched (if any, with dual ETA — pickup and facility separately), status timeline, outcome.
 
 These registries are the actual product. Glific handles the messaging; something else (a small webhook backend — Postgres/Supabase, matching the pattern already used elsewhere in this repo for the trust ledger) has to hold this state and do the matching logic, since Glific flows alone can't answer "who's the nearest available boatman for char X."
 
@@ -58,7 +64,7 @@ These registries are the actual product. Glific handles the messaging; something
 
 The system needs to accept a trigger from **any** of these, not just one canonical path:
 
-1. **Frontline worker (primary expected path)** — she's usually already tracking the HRP case. Sends a keyword or taps a button ("EMERGENCY" / "🚨 HRP Case") → structured flow captures char, patient ref, risk level, optionally voice note/photo/location.
+1. **Frontline worker (primary expected path)** — she's usually already tracking the HRP case. Per `SERVICE_BLUEPRINT.md`, her actual assessment happens **before** she touches the system at all: she goes to the family, conducts a preliminary danger-signs assessment (per NHM ASHA guidelines), and privately notes the case **RED** (emergency), **GREEN** (routine), or **LABOUR STARTED** — then triggers with a **single button**, not a multi-question form. The sequential capture (char, patient ref, media) that `FLOW-W1` currently asks for should happen *after* dispatch already fired, not as a gate in front of it — see `SERVICE_BLUEPRINT.md`'s reconciliation notes; `FLOWS.md` still describes the older, question-gated shape and needs updating to match.
 2. **Family / community member** — allowed to raise a case on a public/shared number, but it does **not** skip straight to boat dispatch. It creates a case in a `pending-verification` state and pings the char's assigned frontline worker to confirm (she may already know the case, or needs to check). Only on her confirmation — or a timeout escalation if she's unreachable within a short window — does it move to `open` and trigger boat/facility dispatch. This keeps the low-friction entry point for family while keeping a human clinical check in the loop before boats get mobilised on an unverified report.
 3. **Boatman-initiated** — e.g. a boatman already informally ferrying a patient wants the facility notified retroactively, or wants to log a job.
 4. **Facility-initiated** — a planned/non-emergency referral (facility knows in advance it needs to move a patient out), different urgency tier from an emergency dispatch.
@@ -71,7 +77,7 @@ This is why the flow is described as a state machine over a case record, not a s
 ## 4. Default Happy-Path Sequence
 
 ```
-Frontline worker                Coordination layer (Glific + webhook backend)              Boatman              Facility            104/CNES          Dashboard
+Frontline worker                Coordination layer (Glific + webhook backend)              Boatman              Facility            108/CNES          Dashboard
       |                                    |                                                  |                     |                    |                 |
  1. "EMERGENCY" keyword /           2. Flow opens: char? risk level?                          |                     |                    |                 |
     quick-reply button    ────────►    patient ref? voice note / photo / location pin          |                     |                    |                 |
@@ -84,12 +90,12 @@ Frontline worker                Coordination layer (Glific + webhook backend)   
       |                                    |         capability match to case timing) —         |                     |                    |                 |
       |                                    |         first to tap "Accept" gets the job,        |                     |                    |                 |
       |                                    |         others get an auto "already assigned"      |                     |                    |                 |
-      |                                    |         reply; escalate to 104/CNES if nobody       |                     |                    |                 |
+      |                                    |         reply; escalate to 108/CNES if nobody       |                     |                    |                 |
       |                                    |         in the pool accepts within N minutes        |                     |                    |                 |
       |                                    |                                                5. Accept ──────────────────────────────────────────────────►  case updated
       |                          6. Facility alerted in parallel with boat dispatch, not after ─────────────────────►|                    |                 |
       |                             (case brief: risk flag, ETA, minimal patient info)          |                     |                    |                 |
-      |                          7. If risk tier / severity requires it, 104/CNES dispatch  ────┼─────────────────────────────────────────►|                 |
+      |                          7. If risk tier / severity requires it, 108/CNES dispatch  ────┼─────────────────────────────────────────►|                 |
       |  ◄──── boat assigned, ETA ─────────|                                                    |                     |                    |                 |
       |                                    |◄────── 8. "Departed" / "Reached" / location ───────|                     |                    |                 |
       |                                    |──────────────────────────────────────────────────────────────────► 9. "Patient received" ────────────────────►  case updated
@@ -97,6 +103,8 @@ Frontline worker                Coordination layer (Glific + webhook backend)   
       |                                    |───────────────────────────────────────────────────────────────────────────────────────────────────────────►  every state change
                                                                                                                                                           visible live
 ```
+
+**Updated per `SERVICE_BLUEPRINT.md`:** step 6's fan-out is actually to **four** parties simultaneously, not the three the diagram above shows — the Block Referral Coordinator receives the same case brief as the facility, in parallel, not via the dashboard after the fact. The BRC then also receives every downstream update the facility does: both ambulance ETAs (to pickup, and pickup-to-facility, calculated separately by the 108 Coordinator) and both readiness checklist results (Facility Readiness, Clinical Readiness) — not one combined status. This diagram hasn't been redrawn with a fifth column to avoid breaking its alignment; treat the BRC as running alongside the Facility column throughout.
 
 Key design point: **steps 4 and 6 (boat dispatch and facility alert) fire in parallel, not sequentially** — the whole point is the facility stops finding out only when the boat arrives.
 
@@ -119,7 +127,7 @@ Key design point: **steps 4 and 6 (boat dispatch and facility alert) fire in par
   "verification": { "requiredIfFamilyReported": true, "confirmedBy": "worker_id|null", "confirmedAt": "ISO datetime|null", "status": "pending|confirmed|escalated-unreachable" },
   "boatmanPool": ["array of boatman_ids notified, filtered by capability match"],
   "boatman": { "id": "string", "status": "requested|accepted|departed|arrived", "acceptedAt": "ISO datetime" },
-  "ambulanceDispatch": { "type": "104|CNES|none", "channel": "whatsapp|sms|ivr", "status": "requested|dispatched|arrived" },
+  "ambulanceDispatch": { "type": "108|CNES|none", "channel": "whatsapp|sms|ivr", "status": "requested|dispatched|arrived" },
   "facilityAck": { "status": "notified|ready|received", "at": "ISO datetime" },
   "timeline": [ { "at": "ISO datetime", "actor": "string", "event": "string" } ],
   "status": "pending-verification | open | boat-assigned | in-transit | arrived | closed | escalated-manual",
@@ -140,7 +148,7 @@ Applying general Glific platform knowledge to this specific problem:
 - **Webhooks are the real logic layer**: Glific flows can call out to a webhook mid-flow. All of "find the char's assigned facility," "who's the nearest available boatman," "create/update the case record," "escalate if no accept in N minutes" has to live in an external backend (Postgres/Supabase, same pattern as the trust-ledger piece already in this repo) — Glific itself is the messaging/UI layer, not the state machine.
 - **HSM/template messages**: dispatching a boat request or facility alert is often a business-initiated message outside the 24-hour session window, which WhatsApp requires a pre-approved template for. These templates (case alert, boat request, facility brief) need to be drafted and submitted for approval well before pilot launch — this is a lead-time item, not a build item.
 - **Media handling**: Glific can receive image/audio/location message types inside a flow. Voice notes and photos get captured as media URLs and relayed as-is to the facility/admin (no transcription needed for v0 — that's a later-phase nice-to-have, not a pilot requirement).
-- **Broadcast + escalation**: pool assignment means the request goes out to *every* capability-matched boatman in the char's pool at once — first "Accept" wins, everyone else auto-gets an "already assigned, thank you" reply. If nobody in the pool accepts within N minutes, escalate to 104/CNES. This wait/branch timer is webhook-driven state, not something Glific's flow editor holds on its own.
+- **Broadcast + escalation**: pool assignment means the request goes out to *every* capability-matched boatman in the char's pool at once — first "Accept" wins, everyone else auto-gets an "already assigned, thank you" reply. If nobody in the pool accepts within N minutes, escalate to 108/CNES. This wait/branch timer is webhook-driven state, not something Glific's flow editor holds on its own.
 - **Dashboard**: Glific's built-in analytics won't cover case-tracking. The case registry (webhook-fed) needs its own lightweight dashboard UI — same shape as the existing Supabase-backed pages in this repo (`tl-*.html` for the trust ledger) could be a reusable pattern.
 
 ## 6a. Omnichannel: Gupshup (WhatsApp) + Exotel (SMS/IVR) — corrected v0.3

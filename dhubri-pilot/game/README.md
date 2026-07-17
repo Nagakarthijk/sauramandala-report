@@ -33,7 +33,7 @@ All of these constants (decay rates, thresholds, transit times, fuel burn/refuel
 
 ## What's deliberately simplified for v1
 
-- Only four playable roles (Worker, 2 Boatmen, Facility) — no Family or 104/CNES Ambulance player roles yet, since those add the verification-gate and escalation branches on top of an already substantial first build. Both would follow the same pattern (`applyAction` cases + `availableActions` + chat rendering) if you want to add them.
+- Only four playable roles (Worker, 2 Boatmen, Facility) — no Family or 108/CNES Ambulance player roles yet, since those add the verification-gate and escalation branches on top of an already substantial first build. Both would follow the same pattern (`applyAction` cases + `availableActions` + chat rendering) if you want to add them.
 - The chat log every player sees is a **shared activity feed** (everyone sees everyone's actions), not each contact's private thread the way the real system would work — flagged in the player UI itself. Simpler to build, and arguably better for a group training session where the point is for everyone to see the whole coordination unfold.
 - The boat's position on the game board is a simple linear approximation of transit progress, not a precise physics/pause model around refuelling stops — a deliberately "light" visual, not a simulation.
 

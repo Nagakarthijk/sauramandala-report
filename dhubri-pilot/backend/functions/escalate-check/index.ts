@@ -9,7 +9,7 @@
 //     verification timeout escalates to another worker, or auto-opens flagged
 //     `escalated-unverified` if nobody is reachable.
 //   SOP-3 step 4: an `open` case whose boatman broadcast got no acceptance within
-//     the escalation window escalates to 104/CNES and gets flagged `escalated-manual`.
+//     the escalation window escalates to 108/CNES and gets flagged `escalated-manual`.
 //
 // Both timeout minutes below are PILOT DEFAULTS from SOP.md, not validated figures —
 // change via env vars once real numbers are confirmed (CONCEPT.md §7 q9).
@@ -78,7 +78,7 @@ async function checkStuckBoatmanBroadcasts(db: any, results: { boatmanEscalation
   for (const c of stuck ?? []) {
     await db.from('cases').update({
       status: 'escalated-manual',
-      ambulance_type: c.ambulance_type ?? '104',
+      ambulance_type: c.ambulance_type ?? '108',
       ambulance_status: 'requested'
     }).eq('id', c.id)
 
@@ -94,15 +94,15 @@ async function checkStuckBoatmanBroadcasts(db: any, results: { boatmanEscalation
 
 async function dispatchAmbulance(db: any, c: any) {
   const { data: char } = await db.from('chars').select('*').eq('id', c.char_id).single()
-  // Registry for 104/CNES dispatch contacts isn't modelled yet (CONCEPT.md §7 q4/q8 —
+  // Registry for 108/CNES dispatch contacts isn't modelled yet (CONCEPT.md §7 q4/q8 —
   // whether it's a single contact or its own pool). Placeholder: looks for an
-  // 'operator = 104' or 'cnes' row in boatmen sharing this char, same registry shape
+  // 'operator = 108' or 'cnes' row in boatmen sharing this char, same registry shape
   // reused for now rather than inventing a second table ahead of that decision.
   const { data: ambulancePool } = await db
     .from('boatmen')
     .select('*')
     .eq('char_id', c.char_id)
-    .in('operator', ['104', 'cnes'])
+    .in('operator', ['108', 'cnes'])
 
   for (const amb of ambulancePool ?? []) {
     if (amb.channel === 'whatsapp' && amb.glific_contact_id && FLOW_AMBULANCE_DISPATCH) {

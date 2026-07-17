@@ -53,7 +53,7 @@ Every flow below that needs cross-registry logic ("who's the char's boatman pool
 1. **Send Message** (broadcast to the pool, via each boatman's registered channel — WhatsApp quick-reply, SMS keyword-reply, or IVR DTMF, per CONCEPT.md §6a): "Emergency case at [char] — [risk_flag]. Can you go? Reply YES to accept." / IVR: "Press 1 to accept."
 2. First response wins: **Webhook** → `POST /cases/{id}/boatman-accept` with `{ boatman_id }`. Backend checks case is still unassigned; if so, sets `boatman_id`, flips that boatman's `availability` to `on-job`, and returns "assigned" — flow sends confirmation to the accepting boatman with pickup details (SOP-9 data scope) and the case's ETA note.
 3. Backend simultaneously fires an "already assigned, thank you" message to every other boatman who was in the broadcast pool.
-4. **Wait node**, `PILOT DEFAULT: 10 min` (SOP-3) — if the webhook reports no acceptance in that window, backend escalates to FLOW-A1 (104/CNES) and flags the case `escalated-manual`.
+4. **Wait node**, `PILOT DEFAULT: 10 min` (SOP-3) — if the webhook reports no acceptance in that window, backend escalates to FLOW-A1 (108/CNES) and flags the case `escalated-manual`.
 5. Post-accept: boatman gets two more prompts as the job proceeds — "Departed" and "Reached facility" quick-reply buttons (or SMS keywords `DEPARTED` / `ARRIVED`), each firing a webhook status update that appears on the case timeline and pings the worker/facility.
 
 ---
@@ -69,14 +69,14 @@ Every flow below that needs cross-registry logic ("who's the char's boatman pool
 
 ---
 
-## FLOW-A1 — 104 / CNES Ambulance Dispatch
+## FLOW-A1 — 108 / CNES Ambulance Dispatch
 
 **Trigger:** backend-initiated, either (a) directly for cases flagged as needing ambulance-level response, or (b) as the escalation path from FLOW-B1 step 4 when the private boatman pool doesn't accept in time.
 
-1. **Send Message** (HSM template, WhatsApp — confirmed reachable channel for 104/CNES): case brief + capability requirement (day/night/support), same shape as FLOW-B1's boatman broadcast.
+1. **Send Message** (HSM template, WhatsApp — confirmed reachable channel for 108/CNES): case brief + capability requirement (day/night/support), same shape as FLOW-B1's boatman broadcast.
 2. **Webhook** on accept/dispatch confirmation → `POST /cases/{id}/ambulance-status` with `{ status: 'dispatched' }`.
 3. Status updates (`dispatched → arrived`) feed the same case timeline as a private boatman.
-4. **Open item**: this flow currently assumes 104/CNES has a single or small set of WhatsApp-reachable dispatch contacts — the actual registry (§CONCEPT.md q4/q8) determines whether step 1 is a broadcast (like FLOW-B1) or a single-contact send.
+4. **Open item**: this flow currently assumes 108/CNES has a single or small set of WhatsApp-reachable dispatch contacts — the actual registry (§CONCEPT.md q4/q8) determines whether step 1 is a broadcast (like FLOW-B1) or a single-contact send.
 
 ---
 
@@ -101,7 +101,7 @@ Several flows above depend on "if no response within N minutes, do X." Glific's 
 | Group | Members |
 |---|---|
 | `Workers` | ASHA / Anganwadi / ANM opted-in contacts |
-| `Boatmen` | Registered boatmen, private + 104/CNES |
+| `Boatmen` | Registered boatmen, private + 108/CNES |
 | `Facility` | Facility staff contacts |
 | `Admin` | Control room / dashboard-adjacent contacts, if any also need WhatsApp alerts |
 
@@ -124,7 +124,7 @@ Submit these for WhatsApp approval well before pilot launch — approval turnaro
 1. `case_verification_request` — to a frontline worker, re: an unverified family report
 2. `boat_request_broadcast` — to a boatman, re: a new case needing pickup
 3. `facility_case_alert` — to facility staff, re: an incoming case
-4. `ambulance_dispatch_request` — to 104/CNES, re: an ambulance-level case
+4. `ambulance_dispatch_request` — to 108/CNES, re: an ambulance-level case
 5. `case_status_update` — generic status push (accepted / departed / arrived) to worker + facility
 
 ---
