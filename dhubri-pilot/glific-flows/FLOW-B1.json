@@ -44,7 +44,7 @@
     {
       "keywords": [],
       "definition": {
-        "uuid": "287526a0-96da-45c0-99cc-92ceb09021c8",
+        "uuid": "e9f8a89c-9d5b-4318-bfc4-b0ce035e6436",
         "name": "Boatman Broadcast & Accept",
         "type": "messaging",
         "spec_version": "14.3.0",
@@ -58,10 +58,10 @@
         "vars": [],
         "nodes": [
           {
-            "uuid": "5d4be2b6-8900-4119-927a-77bcd7defce0",
+            "uuid": "9f3e9552-ec3e-44a8-b96b-8a330def5115",
             "actions": [
               {
-                "uuid": "b5b744cd-ffcf-4dc2-817a-02dc020b2ef9",
+                "uuid": "c4e06def-7ab4-4647-855d-f2e8d9a38a6d",
                 "type": "send_interactive_msg",
                 "id": 900002,
                 "name": "Boatman Accept",
@@ -73,13 +73,13 @@
             ],
             "exits": [
               {
-                "uuid": "b63a09b4-fb0c-42f5-ae82-67b1c3d94c70",
-                "destination_uuid": "1258468a-bd06-4fde-ba2e-51ea36e06eb0"
+                "uuid": "356061ca-8235-4c5a-b433-c4ed30c72ad2",
+                "destination_uuid": "aec58bba-e838-4c47-97b3-8a097a6f324c"
               }
             ]
           },
           {
-            "uuid": "1258468a-bd06-4fde-ba2e-51ea36e06eb0",
+            "uuid": "aec58bba-e838-4c47-97b3-8a097a6f324c",
             "actions": [],
             "router": {
               "wait": {
@@ -88,46 +88,46 @@
               "type": "switch",
               "result_name": "response",
               "operand": "@input.text",
-              "default_category_uuid": "b849b420-3efc-48fe-86ac-786d88220d30",
+              "default_category_uuid": "72e16221-cc63-4913-9852-e181398a0359",
               "categories": [
                 {
-                  "uuid": "bd1b3860-cd48-4307-a03d-e1b780c78a62",
+                  "uuid": "7b27757c-0432-4ad9-aa7a-3d5a2b45641a",
                   "name": "Accept",
-                  "exit_uuid": "fd05e354-1c31-4eeb-82a4-06ede17bcb23"
+                  "exit_uuid": "4633c99f-1086-4545-8ea3-8192c3635b26"
                 },
                 {
-                  "uuid": "b849b420-3efc-48fe-86ac-786d88220d30",
+                  "uuid": "72e16221-cc63-4913-9852-e181398a0359",
                   "name": "Other",
-                  "exit_uuid": "ef92ae72-eb97-45e4-a9d3-2fc56885cedb"
+                  "exit_uuid": "80510b11-b7a8-4d45-95fe-21e4eee21d0b"
                 }
               ],
               "cases": [
                 {
-                  "uuid": "37fa1af6-cf23-44b3-9f94-d3c70972368d",
+                  "uuid": "15be9eb9-1ccb-4790-93c9-5307f97699e5",
                   "type": "has_only_phrase",
                   "arguments": [
                     "Accept"
                   ],
-                  "category_uuid": "bd1b3860-cd48-4307-a03d-e1b780c78a62"
+                  "category_uuid": "7b27757c-0432-4ad9-aa7a-3d5a2b45641a"
                 }
               ]
             },
             "exits": [
               {
-                "uuid": "fd05e354-1c31-4eeb-82a4-06ede17bcb23",
-                "destination_uuid": "faf2fa82-dd89-456a-9994-18bfde594cd6"
+                "uuid": "4633c99f-1086-4545-8ea3-8192c3635b26",
+                "destination_uuid": "4a32b270-27c3-441f-a2ab-26d743d66a41"
               },
               {
-                "uuid": "ef92ae72-eb97-45e4-a9d3-2fc56885cedb",
+                "uuid": "80510b11-b7a8-4d45-95fe-21e4eee21d0b",
                 "destination_uuid": null
               }
             ]
           },
           {
-            "uuid": "faf2fa82-dd89-456a-9994-18bfde594cd6",
+            "uuid": "4a32b270-27c3-441f-a2ab-26d743d66a41",
             "actions": [
               {
-                "uuid": "ae509b73-693e-4a9f-9356-b13da42c9188",
+                "uuid": "0a5269e7-f941-49e5-a255-da2f93569c17",
                 "type": "call_webhook",
                 "method": "POST",
                 "url": "https://YOUR-BACKEND-DOMAIN/functions/v1/boatman-accept",
@@ -137,7 +137,7 @@
             ],
             "exits": [
               {
-                "uuid": "3e182bd8-c671-4f23-8424-43cbc132bb59",
+                "uuid": "69213c77-020c-4ee2-b7b6-570542673707",
                 "destination_uuid": null
               }
             ]

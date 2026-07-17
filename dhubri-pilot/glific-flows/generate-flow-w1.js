@@ -9,9 +9,19 @@
 // guess this time, a diff against working JSON.
 //
 // Run: node generate-flow-w1.js  →  writes FLOW-W1.json alongside this script.
+//
+// To test the REAL flow (not FLOW-W1-DEMO.json) without a deployed backend, point
+// the two webhook calls at a free no-code mock JSON responder (e.g. mocky.io) via
+// env vars instead of hand-editing the JSON — see TEST-REAL-FLOWS.md:
+//   export WEBHOOK_CASES_CREATE_URL=https://run.mocky.io/v3/<your-mock-id>
+//   export WEBHOOK_CASE_DETAILS_URL=https://run.mocky.io/v3/<your-mock-id>
+//   node generate-flow-w1.js
 
 const fs = require('fs');
 const { uuid, actionNode, msgAction, interactiveAction, webhookAction, waitAnyNode, waitOptionsNode, interactiveTemplate, wrapFlow, assemble } = require('./_lib');
+
+const CASES_CREATE_URL = process.env.WEBHOOK_CASES_CREATE_URL || 'https://YOUR-BACKEND-DOMAIN/functions/v1/cases-create';
+const CASE_DETAILS_URL = process.env.WEBHOOK_CASE_DETAILS_URL || 'https://YOUR-BACKEND-DOMAIN/functions/v1/case-details';
 
 const flowUuid = uuid();
 const triageTemplateId = 900001;
@@ -80,7 +90,7 @@ const nodes = [
   // N2 — dispatch fires immediately. Two actions, no wait needed between them, so
   // they share one node (confirmed fine — only message-then-user-reply needs splitting).
   actionNode([
-    webhookAction('POST', 'https://YOUR-BACKEND-DOMAIN/functions/v1/cases-create', 'webhook',
+    webhookAction('POST', CASES_CREATE_URL, 'webhook',
       '{ "reported_by_type": "worker", "reported_by_id": @(json(contact.uuid)), "char_id": @(json(contact.fields.char_id)), "triage": @(json(lower(results.triage))), "facility_id_hint": @(json(results.facility_lookup.facility_id)) }'),
     msgAction("Case @results.webhook.case_id created. Dispatching a boat and alerting the facility and block coordinator now — I'll update you as soon as a boatman accepts.")
   ], ids.n3_msg, ids.n2),
@@ -95,7 +105,7 @@ const nodes = [
 
   // N5 — sends the follow-up detail to the already-open case, not cases-create again.
   actionNode([
-    webhookAction('POST', 'https://YOUR-BACKEND-DOMAIN/functions/v1/case-details', 'webhook2',
+    webhookAction('POST', CASE_DETAILS_URL, 'webhook2',
       '{ "case_id": @(json(results.webhook.case_id)), "patient_ref": @(json(results.patient_ref)), "attachments": [] }')
   ], null, ids.n5)
 ];

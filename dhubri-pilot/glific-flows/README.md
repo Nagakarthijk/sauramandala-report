@@ -57,6 +57,10 @@ This catches the class of error that would definitely break an import or cause t
 
 See [`DEMO_ON_WHATSAPP.md`](./DEMO_ON_WHATSAPP.md) — a zero-infrastructure path using `FLOW-W1-DEMO.json`/`FLOW-B1-DEMO.json`/`FLOW-BRC1-DEMO.json` (keyword-triggered siblings of the files below, no backend needed) and a one-command deploy script (`deploy-demo-flows.js`). No n8n, no Supabase, nothing to learn beyond a Glific login.
 
+## The demo flows feel too limited — want to test the real ones instead?
+
+See [`TEST-REAL-FLOWS.md`](./TEST-REAL-FLOWS.md) — same no-code, no-backend approach, but pointed at `FLOW-W1.json`/`FLOW-B1.json`/`FLOW-BRC1.json` themselves: a free mock-webhook trick for a real dynamic case id, and `start-flow-for-contact.js` for manually firing the two flows that are never keyword-triggered by design.
+
 ## Files
 
 - `_lib.js` — shared node/wrapper helpers encoding the confirmed-correct shape (see "What changed in v4" above); every generator below is built on this
@@ -65,4 +69,5 @@ See [`DEMO_ON_WHATSAPP.md`](./DEMO_ON_WHATSAPP.md) — a zero-infrastructure pat
 - `generate-flow-brc1.js` / `FLOW-BRC1.json` — Block Referral Coordinator Alert (SOP-4/SOP-7)
 - `generate-flow-w1-demo.js` / `FLOW-W1-DEMO.json`, `generate-flow-b1-demo.js` / `FLOW-B1-DEMO.json`, `generate-flow-brc1-demo.js` / `FLOW-BRC1-DEMO.json` — keyword-triggered, backend-free demo variants of the three flows above, for showing a real WhatsApp conversation without deploying anything — see `DEMO_ON_WHATSAPP.md`
 - `deploy-demo-flows.js` — one command: login, import, publish all three demo flows against a real Glific instance
+- `start-flow-for-contact.js` — manually fire `startContactFlow` for a real contact with fake seed data, to test `FLOW-B1.json`/`FLOW-BRC1.json` (never keyword-triggered by design) without a backend — see `TEST-REAL-FLOWS.md`
 - `validate-flow.js` — structural consistency checker, run against any flow JSON here
