@@ -10,6 +10,7 @@ A coordination layer for high-risk pregnancy (HRP) and maternal emergencies on t
 
 ## Files
 
+- [`DEMO_GUIDE.md`](./DEMO_GUIDE.md) — **start here if you just want to show this to your team.** What to click, in what order, and what's real vs. still conceptual.
 - [`SERVICE_BLUEPRINT.md`](./SERVICE_BLUEPRINT.md) — a real service-blueprint diagram from the project team, transcribed and made text-searchable. **This is now the authoritative source** for several mechanics the docs below previously guessed at (a named Block Referral Coordinator role, RED/GREEN/LABOUR-STARTED triage, dual ambulance ETAs, a two-checklist facility readiness mechanic, `108` not `104`, `*`/`#` boatman accept, single-button trigger, closing reflection message). `CONCEPT.md`/`SOP.md`/`schema.sql`/`FLOWS.md`/`backend/`/`glific-flows/` are all reconciled to match; one open discrepancy remains (108's parallel-vs-escalation timing — see the file's own notes) and `simulator-scenarios.json`/`game/game-engine.js` are still pre-blueprint.
 - [`CONCEPT.md`](./CONCEPT.md) — system design: actors, registries, trigger flows, sequence diagrams, data model draft, and the open questions/gaps. §6a covers the corrected Gupshup (WhatsApp)/Exotel (SMS/IVR) architecture.
 - [`SOP.md`](./SOP.md) — the standard operating procedures each flow follows, with pilot-default parameters (escalation timers, verification timeout, payment approach) explicitly flagged as placeholders pending real answers.
