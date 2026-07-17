@@ -98,15 +98,17 @@ This maps closely to what `schema.sql`/`backend/` already do (`case_events`, the
 
 ## Reconciliation notes — what this changes in the existing docs
 
-**Already updated in this pass** (see the diffs alongside this file):
+**Already updated (across two passes now):**
 - `CONCEPT.md`: added Block Referral Coordinator to the actor table; corrected 104→108 throughout; noted RED/GREEN/LABOUR-STARTED as the field-facing triage vocabulary; updated the trigger-fan-out description to 4 parties, not 3.
 - `SOP.md`: added the BRC's notification responsibilities; replaced the single "READY" facility step with the two-checklist mechanic; added `*`/`#` as the boatman accept option; added the closing congratulatory/reflection message to SOP-6.
 - `schema.sql`: added `block_referral_coordinators` table; split `ambulance_status` into pickup/facility ETA fields; split facility acknowledgement into separate readiness/clinical status fields; added a `triage` field alongside `risk_flag`.
+- `FLOWS.md`: full v0.2 rewrite — `FLOW-W1`'s single-button-first trigger, new `FLOW-BRC1`, `FLOW-FC1`'s two-checklist mechanic, `FLOW-A1`'s dual-ETA calculation, `FLOW-C1`'s closing reflection message.
+- `backend/`: `dispatch.ts` now fans out to the BRC in parallel with the facility; new `case-details`, `facility-readiness`, `clinical-readiness` endpoints; `cases-create` accepts `triage` and derives `risk_flag` from it (mapping explicitly flagged unconfirmed); `escalate-check` calculates and shares dual ETAs; `case-close` sends the closing reflection message; `exotel-ivr-response` accepts bare `*`/`#` SMS replies. Re-type-checked clean.
+- `glific-flows/`: `FLOW-W1.json` rebuilt for the single-button trigger; new `FLOW-BRC1.json`. Both re-validated structurally sound.
 
-**Not yet reconciled — flagged as follow-up work, not done in this pass** (this is a lot of surface area to touch correctly in one go, and rushing it risks introducing the exact kind of error this project has been careful to avoid elsewhere):
-- `FLOWS.md`: the six flow specs still describe the old single-checklist/single-ETA/no-BRC shape. Needs a full pass to add a BRC notification flow, split the facility checklist into two, split the 108 dispatch into dual-ETA, and reflect the "single button, ask less upfront" trigger UX.
-- `GLIFIC_SETUP.md` / `glific-flows/FLOW-W1.json` / `FLOW-B1.json`: same — the imported-flow JSON still asks the sequential questions before dispatch, and doesn't yet model the BRC or dual checklist.
-- `whatsapp-journey.json`'s 7 scenarios and `simulator-scenarios.json`'s 5 scenarios: still use the old mechanics throughout (single facility READY, single ambulance ETA, no BRC contact, worker-typed EMERGENCY keyword instead of the single-button framing).
+**New discrepancy spotted while reconciling — worth resolving, not yet resolved:** §"Parallel notification fan-out" above and §"108 Coordinator — dual ETA calculation" describe the 108 Coordinator receiving the pickup request **at trigger time, in parallel with the boatman pool** — not only as a fallback once the private pool fails to respond. What got built into `SOP.md`/`backend/` (`SOP-5`, `escalate-check.ts`) instead treats 108 purely as an *escalation* path when the boatman pool times out. These are two different designs: "108 is aware from the start and can respond immediately if needed" vs. "108 only gets involved after the private pool has already failed." The demo scenario below (`whatsapp-journey.json` SCN-08) follows the blueprint's literal parallel-fan-out reading, since that's the more complete picture to show the team — but the backend code still implements the escalation-only version. **This needs a real answer from the team before backend/SOP.md is corrected either way.**
+
+**Not yet reconciled — flagged as follow-up work:**
+- `GLIFIC_SETUP.md`: still describes building `FLOW-W1` as the old sequential-question shape node-by-node — needs updating to match the rebuilt flow.
+- `whatsapp-journey.json`'s original 7 scenarios (SCN-01 through SCN-07) and `simulator-scenarios.json`'s 5 scenarios: still use the pre-blueprint mechanics (single facility READY, single ambulance ETA, no BRC contact, worker-typed EMERGENCY keyword). A new **SCN-08** was added to `whatsapp-journey.json` demonstrating the fully-reconciled mechanics end to end (single-button RED trigger, 5-way parallel fan-out including 108 and BRC, `*` SMS accept, two separate checklists, dual ETA to three parties, closing reflection) — the original 7 were left as-is rather than rewritten, to keep this addition reviewable on its own.
 - `game/game-engine.js`: the training game's mechanics (single facility READY→RECEIVED, no BRC, no dual ETA) predate this blueprint too.
-
-Given the size of that remaining list, the right next move is probably to tackle it as its own focused pass rather than in the same turn as this transcription — happy to start on whichever piece matters most to you first.

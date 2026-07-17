@@ -23,6 +23,7 @@ import { dispatchCase } from '../_shared/dispatch.ts'
 const VERIFICATION_TIMEOUT_MIN = Number(Deno.env.get('VERIFICATION_TIMEOUT_MIN') ?? '5')
 const BOATMAN_ESCALATION_MIN = Number(Deno.env.get('BOATMAN_ESCALATION_MIN') ?? '10')
 const FLOW_AMBULANCE_DISPATCH = Deno.env.get('GLIFIC_FLOW_AMBULANCE_DISPATCH') ?? ''
+const FLOW_CASE_STATUS_UPDATE = Deno.env.get('GLIFIC_FLOW_CASE_STATUS_UPDATE') ?? ''
 
 serve(async (_req) => {
   const db = getServiceClient()
@@ -113,4 +114,56 @@ async function dispatchAmbulance(db: any, c: any) {
       await sendSms(amb.phone, `Ambulance-level case ${c.id} at ${char?.name}. Private boatman pool did not respond.`)
     }
   }
+
+  await calculateAndShareEtas(db, c, char)
+}
+
+// FLOWS.md FLOW-A1 step 3 / SERVICE_BLUEPRINT.md: the 108 Coordinator calculates
+// TWO etas — to the pickup point, and separately from pickup to facility — shared
+// with worker, facility, AND the BRC (three parties, not one).
+//
+// PILOT DEFAULT — placeholder ETA formula, not a real distance/routing calculation.
+// No GPS/routing data exists yet to compute this properly; splits char.indicative_eta_min
+// evenly as a stand-in until real pickup-vs-facility leg timing is available.
+async function calculateAndShareEtas(db: any, c: any, char: any) {
+  const total = char?.indicative_eta_min ?? 30
+  const eta_pickup_min = Math.round(total / 2)
+  const eta_facility_min = total - eta_pickup_min
+
+  await db.from('cases').update({
+    ambulance_eta_pickup_min: eta_pickup_min,
+    ambulance_eta_facility_min: eta_facility_min
+  }).eq('id', c.id)
+
+  const message = `Ambulance ETA for case ${c.id}: ${eta_pickup_min} min to pickup, then ${eta_facility_min} min to facility.`
+
+  if (c.reported_by_type === 'worker' && c.reported_by_id) {
+    const { data: worker } = await db.from('frontline_workers').select('*').eq('id', c.reported_by_id).single()
+    if (worker) await notify(worker, message)
+  }
+
+  const { data: facility } = await db.from('facilities').select('*').eq('id', c.facility_id).single()
+  if (facility) await notify(facility, message)
+
+  const { data: brcs } = await db.from('block_referral_coordinators').select('*').eq('facility_id', c.facility_id)
+  for (const brc of brcs ?? []) await notify(brc, message)
+
+  await db.from('case_events').insert({
+    id: generateId('EVT'), case_id: c.id, actor_type: 'system', actor_id: null,
+    channel: 'whatsapp', event: 'ambulance_eta_calculated', detail: { eta_pickup_min, eta_facility_min }
+  })
+}
+
+// `contact` may be a frontline_worker/boatman/BRC row (channel + phone) or a
+// facilities row (contact_whatsapp/contact_sms, no channel field) — schema.sql
+// doesn't give facility a uniform shape with the others, so this checks
+// glific_contact_id first (present on all of them) before falling back to
+// whichever phone-ish field the row actually has.
+async function notify(contact: any, message: string) {
+  if (contact.glific_contact_id && FLOW_CASE_STATUS_UPDATE) {
+    await startContactFlow(FLOW_CASE_STATUS_UPDATE, contact.glific_contact_id, { message })
+    return
+  }
+  const phone = contact.phone ?? contact.contact_sms ?? contact.contact_whatsapp
+  if (phone) await sendSms(phone, message)
 }

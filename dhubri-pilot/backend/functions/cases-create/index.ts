@@ -4,7 +4,15 @@
 // This is the webhook FLOW-W1's "Call a webhook" node posts to (FLOWS.md), and is
 // also the entry point for a family-reported case before the verification gate.
 //
-// Request body: { reported_by_type, reported_by_id?, char_id, risk_flag, patient_ref?, attachments? }
+// Per the SERVICE_BLUEPRINT.md reconciliation, the worker path now sends `triage`
+// (RED/GREEN/labour-started — her own single-button assessment) instead of asking
+// her to separately pick a risk_flag; risk_flag is derived from it here. The
+// family path (FLOW-F1) still sends risk_flag directly, since her report doesn't
+// go through the same triage vocabulary. patient_ref/attachments are optional here
+// on purpose — FLOW-W1 now captures them as a follow-up via functions/case-details
+// AFTER this call has already dispatched, not before.
+//
+// Request body: { reported_by_type, reported_by_id?, char_id, triage?, risk_flag?, patient_ref?, attachments? }
 // Response: { case_id, status }
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
@@ -28,12 +36,13 @@ serve(async (req) => {
   const reported_by_type = body.reported_by_type as string
   const reported_by_id = (body.reported_by_id as string) ?? null
   const char_id = body.char_id as string
-  const risk_flag = body.risk_flag as string
+  const triage = (body.triage as string) ?? null
+  const risk_flag = (body.risk_flag as string) ?? (triage ? deriveRiskFlagFromTriage(triage) : null)
   const patient_ref = (body.patient_ref as string) ?? null
   const attachments = body.attachments ?? []
 
   if (!reported_by_type || !char_id || !risk_flag) {
-    return jsonResponse({ error: 'reported_by_type, char_id, and risk_flag are required' }, 400)
+    return jsonResponse({ error: 'reported_by_type, char_id, and one of triage/risk_flag are required' }, 400)
   }
 
   const db = getServiceClient()
@@ -57,6 +66,7 @@ serve(async (req) => {
     facility_id: char.facility_id,
     reported_by_type,
     reported_by_id,
+    triage,
     risk_flag,
     time_of_day,
     required_capability,
@@ -67,7 +77,7 @@ serve(async (req) => {
   })
   if (insertErr) return jsonResponse({ error: insertErr.message }, 500)
 
-  await logEvent(db, case_id, reported_by_type, reported_by_id, 'case_created', { risk_flag, time_of_day })
+  await logEvent(db, case_id, reported_by_type, reported_by_id, 'case_created', { triage, risk_flag, time_of_day })
 
   if (isFamily) {
     await requestWorkerVerification(db, case_id, char)
@@ -77,6 +87,18 @@ serve(async (req) => {
 
   return jsonResponse({ case_id, status })
 })
+
+// PILOT DEFAULT — placeholder mapping, explicitly NOT signed off. SOP.md's "Still
+// Open" section flags exactly this: how RED/GREEN/LABOUR-STARTED should map onto
+// risk_flag/required_capability hasn't been confirmed with the team. This mapping
+// exists so the backend has *something* consistent to run against, not because
+// it's been validated — treat GREEN-as-'hrp' and labour-started-as-'emergency' as
+// guesses to correct once the real mapping is confirmed.
+function deriveRiskFlagFromTriage(triage: string): string {
+  if (triage === 'red') return 'emergency'
+  if (triage === 'labour-started') return 'emergency'
+  return 'hrp' // green
+}
 
 // PILOT DEFAULT — placeholder business rule, not yet signed off (SOP.md flags this
 // class of decision). A day+night-with-support boat covers anything; a plain

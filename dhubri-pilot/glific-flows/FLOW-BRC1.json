@@ -1,0 +1,24 @@
+{
+  "uuid": "dbe2ae7e-700f-49e6-a3d3-978f1769513b",
+  "name": "Block Referral Coordinator Alert",
+  "spec_version": "13.1.0",
+  "language": "eng",
+  "type": "messaging",
+  "nodes": [
+    {
+      "uuid": "ad4b23c8-4d6d-4c8d-939c-f4c8a433f99d",
+      "actions": [
+        {
+          "uuid": "cfd6720d-642b-44be-bed1-c5448b8dfc16",
+          "type": "send_msg",
+          "text": "Case @results.case_id.value — @results.char_name.value. ETA once a boat is assigned: @results.eta_min.value min. You are copied on this alongside the facility."
+        }
+      ],
+      "exits": [
+        {
+          "uuid": "ee56bf85-f77e-4a68-b720-bb4d085a468c"
+        }
+      ]
+    }
+  ]
+}

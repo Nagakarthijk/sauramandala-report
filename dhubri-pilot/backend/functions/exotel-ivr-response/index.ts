@@ -17,6 +17,7 @@
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
 import { getServiceClient, jsonResponse } from '../_shared/db.ts'
 import { acceptBoatJob } from '../_shared/accept-boat.ts'
+import { sendSms } from '../_shared/exotel-client.ts'
 
 serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
@@ -43,19 +44,47 @@ serve(async (req) => {
     return jsonResponse(result)
   }
 
-  // Inbound-SMS shape: has From + Body, expecting "YES <case_id>".
+  // Inbound-SMS shape: has From + Body. Two accepted reply patterns per
+  // SERVICE_BLUEPRINT.md/FLOWS.md FLOW-B1 — "YES <case_id>" (unambiguous), or a
+  // bare "*"/"#" (lightest-weight, feature-phone-friendly, carries no case_id so
+  // it's matched against whichever single case is currently awaiting this
+  // boatman's response).
   if ('From' in params && 'Body' in params) {
     const from = params.From as string
     const bodyText = ((params.Body as string) ?? '').trim().toUpperCase()
-    const match = bodyText.match(/^YES\s+(\S+)$/)
-    if (!match) return jsonResponse({ ok: true, accepted: false, reason: 'not a YES <case_id> reply' })
 
-    const case_id = match[1]
     const { data: boatman } = await db.from('boatmen').select('*').eq('phone', from).single()
     if (!boatman) return jsonResponse({ error: `no boatman registered for ${from}` }, 404)
 
-    const result = await acceptBoatJob(db, case_id, boatman.id)
-    return jsonResponse(result)
+    const yesMatch = bodyText.match(/^YES\s+(\S+)$/)
+    if (yesMatch) {
+      const result = await acceptBoatJob(db, yesMatch[1], boatman.id)
+      return jsonResponse(result)
+    }
+
+    if (bodyText === '*' || bodyText === '#') {
+      const { data: pending } = await db
+        .from('case_boatman_requests')
+        .select('*')
+        .eq('boatman_id', boatman.id)
+        .eq('status', 'requested')
+
+      if (!pending || pending.length === 0) {
+        return jsonResponse({ ok: true, accepted: false, reason: 'no pending request for this boatman' })
+      }
+      if (pending.length > 1) {
+        // Ambiguous — more than one case currently awaiting this boatman. Bare
+        // */# has no case_id to disambiguate with; ask them to use "YES <case_id>"
+        // instead rather than guessing which one they meant.
+        await sendSms(from, 'You have more than one pending request — reply YES <case_id> to specify which one.')
+        return jsonResponse({ ok: true, accepted: false, reason: 'ambiguous — multiple pending requests' })
+      }
+
+      const result = await acceptBoatJob(db, pending[0].case_id, boatman.id)
+      return jsonResponse(result)
+    }
+
+    return jsonResponse({ ok: true, accepted: false, reason: 'not a recognised accept reply (YES <case_id>, *, or #)' })
   }
 
   return jsonResponse({ error: 'unrecognised Exotel callback shape' }, 400)

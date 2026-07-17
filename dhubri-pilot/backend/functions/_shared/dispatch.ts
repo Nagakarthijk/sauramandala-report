@@ -10,6 +10,7 @@ import { sendSms, placeIvrCall } from './exotel-client.ts'
 
 const FLOW_BOATMAN_BROADCAST = Deno.env.get('GLIFIC_FLOW_BOATMAN_BROADCAST') ?? ''
 const FLOW_FACILITY_ALERT = Deno.env.get('GLIFIC_FLOW_FACILITY_ALERT') ?? ''
+const FLOW_BRC_ALERT = Deno.env.get('GLIFIC_FLOW_BRC_ALERT') ?? ''
 
 export function capabilitiesSatisfying(required: string): string[] {
   if (required === 'day-only') return ['day-only', 'night-capable', 'day+night-with-support']
@@ -27,6 +28,22 @@ export async function dispatchCase(db: any, case_id: string, char: any, required
   }
   await db.from('cases').update({ facility_status: 'notified' }).eq('id', case_id)
   await logEvent(db, case_id, 'facility_alerted', {})
+
+  // SERVICE_BLUEPRINT.md: the Block Referral Coordinator gets the same case brief
+  // as the facility, in parallel — not a dashboard-only role (FLOWS.md FLOW-BRC1).
+  const { data: brcs } = await db
+    .from('block_referral_coordinators')
+    .select('*')
+    .eq('facility_id', char.facility_id)
+
+  for (const brc of brcs ?? []) {
+    if (brc.glific_contact_id && FLOW_BRC_ALERT) {
+      await startContactFlow(FLOW_BRC_ALERT, brc.glific_contact_id, {
+        case_id, char_name: char.name, eta_min: char.indicative_eta_min
+      })
+    }
+  }
+  await logEvent(db, case_id, 'brc_alerted', { brc_count: (brcs ?? []).length })
 
   const { data: pool } = await db
     .from('boatmen')
