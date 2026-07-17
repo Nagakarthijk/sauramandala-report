@@ -2,25 +2,24 @@
 
 Real Glific flow-definition JSON — importable into an actual Glific workspace and clickable through with Glific's own built-in **Simulator**, not just a webpage that mimics WhatsApp. This is a different, more demanding artifact than `simulator-scenarios.json` or `whatsapp-journey.json` elsewhere in this folder: those are scripts a custom viewer interprets; these are meant to be *consumed by Glific itself*.
 
-**v3 note (this pass):** corrected against `GLIFIC-API-REFERENCE.md` — the team's own real-instance-tested notes (captured against a live Glific instance, smf.glific.com, July 2026), found in this repo's `claude/clever-tesla-6uaxen` branch. This replaces several confident-sounding but wrong guesses from the earlier goflow-fixture-only build. See "What changed in v3" below.
+**v4 note (this pass):** fixed against `CMYC_mPowerClub.json` — a **real, already-imported-and-published** Glific export the team built and debugged previously (found on this repo's `claude/clever-tesla-6uaxen` branch, alongside its generator `generate_mpowerclub.py`). Every flow here was rewritten to match its confirmed-working structure exactly, via a shared `_lib.js` helper module — see "What changed in v4" below. This is a materially stronger source than v3's written notes: it's a diff against JSON that Glific actually accepted, not a description of one.
 
 ## How confident is this, really
 
-Glific's flow engine is a fork of RapidPro/goflow. The `nodes` / `actions` / `router` / `exits` / `categories` / `cases` graph shape, and now the `send_interactive_msg` / `link_google_sheet` / `wait_for_time` action shapes and the top-level `{ flows: [...], interactive_templates: [...] }` wrapper, are all transcribed from **real exports captured from a live Glific instance** (not a generic goflow fixture) — see `GLIFIC-API-REFERENCE.md` for the source captures. This is meaningfully more trustworthy than the v1/v2 builds, which were grounded only in a generic goflow test fixture and got several real specifics wrong.
+`_lib.js`'s node/wrapper shapes are transcribed directly from `CMYC_mPowerClub.json`, a flow file the team confirms was successfully imported and published on their live instance — this is the strongest evidence available short of importing these exact files yourselves. The one still-unverified piece: the `link_google_sheet` node's router (operand `@results.facility_lookup.category`) in `FLOW-W1.json` — there's no Sheets example in the reference file to check it against. Flag this first if that one node misbehaves on import; everything else in these files now matches the working reference structurally, field for field.
 
-Still not verified: the exact behavior of the `link_google_sheet` node's router (operand `@results.facility_lookup.category`, matching "Success"/"Failure") added to `FLOW-W1.json` — this is transcribed from a captured example but not independently re-tested. Flag any surprises here first if the sheet-lookup node misbehaves on import.
+## What changed in v4
 
-## What changed in v3
+The v3 files still failed to import. Diffing them against `CMYC_mPowerClub.json` found the actual cause — several structural things v3 (built from written notes, not a working file) got wrong:
 
-Fixing errors caught by re-reading the team's own hard-won notes, not new guesses:
+- **The `definition` wrapper**: each entry in the top-level `flows` array is `{ keywords: [...], definition: { ...the actual engine flow... } }` — `keywords` is a *sibling* of `definition`, not a field inside it. v3 had `keywords` inside the flow object directly, alongside `nodes`/`spec_version` — there was no `definition` wrapper at all. This was almost certainly the actual import error.
+- **`definition.language` is `"base"`**, not `"eng"`.
+- **`definition` needs several fields v3 didn't have**: `expire_after_minutes` (10080 = one week), `localization: {}`, `_ui: { nodes: {}, stickies: {} }`, `vars: []`.
+- **`send_msg` actions need `quick_replies: []`, `labels: []`, `attachments: []`** — v3's `send_msg` actions only had `uuid`/`type`/`text`.
+- **A "send a message, then wait for the reply" step is TWO separate nodes**, not one node holding both the action and the router: an action-only node with a single exit, then a node with `actions: []` and the router/exits. v3 combined them into one node. (`wait_for_time` is the one exception — action and router stay combined there, confirmed correct as-is.)
+- Everything from v3 that *was* independently confirmed carries forward unchanged: `spec_version: "14.3.0"`, `send_interactive_msg` + top-level `interactive_templates`, `has_only_phrase` button matching, no `router.wait.timeout`, `@results.*` without `.value`, `startContactFlow`'s `result` argument.
 
-- **`spec_version`**: `"14.3.0"`, not `"13.1.0"` — this is Glific's real live spec version as of the July 2026 captures, newer than the generic goflow spec these files originally targeted.
-- **Import shape**: `importFlow(flow: $flow)` expects `{ flows: [<flow>], interactive_templates: [...] }` — a wrapper object, not a bare flow object at the top level. All three files here now write that shape.
-- **Interactive buttons**: the triage question (`FLOW-W1`) and the boatman "Accept" button (`FLOW-B1`) now use the real `send_interactive_msg` action type, referencing a `quick_reply` entry in the top-level `interactive_templates` array by `id`/`source_id`. The old `send_msg` + `quick_replies: [...]` shape doesn't exist in real Glific — that field isn't on `send_msg`.
-- **Button-reply matching**: `has_only_phrase` against the exact button title text, not `has_any_word` — that's how Glific actually matches a tapped quick-reply (the tap still arrives as plain text, matched against the label).
-- **No-response timeouts removed**: `router.wait.timeout` is **confirmed non-functional in real Glific** (tested directly against a live instance — the flow just waits forever, the timeout never fires). The old "No Response" categories in `FLOW-W1`/`FLOW-B1` were dead code building on a mechanism that doesn't work. Real no-response handling for Dhubri already lives where it actually works: `backend/functions/escalate-check` polling `case.created_at` / `boatman_broadcasts` age from outside the flow. (Glific does have a real `wait_for_time` action for *sequential* delays — "wait N seconds, then continue" — but that's a different primitive from "wait for a reply OR N seconds, whichever comes first," which Glific's router can't do natively.)
-- **Variable syntax**: `@results.triage` / `@results.case_id` / `@results.webhook.case_id`, not `@results.triage.value` / `@results.case_id.value` / `@results.webhook.json.case_id`. The `.value` suffix is only for `@contact.fields.<key>.value` (persisted contact fields) — seeded/computed results (`@results.*`) and webhook returns (`@results.<name>.<key>`) don't take it.
-- **`startContactFlow`'s seed-data argument**: `result: JSON!`, not `defaultResults` — fixed in `backend/functions/_shared/glific-client.ts` too.
+All six flow files (`FLOW-W1`, `FLOW-B1`, `FLOW-BRC1` and their `-DEMO` siblings) are now generated through `_lib.js`'s shared helpers rather than hand-built per file, so this class of mistake can't drift between them again.
 
 ## New: a real Google Sheets exploitation example
 
@@ -60,6 +59,7 @@ See [`DEMO_ON_WHATSAPP.md`](./DEMO_ON_WHATSAPP.md) — a zero-infrastructure pat
 
 ## Files
 
+- `_lib.js` — shared node/wrapper helpers encoding the confirmed-correct shape (see "What changed in v4" above); every generator below is built on this
 - `generate-flow-w1.js` / `FLOW-W1.json` — Worker Emergency Report (SOP-1): single-button RED/GREEN/Labour-Started trigger (real tappable quick reply), a Google Sheets char→facility lookup, immediate dispatch, follow-up patient-ref/media capture
 - `generate-flow-b1.js` / `FLOW-B1.json` — Boatman Broadcast & Accept (SOP-3), real tappable "Accept" quick reply
 - `generate-flow-brc1.js` / `FLOW-BRC1.json` — Block Referral Coordinator Alert (SOP-4/SOP-7)

@@ -1,88 +1,4 @@
 {
-  "flows": [
-    {
-      "uuid": "470e95e4-c1cb-4b35-8647-ed2549d42a20",
-      "name": "Boatman Broadcast & Accept",
-      "spec_version": "14.3.0",
-      "language": "eng",
-      "type": "messaging",
-      "nodes": [
-        {
-          "uuid": "04a9053c-0d3c-4ded-b2d6-afb9fd18890e",
-          "actions": [
-            {
-              "uuid": "a8174b99-7699-444b-b1a0-d890e323afc8",
-              "type": "send_interactive_msg",
-              "id": 900002,
-              "name": "Boatman Accept",
-              "text": "{\"content\":{\"header\":\"\",\"text\":\"🚨 Emergency case at @results.case_id — @results.char_name (@results.risk_flag). Can you go?\",\"type\":\"text\"},\"options\":[{\"title\":\"Accept\",\"type\":\"text\"}],\"type\":\"quick_reply\"}",
-              "labels": [],
-              "attachment_url": "",
-              "attachment_type": ""
-            }
-          ],
-          "router": {
-            "type": "switch",
-            "wait": {
-              "type": "msg"
-            },
-            "result_name": "response",
-            "operand": "@input.text",
-            "cases": [
-              {
-                "uuid": "5af894c9-c3f0-49ec-a70c-54b99c4deafe",
-                "type": "has_only_phrase",
-                "arguments": [
-                  "Accept"
-                ],
-                "category_uuid": "e645e493-a01d-4b89-88af-ceb349b05533"
-              }
-            ],
-            "categories": [
-              {
-                "uuid": "e645e493-a01d-4b89-88af-ceb349b05533",
-                "name": "Accept",
-                "exit_uuid": "8edfb7a3-1cc3-4d5a-9adb-892760cbec55"
-              },
-              {
-                "uuid": "364da0bb-6f91-46b6-92ee-bae49618e481",
-                "name": "Other",
-                "exit_uuid": "ad57f8e5-22a3-453f-b1af-6f84db78d62b"
-              }
-            ],
-            "default_category_uuid": "364da0bb-6f91-46b6-92ee-bae49618e481"
-          },
-          "exits": [
-            {
-              "uuid": "8edfb7a3-1cc3-4d5a-9adb-892760cbec55",
-              "destination_uuid": "e254b8ac-17f0-4da3-bc25-1db152dac31a"
-            },
-            {
-              "uuid": "ad57f8e5-22a3-453f-b1af-6f84db78d62b"
-            }
-          ]
-        },
-        {
-          "uuid": "e254b8ac-17f0-4da3-bc25-1db152dac31a",
-          "actions": [
-            {
-              "uuid": "21fbf815-aece-456c-9ad2-bd1150175ad7",
-              "type": "call_webhook",
-              "method": "POST",
-              "url": "https://YOUR-BACKEND-DOMAIN/functions/v1/boatman-accept",
-              "result_name": "webhook",
-              "body": "{ \"case_id\": @(json(results.case_id)), \"boatman_id\": @(json(contact.uuid)) }"
-            }
-          ],
-          "exits": [
-            {
-              "uuid": "1efc79dc-935b-4f44-87e4-2db473c87b29"
-            }
-          ]
-        }
-      ]
-    }
-  ],
   "interactive_templates": [
     {
       "source_id": 900002,
@@ -104,7 +20,130 @@
           }
         ]
       },
-      "translations": {}
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "",
+            "text": "🚨 Emergency case at @results.case_id — @results.char_name (@results.risk_flag). Can you go?"
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "Accept"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "contact_field": [],
+  "collections": [],
+  "flows": [
+    {
+      "keywords": [],
+      "definition": {
+        "uuid": "287526a0-96da-45c0-99cc-92ceb09021c8",
+        "name": "Boatman Broadcast & Accept",
+        "type": "messaging",
+        "spec_version": "14.3.0",
+        "language": "base",
+        "expire_after_minutes": 10080,
+        "localization": {},
+        "_ui": {
+          "nodes": {},
+          "stickies": {}
+        },
+        "vars": [],
+        "nodes": [
+          {
+            "uuid": "5d4be2b6-8900-4119-927a-77bcd7defce0",
+            "actions": [
+              {
+                "uuid": "b5b744cd-ffcf-4dc2-817a-02dc020b2ef9",
+                "type": "send_interactive_msg",
+                "id": 900002,
+                "name": "Boatman Accept",
+                "text": "{\"type\":\"quick_reply\",\"content\":{\"type\":\"text\",\"header\":\"\",\"text\":\"🚨 Emergency case at @results.case_id — @results.char_name (@results.risk_flag). Can you go?\"},\"options\":[{\"type\":\"text\",\"title\":\"Accept\"}]}",
+                "labels": [],
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "b63a09b4-fb0c-42f5-ae82-67b1c3d94c70",
+                "destination_uuid": "1258468a-bd06-4fde-ba2e-51ea36e06eb0"
+              }
+            ]
+          },
+          {
+            "uuid": "1258468a-bd06-4fde-ba2e-51ea36e06eb0",
+            "actions": [],
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "response",
+              "operand": "@input.text",
+              "default_category_uuid": "b849b420-3efc-48fe-86ac-786d88220d30",
+              "categories": [
+                {
+                  "uuid": "bd1b3860-cd48-4307-a03d-e1b780c78a62",
+                  "name": "Accept",
+                  "exit_uuid": "fd05e354-1c31-4eeb-82a4-06ede17bcb23"
+                },
+                {
+                  "uuid": "b849b420-3efc-48fe-86ac-786d88220d30",
+                  "name": "Other",
+                  "exit_uuid": "ef92ae72-eb97-45e4-a9d3-2fc56885cedb"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "37fa1af6-cf23-44b3-9f94-d3c70972368d",
+                  "type": "has_only_phrase",
+                  "arguments": [
+                    "Accept"
+                  ],
+                  "category_uuid": "bd1b3860-cd48-4307-a03d-e1b780c78a62"
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "fd05e354-1c31-4eeb-82a4-06ede17bcb23",
+                "destination_uuid": "faf2fa82-dd89-456a-9994-18bfde594cd6"
+              },
+              {
+                "uuid": "ef92ae72-eb97-45e4-a9d3-2fc56885cedb",
+                "destination_uuid": null
+              }
+            ]
+          },
+          {
+            "uuid": "faf2fa82-dd89-456a-9994-18bfde594cd6",
+            "actions": [
+              {
+                "uuid": "ae509b73-693e-4a9f-9356-b13da42c9188",
+                "type": "call_webhook",
+                "method": "POST",
+                "url": "https://YOUR-BACKEND-DOMAIN/functions/v1/boatman-accept",
+                "result_name": "webhook",
+                "body": "{ \"case_id\": @(json(results.case_id)), \"boatman_id\": @(json(contact.uuid)) }"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "3e182bd8-c671-4f23-8424-43cbc132bb59",
+                "destination_uuid": null
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

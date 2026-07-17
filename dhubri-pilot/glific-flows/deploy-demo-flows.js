@@ -67,8 +67,8 @@ async function main() {
   for (const file of FILES) {
     const filePath = path.join(__dirname, file);
     const contents = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    const flowUuid = contents.flows[0].uuid;
-    const flowName = contents.flows[0].name;
+    const flowUuid = contents.flows[0].definition.uuid;
+    const flowName = contents.flows[0].definition.name;
 
     console.log(`Importing ${file} (${flowName})...`);
     const importResult = await graphql(token, IMPORT_FLOW, { flow: contents });

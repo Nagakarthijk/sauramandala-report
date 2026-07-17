@@ -1,56 +1,28 @@
-// generate-flow-brc1.js — builds FLOW-BRC1.json (Block Referral Coordinator
-// Alert) — the BRC gets the same case brief as the facility, in parallel, not
-// just dashboard visibility.
+// generate-flow-brc1.js — builds FLOW-BRC1.json (Block Referral Coordinator Alert).
 //
-// v2: corrected against GLIFIC-API-REFERENCE.md: spec_version "14.3.0", output
-// wrapped as { flows: [...] } (no interactive_templates needed — this flow has
-// no buttons), and `@results.case_id` / `@results.char_name` / `@results.eta_min`
-// without a `.value` suffix (these are startContactFlow-seeded results, not
-// contact fields).
+// v3: fixed against a real, already-imported-and-published Glific export — wrapped
+// in {keywords, definition} now (see generate-flow-w1.js / _lib.js). Structurally
+// unaffected by the message+wait split fix since this flow has no router at all —
+// a single one-way alert, no reply expected.
 //
-// Deliberately a single node with no router: per FLOWS.md FLOW-BRC1, no reply
-// is expected from the BRC to progress the case — this is a one-way alert.
-//
-// This flow is specifically the INITIAL case-brief alert (backend/functions/
-// _shared/dispatch.ts calls startContactFlow(FLOW_BRC_ALERT, ..., result:
-// {case_id, char_name, eta_min})). The BRC's later updates (dual ETA, checklist
-// results) reuse the existing generic GLIFIC_FLOW_CASE_STATUS_UPDATE flow with a
-// pre-composed {message} instead — see readiness.ts / escalate-check/index.ts —
-// not this flow again, so this template only needs to reference case_id/char_name/eta_min.
+// Started via the backend's startContactFlow for each block_referral_coordinators
+// contact tied to the case's facility, seeded via `result` with
+// {case_id, char_name, eta_min} (dispatch.ts). Never keyword-triggered.
 //
 // Run: node generate-flow-brc1.js  →  writes FLOW-BRC1.json alongside this script.
 
 const fs = require('fs');
-const { randomUUID } = require('crypto');
-const uuid = () => randomUUID();
+const { uuid, actionNode, msgAction, wrapFlow, assemble } = require('./_lib');
 
-const ids = { flow: uuid(), n1: uuid(), n1_action: uuid(), n1_exit: uuid() };
+const flowUuid = uuid();
+const nodeUuid = uuid();
 
-const flow = {
-  uuid: ids.flow,
-  name: 'Block Referral Coordinator Alert',
-  spec_version: '14.3.0',
-  language: 'eng',
-  type: 'messaging',
-  // Never keyword-triggered — started via the backend's startContactFlow call
-  // for each block_referral_coordinators contact tied to the case's facility,
-  // seeded via the `result` parameter with {case_id, char_name, eta_min} (dispatch.ts).
-  nodes: [
-    {
-      uuid: ids.n1,
-      actions: [
-        {
-          uuid: ids.n1_action,
-          type: 'send_msg',
-          text: 'Case @results.case_id — @results.char_name. ETA once a boat is assigned: @results.eta_min min. You are copied on this alongside the facility.'
-        }
-      ],
-      exits: [{ uuid: ids.n1_exit }]
-    }
-  ]
-};
+const nodes = [
+  actionNode([msgAction('Case @results.case_id — @results.char_name. ETA once a boat is assigned: @results.eta_min min. You are copied on this alongside the facility.')], null, nodeUuid)
+];
 
-const output = { flows: [flow] };
+const flow = wrapFlow({ uuid: flowUuid, name: 'Block Referral Coordinator Alert', keywords: [], nodes });
+const output = assemble([flow]);
 
 fs.writeFileSync(__dirname + '/FLOW-BRC1.json', JSON.stringify(output, null, 2) + '\n');
-console.log('Wrote FLOW-BRC1.json —', flow.nodes.length, 'node,', Object.keys(ids).length, 'UUIDs allocated.');
+console.log('Wrote FLOW-BRC1.json —', nodes.length, 'node.');
