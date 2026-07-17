@@ -1,22 +1,26 @@
 {
-  "uuid": "dbe2ae7e-700f-49e6-a3d3-978f1769513b",
-  "name": "Block Referral Coordinator Alert",
-  "spec_version": "13.1.0",
-  "language": "eng",
-  "type": "messaging",
-  "nodes": [
+  "flows": [
     {
-      "uuid": "ad4b23c8-4d6d-4c8d-939c-f4c8a433f99d",
-      "actions": [
+      "uuid": "ccfb5170-e503-4694-9044-19e21b0d2ab8",
+      "name": "Block Referral Coordinator Alert",
+      "spec_version": "14.3.0",
+      "language": "eng",
+      "type": "messaging",
+      "nodes": [
         {
-          "uuid": "cfd6720d-642b-44be-bed1-c5448b8dfc16",
-          "type": "send_msg",
-          "text": "Case @results.case_id.value — @results.char_name.value. ETA once a boat is assigned: @results.eta_min.value min. You are copied on this alongside the facility."
-        }
-      ],
-      "exits": [
-        {
-          "uuid": "ee56bf85-f77e-4a68-b720-bb4d085a468c"
+          "uuid": "b4ddb525-6d03-43ea-afec-5efa560955af",
+          "actions": [
+            {
+              "uuid": "652533cf-2ade-4262-bd65-2016685a5df2",
+              "type": "send_msg",
+              "text": "Case @results.case_id — @results.char_name. ETA once a boat is assigned: @results.eta_min min. You are copied on this alongside the facility."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "514cf3a6-61c0-4c8b-84ba-acbf73d3c804"
+            }
+          ]
         }
       ]
     }

@@ -56,9 +56,14 @@ async function graphql(query: string, variables: Record<string, unknown>) {
   return json.data
 }
 
+// Corrected against GLIFIC-API-REFERENCE.md's confirmed GraphQL shape: the seed-data
+// argument is `result: JSON!` (camelCase variable names throughout), not the
+// `defaultResults`/snake_case guess this file used before. A flow's message nodes then
+// read the seeded keys as @results.<key> directly — no `.value` suffix (that suffix is
+// only for @contact.fields.<key>.value).
 const START_CONTACT_FLOW = `
-  mutation StartContactFlow($flow_id: ID!, $contact_id: ID!, $default_results: Json) {
-    startContactFlow(flowId: $flow_id, contactId: $contact_id, defaultResults: $default_results) {
+  mutation StartContactFlow($flowId: ID!, $contactId: ID!, $result: JSON!) {
+    startContactFlow(flowId: $flowId, contactId: $contactId, result: $result) {
       success
       errors { key message }
     }
@@ -67,20 +72,16 @@ const START_CONTACT_FLOW = `
 
 // Starts a specific, pre-built Glific flow for a specific contact, seeding it with
 // context (case_id, char_name, etc.) the flow's message nodes can reference as
-// @results.<key>. This is how FLOW-B1 (boatman broadcast) and FLOW-FC1 (facility
+// @results.<key>. This is how FLOW-B1 (boatman broadcast) and FLOW-BRC1 (BRC
 // alert) actually get triggered from outside a flow — see FLOWS.md.
 export async function startContactFlow(
   flowId: string,
   contactId: string,
-  defaultResults: Record<string, unknown>
+  result: Record<string, unknown>
 ): Promise<void> {
-  const data = await graphql(START_CONTACT_FLOW, {
-    flow_id: flowId,
-    contact_id: contactId,
-    default_results: defaultResults
-  })
-  const result = data.startContactFlow
-  if (!result?.success) {
-    throw new Error(`startContactFlow failed for contact ${contactId}: ${JSON.stringify(result?.errors)}`)
+  const data = await graphql(START_CONTACT_FLOW, { flowId, contactId, result })
+  const outcome = data.startContactFlow
+  if (!outcome?.success) {
+    throw new Error(`startContactFlow failed for contact ${contactId}: ${JSON.stringify(outcome?.errors)}`)
   }
 }

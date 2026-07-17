@@ -1,247 +1,298 @@
 {
-  "uuid": "dd4e4cbf-75ea-426c-b000-f76aac827e3b",
-  "name": "Worker Emergency Report",
-  "spec_version": "13.1.0",
-  "language": "eng",
-  "type": "messaging",
-  "keywords": [
-    "emergency"
-  ],
-  "nodes": [
+  "flows": [
     {
-      "uuid": "21ce5174-6523-44a9-9542-6c4815168d2f",
-      "actions": [
+      "uuid": "64da5144-19fb-4052-9497-86d11e6130ed",
+      "name": "Worker Emergency Report",
+      "spec_version": "14.3.0",
+      "language": "eng",
+      "type": "messaging",
+      "keywords": [
+        "emergency"
+      ],
+      "nodes": [
         {
-          "uuid": "c4e370f2-332b-4331-9d66-8181600126eb",
-          "type": "send_msg",
-          "text": "Case status?",
-          "quick_replies": [
-            "RED",
-            "GREEN",
-            "Labour Started"
+          "uuid": "ba6f7ba1-56c3-4138-a47c-ab1b712bf339",
+          "actions": [
+            {
+              "uuid": "3a884184-f427-407d-b613-14c7feb45499",
+              "type": "send_interactive_msg",
+              "id": 900001,
+              "name": "Worker Case Status Triage",
+              "text": "{\"content\":{\"header\":\"Case status?\",\"text\":\"Tap the option that matches your assessment.\",\"type\":\"text\"},\"options\":[{\"title\":\"RED\",\"type\":\"text\"},{\"title\":\"GREEN\",\"type\":\"text\"},{\"title\":\"Labour Started\",\"type\":\"text\"}],\"type\":\"quick_reply\"}",
+              "labels": [],
+              "attachment_url": "",
+              "attachment_type": ""
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "wait": {
+              "type": "msg"
+            },
+            "result_name": "triage",
+            "operand": "@input.text",
+            "cases": [
+              {
+                "uuid": "426babce-f4cf-4246-be48-ce2cde90295c",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "RED"
+                ],
+                "category_uuid": "c75cc19e-1cd7-40eb-bf9b-093a89f7bc33"
+              },
+              {
+                "uuid": "96bcd3cc-5e6c-4dc0-81fe-c748dd155b42",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "GREEN"
+                ],
+                "category_uuid": "4820685d-ad0f-4250-a47a-c9dd223e9604"
+              },
+              {
+                "uuid": "ba388932-8e42-467a-8006-2222c609747c",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "Labour Started"
+                ],
+                "category_uuid": "96e7dede-0417-46ac-84e2-843029e2c59b"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "c75cc19e-1cd7-40eb-bf9b-093a89f7bc33",
+                "name": "RED",
+                "exit_uuid": "1878386a-90dd-47e0-963c-ce5190820d98"
+              },
+              {
+                "uuid": "4820685d-ad0f-4250-a47a-c9dd223e9604",
+                "name": "GREEN",
+                "exit_uuid": "7ceeea9a-e300-4fb5-9902-2d7584046fe5"
+              },
+              {
+                "uuid": "96e7dede-0417-46ac-84e2-843029e2c59b",
+                "name": "Labour Started",
+                "exit_uuid": "3ed85515-92b1-4100-a6ac-d99469234754"
+              },
+              {
+                "uuid": "62d916c6-aa8d-4f0e-8bea-a6aa1185b0ba",
+                "name": "Other",
+                "exit_uuid": "f1660596-67fc-4eb9-8186-642a6d5ced62"
+              }
+            ],
+            "default_category_uuid": "62d916c6-aa8d-4f0e-8bea-a6aa1185b0ba"
+          },
+          "exits": [
+            {
+              "uuid": "1878386a-90dd-47e0-963c-ce5190820d98",
+              "destination_uuid": "d2862a62-ad83-4d34-891a-ccc198249a20"
+            },
+            {
+              "uuid": "7ceeea9a-e300-4fb5-9902-2d7584046fe5",
+              "destination_uuid": "d2862a62-ad83-4d34-891a-ccc198249a20"
+            },
+            {
+              "uuid": "3ed85515-92b1-4100-a6ac-d99469234754",
+              "destination_uuid": "d2862a62-ad83-4d34-891a-ccc198249a20"
+            },
+            {
+              "uuid": "f1660596-67fc-4eb9-8186-642a6d5ced62",
+              "destination_uuid": "d2862a62-ad83-4d34-891a-ccc198249a20"
+            }
+          ]
+        },
+        {
+          "uuid": "d2862a62-ad83-4d34-891a-ccc198249a20",
+          "actions": [
+            {
+              "uuid": "db9e0ccf-cf79-4309-b1dc-fd9db34af212",
+              "type": "link_google_sheet",
+              "url": "https://docs.google.com/spreadsheets/d/REPLACE_WITH_YOUR_CHAR_FACILITY_SHEET_ID/edit?usp=sharing",
+              "sheet_id": 0,
+              "row": "@contact.fields.char_id.value",
+              "result_name": "facility_lookup",
+              "name": "Char to Facility Directory",
+              "action_type": "READ"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.facility_lookup.category",
+            "cases": [
+              {
+                "uuid": "d191ae09-e222-4364-a959-db86b1ed1daf",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "7077520c-586d-47b3-8a7b-b49d90ef982a"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "7077520c-586d-47b3-8a7b-b49d90ef982a",
+                "name": "Success",
+                "exit_uuid": "d2ae3dec-8442-434e-a049-61e468f80504"
+              },
+              {
+                "uuid": "e244f0ec-2df9-4170-a897-0df9d8c97e44",
+                "name": "Failure",
+                "exit_uuid": "0b4371be-b5b4-4d30-a2ff-59bb470e255c"
+              }
+            ],
+            "default_category_uuid": "e244f0ec-2df9-4170-a897-0df9d8c97e44"
+          },
+          "exits": [
+            {
+              "uuid": "d2ae3dec-8442-434e-a049-61e468f80504",
+              "destination_uuid": "7ec07e5e-e0ad-40e9-b424-7b235199e1e3"
+            },
+            {
+              "uuid": "0b4371be-b5b4-4d30-a2ff-59bb470e255c",
+              "destination_uuid": "7ec07e5e-e0ad-40e9-b424-7b235199e1e3"
+            }
+          ]
+        },
+        {
+          "uuid": "7ec07e5e-e0ad-40e9-b424-7b235199e1e3",
+          "actions": [
+            {
+              "uuid": "6d99a307-2742-466c-a81a-b91cd3c12344",
+              "type": "call_webhook",
+              "method": "POST",
+              "url": "https://YOUR-BACKEND-DOMAIN/functions/v1/cases-create",
+              "result_name": "webhook",
+              "body": "{ \"reported_by_type\": \"worker\", \"reported_by_id\": @(json(contact.uuid)), \"char_id\": @(json(contact.fields.char_id)), \"triage\": @(json(lower(results.triage))), \"facility_id_hint\": @(json(results.facility_lookup.facility_id)) }"
+            },
+            {
+              "uuid": "16d0da19-6246-4632-80e4-3e104adf7ac1",
+              "type": "send_msg",
+              "text": "Case @results.webhook.case_id created. Dispatching a boat and alerting the facility and block coordinator now — I'll update you as soon as a boatman accepts."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "314ff4e1-aee3-44b5-9b39-29b04e13e6e0",
+              "destination_uuid": "efc5860c-f143-4202-8018-27096d0d43f9"
+            }
+          ]
+        },
+        {
+          "uuid": "efc5860c-f143-4202-8018-27096d0d43f9",
+          "actions": [
+            {
+              "uuid": "373e43c7-7a10-4098-8bdb-d7a393769b4a",
+              "type": "send_msg",
+              "text": "Patient reference (name/ID as you track it)?"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "wait": {
+              "type": "msg"
+            },
+            "result_name": "patient_ref",
+            "operand": "@input.text",
+            "cases": [],
+            "categories": [
+              {
+                "uuid": "fb795fe0-781b-4079-9048-037c4d0dd7b6",
+                "name": "Any",
+                "exit_uuid": "ae658813-5d33-4d03-b615-43af5bfa6aab"
+              }
+            ],
+            "default_category_uuid": "fb795fe0-781b-4079-9048-037c4d0dd7b6"
+          },
+          "exits": [
+            {
+              "uuid": "ae658813-5d33-4d03-b615-43af5bfa6aab",
+              "destination_uuid": "a731d6f4-916d-4b0e-81b7-7e7412df584c"
+            }
+          ]
+        },
+        {
+          "uuid": "a731d6f4-916d-4b0e-81b7-7e7412df584c",
+          "actions": [
+            {
+              "uuid": "893ad992-d38b-4914-bcc7-aae95f4ae9d0",
+              "type": "send_msg",
+              "text": "Send a voice note, photo, or location if you have it — or type SKIP"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "wait": {
+              "type": "msg"
+            },
+            "result_name": "attachment",
+            "operand": "@input.text",
+            "cases": [],
+            "categories": [
+              {
+                "uuid": "c49fc270-9a84-4ca9-90e6-7448f22a3be7",
+                "name": "Any",
+                "exit_uuid": "2b8ffe8e-c408-4c02-9e56-e9537b978b05"
+              }
+            ],
+            "default_category_uuid": "c49fc270-9a84-4ca9-90e6-7448f22a3be7"
+          },
+          "exits": [
+            {
+              "uuid": "2b8ffe8e-c408-4c02-9e56-e9537b978b05",
+              "destination_uuid": "b21f8337-a8ff-4802-9d81-6504e3f3c948"
+            }
+          ]
+        },
+        {
+          "uuid": "b21f8337-a8ff-4802-9d81-6504e3f3c948",
+          "actions": [
+            {
+              "uuid": "6cd44842-2b26-417c-997c-533c0eb14694",
+              "type": "call_webhook",
+              "method": "POST",
+              "url": "https://YOUR-BACKEND-DOMAIN/functions/v1/case-details",
+              "result_name": "webhook2",
+              "body": "{ \"case_id\": @(json(results.webhook.case_id)), \"patient_ref\": @(json(results.patient_ref)), \"attachments\": [] }"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "7adfde99-57b4-4a5b-a71b-f1a492092897"
+            }
           ]
         }
-      ],
-      "router": {
-        "type": "switch",
-        "wait": {
-          "type": "msg",
-          "timeout": {
-            "seconds": 600,
-            "category_uuid": "706014ea-bfa3-4200-8d60-31e6df6e2d83"
-          }
+      ]
+    }
+  ],
+  "interactive_templates": [
+    {
+      "source_id": 900001,
+      "type": "quick_reply",
+      "label": "Worker Case Status Triage",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "Case status?",
+          "text": "Tap the option that matches your assessment."
         },
-        "result_name": "triage",
-        "operand": "@input.text",
-        "cases": [
+        "options": [
           {
-            "uuid": "e076fff9-361c-41ec-8e73-7b404ee0529d",
-            "type": "has_any_word",
-            "arguments": [
-              "RED"
-            ],
-            "category_uuid": "70545222-86e5-4225-bc7d-0785f5b464c4"
+            "type": "text",
+            "title": "RED"
           },
           {
-            "uuid": "a4b6777f-90aa-437f-a6d3-c05ed3f5148a",
-            "type": "has_any_word",
-            "arguments": [
-              "GREEN"
-            ],
-            "category_uuid": "4e9f1647-4b4d-47d6-81d0-e5702d509e83"
+            "type": "text",
+            "title": "GREEN"
           },
           {
-            "uuid": "6d601999-2d83-403b-b142-c2ffb8eb4e5d",
-            "type": "has_any_word",
-            "arguments": [
-              "Labour",
-              "Started"
-            ],
-            "category_uuid": "a1414297-962a-498a-9495-57f0e9d754e0"
+            "type": "text",
+            "title": "Labour Started"
           }
-        ],
-        "categories": [
-          {
-            "uuid": "70545222-86e5-4225-bc7d-0785f5b464c4",
-            "name": "RED",
-            "exit_uuid": "6c7547bf-c0a1-41e4-b549-0691b4305598"
-          },
-          {
-            "uuid": "4e9f1647-4b4d-47d6-81d0-e5702d509e83",
-            "name": "GREEN",
-            "exit_uuid": "1e4d2908-49cf-4019-a77f-64ce56f2c4bd"
-          },
-          {
-            "uuid": "a1414297-962a-498a-9495-57f0e9d754e0",
-            "name": "Labour Started",
-            "exit_uuid": "561d88e1-4458-4049-a6c5-73ffd43551be"
-          },
-          {
-            "uuid": "0ff497b9-bc20-4f61-a9ed-bc0c20bde380",
-            "name": "Other",
-            "exit_uuid": "70fce250-33f3-4539-80f6-e1634f01ae0a"
-          },
-          {
-            "uuid": "706014ea-bfa3-4200-8d60-31e6df6e2d83",
-            "name": "No Response",
-            "exit_uuid": "72a994ba-70f0-4578-af48-365440bdf6ec"
-          }
-        ],
-        "default_category_uuid": "0ff497b9-bc20-4f61-a9ed-bc0c20bde380"
+        ]
       },
-      "exits": [
-        {
-          "uuid": "6c7547bf-c0a1-41e4-b549-0691b4305598",
-          "destination_uuid": "4c567725-8e50-4bba-beb8-a92b7d28e39e"
-        },
-        {
-          "uuid": "1e4d2908-49cf-4019-a77f-64ce56f2c4bd",
-          "destination_uuid": "4c567725-8e50-4bba-beb8-a92b7d28e39e"
-        },
-        {
-          "uuid": "561d88e1-4458-4049-a6c5-73ffd43551be",
-          "destination_uuid": "4c567725-8e50-4bba-beb8-a92b7d28e39e"
-        },
-        {
-          "uuid": "70fce250-33f3-4539-80f6-e1634f01ae0a",
-          "destination_uuid": "4c567725-8e50-4bba-beb8-a92b7d28e39e"
-        },
-        {
-          "uuid": "72a994ba-70f0-4578-af48-365440bdf6ec"
-        }
-      ]
-    },
-    {
-      "uuid": "4c567725-8e50-4bba-beb8-a92b7d28e39e",
-      "actions": [
-        {
-          "uuid": "14e7259a-048a-4f6b-b198-05ad3465d9df",
-          "type": "call_webhook",
-          "method": "POST",
-          "url": "https://YOUR-BACKEND-DOMAIN/functions/v1/cases-create",
-          "body": "{ \"reported_by_type\": \"worker\", \"reported_by_id\": @(json(contact.uuid)), \"char_id\": @(json(contact.fields.char_id)), \"triage\": @(json(lower(results.triage.value))) }"
-        },
-        {
-          "uuid": "46c3b073-653a-4ab5-9ef1-4456df07571a",
-          "type": "send_msg",
-          "text": "Case @results.webhook.json.case_id created. Dispatching a boat and alerting the facility and block coordinator now — I'll update you as soon as a boatman accepts."
-        }
-      ],
-      "exits": [
-        {
-          "uuid": "93a5465f-8810-496c-89d1-cc6deb5e5c38",
-          "destination_uuid": "8ad3fa45-619c-4b55-afa8-e4027f3e7324"
-        }
-      ]
-    },
-    {
-      "uuid": "8ad3fa45-619c-4b55-afa8-e4027f3e7324",
-      "actions": [
-        {
-          "uuid": "efca7f71-9f3d-496c-8428-173113bc0dc2",
-          "type": "send_msg",
-          "text": "Patient reference (name/ID as you track it)?"
-        }
-      ],
-      "router": {
-        "type": "switch",
-        "wait": {
-          "type": "msg",
-          "timeout": {
-            "seconds": 600,
-            "category_uuid": "7522f160-8423-4a04-901a-dedcff6d1821"
-          }
-        },
-        "result_name": "patient_ref",
-        "operand": "@input.text",
-        "cases": [],
-        "categories": [
-          {
-            "uuid": "d7cb3c62-393c-4620-946e-c8deac3848c3",
-            "name": "Other",
-            "exit_uuid": "5a7d750f-6fc0-443c-90f6-0ab63303c05b"
-          },
-          {
-            "uuid": "7522f160-8423-4a04-901a-dedcff6d1821",
-            "name": "No Response",
-            "exit_uuid": "54af39f2-d03a-45e5-bba4-1d321f0316f6"
-          }
-        ],
-        "default_category_uuid": "d7cb3c62-393c-4620-946e-c8deac3848c3"
-      },
-      "exits": [
-        {
-          "uuid": "5a7d750f-6fc0-443c-90f6-0ab63303c05b",
-          "destination_uuid": "f669f5a6-d0ce-468f-9f48-b93415f50997"
-        },
-        {
-          "uuid": "54af39f2-d03a-45e5-bba4-1d321f0316f6",
-          "destination_uuid": "f669f5a6-d0ce-468f-9f48-b93415f50997"
-        }
-      ]
-    },
-    {
-      "uuid": "f669f5a6-d0ce-468f-9f48-b93415f50997",
-      "actions": [
-        {
-          "uuid": "3c53141b-e2fd-4bd8-935f-b1635c2c2b7a",
-          "type": "send_msg",
-          "text": "Send a voice note, photo, or location if you have it — or type SKIP"
-        }
-      ],
-      "router": {
-        "type": "switch",
-        "wait": {
-          "type": "msg",
-          "timeout": {
-            "seconds": 600,
-            "category_uuid": "f609879c-9964-4aea-b64d-f1e6ee6c4d70"
-          }
-        },
-        "result_name": "attachment",
-        "operand": "@input.text",
-        "cases": [],
-        "categories": [
-          {
-            "uuid": "a512660e-7adf-49e7-a5ca-4fbae68bc5ca",
-            "name": "Other",
-            "exit_uuid": "092e49e9-c9b2-400b-a79c-210805ba592b"
-          },
-          {
-            "uuid": "f609879c-9964-4aea-b64d-f1e6ee6c4d70",
-            "name": "No Response",
-            "exit_uuid": "a6bed4e8-6d87-4d83-9def-f920092c4204"
-          }
-        ],
-        "default_category_uuid": "a512660e-7adf-49e7-a5ca-4fbae68bc5ca"
-      },
-      "exits": [
-        {
-          "uuid": "092e49e9-c9b2-400b-a79c-210805ba592b",
-          "destination_uuid": "f3710feb-d62a-48fc-87f3-0eb52c1749c7"
-        },
-        {
-          "uuid": "a6bed4e8-6d87-4d83-9def-f920092c4204",
-          "destination_uuid": "f3710feb-d62a-48fc-87f3-0eb52c1749c7"
-        }
-      ]
-    },
-    {
-      "uuid": "f3710feb-d62a-48fc-87f3-0eb52c1749c7",
-      "actions": [
-        {
-          "uuid": "24880692-28ff-4f68-b161-9e6bdc60f4ca",
-          "type": "call_webhook",
-          "method": "POST",
-          "url": "https://YOUR-BACKEND-DOMAIN/functions/v1/case-details",
-          "body": "{ \"case_id\": @(json(results.webhook.json.case_id)), \"patient_ref\": @(json(results.patient_ref.value)), \"attachments\": [] }"
-        }
-      ],
-      "exits": [
-        {
-          "uuid": "b008d3fd-65d8-44d6-bef0-b9022dd91553"
-        }
-      ]
+      "translations": {}
     }
   ]
 }

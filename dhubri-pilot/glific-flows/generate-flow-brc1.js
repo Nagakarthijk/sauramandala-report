@@ -1,14 +1,20 @@
 // generate-flow-brc1.js — builds FLOW-BRC1.json (Block Referral Coordinator
-// Alert), the new flow SERVICE_BLUEPRINT.md/FLOWS.md added — the BRC gets the
-// same case brief as the facility, in parallel, not just dashboard visibility.
+// Alert) — the BRC gets the same case brief as the facility, in parallel, not
+// just dashboard visibility.
+//
+// v2: corrected against GLIFIC-API-REFERENCE.md: spec_version "14.3.0", output
+// wrapped as { flows: [...] } (no interactive_templates needed — this flow has
+// no buttons), and `@results.case_id` / `@results.char_name` / `@results.eta_min`
+// without a `.value` suffix (these are startContactFlow-seeded results, not
+// contact fields).
 //
 // Deliberately a single node with no router: per FLOWS.md FLOW-BRC1, no reply
 // is expected from the BRC to progress the case — this is a one-way alert.
 //
 // This flow is specifically the INITIAL case-brief alert (backend/functions/
-// _shared/dispatch.ts calls startContactFlow(FLOW_BRC_ALERT, ..., {case_id,
-// char_name, eta_min})). The BRC's later updates (dual ETA, checklist results)
-// reuse the existing generic GLIFIC_FLOW_CASE_STATUS_UPDATE flow with a
+// _shared/dispatch.ts calls startContactFlow(FLOW_BRC_ALERT, ..., result:
+// {case_id, char_name, eta_min})). The BRC's later updates (dual ETA, checklist
+// results) reuse the existing generic GLIFIC_FLOW_CASE_STATUS_UPDATE flow with a
 // pre-composed {message} instead — see readiness.ts / escalate-check/index.ts —
 // not this flow again, so this template only needs to reference case_id/char_name/eta_min.
 //
@@ -23,12 +29,12 @@ const ids = { flow: uuid(), n1: uuid(), n1_action: uuid(), n1_exit: uuid() };
 const flow = {
   uuid: ids.flow,
   name: 'Block Referral Coordinator Alert',
-  spec_version: '13.1.0',
+  spec_version: '14.3.0',
   language: 'eng',
   type: 'messaging',
   // Never keyword-triggered — started via the backend's startContactFlow call
   // for each block_referral_coordinators contact tied to the case's facility,
-  // seeded with default_results: {case_id, char_name, eta_min} (dispatch.ts).
+  // seeded via the `result` parameter with {case_id, char_name, eta_min} (dispatch.ts).
   nodes: [
     {
       uuid: ids.n1,
@@ -36,7 +42,7 @@ const flow = {
         {
           uuid: ids.n1_action,
           type: 'send_msg',
-          text: 'Case @results.case_id.value — @results.char_name.value. ETA once a boat is assigned: @results.eta_min.value min. You are copied on this alongside the facility.'
+          text: 'Case @results.case_id — @results.char_name. ETA once a boat is assigned: @results.eta_min min. You are copied on this alongside the facility.'
         }
       ],
       exits: [{ uuid: ids.n1_exit }]
@@ -44,5 +50,7 @@ const flow = {
   ]
 };
 
-fs.writeFileSync(__dirname + '/FLOW-BRC1.json', JSON.stringify(flow, null, 2) + '\n');
+const output = { flows: [flow] };
+
+fs.writeFileSync(__dirname + '/FLOW-BRC1.json', JSON.stringify(output, null, 2) + '\n');
 console.log('Wrote FLOW-BRC1.json —', flow.nodes.length, 'node,', Object.keys(ids).length, 'UUIDs allocated.');
