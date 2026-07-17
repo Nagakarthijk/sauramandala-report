@@ -54,9 +54,15 @@ This catches the class of error that would definitely break an import or cause t
 
 `generate-flow-w1.js`, `generate-flow-b1.js`, and `generate-flow-brc1.js` are the template pattern — same allocate-all-UUIDs-up-front approach, same node/router/exit shape, same `{ flows: [...], interactive_templates: [...] }` wrapper. The remaining flows in `FLOWS.md` (FLOW-F1 family report + verification, FLOW-FC1's two-checklist facility alert, FLOW-A1's dual-ETA ambulance dispatch, FLOW-C1 case close + reflection) follow the identical shape; write a `generate-flow-<id>.js` per flow using these three as the reference, and validate each with `validate-flow.js` before attempting an import.
 
+## Want to show this live on WhatsApp to your team first?
+
+See [`DEMO_ON_WHATSAPP.md`](./DEMO_ON_WHATSAPP.md) — a zero-infrastructure path using `FLOW-W1-DEMO.json`/`FLOW-B1-DEMO.json`/`FLOW-BRC1-DEMO.json` (keyword-triggered siblings of the files below, no backend needed) and a one-command deploy script (`deploy-demo-flows.js`). No n8n, no Supabase, nothing to learn beyond a Glific login.
+
 ## Files
 
 - `generate-flow-w1.js` / `FLOW-W1.json` — Worker Emergency Report (SOP-1): single-button RED/GREEN/Labour-Started trigger (real tappable quick reply), a Google Sheets char→facility lookup, immediate dispatch, follow-up patient-ref/media capture
 - `generate-flow-b1.js` / `FLOW-B1.json` — Boatman Broadcast & Accept (SOP-3), real tappable "Accept" quick reply
 - `generate-flow-brc1.js` / `FLOW-BRC1.json` — Block Referral Coordinator Alert (SOP-4/SOP-7)
+- `generate-flow-w1-demo.js` / `FLOW-W1-DEMO.json`, `generate-flow-b1-demo.js` / `FLOW-B1-DEMO.json`, `generate-flow-brc1-demo.js` / `FLOW-BRC1-DEMO.json` — keyword-triggered, backend-free demo variants of the three flows above, for showing a real WhatsApp conversation without deploying anything — see `DEMO_ON_WHATSAPP.md`
+- `deploy-demo-flows.js` — one command: login, import, publish all three demo flows against a real Glific instance
 - `validate-flow.js` — structural consistency checker, run against any flow JSON here

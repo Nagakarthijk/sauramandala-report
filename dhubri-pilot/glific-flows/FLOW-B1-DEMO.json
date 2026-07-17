@@ -1,0 +1,110 @@
+{
+  "flows": [
+    {
+      "uuid": "936db705-35c0-449b-b362-fc65c4ea402d",
+      "name": "Boatman Broadcast & Accept (Demo)",
+      "spec_version": "14.3.0",
+      "language": "eng",
+      "type": "messaging",
+      "keywords": [
+        "boatjob"
+      ],
+      "nodes": [
+        {
+          "uuid": "a5be72a9-bc3b-4ea4-bc96-f4662ccbbacb",
+          "actions": [
+            {
+              "uuid": "342792cd-b390-4ae0-b3ad-6b26d15f3858",
+              "type": "send_interactive_msg",
+              "id": 900102,
+              "name": "Boatman Accept (Demo)",
+              "text": "{\"content\":{\"header\":\"\",\"text\":\"🚨 Emergency case at River Char 7 — Rina Begum (RED). Can you go?\",\"type\":\"text\"},\"options\":[{\"title\":\"Accept\",\"type\":\"text\"}],\"type\":\"quick_reply\"}",
+              "labels": [],
+              "attachment_url": "",
+              "attachment_type": ""
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "wait": {
+              "type": "msg"
+            },
+            "result_name": "response",
+            "operand": "@input.text",
+            "cases": [
+              {
+                "uuid": "ad4fe7ea-f21d-44bb-ace0-936a9e58b040",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "Accept"
+                ],
+                "category_uuid": "3e4a30e0-e6e9-4b1f-8a95-985f663fc01a"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "3e4a30e0-e6e9-4b1f-8a95-985f663fc01a",
+                "name": "Accept",
+                "exit_uuid": "132de352-1501-4666-b513-95a631c77d14"
+              },
+              {
+                "uuid": "6a43265e-b0a2-44da-beb4-d47ff26dca83",
+                "name": "Other",
+                "exit_uuid": "f4118b19-33af-488c-bc6a-f3f7e33be935"
+              }
+            ],
+            "default_category_uuid": "6a43265e-b0a2-44da-beb4-d47ff26dca83"
+          },
+          "exits": [
+            {
+              "uuid": "132de352-1501-4666-b513-95a631c77d14",
+              "destination_uuid": "09159865-fc11-4bf0-aa88-851f112e08fd"
+            },
+            {
+              "uuid": "f4118b19-33af-488c-bc6a-f3f7e33be935"
+            }
+          ]
+        },
+        {
+          "uuid": "09159865-fc11-4bf0-aa88-851f112e08fd",
+          "actions": [
+            {
+              "uuid": "7113e556-1c8c-4d00-8b38-bd62fc04aeb2",
+              "type": "send_msg",
+              "text": "You're assigned! Pickup brief: River Char 7 — Rina Begum, RED. Head to the case now."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "3059f26d-abb6-490d-8e3c-854b42e5c226"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "interactive_templates": [
+    {
+      "source_id": 900102,
+      "type": "quick_reply",
+      "label": "Boatman Accept (Demo)",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "",
+          "text": "🚨 Emergency case at River Char 7 — Rina Begum (RED). Can you go?"
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "Accept"
+          }
+        ]
+      },
+      "translations": {}
+    }
+  ]
+}

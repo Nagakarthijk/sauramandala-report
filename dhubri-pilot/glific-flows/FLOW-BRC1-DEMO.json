@@ -1,0 +1,31 @@
+{
+  "flows": [
+    {
+      "uuid": "9e64f0e6-107d-4df4-9ce1-82036564e637",
+      "name": "Block Referral Coordinator Alert (Demo)",
+      "spec_version": "14.3.0",
+      "language": "eng",
+      "type": "messaging",
+      "keywords": [
+        "brcalert"
+      ],
+      "nodes": [
+        {
+          "uuid": "765849e7-e697-4a03-9d36-2dcfd1b59b13",
+          "actions": [
+            {
+              "uuid": "bda3449a-dde7-4d9d-8ae6-e16e8b780b19",
+              "type": "send_msg",
+              "text": "Case at River Char 7 — Rina Begum (RED). ETA once a boat is assigned: 18 min. You are copied on this alongside the facility."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "4b7be69a-9e5b-4219-95fa-e957eee3d29e"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

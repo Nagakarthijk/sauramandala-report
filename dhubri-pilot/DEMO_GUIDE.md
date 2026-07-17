@@ -14,6 +14,10 @@ The control-room view — what a district coordinator would watch during a live 
 
 A simpler 5-scenario version of the same idea, predates the blueprint reconciliation — use only if `whatsapp-journey.html` feels like too much detail for a first look.
 
+## Want it on real WhatsApp instead of a browser mockup?
+
+See [`glific-flows/DEMO_ON_WHATSAPP.md`](./glific-flows/DEMO_ON_WHATSAPP.md) — a step up from the browser demo above: the same conversations, running on a real Glific instance, arriving on real phones in real WhatsApp. Still no n8n, no Supabase, nothing to learn beyond a Glific login — just three phones, three keywords (`emergency`, `boatjob`, `brcalert`), and one setup script someone technical runs once beforehand.
+
 ## Optional, needs 2+ people in the same room on their phones: `game/`
 
 A live multiplayer training exercise — real people play worker/boatmen/facility roles and their actual coordination speed drives a real outcome (safe delivery vs. complication vs. death). Peer-to-peer, no server, but genuinely untested in this dev environment (its dependency CDN was blocked from here) — do a quick two-device test yourself before running it in front of the team. See `game/README.md`.
