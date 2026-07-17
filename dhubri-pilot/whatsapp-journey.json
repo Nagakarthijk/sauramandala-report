@@ -1,260 +1,198 @@
 {
-  "version": "0.1",
-  "description": "Dhubri Pilot — the complete case-to-facility journey (SOP-1 → SOP-3 → SOP-4 → SOP-6) as one continuous WhatsApp-only transcript, using authentic WhatsApp Cloud API / Gupshup message JSON shapes rather than the simplified 'beat' schema in simulator-scenarios.json. Every message feature from the original brief appears at least once: keyword trigger, interactive buttons, interactive lists, free text, voice note, photo, location share (including a boatman's live-location pings mid-transit), HSM/template messages for business-initiated sends, and the parallel dispatch + first-accept-wins pool logic. This is a script for whatsapp-journey.html, not a live system.",
-  "_format_note": "Each journey[].message mirrors Meta/Gupshup's real message JSON. `direction: outbound` entries are what the backend POSTs to WhatsApp's /messages endpoint (this is what our Glific flow, or the backend calling Gupshup directly, actually sends). `direction: inbound` entries are the inner `messages[]` object from WhatsApp's webhook payload — i.e. entry[0].changes[0].value.messages[0] — simplified by dropping the outer webhook envelope (object/entry/changes/value/metadata/contacts wrapper) for readability, since that wrapper is boilerplate identical on every inbound message. Field names below (type, interactive.type, action.sections, template.components, etc.) match Meta's documented Cloud API schema, which Gupshup passes through largely as-is.",
+  "version": "0.2",
+  "description": "Dhubri Pilot — seven case-to-facility journeys, each a complete real-life scenario (day, night, family-reported + verified, family-reported + timed out, boatman pool silent, flooding, fuel shortage), scripted using authentic WhatsApp Cloud API / Gupshup message JSON. This is the Glific-realistic companion to simulator-scenarios.json's simplified schema — every message's `message` field is what would actually flow through Gupshup/Glific for that step, inspectable via 'raw WhatsApp JSON' in whatsapp-journey.html. Not a live system — a scripted, evidence-grounded walkthrough of how the design in CONCEPT.md/SOP.md/FLOWS.md plays out across the range of real situations this pilot has to handle.",
+  "_format_note": "Each journey[].message mirrors Meta/Gupshup's real message JSON. `direction: outbound` entries are what the backend POSTs to WhatsApp's /messages endpoint. `direction: inbound` entries are the inner `messages[]` object from WhatsApp's webhook payload — i.e. entry[0].changes[0].value.messages[0] — simplified by dropping the outer webhook envelope for readability. Field names (type, interactive.type, action.sections, template.components, etc.) match Meta's documented Cloud API schema, which Gupshup passes through largely as-is. Where a step represents an internal timer/escalation with no WhatsApp equivalent (e.g. 'nobody replied for 5 minutes'), it's carried as a `dashboard.note` on the next real message rather than invented as a fake message type.",
 
-  "contacts": [
-    { "id": "worker", "label": "Rina — ASHA (Worker, Char A)", "wa_id": "91XXXXXXX101", "role": "worker" },
-    { "id": "boat1", "label": "Abdul — Boatman (night-capable)", "wa_id": "91XXXXXXX201", "role": "boatman" },
-    { "id": "boat2", "label": "Salim — Boatman (day-only)", "wa_id": "91XXXXXXX202", "role": "boatman" },
-    { "id": "facility", "label": "Sample PHC — Facility", "wa_id": "91XXXXXXX301", "role": "facility" }
-  ],
+  "scenarios": [
+    {
+      "id": "SCN-01", "title": "Day emergency — happy path",
+      "summary": "SOP-1's primary flow in the calmest conditions: daytime, either boatman can take the job, no complications. The baseline every other scenario is a variation on.",
+      "contacts": [
+        { "id": "worker", "label": "Rina — ASHA (Worker, Char A)", "wa_id": "91XXXXXXX101", "role": "worker" },
+        { "id": "boat1", "label": "Abdul — Boatman", "wa_id": "91XXXXXXX201", "role": "boatman" },
+        { "id": "boat2", "label": "Salim — Boatman", "wa_id": "91XXXXXXX202", "role": "boatman" },
+        { "id": "facility", "label": "Sample PHC — Facility", "wa_id": "91XXXXXXX301", "role": "facility" }
+      ],
+      "journey": [
+        { "step": 1, "at": 0, "direction": "inbound", "contact_id": "worker", "sop_ref": "SOP-1 step 1", "message": { "from": "91XXXXXXX101", "id": "wamid.D01", "timestamp": "1752700000", "type": "text", "text": { "body": "EMERGENCY" } } },
+        { "step": 2, "at": 700, "direction": "outbound", "contact_id": "worker", "sop_ref": "SOP-1 step 1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "interactive", "interactive": { "type": "button", "body": { "text": "Risk level?" }, "action": { "buttons": [ { "type": "reply", "reply": { "id": "risk_emergency", "title": "Emergency" } } ] } } } },
+        { "step": 3, "at": 1400, "direction": "inbound", "contact_id": "worker", "sop_ref": "SOP-1 step 1", "message": { "from": "91XXXXXXX101", "id": "wamid.D02", "timestamp": "1752700001.4", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "risk_emergency", "title": "Emergency" } } } },
+        { "step": 4, "at": 2000, "direction": "outbound", "contact_id": "worker", "sop_ref": "SOP-1 step 3", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Patient reference?" } } },
+        { "step": 5, "at": 2700, "direction": "inbound", "contact_id": "worker", "sop_ref": "SOP-1 step 3", "message": { "from": "91XXXXXXX101", "id": "wamid.D03", "timestamp": "1752700002.7", "type": "text", "text": { "body": "Laxmi — 3rd pregnancy, mild bleeding since morning" } } },
+        { "step": 6, "at": 3400, "direction": "outbound", "contact_id": "worker", "sop_ref": "SOP-1 step 5-6", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Case DHU-2026-000801 created. Dispatching now." } }, "dashboard": { "status": "open", "note": "Case created — day, emergency" } },
+        { "step": 7, "at": 3700, "direction": "outbound", "contact_id": "boat1", "sop_ref": "FLOW-B1 — HSM broadcast", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX201", "type": "template", "template": { "name": "boat_request_broadcast", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "Char A" }, { "type": "text", "text": "Emergency" } ] } ] } } },
+        { "step": 8, "at": 3700, "direction": "outbound", "contact_id": "boat2", "sop_ref": "FLOW-B1 — same broadcast, day-only boat also eligible", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX202", "type": "template", "template": { "name": "boat_request_broadcast", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "Char A" }, { "type": "text", "text": "Emergency" } ] } ] } } },
+        { "step": 9, "at": 3800, "direction": "outbound", "contact_id": "facility", "sop_ref": "FLOW-FC1 — parallel facility alert", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "template", "template": { "name": "facility_case_alert", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "DHU-2026-000801" }, { "type": "text", "text": "Char A" } ] } ] } }, "dashboard": { "note": "Boat broadcast + facility alert fired in parallel" } },
+        { "step": 10, "at": 5200, "direction": "inbound", "contact_id": "boat2", "sop_ref": "SOP-3 first-accept-wins", "message": { "from": "91XXXXXXX202", "id": "wamid.D04", "timestamp": "1752700005.2", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "accept", "title": "Accept" } } }, "dashboard": { "status": "boat-assigned", "note": "Salim (BOAT-002) accepted — day-only boat is fine in daytime" } },
+        { "step": 11, "at": 5400, "direction": "outbound", "contact_id": "boat1", "sop_ref": "SOP-3 step 3", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX201", "type": "text", "text": { "body": "Already assigned, thank you." } } },
+        { "step": 12, "at": 7000, "direction": "inbound", "contact_id": "facility", "sop_ref": "SOP-4 step 3", "message": { "from": "91XXXXXXX301", "id": "wamid.D05", "timestamp": "1752700007", "type": "text", "text": { "body": "READY" } } },
+        { "step": 13, "at": 12000, "direction": "inbound", "contact_id": "boat2", "sop_ref": "in-transit", "message": { "from": "91XXXXXXX202", "id": "wamid.D06", "timestamp": "1752700012", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "arrived", "title": "Reached facility" } } }, "dashboard": { "status": "arrived", "note": "Calm daytime run — no complications" } },
+        { "step": 14, "at": 12500, "direction": "inbound", "contact_id": "facility", "sop_ref": "SOP-6 step 1", "message": { "from": "91XXXXXXX301", "id": "wamid.D07", "timestamp": "1752700012.5", "type": "text", "text": { "body": "RECEIVED" } } },
+        { "step": 15, "at": 13000, "direction": "outbound", "contact_id": "facility", "sop_ref": "FLOW-C1 step 1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "interactive", "interactive": { "type": "list", "body": { "text": "Outcome?" }, "action": { "button": "Select", "sections": [ { "title": "Outcome", "rows": [ { "id": "admitted", "title": "Admitted" }, { "id": "managed", "title": "Managed & discharged" } ] } ] } } } },
+        { "step": 16, "at": 13800, "direction": "inbound", "contact_id": "facility", "sop_ref": "FLOW-C1 step 2", "message": { "from": "91XXXXXXX301", "id": "wamid.D08", "timestamp": "1752700013.8", "type": "interactive", "interactive": { "type": "list_reply", "list_reply": { "id": "managed", "title": "Managed & discharged" } } }, "dashboard": { "status": "closed", "note": "Case closed — Managed & discharged. Total time char-to-facility: well within SOP targets." } }
+      ]
+    },
 
-  "journey": [
     {
-      "step": 1, "at": 0, "direction": "inbound", "contact_id": "worker",
-      "sop_ref": "SOP-1 step 1 — keyword trigger",
-      "message": { "from": "91XXXXXXX101", "id": "wamid.EVT001", "timestamp": "1752652800", "type": "text", "text": { "body": "EMERGENCY" } }
+      "id": "SCN-02", "title": "Night emergency — full-detail run",
+      "summary": "The flagship comprehensive run: every message feature in one journey (voice note, photo, static + live location, HSM templates), at night, where the day-only boat can't take the job.",
+      "contacts": [
+        { "id": "worker", "label": "Rina — ASHA (Worker, Char A)", "wa_id": "91XXXXXXX101", "role": "worker" },
+        { "id": "boat1", "label": "Abdul — Boatman (night-capable)", "wa_id": "91XXXXXXX201", "role": "boatman" },
+        { "id": "boat2", "label": "Salim — Boatman (day-only)", "wa_id": "91XXXXXXX202", "role": "boatman" },
+        { "id": "facility", "label": "Sample PHC — Facility", "wa_id": "91XXXXXXX301", "role": "facility" }
+      ],
+      "journey": [
+        { "step": 1, "at": 0, "direction": "inbound", "contact_id": "worker", "sop_ref": "SOP-1 step 1 — keyword trigger", "message": { "from": "91XXXXXXX101", "id": "wamid.EVT001", "timestamp": "1752652800", "type": "text", "text": { "body": "EMERGENCY" } } },
+        { "step": 2, "at": 800, "direction": "outbound", "contact_id": "worker", "sop_ref": "SOP-1 step 1 — risk level capture", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "interactive", "interactive": { "type": "button", "body": { "text": "Risk level?" }, "action": { "buttons": [ { "type": "reply", "reply": { "id": "risk_hrp", "title": "HRP" } }, { "type": "reply", "reply": { "id": "risk_emergency", "title": "Emergency" } }, { "type": "reply", "reply": { "id": "risk_planned", "title": "Planned Referral" } } ] } } } },
+        { "step": 3, "at": 1600, "direction": "inbound", "contact_id": "worker", "sop_ref": "SOP-1 step 1", "message": { "from": "91XXXXXXX101", "id": "wamid.EVT002", "timestamp": "1752652801.6", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "risk_emergency", "title": "Emergency" } } } },
+        { "step": 4, "at": 2200, "direction": "outbound", "contact_id": "worker", "sop_ref": "SOP-1 step 2 — char selection", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "interactive", "interactive": { "type": "list", "body": { "text": "Which char?" }, "action": { "button": "Select Char", "sections": [ { "title": "Assigned chars", "rows": [ { "id": "char_a", "title": "Char A", "description": "Sample Char A" } ] } ] } } } },
+        { "step": 5, "at": 2800, "direction": "inbound", "contact_id": "worker", "sop_ref": "SOP-1 step 2", "message": { "from": "91XXXXXXX101", "id": "wamid.EVT003", "timestamp": "1752652802.8", "type": "interactive", "interactive": { "type": "list_reply", "list_reply": { "id": "char_a", "title": "Char A" } } } },
+        { "step": 6, "at": 3400, "direction": "outbound", "contact_id": "worker", "sop_ref": "SOP-1 step 3 — patient reference", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Patient reference (name/ID as you track it)?" } } },
+        { "step": 7, "at": 4200, "direction": "inbound", "contact_id": "worker", "sop_ref": "SOP-1 step 3", "message": { "from": "91XXXXXXX101", "id": "wamid.EVT004", "timestamp": "1752652804.2", "type": "text", "text": { "body": "Amina — 2nd pregnancy, labour pain since 2am, HRP flagged" } } },
+        { "step": 8, "at": 5000, "direction": "outbound", "contact_id": "worker", "sop_ref": "SOP-1 step 4 — media capture prompt", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Send a voice note, photo, or location if you have it — or type SKIP" } } },
+        { "step": 9, "at": 5800, "direction": "inbound", "contact_id": "worker", "sop_ref": "SOP-1 step 4 — voice note", "message": { "from": "91XXXXXXX101", "id": "wamid.EVT005", "timestamp": "1752652805.8", "type": "audio", "audio": { "id": "media.VOICE001", "mime_type": "audio/ogg; codecs=opus" } }, "note": "0:22 voice note — worker describing labour progression, relayed as-is to facility (SOP-9: media forwarded, not transcribed for v0)" },
+        { "step": 10, "at": 6300, "direction": "inbound", "contact_id": "worker", "sop_ref": "SOP-1 step 4 — photo", "message": { "from": "91XXXXXXX101", "id": "wamid.EVT006", "timestamp": "1752652806.3", "type": "image", "image": { "id": "media.PHOTO001", "mime_type": "image/jpeg", "caption": "Patient at home, Char A" } } },
+        { "step": 11, "at": 6900, "direction": "inbound", "contact_id": "worker", "sop_ref": "SOP-1 step 4 — location share", "message": { "from": "91XXXXXXX101", "id": "wamid.EVT007", "timestamp": "1752652806.9", "type": "location", "location": { "latitude": 26.0208, "longitude": 89.9847, "name": "Char A landing point" } } },
+        { "step": 12, "at": 7600, "direction": "outbound", "contact_id": "worker", "sop_ref": "SOP-1 step 5-6 — case created", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Case DHU-2026-000701 created. Dispatching a boat and alerting the facility now — I'll update you as soon as a boatman accepts." } }, "dashboard": { "status": "open", "note": "Case created — worker report, capturing text + voice + photo + location" } },
+        { "step": 13, "at": 7900, "direction": "outbound", "contact_id": "boat1", "sop_ref": "FLOW-B1 — boat request broadcast (HSM, outside 24h session)", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX201", "type": "template", "template": { "name": "boat_request_broadcast", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "Char A" }, { "type": "text", "text": "Emergency" } ] }, { "type": "button", "sub_type": "quick_reply", "index": "0", "parameters": [ { "type": "payload", "payload": "ACCEPT_DHU-2026-000701" } ] } ] } }, "note": "Business-initiated message — requires the boat_request_broadcast HSM template pre-approved via Gupshup (GLIFIC_SETUP.md §1.4)" },
+        { "step": 14, "at": 7900, "direction": "outbound", "contact_id": "boat2", "sop_ref": "FLOW-B1 — same broadcast, second boatman in the capability-matched pool", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX202", "type": "template", "template": { "name": "boat_request_broadcast", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "Char A" }, { "type": "text", "text": "Emergency" } ] }, { "type": "button", "sub_type": "quick_reply", "index": "0", "parameters": [ { "type": "payload", "payload": "ACCEPT_DHU-2026-000701" } ] } ] } } },
+        { "step": 15, "at": 8000, "direction": "outbound", "contact_id": "facility", "sop_ref": "FLOW-FC1 — facility alert, fires in parallel with the boat broadcast (CONCEPT.md §4), not after", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "template", "template": { "name": "facility_case_alert", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "DHU-2026-000701" }, { "type": "text", "text": "Char A" }, { "type": "text", "text": "Emergency" }, { "type": "text", "text": "35" } ] } ] } }, "dashboard": { "note": "Boat broadcast (2 boatmen) + facility alert fired in parallel — same instant, not sequential" } },
+        { "step": 16, "at": 10700, "direction": "inbound", "contact_id": "boat1", "sop_ref": "SOP-3 — first-accept-wins; boat2 (day-only) never even sees a valid path here", "message": { "from": "91XXXXXXX201", "id": "wamid.EVT008", "timestamp": "1752652810.7", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "ACCEPT_DHU-2026-000701", "title": "Accept" } } }, "dashboard": { "status": "boat-assigned", "note": "Abdul (BOAT-001, night-capable) accepted — atomic first-accept-wins claims the case" } },
+        { "step": 17, "at": 11000, "direction": "outbound", "contact_id": "boat2", "sop_ref": "SOP-3 step 3 — losing boatman auto-notified", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX202", "type": "text", "text": { "body": "Already assigned, thank you." } } },
+        { "step": 18, "at": 11100, "direction": "outbound", "contact_id": "worker", "sop_ref": "FLOW-B1 step 5 — worker informed (task-shifting: she doesn't have to ask)", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Boatman Abdul accepted (night-capable boat). ETA ~35 min." } } },
+        { "step": 19, "at": 11200, "direction": "outbound", "contact_id": "facility", "sop_ref": "FLOW-FC1 — facility informed of assignment", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "text", "text": { "body": "Boatman Abdul assigned. ETA ~35 min." } } },
+        { "step": 20, "at": 13500, "direction": "inbound", "contact_id": "facility", "sop_ref": "SOP-4 step 3 — facility readiness ack", "message": { "from": "91XXXXXXX301", "id": "wamid.EVT009", "timestamp": "1752652813.5", "type": "text", "text": { "body": "READY" } }, "dashboard": { "note": "Facility acknowledged ready — a facility that never sends this is itself a control-room escalation trigger (SOP-4 step 4)" } },
+        { "step": 21, "at": 18000, "direction": "inbound", "contact_id": "boat1", "sop_ref": "FLOW-B1 step 5 — journey status", "message": { "from": "91XXXXXXX201", "id": "wamid.EVT010", "timestamp": "1752652818", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "departed", "title": "Departed" } } }, "dashboard": { "status": "in-transit", "note": "Boatman departed char" } },
+        { "step": 22, "at": 20500, "direction": "inbound", "contact_id": "boat1", "sop_ref": "in-transit location sharing", "message": { "from": "91XXXXXXX201", "id": "wamid.EVT011", "timestamp": "1752652820.5", "type": "location", "location": { "latitude": 26.035, "longitude": 89.991, "name": "Mid-river, en route" } }, "dashboard": { "note": "Boatman shares live location mid-transit — dashboard can plot real-time position, not just status text" } },
+        { "step": 23, "at": 24000, "direction": "inbound", "contact_id": "boat1", "sop_ref": "in-transit location sharing, second ping", "message": { "from": "91XXXXXXX201", "id": "wamid.EVT012", "timestamp": "1752652824", "type": "location", "location": { "latitude": 26.0475, "longitude": 89.996, "name": "Approaching facility landing" } } },
+        { "step": 24, "at": 27000, "direction": "inbound", "contact_id": "boat1", "sop_ref": "FLOW-B1 step 5", "message": { "from": "91XXXXXXX201", "id": "wamid.EVT013", "timestamp": "1752652827", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "arrived", "title": "Reached facility" } } } },
+        { "step": 25, "at": 27300, "direction": "outbound", "contact_id": "facility", "sop_ref": "FLOW-FC1 step 3 — arrival notice", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "text", "text": { "body": "Patient arriving now." } } },
+        { "step": 26, "at": 29000, "direction": "inbound", "contact_id": "facility", "sop_ref": "SOP-4 step 4 / SOP-6 step 1 — patient received", "message": { "from": "91XXXXXXX301", "id": "wamid.EVT014", "timestamp": "1752652829", "type": "text", "text": { "body": "RECEIVED" } }, "dashboard": { "status": "arrived", "note": "Patient received at facility — this closes the transit loop and triggers outcome capture (FLOW-C1)" } },
+        { "step": 27, "at": 30000, "direction": "outbound", "contact_id": "facility", "sop_ref": "FLOW-C1 step 1 — outcome capture", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "interactive", "interactive": { "type": "list", "body": { "text": "Case DHU-2026-000701 — outcome?" }, "action": { "button": "Select outcome", "sections": [ { "title": "Outcome", "rows": [ { "id": "admitted", "title": "Admitted" }, { "id": "referred", "title": "Referred further" }, { "id": "managed", "title": "Managed & discharged" } ] } ] } } } },
+        { "step": 28, "at": 31500, "direction": "inbound", "contact_id": "facility", "sop_ref": "FLOW-C1 step 2", "message": { "from": "91XXXXXXX301", "id": "wamid.EVT015", "timestamp": "1752652831.5", "type": "interactive", "interactive": { "type": "list_reply", "list_reply": { "id": "admitted", "title": "Admitted" } } }, "dashboard": { "status": "closed", "note": "Case closed — Admitted. Payment reconciliation (SOP-8) now runs async, doesn't block anything above. Boatman freed back to available." } },
+        { "step": 29, "at": 32000, "direction": "outbound", "contact_id": "worker", "sop_ref": "information sharing back to the reporting worker", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Case DHU-2026-000701 closed — patient admitted. Thank you for the fast report." } } }
+      ]
     },
+
     {
-      "step": 2, "at": 800, "direction": "outbound", "contact_id": "worker",
-      "sop_ref": "SOP-1 step 1 — risk level capture",
-      "message": {
-        "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "interactive",
-        "interactive": {
-          "type": "button",
-          "body": { "text": "Risk level?" },
-          "action": { "buttons": [
-            { "type": "reply", "reply": { "id": "risk_hrp", "title": "HRP" } },
-            { "type": "reply", "reply": { "id": "risk_emergency", "title": "Emergency" } },
-            { "type": "reply", "reply": { "id": "risk_planned", "title": "Planned Referral" } }
-          ] }
-        }
-      }
+      "id": "SCN-03", "title": "Family report — worker confirms, proceeds",
+      "summary": "SOP-2's main path: an unregistered family member reports on a public number. The case stays pending-verification until the char's frontline worker confirms — only then does dispatch actually fire.",
+      "contacts": [
+        { "id": "family", "label": "Family member (unregistered)", "wa_id": "91XXXXXXX401", "role": "family" },
+        { "id": "worker", "label": "Meena — Anganwadi (Worker, Char B)", "wa_id": "91XXXXXXX102", "role": "worker" },
+        { "id": "boat1", "label": "Karim — Boatman", "wa_id": "91XXXXXXX204", "role": "boatman" },
+        { "id": "facility", "label": "Sample PHC — Facility", "wa_id": "91XXXXXXX301", "role": "facility" }
+      ],
+      "journey": [
+        { "step": 1, "at": 0, "direction": "inbound", "contact_id": "family", "sop_ref": "SOP-2 step 1", "message": { "from": "91XXXXXXX401", "id": "wamid.F01", "timestamp": "1752710000", "type": "text", "text": { "body": "Please help, my sister is in labour on the char, no one is picking up" } } },
+        { "step": 2, "at": 900, "direction": "outbound", "contact_id": "family", "sop_ref": "SOP-2 step 1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX401", "type": "text", "text": { "body": "This is the Dhubri emergency line. Which char? Is this labour/delivery or something else?" } } },
+        { "step": 3, "at": 1800, "direction": "inbound", "contact_id": "family", "sop_ref": "SOP-2 step 1", "message": { "from": "91XXXXXXX401", "id": "wamid.F02", "timestamp": "1752710001.8", "type": "text", "text": { "body": "Char B — labour started, water broke" } } },
+        { "step": 4, "at": 2600, "direction": "outbound", "contact_id": "family", "sop_ref": "SOP-2 step 2", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX401", "type": "text", "text": { "body": "Thank you — help is being coordinated. We'll update you here." } }, "dashboard": { "status": "pending-verification", "note": "Unverified family report, Char B — verification requested from assigned worker" } },
+        { "step": 5, "at": 2900, "direction": "outbound", "contact_id": "worker", "sop_ref": "SOP-2 step 3 (HSM — worker hasn't messaged first)", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX102", "type": "template", "template": { "name": "case_verification_request", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "Char B" } ] }, { "type": "button", "sub_type": "quick_reply", "index": "0", "parameters": [ { "type": "payload", "payload": "CONFIRM_DHU-2026-000812" } ] } ] } } },
+        { "step": 6, "at": 5000, "direction": "inbound", "contact_id": "worker", "sop_ref": "SOP-2 step 5 (main path)", "message": { "from": "91XXXXXXX102", "id": "wamid.F03", "timestamp": "1752710005", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "CONFIRM_DHU-2026-000812", "title": "Confirm" } } }, "dashboard": { "status": "open", "note": "Worker confirmed — verification_status: confirmed. Dispatch now fires exactly as in the worker-reported path." } },
+        { "step": 7, "at": 5300, "direction": "outbound", "contact_id": "family", "sop_ref": "closing the loop with family", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX401", "type": "text", "text": { "body": "Confirmed — a boat and the facility are being alerted now." } } },
+        { "step": 8, "at": 5600, "direction": "outbound", "contact_id": "boat1", "sop_ref": "FLOW-B1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX204", "type": "template", "template": { "name": "boat_request_broadcast", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "Char B" }, { "type": "text", "text": "Emergency" } ] } ] } } },
+        { "step": 9, "at": 5700, "direction": "outbound", "contact_id": "facility", "sop_ref": "FLOW-FC1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "template", "template": { "name": "facility_case_alert", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "DHU-2026-000812" }, { "type": "text", "text": "Char B" } ] } ] } } },
+        { "step": 10, "at": 8000, "direction": "inbound", "contact_id": "boat1", "sop_ref": "SOP-3", "message": { "from": "91XXXXXXX204", "id": "wamid.F04", "timestamp": "1752710008", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "accept", "title": "Accept" } } }, "dashboard": { "status": "boat-assigned", "note": "Karim accepted. Rest of the flow (departure, arrival, outcome, close) proceeds exactly as in SCN-01/SCN-02." } },
+        { "step": 11, "at": 14000, "direction": "inbound", "contact_id": "facility", "sop_ref": "SOP-4", "message": { "from": "91XXXXXXX301", "id": "wamid.F05", "timestamp": "1752710014", "type": "text", "text": { "body": "READY" } } },
+        { "step": 12, "at": 22000, "direction": "inbound", "contact_id": "boat1", "sop_ref": "in-transit", "message": { "from": "91XXXXXXX204", "id": "wamid.F06", "timestamp": "1752710022", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "arrived", "title": "Reached facility" } } }, "dashboard": { "status": "arrived", "note": "" } },
+        { "step": 13, "at": 22500, "direction": "inbound", "contact_id": "facility", "sop_ref": "SOP-6", "message": { "from": "91XXXXXXX301", "id": "wamid.F07", "timestamp": "1752710022.5", "type": "text", "text": { "body": "RECEIVED" } } },
+        { "step": 14, "at": 23000, "direction": "outbound", "contact_id": "facility", "sop_ref": "FLOW-C1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "interactive", "interactive": { "type": "list", "body": { "text": "Outcome?" }, "action": { "button": "Select", "sections": [ { "title": "Outcome", "rows": [ { "id": "admitted", "title": "Admitted" } ] } ] } } } },
+        { "step": 15, "at": 23800, "direction": "inbound", "contact_id": "facility", "sop_ref": "FLOW-C1", "message": { "from": "91XXXXXXX301", "id": "wamid.F08", "timestamp": "1752710023.8", "type": "interactive", "interactive": { "type": "list_reply", "list_reply": { "id": "admitted", "title": "Admitted" } } }, "dashboard": { "status": "closed", "note": "Case closed — Admitted. Family-reported case, verified in under 3 real minutes." } }
+      ]
     },
+
     {
-      "step": 3, "at": 1600, "direction": "inbound", "contact_id": "worker",
-      "sop_ref": "SOP-1 step 1", "message": {
-        "from": "91XXXXXXX101", "id": "wamid.EVT002", "timestamp": "1752652801.6", "type": "interactive",
-        "interactive": { "type": "button_reply", "button_reply": { "id": "risk_emergency", "title": "Emergency" } }
-      }
+      "id": "SCN-04", "title": "Family report — worker unreachable, timeout escalates",
+      "summary": "SOP-2 step 5's harder case: nobody confirms in time. The pilot-default tradeoff errs toward dispatching anyway rather than risking a delayed real emergency — flagged for control-room review either way.",
+      "contacts": [
+        { "id": "family", "label": "Family member (unregistered)", "wa_id": "91XXXXXXX402", "role": "family" },
+        { "id": "worker", "label": "Farida — ANM (Worker, Char C)", "wa_id": "91XXXXXXX103", "role": "worker" },
+        { "id": "boat1", "label": "Nasir — Boatman", "wa_id": "91XXXXXXX205", "role": "boatman" }
+      ],
+      "journey": [
+        { "step": 1, "at": 0, "direction": "inbound", "contact_id": "family", "sop_ref": "SOP-2 step 1", "message": { "from": "91XXXXXXX402", "id": "wamid.G01", "timestamp": "1752715000", "type": "text", "text": { "body": "Emergency, please send help, Char C, my wife" } } },
+        { "step": 2, "at": 900, "direction": "outbound", "contact_id": "family", "sop_ref": "SOP-2 step 1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX402", "type": "text", "text": { "body": "This is the Dhubri emergency line. Which char? Is this labour/delivery or something else?" } } },
+        { "step": 3, "at": 1700, "direction": "inbound", "contact_id": "family", "sop_ref": "SOP-2 step 1", "message": { "from": "91XXXXXXX402", "id": "wamid.G02", "timestamp": "1752715001.7", "type": "text", "text": { "body": "Char C — bleeding a lot" } } },
+        { "step": 4, "at": 2400, "direction": "outbound", "contact_id": "family", "sop_ref": "SOP-2 step 2", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX402", "type": "text", "text": { "body": "Thank you — help is being coordinated. We'll update you here." } }, "dashboard": { "status": "pending-verification", "note": "Unverified family report, Char C — verification requested from FLW-003" } },
+        { "step": 5, "at": 2700, "direction": "outbound", "contact_id": "worker", "sop_ref": "SOP-2 step 3", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX103", "type": "template", "template": { "name": "case_verification_request", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "Char C" } ] } ] } } },
+        { "step": 6, "at": 6500, "direction": "outbound", "contact_id": "family", "sop_ref": "SOP-2 step 5 — timeout escalation (no worker message exists here; this is a backend timer, not a WhatsApp event)", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX402", "type": "text", "text": { "body": "Help is on the way." } }, "dashboard": { "status": "open", "note": "⏳ No response from Farida within the 5 min pilot-default window (SOP.md SOP-2) — case auto-opened, flagged escalated-unverified. Control room notified to keep an eye on this one." } },
+        { "step": 7, "at": 6800, "direction": "outbound", "contact_id": "boat1", "sop_ref": "FLOW-B1, fired by the timeout-escalation path in escalate-check", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX205", "type": "template", "template": { "name": "boat_request_broadcast", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "Char C" }, { "type": "text", "text": "Emergency" } ] } ] } } },
+        { "step": 8, "at": 9500, "direction": "inbound", "contact_id": "boat1", "sop_ref": "SOP-3", "message": { "from": "91XXXXXXX205", "id": "wamid.G03", "timestamp": "1752715009.5", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "accept", "title": "Accept" } } }, "dashboard": { "status": "boat-assigned", "note": "Nasir accepted. Case stays flagged escalated-unverified on the dashboard even after resolution, for post-hoc review — this is the tradeoff to validate with field partners (CONCEPT.md §7)." } }
+      ]
     },
+
     {
-      "step": 4, "at": 2200, "direction": "outbound", "contact_id": "worker",
-      "sop_ref": "SOP-1 step 2 — char selection",
-      "message": {
-        "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "interactive",
-        "interactive": {
-          "type": "list",
-          "body": { "text": "Which char?" },
-          "action": { "button": "Select Char", "sections": [
-            { "title": "Assigned chars", "rows": [
-              { "id": "char_a", "title": "Char A", "description": "Sample Char A" }
-            ] }
-          ] }
-        }
-      }
+      "id": "SCN-05", "title": "Boatman pool silent — escalates to 104/CNES",
+      "summary": "SOP-3 step 4: nobody in the private boatman pool accepts within the escalation window. Automatically escalates to the 104/CNES ambulance channel and gets flagged for control-room follow-up on why the pool didn't respond.",
+      "contacts": [
+        { "id": "worker", "label": "Rina — ASHA (Worker)", "wa_id": "91XXXXXXX101", "role": "worker" },
+        { "id": "boat1", "label": "Abdul — Boatman", "wa_id": "91XXXXXXX201", "role": "boatman" },
+        { "id": "boat2", "label": "Salim — Boatman", "wa_id": "91XXXXXXX202", "role": "boatman" },
+        { "id": "ambulance", "label": "104/CNES Dispatch", "wa_id": "91XXXXXXX501", "role": "ambulance" }
+      ],
+      "journey": [
+        { "step": 1, "at": 0, "direction": "inbound", "contact_id": "worker", "sop_ref": "SOP-1", "message": { "from": "91XXXXXXX101", "id": "wamid.H01", "timestamp": "1752720000", "type": "text", "text": { "body": "EMERGENCY" } } },
+        { "step": 2, "at": 700, "direction": "outbound", "contact_id": "worker", "sop_ref": "SOP-1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Case DHU-2026-000833 created for Char A. Dispatching a boat now." } }, "dashboard": { "status": "open", "note": "Case created — dispatching to boatman pool (2 available, capability-matched)" } },
+        { "step": 3, "at": 1000, "direction": "outbound", "contact_id": "boat1", "sop_ref": "FLOW-B1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX201", "type": "template", "template": { "name": "boat_request_broadcast", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "Char A" }, { "type": "text", "text": "Emergency" } ] } ] } } },
+        { "step": 4, "at": 1000, "direction": "outbound", "contact_id": "boat2", "sop_ref": "FLOW-B1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX202", "type": "template", "template": { "name": "boat_request_broadcast", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "Char A" }, { "type": "text", "text": "Emergency" } ] } ] } } },
+        { "step": 5, "at": 9500, "direction": "outbound", "contact_id": "ambulance", "sop_ref": "SOP-3 step 4 — timeout escalation (no WhatsApp reply exists from either boatman; this is a backend timer)", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX501", "type": "template", "template": { "name": "ambulance_dispatch_request", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "DHU-2026-000833" }, { "type": "text", "text": "Char A" }, { "type": "text", "text": "day+night-with-support" } ] } ] } }, "dashboard": { "status": "escalated-manual", "note": "⏳ 10 min pilot-default escalation window ran out — neither Abdul nor Salim accepted. Escalating to 104/CNES, flagged on dashboard for control-room follow-up on why the private pool didn't respond." } },
+        { "step": 6, "at": 11500, "direction": "inbound", "contact_id": "ambulance", "sop_ref": "SOP-5", "message": { "from": "91XXXXXXX501", "id": "wamid.H02", "timestamp": "1752720011.5", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "accept", "title": "Accept" } } }, "dashboard": { "status": "boat-assigned", "note": "104/CNES dispatched. Rest of flow (facility, arrival, close) proceeds as in SCN-01/SCN-02." } },
+        { "step": 7, "at": 12000, "direction": "outbound", "contact_id": "boat1", "sop_ref": "closing the loop with the pool", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX201", "type": "text", "text": { "body": "This case has been reassigned to 104/CNES." } } },
+        { "step": 8, "at": 12000, "direction": "outbound", "contact_id": "boat2", "sop_ref": "closing the loop with the pool", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX202", "type": "text", "text": { "body": "This case has been reassigned to 104/CNES." } } }
+      ]
     },
+
     {
-      "step": 5, "at": 2800, "direction": "inbound", "contact_id": "worker",
-      "sop_ref": "SOP-1 step 2", "message": {
-        "from": "91XXXXXXX101", "id": "wamid.EVT003", "timestamp": "1752652802.8", "type": "interactive",
-        "interactive": { "type": "list_reply", "list_reply": { "id": "char_a", "title": "Char A" } }
-      }
+      "id": "SCN-06", "title": "Flooding — delayed transit, mid-route reroute",
+      "summary": "Not a separate flow in SOP.md, but a real operating condition worth scripting explicitly: flooding stretches transit time and forces a boatman to divert, and the facility needs to be told about the delay, not left guessing.",
+      "contacts": [
+        { "id": "worker", "label": "Rina — ASHA (Worker)", "wa_id": "91XXXXXXX101", "role": "worker" },
+        { "id": "boat1", "label": "Abdul — Boatman", "wa_id": "91XXXXXXX201", "role": "boatman" },
+        { "id": "facility", "label": "Sample PHC — Facility", "wa_id": "91XXXXXXX301", "role": "facility" }
+      ],
+      "journey": [
+        { "step": 1, "at": 0, "direction": "inbound", "contact_id": "worker", "sop_ref": "SOP-1", "message": { "from": "91XXXXXXX101", "id": "wamid.I01", "timestamp": "1752725000", "type": "text", "text": { "body": "EMERGENCY" } } },
+        { "step": 2, "at": 900, "direction": "inbound", "contact_id": "worker", "sop_ref": "flagging the flood condition in her own words, captured as free text (SOP-1 step 3)", "message": { "from": "91XXXXXXX101", "id": "wamid.I02", "timestamp": "1752725000.9", "type": "text", "text": { "body": "Char A, HRP case, heavy rain last two days — water is very high, normal route may be flooded" } } },
+        { "step": 3, "at": 1600, "direction": "outbound", "contact_id": "worker", "sop_ref": "SOP-1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Case DHU-2026-000844 created. Dispatching now — flagged flood conditions." } }, "dashboard": { "status": "open", "note": "Case created — flooding flagged from worker's own report" } },
+        { "step": 4, "at": 1900, "direction": "outbound", "contact_id": "boat1", "sop_ref": "FLOW-B1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX201", "type": "template", "template": { "name": "boat_request_broadcast", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "Char A" }, { "type": "text", "text": "HRP" } ] } ] } } },
+        { "step": 5, "at": 2000, "direction": "outbound", "contact_id": "facility", "sop_ref": "FLOW-FC1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "template", "template": { "name": "facility_case_alert", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "DHU-2026-000844" }, { "type": "text", "text": "Char A" } ] } ] } } },
+        { "step": 6, "at": 4500, "direction": "inbound", "contact_id": "boat1", "sop_ref": "SOP-3", "message": { "from": "91XXXXXXX201", "id": "wamid.I03", "timestamp": "1752725004.5", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "accept", "title": "Accept" } } }, "dashboard": { "status": "boat-assigned", "note": "Abdul accepted" } },
+        { "step": 7, "at": 8000, "direction": "inbound", "contact_id": "boat1", "sop_ref": "departure", "message": { "from": "91XXXXXXX201", "id": "wamid.I04", "timestamp": "1752725008", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "departed", "title": "Departed" } } }, "dashboard": { "status": "in-transit", "note": "" } },
+        { "step": 8, "at": 15000, "direction": "inbound", "contact_id": "boat1", "sop_ref": "operational reality — not in the original FLOWS.md spec, but exactly the kind of message a real flood day produces", "message": { "from": "91XXXXXXX201", "id": "wamid.I05", "timestamp": "1752725015", "type": "text", "text": { "body": "Water level very high near the char, normal channel blocked — taking the longer inner route, will be delayed" } }, "dashboard": { "note": "Boatman reports a reroute — facility needs this, not silence" } },
+        { "step": 9, "at": 15300, "direction": "outbound", "contact_id": "facility", "sop_ref": "passing the delay through, not leaving the facility guessing", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "text", "text": { "body": "Update: boatman rerouting due to flooding, revised ETA longer than usual. Will confirm on arrival." } } },
+        { "step": 10, "at": 18000, "direction": "inbound", "contact_id": "boat1", "sop_ref": "location share mid-reroute", "message": { "from": "91XXXXXXX201", "id": "wamid.I06", "timestamp": "1752725018", "type": "location", "location": { "latitude": 26.041, "longitude": 89.978, "name": "Inner channel detour" } } },
+        { "step": 11, "at": 24000, "direction": "inbound", "contact_id": "boat1", "sop_ref": "arrival, later than the unflooded baseline but safe", "message": { "from": "91XXXXXXX201", "id": "wamid.I07", "timestamp": "1752725024", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "arrived", "title": "Reached facility" } } } },
+        { "step": 12, "at": 24500, "direction": "inbound", "contact_id": "facility", "sop_ref": "SOP-4", "message": { "from": "91XXXXXXX301", "id": "wamid.I08", "timestamp": "1752725024.5", "type": "text", "text": { "body": "RECEIVED" } }, "dashboard": { "status": "arrived", "note": "" } },
+        { "step": 13, "at": 25000, "direction": "outbound", "contact_id": "facility", "sop_ref": "FLOW-C1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "interactive", "interactive": { "type": "list", "body": { "text": "Outcome?" }, "action": { "button": "Select", "sections": [ { "title": "Outcome", "rows": [ { "id": "managed", "title": "Managed & discharged" } ] } ] } } } },
+        { "step": 14, "at": 25800, "direction": "inbound", "contact_id": "facility", "sop_ref": "FLOW-C1", "message": { "from": "91XXXXXXX301", "id": "wamid.I09", "timestamp": "1752725025.8", "type": "interactive", "interactive": { "type": "list_reply", "list_reply": { "id": "managed", "title": "Managed & discharged" } } }, "dashboard": { "status": "closed", "note": "Case closed — Managed & discharged, despite the flood delay. Worth reviewing in debrief: how much did the reroute cost, and does this char need a flood-season contingency route on file?" } }
+      ]
     },
+
     {
-      "step": 6, "at": 3400, "direction": "outbound", "contact_id": "worker",
-      "sop_ref": "SOP-1 step 3 — patient reference",
-      "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Patient reference (name/ID as you track it)?" } }
-    },
-    {
-      "step": 7, "at": 4200, "direction": "inbound", "contact_id": "worker",
-      "sop_ref": "SOP-1 step 3", "message": {
-        "from": "91XXXXXXX101", "id": "wamid.EVT004", "timestamp": "1752652804.2", "type": "text",
-        "text": { "body": "Amina — 2nd pregnancy, labour pain since 2am, HRP flagged" }
-      }
-    },
-    {
-      "step": 8, "at": 5000, "direction": "outbound", "contact_id": "worker",
-      "sop_ref": "SOP-1 step 4 — media capture prompt",
-      "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Send a voice note, photo, or location if you have it — or type SKIP" } }
-    },
-    {
-      "step": 9, "at": 5800, "direction": "inbound", "contact_id": "worker",
-      "sop_ref": "SOP-1 step 4 — voice note", "message": {
-        "from": "91XXXXXXX101", "id": "wamid.EVT005", "timestamp": "1752652805.8", "type": "audio",
-        "audio": { "id": "media.VOICE001", "mime_type": "audio/ogg; codecs=opus" }
-      },
-      "note": "0:22 voice note — worker describing labour progression, relayed as-is to facility (SOP-9: media forwarded, not transcribed for v0)"
-    },
-    {
-      "step": 10, "at": 6300, "direction": "inbound", "contact_id": "worker",
-      "sop_ref": "SOP-1 step 4 — photo", "message": {
-        "from": "91XXXXXXX101", "id": "wamid.EVT006", "timestamp": "1752652806.3", "type": "image",
-        "image": { "id": "media.PHOTO001", "mime_type": "image/jpeg", "caption": "Patient at home, Char A" }
-      }
-    },
-    {
-      "step": 11, "at": 6900, "direction": "inbound", "contact_id": "worker",
-      "sop_ref": "SOP-1 step 4 — location share", "message": {
-        "from": "91XXXXXXX101", "id": "wamid.EVT007", "timestamp": "1752652806.9", "type": "location",
-        "location": { "latitude": 26.0208, "longitude": 89.9847, "name": "Char A landing point" }
-      }
-    },
-    {
-      "step": 12, "at": 7600, "direction": "outbound", "contact_id": "worker",
-      "sop_ref": "SOP-1 step 5-6 — case created",
-      "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Case DHU-2026-000701 created. Dispatching a boat and alerting the facility now — I'll update you as soon as a boatman accepts." } },
-      "dashboard": { "status": "open", "note": "Case created — worker report, capturing text + voice + photo + location" }
-    },
-    {
-      "step": 13, "at": 7900, "direction": "outbound", "contact_id": "boat1",
-      "sop_ref": "FLOW-B1 — boat request broadcast (HSM, outside 24h session)",
-      "message": {
-        "messaging_product": "whatsapp", "to": "91XXXXXXX201", "type": "template",
-        "template": {
-          "name": "boat_request_broadcast", "language": { "code": "en" },
-          "components": [
-            { "type": "body", "parameters": [ { "type": "text", "text": "Char A" }, { "type": "text", "text": "Emergency" } ] },
-            { "type": "button", "sub_type": "quick_reply", "index": "0", "parameters": [ { "type": "payload", "payload": "ACCEPT_DHU-2026-000701" } ] }
-          ]
-        }
-      },
-      "note": "Business-initiated message — requires the boat_request_broadcast HSM template pre-approved via Gupshup (GLIFIC_SETUP.md §1.4)"
-    },
-    {
-      "step": 14, "at": 7900, "direction": "outbound", "contact_id": "boat2",
-      "sop_ref": "FLOW-B1 — same broadcast, second boatman in the capability-matched pool",
-      "message": {
-        "messaging_product": "whatsapp", "to": "91XXXXXXX202", "type": "template",
-        "template": {
-          "name": "boat_request_broadcast", "language": { "code": "en" },
-          "components": [
-            { "type": "body", "parameters": [ { "type": "text", "text": "Char A" }, { "type": "text", "text": "Emergency" } ] },
-            { "type": "button", "sub_type": "quick_reply", "index": "0", "parameters": [ { "type": "payload", "payload": "ACCEPT_DHU-2026-000701" } ] }
-          ]
-        }
-      }
-    },
-    {
-      "step": 15, "at": 8000, "direction": "outbound", "contact_id": "facility",
-      "sop_ref": "FLOW-FC1 — facility alert, fires in parallel with the boat broadcast (CONCEPT.md §4), not after",
-      "message": {
-        "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "template",
-        "template": {
-          "name": "facility_case_alert", "language": { "code": "en" },
-          "components": [ { "type": "body", "parameters": [
-            { "type": "text", "text": "DHU-2026-000701" }, { "type": "text", "text": "Char A" },
-            { "type": "text", "text": "Emergency" }, { "type": "text", "text": "35" }
-          ] } ]
-        }
-      },
-      "dashboard": { "note": "Boat broadcast (2 boatmen) + facility alert fired in parallel — same instant, not sequential" }
-    },
-    {
-      "step": 16, "at": 10700, "direction": "inbound", "contact_id": "boat1",
-      "sop_ref": "SOP-3 — first-accept-wins", "message": {
-        "from": "91XXXXXXX201", "id": "wamid.EVT008", "timestamp": "1752652810.7", "type": "interactive",
-        "interactive": { "type": "button_reply", "button_reply": { "id": "ACCEPT_DHU-2026-000701", "title": "Accept" } }
-      },
-      "dashboard": { "status": "boat-assigned", "note": "Abdul (BOAT-001) accepted — atomic first-accept-wins claims the case" }
-    },
-    {
-      "step": 17, "at": 11000, "direction": "outbound", "contact_id": "boat2",
-      "sop_ref": "SOP-3 step 3 — losing boatman auto-notified",
-      "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX202", "type": "text", "text": { "body": "Already assigned, thank you." } }
-    },
-    {
-      "step": 18, "at": 11100, "direction": "outbound", "contact_id": "worker",
-      "sop_ref": "FLOW-B1 step 5 — worker informed (task-shifting: she doesn't have to ask)",
-      "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Boatman Abdul accepted (night-capable boat). ETA ~35 min." } }
-    },
-    {
-      "step": 19, "at": 11200, "direction": "outbound", "contact_id": "facility",
-      "sop_ref": "FLOW-FC1 — facility informed of assignment",
-      "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "text", "text": { "body": "Boatman Abdul assigned. ETA ~35 min." } }
-    },
-    {
-      "step": 20, "at": 13500, "direction": "inbound", "contact_id": "facility",
-      "sop_ref": "SOP-4 step 3 — facility readiness ack", "message": {
-        "from": "91XXXXXXX301", "id": "wamid.EVT009", "timestamp": "1752652813.5", "type": "text", "text": { "body": "READY" }
-      },
-      "dashboard": { "note": "Facility acknowledged ready — a facility that never sends this is itself a control-room escalation trigger (SOP-4 step 4)" }
-    },
-    {
-      "step": 21, "at": 18000, "direction": "inbound", "contact_id": "boat1",
-      "sop_ref": "FLOW-B1 step 5 — journey status", "message": {
-        "from": "91XXXXXXX201", "id": "wamid.EVT010", "timestamp": "1752652818", "type": "interactive",
-        "interactive": { "type": "button_reply", "button_reply": { "id": "departed", "title": "Departed" } }
-      },
-      "dashboard": { "status": "in-transit", "note": "Boatman departed char" }
-    },
-    {
-      "step": 22, "at": 20500, "direction": "inbound", "contact_id": "boat1",
-      "sop_ref": "in-transit location sharing (not in original FLOWS.md spec — natural extension of SOP-9 media handling)",
-      "message": {
-        "from": "91XXXXXXX201", "id": "wamid.EVT011", "timestamp": "1752652820.5", "type": "location",
-        "location": { "latitude": 26.0350, "longitude": 89.9910, "name": "Mid-river, en route" }
-      },
-      "dashboard": { "note": "Boatman shares live location mid-transit — dashboard can plot real-time position, not just status text" }
-    },
-    {
-      "step": 23, "at": 24000, "direction": "inbound", "contact_id": "boat1",
-      "sop_ref": "in-transit location sharing, second ping",
-      "message": {
-        "from": "91XXXXXXX201", "id": "wamid.EVT012", "timestamp": "1752652824", "type": "location",
-        "location": { "latitude": 26.0475, "longitude": 89.9960, "name": "Approaching facility landing" }
-      }
-    },
-    {
-      "step": 24, "at": 27000, "direction": "inbound", "contact_id": "boat1",
-      "sop_ref": "FLOW-B1 step 5", "message": {
-        "from": "91XXXXXXX201", "id": "wamid.EVT013", "timestamp": "1752652827", "type": "interactive",
-        "interactive": { "type": "button_reply", "button_reply": { "id": "arrived", "title": "Reached facility" } }
-      }
-    },
-    {
-      "step": 25, "at": 27300, "direction": "outbound", "contact_id": "facility",
-      "sop_ref": "FLOW-FC1 step 3 — arrival notice",
-      "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "text", "text": { "body": "Patient arriving now." } }
-    },
-    {
-      "step": 26, "at": 29000, "direction": "inbound", "contact_id": "facility",
-      "sop_ref": "SOP-4 step 4 / SOP-6 step 1 — patient received", "message": {
-        "from": "91XXXXXXX301", "id": "wamid.EVT014", "timestamp": "1752652829", "type": "text", "text": { "body": "RECEIVED" }
-      },
-      "dashboard": { "status": "arrived", "note": "Patient received at facility — this closes the transit loop and triggers outcome capture (FLOW-C1)" }
-    },
-    {
-      "step": 27, "at": 30000, "direction": "outbound", "contact_id": "facility",
-      "sop_ref": "FLOW-C1 step 1 — outcome capture",
-      "message": {
-        "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "interactive",
-        "interactive": {
-          "type": "list",
-          "body": { "text": "Case DHU-2026-000701 — outcome?" },
-          "action": { "button": "Select outcome", "sections": [
-            { "title": "Outcome", "rows": [
-              { "id": "admitted", "title": "Admitted" },
-              { "id": "referred", "title": "Referred further" },
-              { "id": "managed", "title": "Managed & discharged" }
-            ] }
-          ] }
-        }
-      }
-    },
-    {
-      "step": 28, "at": 31500, "direction": "inbound", "contact_id": "facility",
-      "sop_ref": "FLOW-C1 step 2", "message": {
-        "from": "91XXXXXXX301", "id": "wamid.EVT015", "timestamp": "1752652831.5", "type": "interactive",
-        "interactive": { "type": "list_reply", "list_reply": { "id": "admitted", "title": "Admitted" } }
-      },
-      "dashboard": { "status": "closed", "note": "Case closed — Admitted. Payment reconciliation (SOP-8) now runs async, doesn't block anything above. Boatman freed back to available." }
-    },
-    {
-      "step": 29, "at": 32000, "direction": "outbound", "contact_id": "worker",
-      "sop_ref": "information sharing back to the reporting worker — closes the loop she opened at step 1",
-      "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Case DHU-2026-000701 closed — patient admitted. Thank you for the fast report." } }
+      "id": "SCN-07", "title": "Fuel shortage — divert to refuel mid-transit",
+      "summary": "Another real operating condition, not in the original SOP flows: the boat runs low on fuel mid-transit and has to divert, trading time for the ability to finish the job at all — a genuine logistics constraint in remote/flood-prone areas.",
+      "contacts": [
+        { "id": "worker", "label": "Rina — ASHA (Worker)", "wa_id": "91XXXXXXX101", "role": "worker" },
+        { "id": "boat1", "label": "Abdul — Boatman", "wa_id": "91XXXXXXX201", "role": "boatman" },
+        { "id": "facility", "label": "Sample PHC — Facility", "wa_id": "91XXXXXXX301", "role": "facility" }
+      ],
+      "journey": [
+        { "step": 1, "at": 0, "direction": "inbound", "contact_id": "worker", "sop_ref": "SOP-1", "message": { "from": "91XXXXXXX101", "id": "wamid.J01", "timestamp": "1752730000", "type": "text", "text": { "body": "EMERGENCY" } } },
+        { "step": 2, "at": 800, "direction": "outbound", "contact_id": "worker", "sop_ref": "SOP-1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX101", "type": "text", "text": { "body": "Case DHU-2026-000855 created for Char A. Dispatching now." } }, "dashboard": { "status": "open", "note": "Case created" } },
+        { "step": 3, "at": 1100, "direction": "outbound", "contact_id": "boat1", "sop_ref": "FLOW-B1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX201", "type": "template", "template": { "name": "boat_request_broadcast", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "Char A" }, { "type": "text", "text": "Emergency" } ] } ] } } },
+        { "step": 4, "at": 1200, "direction": "outbound", "contact_id": "facility", "sop_ref": "FLOW-FC1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "template", "template": { "name": "facility_case_alert", "language": { "code": "en" }, "components": [ { "type": "body", "parameters": [ { "type": "text", "text": "DHU-2026-000855" }, { "type": "text", "text": "Char A" } ] } ] } } },
+        { "step": 5, "at": 3500, "direction": "inbound", "contact_id": "boat1", "sop_ref": "SOP-3", "message": { "from": "91XXXXXXX201", "id": "wamid.J02", "timestamp": "1752730003.5", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "accept", "title": "Accept" } } }, "dashboard": { "status": "boat-assigned", "note": "Abdul accepted" } },
+        { "step": 6, "at": 5000, "direction": "inbound", "contact_id": "boat1", "sop_ref": "departure", "message": { "from": "91XXXXXXX201", "id": "wamid.J03", "timestamp": "1752730005", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "departed", "title": "Departed" } } }, "dashboard": { "status": "in-transit", "note": "" } },
+        { "step": 7, "at": 12000, "direction": "inbound", "contact_id": "boat1", "sop_ref": "operational reality — a genuine trade-off decision, not just a delay", "message": { "from": "91XXXXXXX201", "id": "wamid.J04", "timestamp": "1752730012", "type": "text", "text": { "body": "Low on fuel, won't make it all the way — diverting to the refuel point first" } }, "dashboard": { "note": "Boatman diverting to refuel — costs real time but the alternative is getting stranded mid-river" } },
+        { "step": 8, "at": 12300, "direction": "outbound", "contact_id": "facility", "sop_ref": "keeping the facility informed, not silent", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "text", "text": { "body": "Update: boatman diverting for fuel, ETA delayed. Will confirm once back en route." } } },
+        { "step": 9, "at": 19000, "direction": "inbound", "contact_id": "boat1", "sop_ref": "refuel complete", "message": { "from": "91XXXXXXX201", "id": "wamid.J05", "timestamp": "1752730019", "type": "text", "text": { "body": "Refuelled, back en route now" } }, "dashboard": { "note": "Boatman resumed transit after the refuel stop" } },
+        { "step": 10, "at": 26000, "direction": "inbound", "contact_id": "boat1", "sop_ref": "arrival, later than baseline due to the refuel diversion", "message": { "from": "91XXXXXXX201", "id": "wamid.J06", "timestamp": "1752730026", "type": "interactive", "interactive": { "type": "button_reply", "button_reply": { "id": "arrived", "title": "Reached facility" } } } },
+        { "step": 11, "at": 26500, "direction": "inbound", "contact_id": "facility", "sop_ref": "SOP-4", "message": { "from": "91XXXXXXX301", "id": "wamid.J07", "timestamp": "1752730026.5", "type": "text", "text": { "body": "RECEIVED" } }, "dashboard": { "status": "arrived", "note": "" } },
+        { "step": 12, "at": 27000, "direction": "outbound", "contact_id": "facility", "sop_ref": "FLOW-C1", "message": { "messaging_product": "whatsapp", "to": "91XXXXXXX301", "type": "interactive", "interactive": { "type": "list", "body": { "text": "Outcome?" }, "action": { "button": "Select", "sections": [ { "title": "Outcome", "rows": [ { "id": "referred", "title": "Referred further" } ] } ] } } } },
+        { "step": 13, "at": 27800, "direction": "inbound", "contact_id": "facility", "sop_ref": "FLOW-C1", "message": { "from": "91XXXXXXX301", "id": "wamid.J08", "timestamp": "1752730027.8", "type": "interactive", "interactive": { "type": "list_reply", "list_reply": { "id": "referred", "title": "Referred further" } } }, "dashboard": { "status": "closed", "note": "Case closed — Referred further. Debrief question: should high-fuel-risk boats be flagged in the registry before dispatch, not discovered mid-transit? (schema.sql's boatmen.rate_card is the closest existing field — fuel status isn't tracked there yet.)" } }
+      ]
     }
   ]
 }
