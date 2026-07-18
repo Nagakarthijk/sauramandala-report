@@ -8,15 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="oesn-data.js"></script>
+  <script src="oesn-auth.js"></script>
   <style>
-    :root {
-      --ground: #FAFAF8;
-      --text: #1C1917;
-      --accent: #D97706;
-      --accent-2: #059669;
-    }
-    body { font-family: 'Inter', sans-serif; background: var(--ground); color: var(--text); }
+    body { font-family: 'Inter', sans-serif; background: #FAFAF8; color: #1C1917; }
     .mono { font-family: 'DM Mono', monospace; }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
@@ -27,14 +23,20 @@
     .scroll-x::-webkit-scrollbar { display: none; }
     .scroll-x { -ms-overflow-style: none; scrollbar-width: none; }
     @media (prefers-reduced-motion: reduce) { .sheet { transition: none; } }
+    .diag-opt { transition: background 0.1s, color 0.1s, border-color 0.1s; }
+    .diag-opt.active-done  { background:#d1fae5; color:#065f46; border-color:#6ee7b7; }
+    .diag-opt.active-gap   { background:#fee2e2; color:#991b1b; border-color:#fca5a5; }
+    .diag-opt.active-na    { background:#e7e5e4; color:#57534e; border-color:#d6d3d1; }
   </style>
 </head>
 <body class="min-h-screen">
 
+<div id="user-bar"></div>
+
 <!-- Overlay -->
 <div id="overlay" class="overlay fixed inset-0 bg-black/50 z-40" onclick="closeSheets()"></div>
 
-<!-- Referral Sheet -->
+<!-- ═══ SHEET 1: Referral Detail ═══════════════════════════════════════════ -->
 <div id="ref-sheet" class="sheet fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-h-[90vh] overflow-y-auto">
   <div class="w-12 h-1.5 bg-stone-300 rounded-full mx-auto mt-3"></div>
   <div class="flex items-start justify-between px-5 pt-3 pb-1">
@@ -52,7 +54,7 @@
   <div id="rs-body" class="px-5 pb-10 space-y-4 text-sm"></div>
 </div>
 
-<!-- Entrepreneur Sheet -->
+<!-- ═══ SHEET 2: Entrepreneur Profile ══════════════════════════════════════ -->
 <div id="ent-sheet" class="sheet fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-h-[90vh] overflow-y-auto">
   <div class="w-12 h-1.5 bg-stone-300 rounded-full mx-auto mt-3"></div>
   <div class="flex items-start justify-between px-5 pt-3 pb-1">
@@ -67,7 +69,161 @@
   <div id="es-body" class="px-5 pb-10 space-y-4 text-sm"></div>
 </div>
 
-<!-- Bottom Nav -->
+<!-- ═══ SHEET 3: Add Entrepreneur ══════════════════════════════════════════ -->
+<div id="add-ent-sheet" class="sheet fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-h-[92vh] overflow-y-auto">
+  <div class="w-12 h-1.5 bg-stone-300 rounded-full mx-auto mt-3"></div>
+  <div class="flex items-center justify-between px-5 pt-3 pb-3 border-b border-stone-100">
+    <h3 class="text-base font-bold text-stone-900">Add Entrepreneur</h3>
+    <button onclick="closeSheets()" class="text-stone-400 p-1" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="px-5 pt-4 pb-10 space-y-3">
+    <div>
+      <label class="text-xs font-semibold text-stone-500 block mb-1">Full Name *</label>
+      <input id="ae-name" type="text" placeholder="e.g. Lakshmi Devi"
+        class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+    <div>
+      <label class="text-xs font-semibold text-stone-500 block mb-1">Mobile Number *</label>
+      <input id="ae-phone" type="tel" placeholder="10-digit number" maxlength="10"
+        class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+    <div>
+      <label class="text-xs font-semibold text-stone-500 block mb-1">Business Name *</label>
+      <input id="ae-biz" type="text" placeholder="e.g. Devi Agarbatti Works"
+        class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+      <div>
+        <label class="text-xs font-semibold text-stone-500 block mb-1">Sector *</label>
+        <select id="ae-sector" class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-400">
+          <option value="food_processing">Food Processing</option>
+          <option value="handicrafts">Handicrafts</option>
+          <option value="agriculture">Agriculture</option>
+          <option value="textile">Textile & Garments</option>
+          <option value="beauty_wellness">Beauty & Wellness</option>
+          <option value="carpentry">Carpentry & Furniture</option>
+          <option value="printing">Printing & Design</option>
+          <option value="energy">Energy & Solar</option>
+          <option value="services">Services</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-stone-500 block mb-1">Entity Type</label>
+        <select id="ae-entity" class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-400">
+          <option value="individual">Individual</option>
+          <option value="shg">SHG / Cooperative</option>
+          <option value="partnership">Partnership</option>
+          <option value="company">Company</option>
+        </select>
+      </div>
+    </div>
+    <div>
+      <label class="text-xs font-semibold text-stone-500 block mb-1">Village / Location *</label>
+      <input id="ae-location" type="text" placeholder="e.g. Raichur"
+        class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+      <label class="flex items-start gap-2.5 cursor-pointer">
+        <input id="ae-consent" type="checkbox" class="mt-0.5 accent-amber-500 shrink-0 w-4 h-4">
+        <span class="text-xs text-amber-800 leading-snug">I have explained the OESN programme and obtained verbal consent from this entrepreneur to be registered.</span>
+      </label>
+    </div>
+    <div id="ae-error" class="text-xs text-red-600 font-medium hidden"></div>
+    <button onclick="saveNewEntrepreneur()" class="w-full bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold py-3 rounded-xl text-sm transition-colors">
+      Save Entrepreneur
+    </button>
+  </div>
+</div>
+
+<!-- ═══ SHEET 4: Needs Assessment / Diagnostic ═════════════════════════════ -->
+<div id="diag-sheet" class="sheet fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-h-[92vh] overflow-y-auto">
+  <div class="w-12 h-1.5 bg-stone-300 rounded-full mx-auto mt-3"></div>
+  <div class="flex items-center justify-between px-5 pt-3 pb-3 border-b border-stone-100">
+    <div>
+      <h3 class="text-base font-bold text-stone-900">Needs Assessment</h3>
+      <p id="diag-sub" class="text-xs text-stone-400 mt-0.5">Mark what applies</p>
+    </div>
+    <button onclick="closeSheets()" class="text-stone-400 p-1" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div id="diag-body" class="px-4 pt-3 pb-4 space-y-2"></div>
+  <div class="px-4 pb-10">
+    <button onclick="saveDiagnostic()" class="w-full bg-stone-900 hover:bg-stone-700 text-white font-bold py-3 rounded-xl text-sm transition-colors">
+      Save &amp; Suggest Referrals
+    </button>
+  </div>
+</div>
+
+<!-- ═══ SHEET 5: Log Note ══════════════════════════════════════════════════ -->
+<div id="note-sheet" class="sheet fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-h-[80vh] overflow-y-auto">
+  <div class="w-12 h-1.5 bg-stone-300 rounded-full mx-auto mt-3"></div>
+  <div class="flex items-center justify-between px-5 pt-3 pb-3 border-b border-stone-100">
+    <h3 class="text-base font-bold text-stone-900">Log Note</h3>
+    <button onclick="closeSheets()" class="text-stone-400 p-1" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="px-5 pt-4 pb-10 space-y-3">
+    <div class="flex gap-2 flex-wrap">
+      <button data-type="visit" onclick="setNoteType('visit',this)" class="note-type rounded-full px-3 py-1.5 text-xs font-semibold bg-amber-500 text-white">Visit</button>
+      <button data-type="call" onclick="setNoteType('call',this)" class="note-type rounded-full px-3 py-1.5 text-xs font-semibold bg-stone-100 text-stone-600">Call</button>
+      <button data-type="whatsapp" onclick="setNoteType('whatsapp',this)" class="note-type rounded-full px-3 py-1.5 text-xs font-semibold bg-stone-100 text-stone-600">WhatsApp</button>
+      <button data-type="other" onclick="setNoteType('other',this)" class="note-type rounded-full px-3 py-1.5 text-xs font-semibold bg-stone-100 text-stone-600">Other</button>
+    </div>
+    <textarea id="note-body" rows="5" placeholder="What happened during this visit or call? Key observations, next steps, follow-ups…"
+      class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"></textarea>
+    <button onclick="saveNote()" class="w-full bg-stone-900 hover:bg-stone-700 text-white font-bold py-3 rounded-xl text-sm transition-colors">Save Note</button>
+  </div>
+</div>
+
+<!-- ═══ SHEET 6: New Referral ══════════════════════════════════════════════ -->
+<div id="new-ref-sheet" class="sheet fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-h-[92vh] overflow-y-auto">
+  <div class="w-12 h-1.5 bg-stone-300 rounded-full mx-auto mt-3"></div>
+  <div class="flex items-center justify-between px-5 pt-3 pb-3 border-b border-stone-100">
+    <div>
+      <h3 class="text-base font-bold text-stone-900">New Referral</h3>
+      <p id="nr-sub" class="text-xs text-stone-400 mt-0.5"></p>
+    </div>
+    <button onclick="closeSheets()" class="text-stone-400 p-1" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="px-5 pt-4 pb-10 space-y-3">
+    <div>
+      <label class="text-xs font-semibold text-stone-500 block mb-1">Service *</label>
+      <select id="nr-service" onchange="onNRServiceChange()" class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-400">
+        <option value="">Select a service…</option>
+      </select>
+    </div>
+    <div>
+      <label class="text-xs font-semibold text-stone-500 block mb-1">Provider *</label>
+      <select id="nr-provider" class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-400"></select>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+      <div>
+        <label class="text-xs font-semibold text-stone-500 block mb-1">Deadline</label>
+        <input id="nr-deadline" type="date" class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-400">
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-stone-500 block mb-1">Commission (₹)</label>
+        <input id="nr-commission" type="number" min="0" placeholder="500" class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-400">
+      </div>
+    </div>
+    <div id="nr-intake" class="space-y-2"></div>
+    <div>
+      <label class="text-xs font-semibold text-stone-500 block mb-1">Additional notes</label>
+      <textarea id="nr-notes" rows="2" placeholder="Any other details or special requirements…" class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"></textarea>
+    </div>
+    <div id="nr-error" class="text-xs text-red-600 font-medium hidden"></div>
+    <button onclick="saveNewReferral()" class="w-full bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold py-3 rounded-xl text-sm transition-colors">Create Referral</button>
+  </div>
+</div>
+
+<!-- ═══ BOTTOM NAV ══════════════════════════════════════════════════════════ -->
 <nav class="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-stone-200 flex" style="padding-bottom:env(safe-area-inset-bottom)">
   <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[52px] text-amber-700" aria-label="Dashboard">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1v-9.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 21v-8h6v8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
@@ -91,40 +247,29 @@
   </button>
 </nav>
 
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- TAB 1: DASHBOARD -->
-<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ═══ TAB 1: DASHBOARD ════════════════════════════════════════════════════ -->
 <div id="tab-dashboard" class="tab-content active overflow-y-auto" style="height:100dvh;padding-bottom:72px;">
   <div class="px-4 pt-5 pb-2">
     <div class="flex items-start justify-between mb-4">
       <div>
-        <h1 class="text-xl font-bold text-stone-900">Good morning, Arjun</h1>
-        <p class="text-sm text-stone-400 mt-0.5">Saturday, 21 June</p>
+        <h1 id="dash-greeting" class="text-xl font-bold text-stone-900">Good morning</h1>
+        <p id="dash-date" class="text-sm text-stone-400 mt-0.5"></p>
       </div>
       <button class="relative text-stone-400 hover:text-stone-700 p-1 mt-0.5" aria-label="Notifications">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="absolute top-0.5 right-0.5 w-2 h-2 bg-amber-500 rounded-full"></span>
       </button>
     </div>
-
-    <!-- Portfolio pills -->
     <div id="dash-portfolio" class="flex gap-2 overflow-x-auto scroll-x pb-1 mb-2"></div>
-    <!-- Referral status pills -->
     <div id="dash-ref-status" class="flex gap-2 overflow-x-auto scroll-x pb-1"></div>
   </div>
-
-  <!-- Priority cards -->
   <div class="px-4 mt-4">
     <p class="text-xs text-stone-400 uppercase tracking-widest font-medium mb-3">This week</p>
     <div id="priority-cards" class="space-y-2.5"></div>
   </div>
-
-  <!-- Earnings nudge -->
   <div class="px-4 mt-5">
     <div id="dash-earnings-card" class="bg-amber-50 border border-amber-200 rounded-xl p-4 cursor-pointer" onclick="switchTab('earn')"></div>
   </div>
-
-  <!-- Dormant reconnect -->
   <div class="px-4 mt-5">
     <div class="flex items-center gap-2 mb-2.5">
       <p class="text-xs text-stone-400 uppercase tracking-widest font-medium">Reconnect</p>
@@ -132,23 +277,25 @@
     </div>
     <div id="dormant-list" class="space-y-2.5"></div>
   </div>
-
-  <!-- Provider updates -->
   <div class="px-4 mt-5 mb-4">
     <p class="text-xs text-stone-400 uppercase tracking-widest font-medium mb-2.5">Provider updates</p>
     <div id="provider-updates" class="space-y-2"></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- TAB 2: PEOPLE -->
-<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ═══ TAB 2: PEOPLE ═══════════════════════════════════════════════════════ -->
 <div id="tab-people" class="tab-content overflow-y-auto" style="height:100dvh;padding-bottom:72px;">
   <div class="px-4 pt-5">
-    <div class="relative mb-3">
-      <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 w-4 h-4 pointer-events-none" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-      <input id="people-search" type="search" placeholder="Search by name or business…" oninput="renderPeople()"
-        class="w-full bg-stone-100 rounded-xl pl-9 pr-4 py-2.5 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="relative flex-1">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 w-4 h-4 pointer-events-none" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input id="people-search" type="search" placeholder="Search by name or business…" oninput="renderPeople()"
+          class="w-full bg-stone-100 rounded-xl pl-9 pr-4 py-2.5 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+      </div>
+      <button onclick="openAddEntSheet()" class="shrink-0 flex items-center gap-1 bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold text-sm px-3.5 py-2.5 rounded-xl transition-colors" aria-label="Add entrepreneur">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        Add
+      </button>
     </div>
     <div class="flex gap-2 overflow-x-auto scroll-x pb-2">
       <button onclick="setPeopleFilter('All',this)" class="pf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold bg-amber-500 text-white">All</button>
@@ -160,9 +307,7 @@
   <div id="people-list" class="px-4 space-y-2.5 mt-2 pb-4"></div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- TAB 3: REFERRALS -->
-<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ═══ TAB 3: REFERRALS ════════════════════════════════════════════════════ -->
 <div id="tab-referrals" class="tab-content overflow-y-auto" style="height:100dvh;padding-bottom:72px;">
   <div class="px-4 pt-5">
     <div class="flex gap-2 overflow-x-auto scroll-x pb-3">
@@ -176,9 +321,7 @@
   <div id="referrals-list" class="px-4 space-y-2.5 pb-4"></div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- TAB 4: EARN -->
-<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ═══ TAB 4: EARN ═════════════════════════════════════════════════════════ -->
 <div id="tab-earn" class="tab-content overflow-y-auto" style="height:100dvh;padding-bottom:72px;">
   <div class="px-4 pt-5">
     <h2 class="text-lg font-bold text-stone-900 mb-4">Earnings</h2>
@@ -211,14 +354,11 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- TAB 5: TOOLS -->
-<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ═══ TAB 5: TOOLS ════════════════════════════════════════════════════════ -->
 <div id="tab-tools" class="tab-content overflow-y-auto" style="height:100dvh;padding-bottom:72px;">
   <div class="px-4 pt-5 space-y-3 pb-4">
-    <h2 class="text-lg font-bold text-stone-900 mb-2">Tools</h2>
+    <h2 class="text-lg font-bold text-stone-900 mb-2">Field Tools</h2>
 
-    <!-- Unit Costing -->
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
       <button onclick="toggleTool('t1')" class="w-full flex items-center justify-between p-4 text-left focus:outline-none">
         <span class="font-semibold text-stone-900 text-sm">Unit Costing Calculator</span>
@@ -233,6 +373,15 @@
           <div><label class="text-xs text-stone-400 block mb-1">Transport (₹)</label><input id="uc-t" type="number" value="0" min="0" oninput="calcUnit()" class="w-full bg-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
           <div><label class="text-xs text-stone-400 block mb-1">Batch size (units)</label><input id="uc-b" type="number" value="1" min="1" oninput="calcUnit()" class="w-full bg-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
         </div>
+        <div class="border-t border-stone-100 pt-3">
+          <p class="text-xs font-semibold text-stone-400 uppercase tracking-widest mb-2">Fixed costs (monthly)</p>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="text-xs text-stone-400 block mb-1">Rent / batch (₹)</label><input id="uc-rent" type="number" value="0" min="0" oninput="calcUnit()" class="w-full bg-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
+            <div><label class="text-xs text-stone-400 block mb-1">Batches / month</label><input id="uc-bpm" type="number" value="1" min="1" oninput="calcUnit()" class="w-full bg-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
+            <div><label class="text-xs text-stone-400 block mb-1">Utilities / month (₹)</label><input id="uc-util" type="number" value="0" min="0" oninput="calcUnit()" class="w-full bg-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
+            <div><label class="text-xs text-stone-400 block mb-1">Equipment EMI (₹)</label><input id="uc-emi" type="number" value="0" min="0" oninput="calcUnit()" class="w-full bg-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
+          </div>
+        </div>
         <div><label class="text-xs text-stone-400 block mb-1">Selling price (₹/unit)</label><input id="uc-s" type="number" value="0" min="0" oninput="calcUnit()" class="w-full bg-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"></div>
         <div id="uc-result" class="bg-stone-50 rounded-xl p-3 space-y-1.5 text-sm"></div>
         <div class="flex gap-2">
@@ -242,7 +391,6 @@
       </div>
     </div>
 
-    <!-- FSSAI -->
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
       <button onclick="toggleTool('t2')" class="w-full flex items-center justify-between p-4 text-left focus:outline-none">
         <span class="font-semibold text-stone-900 text-sm">FSSAI Eligibility</span>
@@ -265,7 +413,6 @@
       </div>
     </div>
 
-    <!-- Scheme Matcher -->
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
       <button onclick="toggleTool('t3')" class="w-full flex items-center justify-between p-4 text-left focus:outline-none">
         <span class="font-semibold text-stone-900 text-sm">Scheme Matcher</span>
@@ -292,10 +439,9 @@
       </div>
     </div>
 
-    <!-- Solar Load -->
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
       <button onclick="toggleTool('t4')" class="w-full flex items-center justify-between p-4 text-left focus:outline-none">
-        <span class="font-semibold text-stone-900 text-sm">Solar Load Estimator</span>
+        <span class="font-semibold text-stone-900 text-sm">Solar System Designer</span>
         <svg id="t4-c" width="16" height="16" viewBox="0 0 20 20" fill="none" class="text-stone-400 transition-transform shrink-0"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       </button>
       <div id="t4" class="hidden px-4 pb-5 space-y-3">
@@ -308,91 +454,265 @@
         <div id="solar-result" class="bg-stone-50 rounded-xl p-3 text-sm space-y-1.5"></div>
       </div>
     </div>
+
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <button onclick="toggleTool('t5')" class="w-full flex items-center justify-between p-4 text-left focus:outline-none">
+        <span class="font-semibold text-stone-900 text-sm">Nutrition Facts Calculator</span>
+        <svg id="t5-c" width="16" height="16" viewBox="0 0 20 20" fill="none" class="text-stone-400 transition-transform shrink-0"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <div id="t5" class="hidden px-4 pb-5 space-y-3">
+        <p class="text-xs text-stone-400">Add ingredients with weight in grams to generate an FSSAI-format nutrition label.</p>
+        <div id="nutr-rows" class="space-y-2"></div>
+        <button onclick="addNutrRow()" class="flex items-center gap-1.5 text-xs font-semibold text-amber-700">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Add ingredient
+        </button>
+        <div>
+          <label class="text-xs text-stone-400 block mb-1">Serving size (g)</label>
+          <input id="nutr-serving" type="number" value="100" min="1" oninput="calcNutr()" class="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+        </div>
+        <div id="nutr-result" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <button onclick="toggleTool('t6')" class="w-full flex items-center justify-between p-4 text-left focus:outline-none">
+        <span class="font-semibold text-stone-900 text-sm">Business Logo Builder</span>
+        <svg id="t6-c" width="16" height="16" viewBox="0 0 20 20" fill="none" class="text-stone-400 transition-transform shrink-0"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <div id="t6" class="hidden px-4 pb-5 space-y-3">
+        <div>
+          <label class="text-xs text-stone-400 block mb-1">Business name</label>
+          <input id="lb-name" type="text" placeholder="e.g. Devi Agarbatti" oninput="updateLogo()" class="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+        </div>
+        <div>
+          <label class="text-xs text-stone-400 block mb-1">Tagline (optional)</label>
+          <input id="lb-tag" type="text" placeholder="e.g. Pure &amp; Natural" oninput="updateLogo()" class="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+        </div>
+        <div>
+          <label class="text-xs text-stone-400 block mb-1">Layout</label>
+          <div class="flex gap-1.5">
+            <button onclick="setLogoTemplate('badge',this)" class="lb-tmpl flex-1 py-1.5 text-xs font-semibold rounded-lg border bg-stone-800 text-white border-stone-800 transition-colors">Badge</button>
+            <button onclick="setLogoTemplate('wordmark',this)" class="lb-tmpl flex-1 py-1.5 text-xs font-semibold rounded-lg border bg-stone-100 text-stone-600 border-stone-200 transition-colors">Wordmark</button>
+            <button onclick="setLogoTemplate('horizontal',this)" class="lb-tmpl flex-1 py-1.5 text-xs font-semibold rounded-lg border bg-stone-100 text-stone-600 border-stone-200 transition-colors">Horizontal</button>
+            <button onclick="setLogoTemplate('stacked',this)" class="lb-tmpl flex-1 py-1.5 text-xs font-semibold rounded-lg border bg-stone-100 text-stone-600 border-stone-200 transition-colors">Stacked</button>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-stone-400 block mb-1">Colour</label>
+          <div class="flex gap-2">
+            <button onclick="setLogoPalette(0,this)" class="lb-pal w-8 h-8 rounded-full shrink-0" style="background:#F59E0B;outline:3px solid #1c1917;outline-offset:2px" title="Amber"></button>
+            <button onclick="setLogoPalette(1,this)" class="lb-pal w-8 h-8 rounded-full shrink-0" style="background:#10B981;outline:3px solid transparent;outline-offset:2px" title="Emerald"></button>
+            <button onclick="setLogoPalette(2,this)" class="lb-pal w-8 h-8 rounded-full shrink-0" style="background:#0EA5E9;outline:3px solid transparent;outline-offset:2px" title="Sky"></button>
+            <button onclick="setLogoPalette(3,this)" class="lb-pal w-8 h-8 rounded-full shrink-0" style="background:#8B5CF6;outline:3px solid transparent;outline-offset:2px" title="Violet"></button>
+            <button onclick="setLogoPalette(4,this)" class="lb-pal w-8 h-8 rounded-full shrink-0" style="background:#78716C;outline:3px solid transparent;outline-offset:2px" title="Stone"></button>
+          </div>
+        </div>
+        <div id="lb-preview" class="flex items-center justify-center bg-stone-50 rounded-xl p-4 min-h-[120px] overflow-x-auto"></div>
+        <button onclick="downloadLogo()" class="w-full bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold py-2.5 rounded-xl text-sm transition-colors">Download SVG</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-// ─── INIT ──────────────────────────────────────────────────────────────
-OESN.init();
+// ─── CONSTANTS ─────────────────────────────────────────────────────────────
+const SERVICE_CATALOG = [
+  { service:'FSSAI Registration',   prov_id:'prov_anant',          prov:'Anant Foundation', payment_type:'programme_prebuy',   commission:500,  days:30 },
+  { service:'Unit Costing Support', prov_id:'prov_anant',          prov:'Anant Foundation', payment_type:'programme_prebuy',   commission:300,  days:14 },
+  { service:'Market Linkage',       prov_id:'prov_meeraconnects',  prov:'Meera Connects',   payment_type:'provider_commission', commission:800,  days:45 },
+  { service:'Solar Installation',   prov_id:'prov_solarkraft',     prov:'SolarKraft',        payment_type:'provider_commission', commission:2000, days:60 },
+  { service:'Loan Facilitation',    prov_id:'prov_raichurnbfc',    prov:'Raichur NBFC',     payment_type:'provider_commission', commission:1500, days:45 },
+  { service:'Label Design',         prov_id:'prov_rajancreatives', prov:'Rajan Creatives',  payment_type:'provider_commission', commission:400,  days:21 },
+  { service:'Printing',             prov_id:'prov_rajancreatives', prov:'Rajan Creatives',  payment_type:'provider_commission', commission:200,  days:14 },
+];
 
-// ─── TAB SWITCHING ─────────────────────────────────────────────────────
+const CAPABILITIES = [
+  { tag:'unit_costing',     label:'Unit Costing',       q:'Does the entrepreneur know their cost per unit?',              ref_service:'Unit Costing Support' },
+  { tag:'fssai',            label:'FSSAI Licence',      q:'Does the business sell food products? (FSSAI licence needed)', ref_service:'FSSAI Registration' },
+  { tag:'market_linkage',   label:'Market Access',      q:'Does the entrepreneur have a stable buyer or market channel?', ref_service:'Market Linkage' },
+  { tag:'gst_registered',   label:'GST Registration',   q:'Is the business currently GST registered?',                   ref_service:null },
+  { tag:'udyam_registered', label:'Udyam / MSME',       q:'Is the business registered under Udyam / MSME?',              ref_service:null },
+  { tag:'solar_viable',     label:'Solar Energy',       q:'Does the business have high electricity costs? Solar viable?', ref_service:'Solar Installation' },
+  { tag:'loan_ready',       label:'Finance / Loan',     q:'Is the entrepreneur looking for a business loan or finance?',  ref_service:'Loan Facilitation' },
+  { tag:'digital_presence', label:'Digital Presence',   q:'Does the business have social media or an online presence?',   ref_service:null },
+];
+
+const INTAKE_FORMS = {
+  'FSSAI Registration': { fields: [
+    { id:'if-fssai-products', type:'textarea', label:'Food products made by the business', placeholder:'e.g. pickles, masala, agarbatti…' },
+    { id:'if-fssai-turnover', type:'radio',    label:'Annual turnover estimate', options:['Under ₹12L','₹12L–₹20L','₹20L–₹1Cr','Above ₹1Cr'] },
+    { id:'if-fssai-status',   type:'radio',    label:'Current FSSAI status',    options:['None','Basic Registration','State Licence'] },
+  ]},
+  'Solar Installation': { fields: [
+    { id:'if-solar-bill',  type:'number',   label:'Monthly electricity bill (₹)', placeholder:'e.g. 2000' },
+    { id:'if-solar-equip', type:'textarea', label:'Key equipment using electricity', placeholder:'e.g. grinder 500W, pump 750W…' },
+    { id:'if-solar-roof',  type:'radio',    label:'Roof / mounting type', options:['Concrete RCC','Tin/Sheet','Tiled','Ground-mount'] },
+  ]},
+  'Loan Facilitation': { fields: [
+    { id:'if-loan-amount',   type:'number',   label:'Loan amount needed (₹)',       placeholder:'e.g. 200000' },
+    { id:'if-loan-purpose',  type:'textarea', label:'Purpose of loan',              placeholder:'e.g. buy machine, expand stock…' },
+    { id:'if-loan-turnover', type:'number',   label:'Monthly business turnover (₹)',placeholder:'e.g. 50000' },
+  ]},
+  'Market Linkage': { fields: [
+    { id:'if-mkt-products',  type:'textarea', label:'Products to sell', placeholder:'e.g. agarbatti, honey…' },
+    { id:'if-mkt-capacity',  type:'number',   label:'Monthly production capacity (units/kg)', placeholder:'e.g. 500' },
+    { id:'if-mkt-channels',  type:'radio',    label:'Current selling channel', options:['Direct/local','Wholesale','Online','None yet'] },
+  ]},
+  'Label Design': { fields: [
+    { id:'if-label-product', type:'text',   label:'Product name',      placeholder:'e.g. Devi Pure Honey' },
+    { id:'if-label-weight',  type:'text',   label:'Net weight/volume', placeholder:'e.g. 500g, 1L' },
+    { id:'if-label-mrp',     type:'number', label:'MRP (₹)',           placeholder:'e.g. 180' },
+  ]},
+};
+
+const NUTR_DB = {
+  'Rice (raw)':         { kcal:345,  prot:7.0,  carb:78.2, fat:0.5,  sugar:0,    fiber:0.2,  sodium:4    },
+  'Wheat flour':        { kcal:341,  prot:11.8, carb:69.4, fat:1.7,  sugar:0,    fiber:2.7,  sodium:2    },
+  'Maida':              { kcal:348,  prot:8.5,  carb:74.5, fat:0.9,  sugar:0,    fiber:0.4,  sodium:3    },
+  'Sugar':              { kcal:400,  prot:0,    carb:99.9, fat:0,    sugar:99.9, fiber:0,    sodium:1    },
+  'Jaggery':            { kcal:383,  prot:0.4,  carb:95,   fat:0.1,  sugar:92,   fiber:0,    sodium:30   },
+  'Refined oil':        { kcal:900,  prot:0,    carb:0,    fat:100,  sugar:0,    fiber:0,    sodium:0    },
+  'Ghee':               { kcal:900,  prot:0,    carb:0,    fat:99.5, sugar:0,    fiber:0,    sodium:0    },
+  'Besan (gram flour)': { kcal:357,  prot:22,   carb:57.8, fat:6,    sugar:7,    fiber:10.9, sodium:64   },
+  'Milk (full fat)':    { kcal:61,   prot:3.2,  carb:4.7,  fat:3.5,  sugar:4.7,  fiber:0,    sodium:44   },
+  'Butter':             { kcal:717,  prot:0.9,  carb:0.1,  fat:81,   sugar:0.1,  fiber:0,    sodium:643  },
+  'Eggs':               { kcal:155,  prot:13,   carb:1.1,  fat:11,   sugar:1,    fiber:0,    sodium:124  },
+  'Peanuts':            { kcal:567,  prot:25.8, carb:16.1, fat:49.2, sugar:3.6,  fiber:8.5,  sodium:18   },
+  'Cashews':            { kcal:553,  prot:18.2, carb:30.2, fat:43.9, sugar:5.9,  fiber:3.3,  sodium:12   },
+  'Sesame seeds':       { kcal:573,  prot:17.7, carb:23.4, fat:49.7, sugar:0.3,  fiber:11.8, sodium:11   },
+  'Coconut (dry)':      { kcal:354,  prot:3.3,  carb:15.2, fat:33.5, sugar:7,    fiber:9,    sodium:20   },
+  'Salt':               { kcal:0,    prot:0,    carb:0,    fat:0,    sugar:0,    fiber:0,    sodium:38758 },
+  'Cardamom':           { kcal:311,  prot:10.8, carb:68,   fat:6.7,  sugar:0,    fiber:28,   sodium:18   },
+  'Turmeric':           { kcal:312,  prot:9.7,  carb:67.1, fat:3.3,  sugar:3.2,  fiber:21,   sodium:38   },
+  'Coriander powder':   { kcal:298,  prot:12.4, carb:54.9, fat:17.8, sugar:0,    fiber:41.9, sodium:46   },
+  'Chilli powder':      { kcal:282,  prot:13.5, carb:49.7, fat:14.3, sugar:7,    fiber:34.8, sodium:30   },
+};
+
+const PALETTES = [
+  { name:'Amber',   primary:'#F59E0B', dark:'#92400E', bg:'#FFFBEB' },
+  { name:'Emerald', primary:'#10B981', dark:'#064E3B', bg:'#ECFDF5' },
+  { name:'Sky',     primary:'#0EA5E9', dark:'#0C4A6E', bg:'#F0F9FF' },
+  { name:'Violet',  primary:'#8B5CF6', dark:'#4C1D95', bg:'#F5F3FF' },
+  { name:'Stone',   primary:'#78716C', dark:'#1C1917', bg:'#FAFAF8' },
+];
+
+// ─── STATE ─────────────────────────────────────────────────────────────────
+let _ents = [];             // cached entrepreneurs for name lookups
+let _noteEntId = '';
+let _noteType  = 'visit';
+let _diagEntId = '';
+let _diagState = {};        // { tag: 'done' | 'gap' | 'na' }
+let _nrEntId   = '';
+let _nrPreset  = null;      // pre-selected service when opening from diagnostic
+
+// ─── AUTH GUARD ─────────────────────────────────────────────────────────────
+OESNAuth.guard('agent').then(async ctx => {
+  if (!ctx) return;
+  OESNAuth.renderUserBar(ctx, 'user-bar');
+  OESN.init();
+
+  // Set greeting
+  const h = new Date().getHours();
+  const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const greetEl = document.getElementById('dash-greeting');
+  if (greetEl) greetEl.textContent = g + (ctx.profile?.name ? ', ' + ctx.profile.name.split(' ')[0] : '');
+  const dateEl = document.getElementById('dash-date');
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
+
+  // Populate service catalog dropdown
+  const sel = document.getElementById('nr-service');
+  SERVICE_CATALOG.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.service; o.textContent = s.service;
+    sel.appendChild(o);
+  });
+
+  // Populate entrepreneur dropdown for unit costing tool (must be after OESN.init())
+  const ucEnt = document.getElementById('uc-ent');
+  OESN.getEntrepreneurs().then(ents => {
+    ents.forEach(e => {
+      const o = document.createElement('option');
+      o.value = e.id; o.textContent = e.name;
+      ucEnt.appendChild(o);
+    });
+  });
+
+  await renderDashboard();
+  renderPeople();
+  renderEarn();
+});
+
+// ─── TAB SWITCHING ──────────────────────────────────────────────────────────
 const NAV_IDS = ['dashboard','people','referrals','earn','tools'];
 function switchTab(name) {
   NAV_IDS.forEach(id => {
     document.getElementById('tab-' + id).classList.toggle('active', id === name);
-    const btn = document.getElementById('nav-' + id);
-    btn.style.color = id === name ? '#b45309' : '#a8a29e';
+    document.getElementById('nav-' + id).style.color = id === name ? '#b45309' : '#a8a29e';
   });
-  if (name === 'people') renderPeople();
+  if (name === 'people')    renderPeople();
   if (name === 'referrals') renderReferrals();
-  if (name === 'earn') renderEarn();
+  if (name === 'earn')      renderEarn();
 }
 
-// ─── SHEETS ────────────────────────────────────────────────────────────
+// ─── SHEETS ─────────────────────────────────────────────────────────────────
+const ALL_SHEETS = ['ref-sheet','ent-sheet','add-ent-sheet','diag-sheet','note-sheet','new-ref-sheet'];
 function openSheet(id) {
-  closeSheets();
+  ALL_SHEETS.forEach(s => document.getElementById(s).classList.remove('open'));
   document.getElementById(id).classList.add('open');
   document.getElementById('overlay').classList.add('show');
   document.body.style.overflow = 'hidden';
 }
 function closeSheets() {
-  ['ref-sheet','ent-sheet'].forEach(id => document.getElementById(id).classList.remove('open'));
+  ALL_SHEETS.forEach(id => document.getElementById(id).classList.remove('open'));
   document.getElementById('overlay').classList.remove('show');
   document.body.style.overflow = '';
 }
 
-// ─── BADGE HELPERS ─────────────────────────────────────────────────────
-function badgeCls(status) {
-  const m = { OVERDUE:'bg-red-500 text-white', RTC:'bg-amber-400 text-stone-900', BLOCKED:'bg-red-400 text-white', IN_PROGRESS:'bg-blue-500 text-white', COMPLETED:'bg-emerald-500 text-white' };
-  return m[status] || 'bg-stone-200 text-stone-600';
+// ─── HELPERS ────────────────────────────────────────────────────────────────
+function badgeCls(s) {
+  return { OVERDUE:'bg-red-500 text-white', RTC:'bg-amber-400 text-stone-900', BLOCKED:'bg-red-400 text-white', IN_PROGRESS:'bg-blue-500 text-white', COMPLETED:'bg-emerald-500 text-white' }[s] || 'bg-stone-200 text-stone-600';
 }
-function badgeLabel(status) {
-  const m = { IN_PROGRESS:'In Progress', OVERDUE:'Overdue', RTC:'RTC', BLOCKED:'Blocked', COMPLETED:'Completed' };
-  return m[status] || status;
+function badgeLabel(s) {
+  return { IN_PROGRESS:'In Progress', OVERDUE:'Overdue', RTC:'RTC', BLOCKED:'Blocked', COMPLETED:'Completed' }[s] || s;
 }
-function borderCls(status) {
-  const m = { OVERDUE:'border-l-[6px] border-l-red-500', RTC:'border-l-4 border-l-amber-400', BLOCKED:'border-l-[6px] border-l-red-400', IN_PROGRESS:'border-l-4 border-l-blue-400', COMPLETED:'border-l-4 border-l-emerald-400' };
-  return m[status] || 'border-l-2 border-l-stone-200';
+function borderCls(s) {
+  return { OVERDUE:'border-l-[6px] border-l-red-500', RTC:'border-l-4 border-l-amber-400', BLOCKED:'border-l-[6px] border-l-red-400', IN_PROGRESS:'border-l-4 border-l-blue-400', COMPLETED:'border-l-4 border-l-emerald-400' }[s] || 'border-l-2 border-l-stone-200';
 }
 function avatarBg(name) {
   const p = ['bg-amber-100 text-amber-800','bg-emerald-100 text-emerald-800','bg-blue-100 text-blue-800','bg-purple-100 text-purple-800','bg-rose-100 text-rose-800','bg-teal-100 text-teal-800'];
-  return p[(name || '').charCodeAt(0) % p.length];
+  return p[(name||'').charCodeAt(0) % p.length];
 }
-function initials(name) { return (name || '').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase(); }
-
-// ─── DATE HELPERS ──────────────────────────────────────────────────────
-function daysBetween(isoA, isoB) { return Math.round((new Date(isoB) - new Date(isoA)) / 86400000); }
-function isToday(iso) { const d = new Date(iso), t = new Date(); return d.toDateString() === t.toDateString(); }
-function fmtDate(iso) { return new Date(iso).toLocaleDateString('en-IN', { day:'numeric', month:'short' }); }
-function lastContactDays(iso) { return daysBetween(iso, new Date().toISOString()); }
-
-// ─── ENTREPRENEUR LOOKUP ───────────────────────────────────────────────
-function entName(id) {
-  const e = OESN.getEntrepreneur(id);
-  return e ? e.name : id;
+function initials(name) { return (name||'').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+function daysBetween(a,b) { return Math.round((new Date(b)-new Date(a))/86400000); }
+function fmtDate(iso) { return new Date(iso).toLocaleDateString('en-IN',{day:'numeric',month:'short'}); }
+function isToday(iso) { const d=new Date(iso),t=new Date(); return d.toDateString()===t.toDateString(); }
+function pill(content) {
+  return `<span class="whitespace-nowrap bg-stone-100 rounded-full px-3 py-1 text-sm flex items-center gap-1.5 shrink-0">${content}</span>`;
 }
+function entName(id) { const e=_ents.find(e=>e.id===id); return e ? e.name : id; }
 
-// ─── DASHBOARD ─────────────────────────────────────────────────────────
-function renderDashboard() {
-  const ents = OESN.getEntrepreneurs();
-  const refs = OESN.getReferrals();
-  const earnings = OESN.getEarnings({ status: 'PENDING' });
+// ─── DASHBOARD ──────────────────────────────────────────────────────────────
+async function renderDashboard() {
+  const [ents, refs, earnings] = await Promise.all([
+    OESN.getEntrepreneurs(),
+    OESN.getReferrals(),
+    OESN.getEarnings({ status:'PENDING' })
+  ]);
+  _ents = ents;
 
-  // Portfolio pills
-  const active = ents.filter(e => e.status === 'active').length;
-  const pipeline = ents.filter(e => e.status === 'pipeline').length;
-  const dormant = ents.filter(e => e.status === 'dormant').length;
+  const active   = ents.filter(e=>e.status==='active').length;
+  const pipeline = ents.filter(e=>e.status==='pipeline').length;
+  const dormant  = ents.filter(e=>e.status==='dormant').length;
   document.getElementById('dash-portfolio').innerHTML = [
     pill(`<span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span><span class="mono font-medium">${active}</span> active`),
     pill(`<span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span><span class="mono font-medium">${pipeline}</span> pipeline`),
     pill(`<span class="w-2 h-2 rounded-full bg-stone-400 shrink-0"></span><span class="mono font-medium">${dormant}</span> dormant`)
   ].join('');
 
-  // Referral status pills
-  const inProg = refs.filter(r => r.status === 'IN_PROGRESS').length;
-  const rtc = refs.filter(r => r.status === 'RTC').length;
-  const overdue = refs.filter(r => r.status === 'OVERDUE').length;
-  const blocked = refs.filter(r => r.status === 'BLOCKED').length;
+  const inProg  = refs.filter(r=>r.status==='IN_PROGRESS').length;
+  const rtc     = refs.filter(r=>r.status==='RTC').length;
+  const overdue = refs.filter(r=>r.status==='OVERDUE').length;
+  const blocked = refs.filter(r=>r.status==='BLOCKED').length;
   document.getElementById('dash-ref-status').innerHTML = [
     pill(`<span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span><span class="mono font-medium">${inProg}</span> in progress`),
     pill(`<span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span><span class="mono font-medium">${rtc}</span> RTC`),
@@ -400,80 +720,69 @@ function renderDashboard() {
     pill(`<span class="w-2 h-2 rounded-full bg-red-400 shrink-0"></span><span class="mono font-medium">${blocked}</span> blocked`)
   ].join('');
 
-  // Priority cards
-  const priority = refs.filter(r => ['OVERDUE','RTC','BLOCKED'].includes(r.status));
+  const priority = refs.filter(r=>['OVERDUE','RTC','BLOCKED'].includes(r.status));
   document.getElementById('priority-cards').innerHTML = priority.map(r => {
     const name = entName(r.entrepreneur_id);
-    let subline = '';
-    if (r.status === 'OVERDUE') {
-      const daysLate = daysBetween(r.deadline, new Date().toISOString());
-      subline = `<p class="text-xs text-red-600 mt-0.5 font-medium">${daysLate} day${daysLate !== 1 ? 's' : ''} overdue</p>`;
-    } else if (r.status === 'RTC') {
-      subline = `<p class="text-xs text-amber-700 mt-0.5">Ready to verify · <span class="mono">₹${r.commission}</span> releases</p>`;
-    } else if (r.status === 'BLOCKED') {
-      subline = `<p class="text-xs text-red-600 mt-0.5">${r.blocker_reason || 'Blocked'}</p>`;
+    let sub = '';
+    if (r.status==='OVERDUE') {
+      const d = Math.abs(daysBetween(r.deadline, new Date().toISOString()));
+      sub = `<p class="text-xs text-red-600 mt-0.5 font-medium">${d} day${d!==1?'s':''} overdue</p>`;
+    } else if (r.status==='RTC') {
+      sub = `<p class="text-xs text-amber-700 mt-0.5">Ready to verify · <span class="mono">₹${r.commission}</span> releases</p>`;
+    } else if (r.status==='BLOCKED') {
+      sub = `<p class="text-xs text-red-600 mt-0.5">${r.blocker_reason||'Blocked'}</p>`;
     }
     return `<div class="bg-white rounded-xl shadow-sm ${borderCls(r.status)} p-4 cursor-pointer" onclick="openRefSheet('${r.id}')">
       <div class="flex items-start justify-between mb-1">
         <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full ${badgeCls(r.status)}">${badgeLabel(r.status).toUpperCase()}</span>
       </div>
       <p class="font-semibold text-stone-900 text-sm mt-1">${name} · ${r.service}</p>
-      ${subline}
+      ${sub}
     </div>`;
   }).join('') || '<p class="text-sm text-stone-400 text-center py-4">No priority items this week.</p>';
 
-  // Earnings card
-  const totalPending = earnings.reduce((s, e) => s + e.amount, 0);
-  const releasesToday = earnings.filter(e => isToday(e.expected_on)).reduce((s, e) => s + e.amount, 0);
+  const totalPending = earnings.reduce((s,e)=>s+e.amount,0);
   document.getElementById('dash-earnings-card').innerHTML = `
     <div class="flex items-start justify-between">
       <div>
         <p class="mono text-2xl font-medium text-amber-800">₹${totalPending.toLocaleString('en-IN')}</p>
         <p class="text-xs text-amber-700 mt-0.5">pending earnings</p>
-        ${releasesToday > 0 ? `<p class="text-xs text-stone-500 mt-2"><span class="text-amber-700 font-medium mono">₹${releasesToday}</span> releases today on verification</p>` : ''}
-        <p class="text-xs text-stone-400 mt-0.5">Next settlement: Friday</p>
+        <p class="text-xs text-stone-400 mt-1">Next settlement: Friday</p>
       </div>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-amber-600 mt-1 shrink-0"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>`;
 
-  // Dormant
-  const dormantEnts = ents.filter(e => e.status === 'dormant');
+  const dormantEnts = ents.filter(e=>e.status==='dormant');
   document.getElementById('dormant-count').textContent = dormantEnts.length;
   document.getElementById('dormant-list').innerHTML = dormantEnts.map(e => {
-    const days = lastContactDays(e.last_contact);
-    const entRefs = refs.filter(r => r.entrepreneur_id === e.id);
-    const blockedRef = entRefs.find(r => r.status === 'BLOCKED');
-    const context = blockedRef ? blockedRef.service + ' · Document blocker' : 'No open referrals';
-    return `<div class="bg-white rounded-xl shadow-sm border-l-2 border-l-stone-200 p-4 flex items-center justify-between">
+    const days = Math.floor((Date.now()-new Date(e.last_contact))/86400000);
+    const entRefs = refs.filter(r=>r.entrepreneur_id===e.id);
+    const blocked = entRefs.find(r=>r.status==='BLOCKED');
+    const ctx = blocked ? blocked.service+' · Document blocker' : 'No open referrals';
+    return `<div class="bg-white rounded-xl shadow-sm border-l-2 border-l-stone-200 p-4 flex items-center justify-between cursor-pointer" onclick="openEntSheet('${e.id}')">
       <div>
         <p class="font-semibold text-stone-900 text-sm">${e.name}</p>
-        <p class="text-xs text-stone-400 mt-0.5"><span class="mono">${days}</span> days · ${e.business} · ${context}</p>
+        <p class="text-xs text-stone-400 mt-0.5"><span class="mono">${days}</span> days · ${e.business||e.sector||''} · ${ctx}</p>
       </div>
-      <a href="sms:${e.phone}" class="text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 px-3 py-1.5 rounded-lg transition-colors shrink-0 ml-3">Message</a>
+      <a href="sms:${e.phone}" onclick="event.stopPropagation()" class="text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 px-3 py-1.5 rounded-lg transition-colors shrink-0 ml-3">Message</a>
     </div>`;
   }).join('');
 
-  // Provider updates
-  const recentRTC = refs.filter(r => r.status === 'RTC').slice(0, 3);
-  document.getElementById('provider-updates').innerHTML = recentRTC.map(r => `
-    <div class="bg-white rounded-xl shadow-sm p-3 cursor-pointer" onclick="openRefSheet('${r.id}')">
+  const rtcRefs = refs.filter(r=>r.status==='RTC').slice(0,3);
+  document.getElementById('provider-updates').innerHTML = rtcRefs.map(r =>
+    `<div class="bg-white rounded-xl shadow-sm p-3 cursor-pointer" onclick="openRefSheet('${r.id}')">
       <p class="text-sm font-medium text-stone-800">${r.provider} confirmed delivery</p>
       <p class="text-xs text-stone-400 mt-0.5">${r.service} · ${OESN.relativeTime(r.updated_at)}</p>
-    </div>`).join('') || '<p class="text-xs text-stone-400">No new updates.</p>';
+    </div>`
+  ).join('') || '<p class="text-xs text-stone-400">No new updates.</p>';
 }
 
-function pill(content) {
-  return `<span class="whitespace-nowrap bg-stone-100 rounded-full px-3 py-1 text-sm flex items-center gap-1.5 shrink-0">${content}</span>`;
-}
-
-// ─── REFERRAL SHEET ────────────────────────────────────────────────────
-function openRefSheet(refId) {
-  const r = OESN.getReferral(refId);
+// ─── REFERRAL SHEET ──────────────────────────────────────────────────────────
+async function openRefSheet(refId) {
+  const r = await OESN.getReferral(refId);
   if (!r) return;
   const name = entName(r.entrepreneur_id);
-  const createdDays = daysBetween(r.created_at, new Date().toISOString());
-  const deadlineDays = daysBetween(new Date().toISOString(), r.deadline);
-  const isOverdue = r.status === 'OVERDUE' || new Date(r.deadline) < new Date();
+  const isOverdue = r.status==='OVERDUE' || (r.deadline && new Date(r.deadline)<new Date());
   const overdueDays = isOverdue ? Math.abs(daysBetween(r.deadline, new Date().toISOString())) : 0;
 
   document.getElementById('rs-title').textContent = r.service;
@@ -482,174 +791,476 @@ function openRefSheet(refId) {
   badge.textContent = badgeLabel(r.status).toUpperCase();
   badge.className = 'text-[11px] font-semibold px-2.5 py-1 rounded-full ' + badgeCls(r.status);
 
-  const payLabel = { provider_commission:'Provider Commission', direct:'Direct', programme_prebuy:'Programme' };
-  const tlDot = (filled) => filled
+  const tlDot = f => f
     ? '<span class="w-3 h-3 rounded-full bg-stone-800 shrink-0 mt-0.5"></span>'
     : '<span class="w-3 h-3 rounded-full border-2 border-stone-300 shrink-0 mt-0.5"></span>';
 
-  const timeline = `
-    <div class="space-y-2">
-      <div class="flex items-start gap-2 text-sm">${tlDot(true)}<span>Created <span class="text-stone-400">${fmtDate(r.created_at)}</span></span></div>
-      <div class="flex items-start gap-2 text-sm">${tlDot(true)}<span>In Progress</span></div>
-      <div class="flex items-start gap-2 text-sm">${tlDot(r.status === 'RTC' || r.status === 'COMPLETED')}<span class="${r.status === 'RTC' || r.status === 'COMPLETED' ? '' : 'text-stone-400'}">RTC${r.status === 'RTC' ? ' — now' : r.status === 'COMPLETED' ? ' — verified' : ' —'}</span></div>
-      <div class="flex items-start gap-2 text-sm">${tlDot(r.status === 'COMPLETED')}<span class="${r.status === 'COMPLETED' ? '' : 'text-stone-400'}">Completed${r.completed_at ? ' — ' + fmtDate(r.completed_at) : ' —'}</span></div>
-    </div>`;
+  const tl = `<div class="space-y-2">
+    <div class="flex items-start gap-2 text-sm">${tlDot(true)}<span>Created <span class="text-stone-400">${fmtDate(r.created_at)}</span></span></div>
+    <div class="flex items-start gap-2 text-sm">${tlDot(true)}<span>In Progress</span></div>
+    <div class="flex items-start gap-2 text-sm">${tlDot(r.status==='RTC'||r.status==='COMPLETED')}<span class="${r.status==='RTC'||r.status==='COMPLETED'?'':'text-stone-400'}">RTC${r.status==='RTC'?' — now':r.status==='COMPLETED'?' — verified':' —'}</span></div>
+    <div class="flex items-start gap-2 text-sm">${tlDot(r.status==='COMPLETED')}<span class="${r.status==='COMPLETED'?'':'text-stone-400'}">Completed${r.completed_at?' — '+fmtDate(r.completed_at):' —'}</span></div>
+  </div>`;
 
   let action = '';
-  if (r.status === 'RTC') {
+  if (r.status==='RTC') {
     action = `<div class="border border-stone-200 rounded-xl p-4 space-y-3">
       <label class="flex items-start gap-2 text-xs text-stone-700 cursor-pointer">
         <input type="checkbox" id="verify-check" class="mt-0.5 accent-amber-500 shrink-0">
         <span>I confirm the outcome meets the completion criteria</span>
       </label>
-      <label class="flex items-center gap-2 text-xs text-stone-500 cursor-pointer">
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M3 17l4-4 4 4 6-10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Attach photo evidence
-      </label>
-      <button onclick="verifyOutcome('${r.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl text-sm transition-colors">✓ Verify Outcome</button>
+      <button onclick="confirmReferralComplete('${r.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl text-sm transition-colors">Verify Outcome</button>
     </div>`;
-  } else if (r.status === 'BLOCKED') {
+  } else if (r.status==='BLOCKED') {
     action = `<div class="bg-red-50 border border-red-200 rounded-xl p-4">
-      <p class="text-xs text-red-700 font-medium mb-3">Blocked: "${r.blocker_reason || 'Unspecified'}"</p>
+      <p class="text-xs text-red-700 font-medium mb-3">Blocked: "${r.blocker_reason||'Unspecified'}"</p>
       <button onclick="escalateRef('${r.id}')" class="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">Escalate to NFO</button>
     </div>`;
-  } else if (r.status === 'OVERDUE') {
-    action = `<div class="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700 font-medium">⚠ ${overdueDays} day${overdueDays !== 1 ? 's' : ''} past deadline</div>`;
+  } else if (isOverdue) {
+    action = `<div class="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700 font-medium">${overdueDays} day${overdueDays!==1?'s':''} past deadline</div>`;
   }
 
+  const payLabel = { provider_commission:'Provider Commission', direct:'Direct', programme_prebuy:'Programme' };
   document.getElementById('rs-body').innerHTML = `
     <div class="space-y-1 text-stone-700">
       <p><span class="text-stone-400">Entrepreneur</span> · ${name}</p>
       <p><span class="text-stone-400">Provider</span> · ${r.provider}</p>
-      <p><span class="text-stone-400">Payment</span> · ${payLabel[r.payment_type] || r.payment_type}${r.commission ? ` · <span class="mono">₹${r.commission}</span> on completion` : ''}</p>
+      <p><span class="text-stone-400">Payment</span> · ${payLabel[r.payment_type]||r.payment_type}${r.commission?` · <span class="mono">₹${r.commission}</span> on completion`:''}</p>
     </div>
-    ${r.criteria ? `<div><p class="text-xs text-stone-400 uppercase tracking-widest mb-1">Criteria</p><p class="text-stone-700 italic">"${r.criteria}"</p></div>` : ''}
-    <div><p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Timeline</p>${timeline}</div>
+    ${r.criteria?`<div><p class="text-xs text-stone-400 uppercase tracking-widest mb-1">Criteria</p><p class="text-stone-700 italic">"${r.criteria}"</p></div>`:''}
+    <div><p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Timeline</p>${tl}</div>
     ${action}
-    ${r.notes ? `<div><p class="text-xs text-stone-400 uppercase tracking-widest mb-1">Notes</p><p class="text-stone-600">${r.notes}</p></div>` : ''}
+    ${r.notes?`<div><p class="text-xs text-stone-400 uppercase tracking-widest mb-1">Notes</p><p class="text-stone-600">${r.notes}</p></div>`:''}
   `;
   openSheet('ref-sheet');
 }
 
-function verifyOutcome(refId) {
+async function confirmReferralComplete(refId) {
   if (!document.getElementById('verify-check').checked) {
-    alert('Please confirm the outcome meets the completion criteria.');
+    alert('Please tick the confirmation checkbox first.');
     return;
   }
-  if (!confirm('Mark this referral as completed?')) return;
-  OESN.updateReferral(refId, { status: 'COMPLETED', completed_at: new Date().toISOString() });
-  const earn = OESN.getEarnings({ referral_id: refId });
-  earn.forEach(e => OESN.updateEarning(e.id, { status: 'CONFIRMED' }));
+  if (!confirm('Mark this referral as completed? This will confirm the earnings.')) return;
+  await OESN.verifyOutcome(refId);
   closeSheets();
-  renderDashboard();
+  await renderDashboard();
   renderReferrals();
 }
 
 function escalateRef(refId) {
+  OESN.escalateToNFO(refId);
   alert('Escalation raised with NFO coordinator.');
+  closeSheets();
 }
 
-// ─── PEOPLE TAB ────────────────────────────────────────────────────────
+// ─── PEOPLE TAB ─────────────────────────────────────────────────────────────
 let pfActive = 'All';
 function setPeopleFilter(f, btn) {
   pfActive = f;
   document.querySelectorAll('.pf-btn').forEach(b => {
-    b.className = `pf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${b === btn ? 'bg-amber-500 text-white' : 'bg-stone-100 text-stone-600'}`;
+    b.className = `pf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${b===btn?'bg-amber-500 text-white':'bg-stone-100 text-stone-600'}`;
   });
   renderPeople();
 }
-function renderPeople() {
-  const q = (document.getElementById('people-search').value || '').toLowerCase();
-  let list = OESN.getEntrepreneurs();
-  if (q) list = list.filter(e => e.name.toLowerCase().includes(q) || e.business.toLowerCase().includes(q));
-  if (pfActive !== 'All') list = list.filter(e => e.status === pfActive);
-  const refs = OESN.getReferrals();
+async function renderPeople() {
+  const q = (document.getElementById('people-search').value||'').toLowerCase();
+  const all = await OESN.getEntrepreneurs();
+  _ents = all;
+  let list = pfActive==='All' ? all : all.filter(e=>e.status===pfActive);
+  if (q) list = list.filter(e=>(e.name||'').toLowerCase().includes(q)||(e.business||'').toLowerCase().includes(q));
+  const refs = await OESN.getReferrals();
   const dotCls = { active:'bg-emerald-400', dormant:'bg-stone-300', pipeline:'bg-amber-400' };
   const el = document.getElementById('people-list');
-  if (!list.length) { el.innerHTML = '<p class="text-sm text-stone-400 text-center py-8">No entrepreneurs found.</p>'; return; }
+  if (!list.length) {
+    el.innerHTML = pfActive==='All' && !q
+      ? `<div class="text-center py-10">
+          <p class="text-stone-400 text-sm mb-3">No entrepreneurs yet.</p>
+          <button onclick="openAddEntSheet()" class="bg-amber-500 text-stone-900 font-bold text-sm px-5 py-2.5 rounded-xl">Add your first entrepreneur</button>
+        </div>`
+      : '<p class="text-sm text-stone-400 text-center py-8">No entrepreneurs found.</p>';
+    return;
+  }
   el.innerHTML = list.map(e => {
-    const entRefs = refs.filter(r => r.entrepreneur_id === e.id && !['COMPLETED'].includes(r.status));
-    const days = lastContactDays(e.last_contact);
+    const entRefs = refs.filter(r=>r.entrepreneur_id===e.id&&!['COMPLETED'].includes(r.status));
+    const days = Math.floor((Date.now()-new Date(e.last_contact))/86400000);
     return `<div class="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3 cursor-pointer" onclick="openEntSheet('${e.id}')">
       <div class="w-10 h-10 rounded-full ${avatarBg(e.name)} flex items-center justify-center text-sm font-bold shrink-0">${initials(e.name)}</div>
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <p class="font-semibold text-stone-900 text-sm">${e.name}</p>
-          <span class="text-[10px] bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">${e.business}</span>
+          <span class="text-[10px] bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">${e.business||e.sector||''}</span>
         </div>
-        <p class="text-xs text-stone-400 mt-0.5">${e.location} · ${days}d ago</p>
+        <p class="text-xs text-stone-400 mt-0.5">${e.location||''} · ${days}d ago</p>
       </div>
       <div class="flex items-center gap-2 shrink-0">
-        ${entRefs.length ? `<span class="mono text-[11px] font-medium bg-amber-100 text-amber-700 rounded-full w-5 h-5 flex items-center justify-center">${entRefs.length}</span>` : ''}
-        <span class="w-2 h-2 rounded-full ${dotCls[e.status] || 'bg-stone-300'}"></span>
+        ${entRefs.length?`<span class="mono text-[11px] font-medium bg-amber-100 text-amber-700 rounded-full w-5 h-5 flex items-center justify-center">${entRefs.length}</span>`:''}
+        <span class="w-2 h-2 rounded-full ${dotCls[e.status]||'bg-stone-300'}"></span>
       </div>
     </div>`;
   }).join('');
 }
 
-function openEntSheet(entId) {
-  const e = OESN.getEntrepreneur(entId);
+// ─── ENTREPRENEUR PROFILE SHEET ─────────────────────────────────────────────
+async function openEntSheet(entId) {
+  document.getElementById('es-name').textContent = '…';
+  document.getElementById('es-sub').textContent = '';
+  document.getElementById('es-body').innerHTML = '<p class="text-stone-400 text-sm py-4 text-center">Loading…</p>';
+  openSheet('ent-sheet');
+
+  const [e, tags, entRefs, notes] = await Promise.all([
+    OESN.getEntrepreneur(entId),
+    OESN.getCapabilityTags(entId),
+    OESN.getReferrals({ entrepreneur_id: entId }),
+    OESN.getConversationNotes(entId)
+  ]);
   if (!e) return;
+
   document.getElementById('es-name').textContent = e.name;
-  document.getElementById('es-sub').textContent = `${e.business} — ${e.location}`;
-  const diag = OESN.getDiagnostic(entId);
-  const tags = diag ? diag.tags : [];
-  const allTags = ['unit_costing','fssai','market_linkage','gst_registered','udyam_registered','solar_viable','loan_ready'];
-  const capHtml = allTags.filter(t => tags.includes(t)).map(t =>
-    `<span class="text-[11px] px-2 py-0.5 rounded-full bg-stone-800 text-white font-medium">${t}</span>`
-  ).join(' ') || '<span class="text-xs text-stone-400">No capabilities recorded</span>';
+  document.getElementById('es-sub').textContent = `${e.business||e.sector||'Unknown business'} — ${e.location||''}`;
 
-  const entRefs = OESN.getReferrals({ entrepreneur_id: entId }).filter(r => !['COMPLETED'].includes(r.status));
-  const refsHtml = entRefs.length ? entRefs.map(r =>
-    `<div class="flex items-center gap-2 text-sm cursor-pointer" onclick="closeSheets();setTimeout(()=>openRefSheet('${r.id}'),50)">
-      <span class="w-1.5 h-1.5 rounded-full bg-stone-400 shrink-0"></span>
-      <span class="flex-1">${r.service}</span>
-      <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full ${badgeCls(r.status)}">${badgeLabel(r.status)}</span>
-    </div>`
-  ).join('') : '<p class="text-stone-400 text-sm">No active referrals</p>';
+  const confirmedTags = tags.filter(t=>t.confirmed);
+  const gapTags = tags.filter(t=>!t.confirmed);
+  const tagColor = { unit_costing:'bg-blue-100 text-blue-700', fssai:'bg-green-100 text-green-700', market_linkage:'bg-amber-100 text-amber-700', loan_ready:'bg-emerald-100 text-emerald-700', solar_viable:'bg-yellow-100 text-yellow-700', gst_registered:'bg-purple-100 text-purple-700', udyam_registered:'bg-indigo-100 text-indigo-700', digital_presence:'bg-pink-100 text-pink-700' };
+  const tagLabel = { unit_costing:'Unit Costing', fssai:'FSSAI', market_linkage:'Market Access', loan_ready:'Finance Ready', solar_viable:'Solar Viable', gst_registered:'GST Regd', udyam_registered:'Udyam Regd', digital_presence:'Digital' };
 
-  const notes = OESN.getConversationNotes(entId).slice(-2).reverse();
-  const notesHtml = notes.map(n =>
-    `<div class="flex gap-2"><span class="text-stone-400 text-xs shrink-0 mt-0.5">${OESN.relativeTime(n.created_at)}</span><span class="text-stone-600 text-sm">${n.body.slice(0,80)}${n.body.length > 80 ? '…' : ''}</span></div>`
+  const capHtml = confirmedTags.length
+    ? confirmedTags.map(t=>`<span class="text-[11px] px-2 py-0.5 rounded-full font-medium ${tagColor[t.tag]||'bg-stone-100 text-stone-600'}">${tagLabel[t.tag]||t.tag}</span>`).join(' ')
+    : '<span class="text-xs text-stone-400">No assessment done yet</span>';
+  const gapHtml = gapTags.length
+    ? gapTags.map(t=>`<span class="text-[11px] px-2 py-0.5 rounded-full font-medium bg-red-50 text-red-600 border border-red-200">${tagLabel[t.tag]||t.tag}</span>`).join(' ')
+    : '';
+
+  const activeRefs = entRefs.filter(r=>!['COMPLETED'].includes(r.status));
+  const refsHtml = activeRefs.length
+    ? activeRefs.map(r=>`<div class="flex items-center gap-2 text-sm cursor-pointer" onclick="closeSheets();setTimeout(()=>openRefSheet('${r.id}'),50)">
+        <span class="w-1.5 h-1.5 rounded-full bg-stone-400 shrink-0"></span>
+        <span class="flex-1">${r.service}</span>
+        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full ${badgeCls(r.status)}">${badgeLabel(r.status)}</span>
+      </div>`).join('')
+    : '<p class="text-stone-400 text-sm">No active referrals</p>';
+
+  const recentNotes = notes.slice(0,2);
+  const notesHtml = recentNotes.map(n=>
+    `<div class="flex gap-2"><span class="text-stone-400 text-xs shrink-0 mt-0.5">${OESN.relativeTime(n.created_at)}</span><span class="text-stone-600 text-sm">${(n.body||'').slice(0,80)}${(n.body||'').length>80?'…':''}</span></div>`
   ).join('');
 
   document.getElementById('es-body').innerHTML = `
-    <div class="flex gap-3 text-xs text-stone-400 border-b border-stone-100 pb-3">
-      <span>KYC: ${e.kyc_done ? 'Done' : 'Pending'}</span><span>|</span><span>Status: ${e.status}</span>
+    <div class="flex gap-4 text-xs text-stone-400 border-b border-stone-100 pb-3">
+      <span>Phone: <span class="text-stone-700 font-medium">${e.phone||'—'}</span></span>
+      <span>KYC: <span class="font-medium ${e.kyc_done?'text-emerald-600':'text-amber-700'}">${e.kyc_done?'Done':'Pending'}</span></span>
+      <span>Status: <span class="font-medium text-stone-700">${e.status||'—'}</span></span>
     </div>
-    <div><p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Capabilities</p><div class="flex flex-wrap gap-1.5">${capHtml}</div></div>
-    <div><p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Active referrals (${entRefs.length})</p><div class="space-y-2">${refsHtml}</div></div>
-    ${notesHtml ? `<div><p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Recent activity</p><div class="space-y-2">${notesHtml}</div></div>` : ''}
+    ${confirmedTags.length||gapTags.length?`<div>
+      <p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Assessment</p>
+      <div class="flex flex-wrap gap-1.5">${capHtml}</div>
+      ${gapHtml?`<div class="flex flex-wrap gap-1.5 mt-1.5">${gapHtml}</div>`:''}
+    </div>`:''}
+    <div>
+      <p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Active referrals (${activeRefs.length})</p>
+      <div class="space-y-2">${refsHtml}</div>
+    </div>
+    ${notesHtml?`<div><p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Recent activity</p><div class="space-y-2">${notesHtml}</div></div>`:''}
     <div class="grid grid-cols-3 gap-2 pt-1">
-      <button class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold text-xs py-2.5 rounded-xl transition-colors">New Referral</button>
-      <button class="bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs py-2.5 rounded-xl transition-colors">Log Note</button>
-      <button class="bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs py-2.5 rounded-xl transition-colors">Diagnostic</button>
+      <button onclick="closeSheets();setTimeout(()=>openNewRefSheet('${entId}'),50)" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold text-xs py-2.5 rounded-xl transition-colors">New Referral</button>
+      <button onclick="closeSheets();setTimeout(()=>openNoteSheet('${entId}'),50)" class="bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs py-2.5 rounded-xl transition-colors">Log Note</button>
+      <button onclick="closeSheets();setTimeout(()=>openDiagSheet('${entId}'),50)" class="bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs py-2.5 rounded-xl transition-colors">Diagnostic</button>
     </div>`;
-  openSheet('ent-sheet');
 }
 
-// ─── REFERRALS TAB ─────────────────────────────────────────────────────
+// ─── ADD ENTREPRENEUR ───────────────────────────────────────────────────────
+function openAddEntSheet() {
+  ['ae-name','ae-phone','ae-biz','ae-location'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('ae-consent').checked = false;
+  document.getElementById('ae-error').classList.add('hidden');
+  openSheet('add-ent-sheet');
+}
+
+async function saveNewEntrepreneur() {
+  const name     = document.getElementById('ae-name').value.trim();
+  const phone    = document.getElementById('ae-phone').value.trim();
+  const business = document.getElementById('ae-biz').value.trim();
+  const sector   = document.getElementById('ae-sector').value;
+  const entity   = document.getElementById('ae-entity').value;
+  const location = document.getElementById('ae-location').value.trim();
+  const consent  = document.getElementById('ae-consent').checked;
+  const errEl    = document.getElementById('ae-error');
+
+  if (!name||!phone||!business||!location) {
+    errEl.textContent = 'Please fill in all required fields.';
+    errEl.classList.remove('hidden'); return;
+  }
+  if (!/^\d{10}$/.test(phone)) {
+    errEl.textContent = 'Phone must be a 10-digit number.';
+    errEl.classList.remove('hidden'); return;
+  }
+  if (!consent) {
+    errEl.textContent = 'Please confirm that verbal consent was obtained.';
+    errEl.classList.remove('hidden'); return;
+  }
+  errEl.classList.add('hidden');
+
+  const btn = document.querySelector('#add-ent-sheet button[onclick="saveNewEntrepreneur()"]');
+  if (btn) { btn.disabled=true; btn.textContent='Saving…'; }
+
+  const ent = await OESN.addEntrepreneur({ name, phone, business, sector, entity_type:entity, location, consent_status:'verbal', kyc_done:false });
+
+  if (btn) { btn.disabled=false; btn.textContent='Save Entrepreneur'; }
+
+  if (!ent) {
+    errEl.textContent = 'Failed to save. Please try again.';
+    errEl.classList.remove('hidden'); return;
+  }
+
+  closeSheets();
+  await renderDashboard();
+  await renderPeople();
+
+  // Offer to run diagnostic immediately
+  setTimeout(() => {
+    if (confirm(`${name} added! Run a needs assessment now?`)) {
+      openDiagSheet(ent.id);
+    }
+  }, 150);
+}
+
+// ─── DIAGNOSTIC (NEEDS ASSESSMENT) ──────────────────────────────────────────
+async function openDiagSheet(entId) {
+  _diagEntId = entId;
+  _diagState = {};
+
+  const e = _ents.find(e=>e.id===entId);
+  document.getElementById('diag-sub').textContent = e ? `For ${e.name}` : 'Mark what applies';
+
+  // Load existing tags to pre-fill
+  const existing = await OESN.getCapabilityTags(entId);
+  existing.forEach(t => { _diagState[t.tag] = t.confirmed ? 'done' : 'gap'; });
+
+  document.getElementById('diag-body').innerHTML = CAPABILITIES.map((cap,i) => {
+    const state = _diagState[cap.tag] || null;
+    return `<div class="bg-stone-50 rounded-xl p-3">
+      <p class="text-xs font-semibold text-stone-700 mb-0.5">${cap.label}</p>
+      <p class="text-xs text-stone-500 mb-2 leading-snug">${cap.q}</p>
+      <div class="flex gap-2">
+        <button onclick="setDiagState('${cap.tag}','done',this)" class="diag-opt flex-1 border border-stone-200 rounded-lg py-1.5 text-xs font-semibold text-stone-500 ${state==='done'?'active-done':''}">Done</button>
+        <button onclick="setDiagState('${cap.tag}','gap',this)" class="diag-opt flex-1 border border-stone-200 rounded-lg py-1.5 text-xs font-semibold text-stone-500 ${state==='gap'?'active-gap':''}">Gap</button>
+        <button onclick="setDiagState('${cap.tag}','na',this)" class="diag-opt flex-1 border border-stone-200 rounded-lg py-1.5 text-xs font-semibold text-stone-500 ${state==='na'?'active-na':''}">N/A</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  openSheet('diag-sheet');
+}
+
+function setDiagState(tag, state, btn) {
+  _diagState[tag] = state;
+  const row = btn.parentElement;
+  row.querySelectorAll('.diag-opt').forEach(b => {
+    b.classList.remove('active-done','active-gap','active-na');
+  });
+  btn.classList.add('active-' + state);
+}
+
+async function saveDiagnostic() {
+  const entId = _diagEntId;
+  const saves = [];
+  for (const cap of CAPABILITIES) {
+    const s = _diagState[cap.tag];
+    if (s === 'done') saves.push(OESN.saveCapabilityTag(entId, cap.tag, true, {}));
+    if (s === 'gap')  saves.push(OESN.saveCapabilityTag(entId, cap.tag, false, {}));
+  }
+  await Promise.all(saves);
+
+  const gaps = CAPABILITIES.filter(c => _diagState[c.tag]==='gap' && c.ref_service);
+  closeSheets();
+
+  if (gaps.length) {
+    const gapList = gaps.map(g=>g.label).join(', ');
+    if (confirm(`Diagnostic saved.\n\nGaps identified: ${gapList}.\n\nCreate a referral for "${gaps[0].ref_service}"?`)) {
+      _nrPreset = gaps[0].ref_service;
+      setTimeout(() => openNewRefSheet(entId), 100);
+    }
+  } else {
+    alert('Diagnostic saved.');
+  }
+}
+
+// ─── LOG NOTE ───────────────────────────────────────────────────────────────
+function openNoteSheet(entId) {
+  _noteEntId = entId;
+  _noteType  = 'visit';
+  document.getElementById('note-body').value = '';
+  document.querySelectorAll('.note-type').forEach(b => {
+    b.className = `note-type rounded-full px-3 py-1.5 text-xs font-semibold ${b.getAttribute('data-type')==='visit'?'bg-amber-500 text-white':'bg-stone-100 text-stone-600'}`;
+  });
+  openSheet('note-sheet');
+}
+
+function setNoteType(type, btn) {
+  _noteType = type;
+  document.querySelectorAll('.note-type').forEach(b => {
+    b.className = `note-type rounded-full px-3 py-1.5 text-xs font-semibold ${b===btn?'bg-amber-500 text-white':'bg-stone-100 text-stone-600'}`;
+  });
+}
+
+async function saveNote() {
+  const body = (document.getElementById('note-body').value||'').trim();
+  if (!body) { alert('Please enter a note.'); return; }
+  await OESN.addConversationNote({ entrepreneur_id:_noteEntId, body, type:_noteType });
+  closeSheets();
+}
+
+// ─── NEW REFERRAL ────────────────────────────────────────────────────────────
+function openNewRefSheet(entId) {
+  _nrEntId = entId;
+  const e = _ents.find(e=>e.id===entId);
+  document.getElementById('nr-sub').textContent = e ? `For ${e.name}` : '';
+  document.getElementById('nr-notes').value = '';
+  document.getElementById('nr-error').classList.add('hidden');
+
+  // Pre-select service if set from diagnostic
+  const svcSel = document.getElementById('nr-service');
+  if (_nrPreset) {
+    svcSel.value = _nrPreset;
+    _nrPreset = null;
+    onNRServiceChange();
+  } else {
+    svcSel.value = '';
+    document.getElementById('nr-provider').innerHTML = '<option value="">— select service first —</option>';
+    document.getElementById('nr-commission').value = '';
+    document.getElementById('nr-deadline').value = '';
+  }
+  openSheet('new-ref-sheet');
+}
+
+function onNRServiceChange() {
+  const svc = document.getElementById('nr-service').value;
+  const c = SERVICE_CATALOG.find(x=>x.service===svc);
+  if (!c) {
+    document.getElementById('nr-provider').innerHTML = '<option value="">— select service first —</option>';
+    document.getElementById('nr-intake').innerHTML = '';
+    return;
+  }
+  document.getElementById('nr-provider').innerHTML = `<option value="${c.prov_id}">${c.prov}</option>`;
+  document.getElementById('nr-commission').value = c.commission;
+  const d = new Date();
+  d.setDate(d.getDate() + c.days);
+  document.getElementById('nr-deadline').value = d.toISOString().split('T')[0];
+  renderIntakeForm(svc);
+}
+
+function renderIntakeForm(svc) {
+  const form = INTAKE_FORMS[svc];
+  const el = document.getElementById('nr-intake');
+  if (!form || !el) { if (el) el.innerHTML = ''; return; }
+  el.innerHTML = `<p class="text-xs font-semibold text-stone-500 uppercase tracking-widest pt-1">Service details</p>` +
+    form.fields.map(f => {
+      if (f.type === 'radio') {
+        return `<div>
+          <label class="text-xs font-semibold text-stone-500 block mb-1">${f.label}</label>
+          <div class="flex gap-3 flex-wrap">${f.options.map(o =>
+            `<label class="flex items-center gap-1 cursor-pointer text-xs text-stone-600">
+              <input type="radio" name="${f.id}" value="${o}" class="accent-amber-500"> ${o}
+            </label>`).join('')}
+          </div>
+        </div>`;
+      } else if (f.type === 'textarea') {
+        return `<div>
+          <label class="text-xs font-semibold text-stone-500 block mb-1">${f.label}</label>
+          <textarea id="${f.id}" rows="2" placeholder="${f.placeholder}" class="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"></textarea>
+        </div>`;
+      } else {
+        return `<div>
+          <label class="text-xs font-semibold text-stone-500 block mb-1">${f.label}</label>
+          <input id="${f.id}" type="${f.type}" placeholder="${f.placeholder||''}" class="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+        </div>`;
+      }
+    }).join('');
+}
+
+function collectIntakeNotes(svc) {
+  const form = INTAKE_FORMS[svc];
+  if (!form) return '';
+  const parts = [];
+  form.fields.forEach(f => {
+    if (f.type === 'radio') {
+      const checked = document.querySelector(`input[name="${f.id}"]:checked`);
+      if (checked) parts.push(`${f.label}: ${checked.value}`);
+    } else {
+      const el = document.getElementById(f.id);
+      if (el && el.value.trim()) parts.push(`${f.label}: ${el.value.trim()}`);
+    }
+  });
+  return parts.join(' | ');
+}
+
+async function saveNewReferral() {
+  const svc    = document.getElementById('nr-service').value;
+  const provEl = document.getElementById('nr-provider');
+  const provId = provEl.value;
+  const provName = provEl.options[provEl.selectedIndex]?.text||'';
+  const commission = +document.getElementById('nr-commission').value||0;
+  const deadline   = document.getElementById('nr-deadline').value;
+  const intakeNotes = collectIntakeNotes(svc);
+  const userNotes  = document.getElementById('nr-notes').value.trim();
+  const notes      = [intakeNotes, userNotes].filter(Boolean).join('\n');
+  const errEl      = document.getElementById('nr-error');
+
+  if (!svc||!provId) {
+    errEl.textContent = 'Please select a service.';
+    errEl.classList.remove('hidden'); return;
+  }
+  errEl.classList.add('hidden');
+
+  const c = SERVICE_CATALOG.find(x=>x.service===svc);
+  const btn = document.querySelector('#new-ref-sheet button[onclick="saveNewReferral()"]');
+  if (btn) { btn.disabled=true; btn.textContent='Creating…'; }
+
+  const ref = await OESN.addReferral({
+    entrepreneur_id: _nrEntId,
+    provider_id    : provId,
+    provider       : provName,
+    service        : svc,
+    payment_type   : c ? c.payment_type : 'provider_commission',
+    commission,
+    deadline       : deadline ? new Date(deadline).toISOString() : null,
+    notes          : notes || null,
+  });
+
+  if (btn) { btn.disabled=false; btn.textContent='Create Referral'; }
+
+  if (!ref) {
+    errEl.textContent = 'Failed to create referral. Please try again.';
+    errEl.classList.remove('hidden'); return;
+  }
+
+  closeSheets();
+  await renderDashboard();
+  renderReferrals();
+  switchTab('referrals');
+}
+
+// ─── REFERRALS TAB ───────────────────────────────────────────────────────────
 let rfActive = 'All';
 function setRefFilter(f, btn) {
   rfActive = f;
   document.querySelectorAll('.rf-btn').forEach(b => {
-    b.className = `rf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${b === btn ? 'bg-amber-500 text-white' : 'bg-stone-100 text-stone-600'}`;
+    b.className = `rf-btn whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${b===btn?'bg-amber-500 text-white':'bg-stone-100 text-stone-600'}`;
   });
   renderReferrals();
 }
-function renderReferrals() {
-  let list = OESN.getReferrals();
-  if (rfActive !== 'All') list = list.filter(r => r.status === rfActive);
+async function renderReferrals() {
+  let list = await OESN.getReferrals();
+  if (rfActive!=='All') list = list.filter(r=>r.status===rfActive);
   const ptLabel = { provider_commission:'Commission', direct:'Direct', programme_prebuy:'Programme' };
   const el = document.getElementById('referrals-list');
   if (!list.length) { el.innerHTML = '<p class="text-sm text-stone-400 text-center py-8">No referrals.</p>'; return; }
   el.innerHTML = list.map(r => {
     const name = entName(r.entrepreneur_id);
     const created = daysBetween(r.created_at, new Date().toISOString());
-    const total = daysBetween(r.created_at, r.deadline);
-    const overdue = r.status === 'OVERDUE' || new Date(r.deadline) < new Date();
-    const overdueDays = overdue ? Math.abs(daysBetween(r.deadline, new Date().toISOString())) : 0;
-    const progress = overdue ? `${overdueDays} day${overdueDays !== 1 ? 's' : ''} overdue` : `Day ${created} of ${total}`;
-    const progCls = overdue ? 'text-red-600' : 'text-stone-400';
+    const total   = r.deadline ? daysBetween(r.created_at, r.deadline) : 30;
+    const overdue = r.status==='OVERDUE' || (r.deadline && new Date(r.deadline)<new Date());
+    const od      = overdue ? Math.abs(daysBetween(r.deadline, new Date().toISOString())) : 0;
+    const progress = overdue ? `${od} day${od!==1?'s':''} overdue` : `Day ${created} of ${total}`;
     return `<div class="bg-white rounded-xl shadow-sm ${borderCls(r.status)} p-4 cursor-pointer" onclick="openRefSheet('${r.id}')">
       <div class="flex items-start justify-between mb-1.5">
         <p class="font-bold text-stone-900 text-sm pr-2">${r.service}</p>
@@ -657,198 +1268,389 @@ function renderReferrals() {
       </div>
       <p class="text-xs text-stone-400">${name} → ${r.provider}</p>
       <div class="flex items-center justify-between mt-2">
-        <p class="mono text-xs ${progCls} font-medium">${progress}</p>
-        <span class="text-[10px] bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">${ptLabel[r.payment_type] || r.payment_type}</span>
+        <p class="mono text-xs ${overdue?'text-red-600':'text-stone-400'} font-medium">${progress}</p>
+        <span class="text-[10px] bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">${ptLabel[r.payment_type]||r.payment_type}</span>
       </div>
     </div>`;
   }).join('');
 }
 
-// ─── EARN TAB ──────────────────────────────────────────────────────────
-function renderEarn() {
-  const all = OESN.getEarnings();
-  const pending = all.filter(e => e.status === 'PENDING');
-  const confirmed = all.filter(e => e.status === 'CONFIRMED');
-  const settled = all.filter(e => e.status === 'SETTLED');
+// ─── EARN TAB ────────────────────────────────────────────────────────────────
+async function renderEarn() {
+  const all = await OESN.getEarnings();
+  const pending   = all.filter(e=>e.status==='PENDING');
+  const confirmed = all.filter(e=>e.status==='CONFIRMED');
+  const settled   = all.filter(e=>e.status==='SETTLED');
   const now = new Date();
-  const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const weekStart  = new Date(now); weekStart.setDate(now.getDate()-now.getDay());
+  const monthStart = new Date(now.getFullYear(),now.getMonth(),1);
 
-  const weekTotal = [...confirmed, ...settled].filter(e => new Date(e.updated_at) >= weekStart).reduce((s, e) => s + e.amount, 0);
-  const monthTotal = [...pending, ...confirmed, ...settled].filter(e => new Date(e.created_at) >= monthStart).reduce((s, e) => s + e.amount, 0);
-  const pendingTotal = pending.reduce((s, e) => s + e.amount, 0);
+  const weekTotal    = [...confirmed,...settled].filter(e=>new Date(e.updated_at)>=weekStart).reduce((s,e)=>s+e.amount,0);
+  const monthTotal   = all.filter(e=>new Date(e.created_at)>=monthStart).reduce((s,e)=>s+e.amount,0);
+  const pendingTotal = pending.reduce((s,e)=>s+e.amount,0);
 
-  document.getElementById('earn-week').textContent = OESN.formatINR(weekTotal);
+  document.getElementById('earn-week').textContent    = OESN.formatINR(weekTotal);
   document.getElementById('earn-pending').textContent = OESN.formatINR(pendingTotal);
-  document.getElementById('earn-month').textContent = OESN.formatINR(monthTotal);
+  document.getElementById('earn-month').textContent   = OESN.formatINR(monthTotal);
 
-  const earnCls = { PENDING:'bg-amber-100 text-amber-700', CONFIRMED:'bg-blue-100 text-blue-700', SETTLED:'bg-emerald-100 text-emerald-700' };
   document.getElementById('earn-list').innerHTML = pending.map(e => {
     const today = isToday(e.expected_on);
     return `<div class="bg-white rounded-xl shadow-sm p-4">
       <div class="flex items-start justify-between">
         <div>
-          <p class="mono text-xl font-medium text-amber-700">₹${e.amount.toLocaleString('en-IN')}</p>
-          <p class="text-xs text-stone-500 mt-0.5">${e.basis}</p>
-          <p class="text-xs text-stone-400 mt-0.5">${e.payer}</p>
+          <p class="mono text-xl font-medium text-amber-700">₹${(e.amount||0).toLocaleString('en-IN')}</p>
+          <p class="text-xs text-stone-500 mt-0.5">${e.basis||''}</p>
+          <p class="text-xs text-stone-400 mt-0.5">${e.payer||''}</p>
         </div>
         <div class="text-right shrink-0 ml-3">
-          <span class="${today ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-500'} text-[11px] font-semibold px-2 py-0.5 rounded-full">${today ? 'Today' : fmtDate(e.expected_on)}</span>
+          <span class="${today?'bg-emerald-100 text-emerald-700':'bg-stone-100 text-stone-500'} text-[11px] font-semibold px-2 py-0.5 rounded-full">${e.expected_on?fmtDate(e.expected_on):'Pending'}</span>
           <p class="text-[10px] text-stone-400 mt-1.5">PENDING</p>
         </div>
       </div>
     </div>`;
   }).join('') || '<p class="text-sm text-stone-400 text-center py-4">No pending earnings.</p>';
 
-  document.getElementById('earn-history').innerHTML = [...confirmed, ...settled].map(e =>
+  const earnCls = { PENDING:'bg-amber-100 text-amber-700', CONFIRMED:'bg-blue-100 text-blue-700', SETTLED:'bg-emerald-100 text-emerald-700' };
+  document.getElementById('earn-history').innerHTML = [...confirmed,...settled].map(e =>
     `<div class="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
       <div>
-        <p class="mono text-base font-medium text-stone-700">₹${e.amount.toLocaleString('en-IN')}</p>
-        <p class="text-xs text-stone-400 mt-0.5">${e.basis}</p>
+        <p class="mono text-base font-medium text-stone-700">₹${(e.amount||0).toLocaleString('en-IN')}</p>
+        <p class="text-xs text-stone-400 mt-0.5">${e.basis||''}</p>
       </div>
-      <span class="${earnCls[e.status] || 'bg-stone-100 text-stone-500'} text-[11px] font-semibold px-2 py-0.5 rounded-full">${e.status}</span>
+      <span class="${earnCls[e.status]||'bg-stone-100 text-stone-500'} text-[11px] font-semibold px-2 py-0.5 rounded-full">${e.status}</span>
     </div>`
   ).join('');
 }
 
 function toggleEarnHistory() {
-  const h = document.getElementById('earn-history');
-  const chev = document.getElementById('hist-chev');
+  const h=document.getElementById('earn-history');
+  const chev=document.getElementById('hist-chev');
   h.classList.toggle('hidden');
-  chev.style.transform = h.classList.contains('hidden') ? '' : 'rotate(180deg)';
+  chev.style.transform=h.classList.contains('hidden')?'':'rotate(180deg)';
 }
 
-// ─── TOOLS ─────────────────────────────────────────────────────────────
+// ─── TOOLS ───────────────────────────────────────────────────────────────────
 function toggleTool(id) {
-  const p = document.getElementById(id);
-  const open = !p.classList.toggle('hidden');
-  document.getElementById(id + '-c').style.transform = open ? 'rotate(180deg)' : '';
+  const p=document.getElementById(id);
+  const open=!p.classList.toggle('hidden');
+  document.getElementById(id+'-c').style.transform=open?'rotate(180deg)':'';
   if (open) {
-    if (id === 't1') calcUnit();
-    if (id === 't2') calcFSSAI();
-    if (id === 't3') calcSchemes();
-    if (id === 't4') calcSolar();
+    if (id==='t1') calcUnit();
+    if (id==='t2') calcFSSAI();
+    if (id==='t3') calcSchemes();
+    if (id==='t4') calcSolar();
+    if (id==='t5') renderNutrRows();
+    if (id==='t6') updateLogo();
   }
 }
 
-// Unit Costing
 function calcUnit() {
-  const r = +document.getElementById('uc-r').value||0, l = +document.getElementById('uc-l').value||0;
-  const e = +document.getElementById('uc-e').value||0, p = +document.getElementById('uc-p').value||0;
-  const t = +document.getElementById('uc-t').value||0, b = Math.max(1, +document.getElementById('uc-b').value||1);
-  const s = +document.getElementById('uc-s').value||0;
-  const cpu = (r + l + e + p + t) / b;
-  const margin = s > 0 ? ((s - cpu) / s * 100) : 0;
-  const p25 = cpu > 0 ? (cpu / 0.75).toFixed(2) : '—';
-  const p35 = cpu > 0 ? (cpu / 0.65).toFixed(2) : '—';
-  const mc = margin < 15 ? 'text-red-600' : margin < 25 ? 'text-amber-700' : 'text-emerald-600';
-  document.getElementById('uc-result').innerHTML = `
-    <div class="flex justify-between"><span class="text-stone-400">Cost per unit</span><span class="mono font-medium">₹${cpu.toFixed(2)}</span></div>
+  const r=+document.getElementById('uc-r').value||0, l=+document.getElementById('uc-l').value||0;
+  const e=+document.getElementById('uc-e').value||0, p=+document.getElementById('uc-p').value||0;
+  const t=+document.getElementById('uc-t').value||0, b=Math.max(1,+document.getElementById('uc-b').value||1);
+  const s=+document.getElementById('uc-s').value||0;
+  const rent=+document.getElementById('uc-rent').value||0;
+  const bpm=Math.max(1,+document.getElementById('uc-bpm').value||1);
+  const util=+document.getElementById('uc-util').value||0;
+  const emi=+document.getElementById('uc-emi').value||0;
+
+  const varCpu=(r+l+e+p+t)/b;
+  const fixedMonthly=rent*bpm+util+emi;
+  const fixedCpu=fixedMonthly/(bpm*b);
+  const cpu=varCpu+fixedCpu;
+  const margin=s>0?((s-cpu)/s*100):0;
+  const p25=cpu>0?(cpu/0.75).toFixed(2):'—';
+  const p35=cpu>0?(cpu/0.65).toFixed(2):'—';
+  const beVol=s>varCpu?Math.ceil(fixedMonthly/(s-varCpu)):null;
+  const mc=margin<15?'text-red-600':margin<25?'text-amber-700':'text-emerald-600';
+  document.getElementById('uc-result').innerHTML=`
+    <div class="flex justify-between"><span class="text-stone-400">Variable cost/unit</span><span class="mono font-medium">₹${varCpu.toFixed(2)}</span></div>
+    ${fixedCpu>0?`<div class="flex justify-between"><span class="text-stone-400">Fixed cost/unit</span><span class="mono font-medium">₹${fixedCpu.toFixed(2)}</span></div>`:''}
+    <div class="flex justify-between font-semibold border-t border-stone-200 pt-1.5 mt-1"><span class="text-stone-700">Total cost/unit</span><span class="mono text-stone-900">₹${cpu.toFixed(2)}</span></div>
     <div class="flex justify-between"><span class="text-stone-400">Margin at selling price</span><span class="mono font-medium ${mc}">${margin.toFixed(1)}%</span></div>
     <div class="flex justify-between"><span class="text-stone-400">Price for 25% margin</span><span class="mono font-medium">₹${p25}</span></div>
-    <div class="flex justify-between"><span class="text-stone-400">Price for 35% margin</span><span class="mono font-medium">₹${p35}</span></div>`;
+    <div class="flex justify-between"><span class="text-stone-400">Price for 35% margin</span><span class="mono font-medium">₹${p35}</span></div>
+    ${beVol!==null?`<div class="flex justify-between border-t border-stone-200 pt-1.5 mt-1"><span class="text-stone-400">Break-even / month</span><span class="mono font-medium text-blue-700">${beVol} units</span></div>`:''}`;
 }
-function saveUnitCosting() {
-  const id = document.getElementById('uc-ent').value;
+async function saveUnitCosting() {
+  const id=document.getElementById('uc-ent').value;
   if (!id) { alert('Select an entrepreneur first.'); return; }
-  OESN.updateDiagnostic(id, { tags: ['unit_costing'] });
+  await OESN.saveCapabilityTag(id,'unit_costing',true,{});
   alert('Saved.');
 }
 
-// FSSAI
 function calcFSSAI() {
-  const type = document.getElementById('fs-t').value;
-  const turn = document.getElementById('fs-v').value;
-  const states = document.getElementById('fs-s').value;
-  let licence, fee, timeline, docs;
-  if (turn === 'a1cr' || states === '5+') {
-    licence = 'Central Licence'; fee = '₹7,500+'; timeline = '60 days';
-    docs = ['Aadhaar / PAN card','GST registration','Food safety management plan','Water test report','Blueprint of premises'];
-  } else if (type === 'home' && turn === 'u12' && states === '1') {
-    licence = 'Basic Registration'; fee = '₹100'; timeline = '7 days';
-    docs = ['Aadhaar card','Passport-size photo','Self-declaration of address'];
+  const type=document.getElementById('fs-t').value, turn=document.getElementById('fs-v').value, states=document.getElementById('fs-s').value;
+  let licence,fee,timeline,docs;
+  if (turn==='a1cr'||states==='5+') {
+    licence='Central Licence';fee='₹7,500+';timeline='60 days';
+    docs=['Aadhaar / PAN card','GST registration','Food safety management plan','Water test report','Blueprint of premises'];
+  } else if (type==='home'&&turn==='u12'&&states==='1') {
+    licence='Basic Registration';fee='₹100';timeline='7 days';
+    docs=['Aadhaar card','Passport-size photo','Self-declaration of address'];
   } else {
-    licence = 'State Licence'; fee = '₹2,000 – ₹5,000'; timeline = '30 days';
-    docs = ['Aadhaar / PAN card','Business registration proof','Premises address proof','Water test report'];
+    licence='State Licence';fee='₹2,000 – ₹5,000';timeline='30 days';
+    docs=['Aadhaar / PAN card','Business registration proof','Premises address proof','Water test report'];
   }
-  document.getElementById('fs-result').innerHTML = `
+  document.getElementById('fs-result').innerHTML=`
     <p class="font-semibold text-stone-900 mb-2">${licence}</p>
-    <ul class="space-y-1 mb-3">${docs.map(d => `<li class="flex items-center gap-1.5 text-xs text-stone-600"><span class="w-1 h-1 rounded-full bg-stone-400 shrink-0"></span>${d}</li>`).join('')}</ul>
+    <ul class="space-y-1 mb-3">${docs.map(d=>`<li class="flex items-center gap-1.5 text-xs text-stone-600"><span class="w-1 h-1 rounded-full bg-stone-400 shrink-0"></span>${d}</li>`).join('')}</ul>
     <div class="flex gap-5 text-xs"><span><span class="text-stone-400">Fee</span> <span class="mono font-medium text-stone-800">${fee}</span></span><span><span class="text-stone-400">Timeline</span> <span class="mono font-medium text-stone-800">${timeline}</span></span></div>`;
 }
 
-// Scheme Matcher
-const SCHEMES = [
-  { name:'PM Mudra Yojana', benefit:'Up to ₹10L collateral-free loan', conditions:'All categories · Shishu / Kishore / Tarun tiers', ease:5, cats:['SC','ST','OBC','General'], prior:['None','Mudra','Other','PMEGP'] },
-  { name:'PMEGP', benefit:'Up to 35% subsidy on project cost', conditions:'SC/ST/Women get higher subsidy · DIC registration needed', ease:3, cats:['SC','ST','OBC','General'], prior:['None'] },
-  { name:'Stand-Up India', benefit:'₹10L – ₹1Cr for SC/ST/Women', conditions:'SC/ST or Women only · Greenfield enterprise required', ease:3, cats:['SC','ST'], prior:['None'] },
-  { name:'Udyogini', benefit:'Up to ₹3L for women entrepreneurs', conditions:'Women only · Below poverty line preference', ease:4, cats:['SC','ST','OBC','General'], prior:['None','Other'] },
-  { name:'Karnataka SC/ST Entrepreneurship', benefit:'State subsidy 50% on project cost', conditions:'Karnataka residents · SC/ST category only', ease:3, cats:['SC','ST'], prior:['None','Other'] },
-  { name:'One District One Product', benefit:'Market linkage + subsidy support', conditions:'Product must belong to district ODOP cluster', ease:4, cats:['SC','ST','OBC','General'], prior:['None','Mudra','Other','PMEGP'] }
+const SCHEMES=[
+  {name:'PM Mudra Yojana',benefit:'Up to ₹10L collateral-free loan',conditions:'All categories · Shishu / Kishore / Tarun tiers',ease:5,cats:['SC','ST','OBC','General'],prior:['None','Mudra','Other','PMEGP']},
+  {name:'PMEGP',benefit:'Up to 35% subsidy on project cost',conditions:'SC/ST/Women get higher subsidy · DIC registration needed',ease:3,cats:['SC','ST','OBC','General'],prior:['None']},
+  {name:'Stand-Up India',benefit:'₹10L – ₹1Cr for SC/ST/Women',conditions:'SC/ST or Women only · Greenfield enterprise required',ease:3,cats:['SC','ST'],prior:['None']},
+  {name:'Udyogini',benefit:'Up to ₹3L for women entrepreneurs',conditions:'Women only · Below poverty line preference',ease:4,cats:['SC','ST','OBC','General'],prior:['None','Other']},
+  {name:'Karnataka SC/ST Entrepreneurship',benefit:'State subsidy 50% on project cost',conditions:'Karnataka residents · SC/ST category only',ease:3,cats:['SC','ST'],prior:['None','Other']},
+  {name:'One District One Product',benefit:'Market linkage + subsidy support',conditions:'Product must belong to district ODOP cluster',ease:4,cats:['SC','ST','OBC','General'],prior:['None','Mudra','Other','PMEGP']},
 ];
-function stars(n) { return '★'.repeat(n) + '☆'.repeat(5 - n); }
-function calcSchemes() {
-  const cat = document.getElementById('sm-c').value;
-  const prior = document.getElementById('sm-p').value;
-  const matched = SCHEMES.filter(s => s.cats.includes(cat) && s.prior.includes(prior)).slice(0, 5);
-  document.getElementById('sm-result').innerHTML = matched.length
-    ? matched.map(s => `<div class="bg-stone-50 rounded-xl p-3 space-y-0.5">
+function stars(n){return '★'.repeat(n)+'☆'.repeat(5-n);}
+function calcSchemes(){
+  const cat=document.getElementById('sm-c').value, prior=document.getElementById('sm-p').value;
+  const matched=SCHEMES.filter(s=>s.cats.includes(cat)&&s.prior.includes(prior)).slice(0,5);
+  document.getElementById('sm-result').innerHTML=matched.length
+    ?matched.map(s=>`<div class="bg-stone-50 rounded-xl p-3 space-y-0.5">
         <p class="font-semibold text-stone-900 text-sm">${s.name}</p>
         <p class="text-xs text-stone-600">${s.benefit}</p>
         <p class="text-[11px] text-stone-400">${s.conditions}</p>
         <p class="text-amber-500 text-xs">Ease: ${stars(s.ease)}</p>
       </div>`).join('')
-    : '<p class="text-xs text-stone-400">No matching schemes for this combination.</p>';
+    :'<p class="text-xs text-stone-400">No matching schemes for this combination.</p>';
 }
 
-// Solar
-let solarRows = [{ n:'Tubelight', w:40, h:8 }, { n:'Fan', w:75, h:10 }, { n:'Machine', w:500, h:6 }];
-function renderSolarRows() {
-  document.getElementById('solar-rows').innerHTML = solarRows.map((row, i) =>
+let solarRows=[{n:'Tubelight',w:40,h:8},{n:'Fan',w:75,h:10},{n:'Machine',w:500,h:6}];
+function renderSolarRows(){
+  document.getElementById('solar-rows').innerHTML=solarRows.map((row,i)=>
     `<div class="flex gap-1.5 items-center">
       <input value="${row.n}" oninput="solarRows[${i}].n=this.value" placeholder="Appliance" class="flex-1 bg-stone-100 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400">
       <input type="number" value="${row.w}" min="0" oninput="solarRows[${i}].w=+this.value;calcSolar()" placeholder="W" class="w-16 bg-stone-100 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400">
       <input type="number" value="${row.h}" min="0" max="24" oninput="solarRows[${i}].h=+this.value;calcSolar()" placeholder="h/d" class="w-14 bg-stone-100 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400">
-      <button onclick="removeSolarRow(${i})" class="text-stone-300 hover:text-red-400 text-xl leading-none px-1" aria-label="Remove">×</button>
+      <button onclick="removeSolarRow(${i})" class="text-stone-300 hover:text-red-400 text-xl leading-none px-1" aria-label="Remove">&times;</button>
     </div>`
   ).join('');
   calcSolar();
 }
-function addSolarRow() { solarRows.push({ n:'', w:0, h:0 }); renderSolarRows(); }
-function removeSolarRow(i) { solarRows.splice(i, 1); renderSolarRows(); }
-function calcSolar() {
-  const daily = solarRows.reduce((s, r) => s + (r.w * r.h) / 1000, 0);
-  const monthly = daily * 30;
-  const kw = Math.ceil(daily / 4 * 10) / 10;
-  const low = Math.round(kw * 60000);
-  const high = Math.round(kw * 80000);
-  const savings = Math.round(monthly * 8);
-  const payback = savings > 0 ? ((low + high) / 2 / (savings * 12)).toFixed(1) : '—';
-  document.getElementById('solar-result').innerHTML = `
+function addSolarRow(){solarRows.push({n:'',w:0,h:0});renderSolarRows();}
+function removeSolarRow(i){solarRows.splice(i,1);renderSolarRows();}
+function calcSolar(){
+  const daily=solarRows.reduce((s,r)=>s+(r.w*r.h)/1000,0);
+  const monthly=daily*30, kw=Math.max(0.5,Math.ceil(daily/4*10)/10);
+
+  const panels=Math.max(1,Math.ceil(kw*1000/330));
+  const battKwh=daily*0.5;
+  const batts=Math.max(1,Math.ceil(battKwh*1000/(150*12*0.8)));
+  const invKva=Math.ceil(kw*1.3*10)/10;
+
+  const panelLo=panels*8000, panelHi=panels*12000;
+  const battLo=batts*10000, battHi=batts*14000;
+  const invLo=Math.ceil(invKva)*6000, invHi=Math.ceil(invKva)*9000;
+  const misc=panels*3000+7000;
+  const labor=12000;
+  const totalLo=panelLo+battLo+invLo+misc+labor;
+  const totalHi=panelHi+battHi+invHi+misc+labor;
+
+  const savings=Math.round(monthly*8);
+  const payback=savings>0?(((totalLo+totalHi)/2)/(savings*12)).toFixed(1):'—';
+  const fmt=n=>n>=100000?`₹${(n/100000).toFixed(1)}L`:n>=1000?`₹${Math.round(n/1000)}K`:`₹${n}`;
+  const bom=[
+    {item:`Solar panels (${panels}×330W)`, lo:panelLo, hi:panelHi},
+    {item:`Batteries (${batts}×150Ah tubular)`, lo:battLo, hi:battHi},
+    {item:`Inverter / PCU (${invKva} kVA)`, lo:invLo, hi:invHi},
+    {item:'MPPT controller + mounting + wiring', lo:misc, hi:misc},
+    {item:'Installation labour', lo:labor, hi:labor},
+  ];
+  document.getElementById('solar-result').innerHTML=`
     <div class="flex justify-between"><span class="text-stone-400">Daily load</span><span class="mono font-medium">${daily.toFixed(1)} kWh</span></div>
-    <div class="flex justify-between"><span class="text-stone-400">Monthly load</span><span class="mono font-medium">${monthly.toFixed(0)} kWh</span></div>
-    <div class="flex justify-between"><span class="text-stone-400">Recommended system</span><span class="mono font-medium">${kw} kW</span></div>
-    <div class="flex justify-between"><span class="text-stone-400">Estimated cost</span><span class="mono font-medium">₹${(low/1000).toFixed(0)}K – ₹${(high/1000).toFixed(0)}K</span></div>
-    <div class="flex justify-between"><span class="text-stone-400">Monthly savings</span><span class="mono font-medium text-emerald-600">₹${savings.toLocaleString('en-IN')}</span></div>
-    <div class="flex justify-between"><span class="text-stone-400">Payback</span><span class="mono font-medium">${payback} yrs</span></div>`;
+    <div class="flex justify-between"><span class="text-stone-400">System size</span><span class="mono font-medium">${kw} kW</span></div>
+    <div class="flex justify-between"><span class="text-stone-400">Monthly savings est.</span><span class="mono font-medium text-emerald-600">₹${savings.toLocaleString('en-IN')}</span></div>
+    <div class="flex justify-between"><span class="text-stone-400">Payback period</span><span class="mono font-medium">${payback} yrs</span></div>
+    <div class="border-t border-stone-200 pt-2 mt-1">
+      <p class="text-[11px] text-stone-400 uppercase tracking-widest mb-1.5">Bill of Materials</p>
+      ${bom.map(row=>`<div class="flex justify-between text-xs py-0.5"><span class="text-stone-600 flex-1 pr-2">${row.item}</span><span class="mono text-stone-700 shrink-0">${fmt(row.lo)}${row.lo!==row.hi?' – '+fmt(row.hi):''}</span></div>`).join('')}
+      <div class="flex justify-between text-sm font-semibold border-t border-stone-200 pt-1.5 mt-1"><span class="text-stone-800">Total estimate</span><span class="mono text-stone-900">${fmt(totalLo)} – ${fmt(totalHi)}</span></div>
+    </div>
+    <button onclick="solarWhatsApp(${kw},${panels},${batts},${invKva},${totalLo},${totalHi})" class="mt-1 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2 rounded-lg transition-colors">Share quote via WhatsApp</button>`;
 }
 
-// ─── BOOT ──────────────────────────────────────────────────────────────
-renderDashboard();
+function solarWhatsApp(kw,panels,batts,inv,lo,hi){
+  const msg=`*Solar System Quote — OESN*\n\nRecommended: ${kw} kW system\n• ${panels} solar panels (330W each)\n• ${batts} batteries (150Ah tubular)\n• ${inv} kVA inverter / PCU\n\nEstimated cost: ₹${Math.round(lo/1000)}K – ₹${Math.round(hi/1000)}K\n\nContact SolarKraft via OESN for a site assessment.`;
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
+
 renderSolarRows();
 
-// Populate entrepreneur dropdown for unit costing
-const ucEnt = document.getElementById('uc-ent');
-OESN.getEntrepreneurs().forEach(e => {
-  const o = document.createElement('option');
-  o.value = e.id;
-  o.textContent = e.name;
-  ucEnt.appendChild(o);
-});
+// ─── NUTRITION FACTS CALCULATOR ──────────────────────────────────────────────
+let nutrRows=[{name:'Rice (raw)',grams:100},{name:'Sugar',grams:20},{name:'Refined oil',grams:10}];
 
-// Service worker
+function renderNutrRows(){
+  const names=Object.keys(NUTR_DB);
+  document.getElementById('nutr-rows').innerHTML=nutrRows.map((row,i)=>
+    `<div class="flex gap-1.5 items-center">
+      <select oninput="nutrRows[${i}].name=this.value;calcNutr()" class="flex-1 bg-stone-100 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400">
+        ${names.map(n=>`<option value="${n}" ${n===row.name?'selected':''}>${n}</option>`).join('')}
+      </select>
+      <input type="number" value="${row.grams}" min="0" oninput="nutrRows[${i}].grams=+this.value;calcNutr()" placeholder="g" class="w-16 bg-stone-100 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400">
+      <button onclick="removeNutrRow(${i})" class="text-stone-300 hover:text-red-400 text-xl leading-none px-1">&times;</button>
+    </div>`
+  ).join('');
+  calcNutr();
+}
+function addNutrRow(){nutrRows.push({name:'Rice (raw)',grams:0});renderNutrRows();}
+function removeNutrRow(i){nutrRows.splice(i,1);renderNutrRows();}
+
+function calcNutr(){
+  const totGrams=nutrRows.reduce((s,r)=>s+r.grams,0);
+  const el=document.getElementById('nutr-result');
+  if(!totGrams){el.innerHTML='';return;}
+  let tot={kcal:0,prot:0,carb:0,fat:0,sugar:0,fiber:0,sodium:0};
+  nutrRows.forEach(row=>{
+    const db=NUTR_DB[row.name];
+    if(!db||!row.grams)return;
+    const f=row.grams/100;
+    Object.keys(tot).forEach(k=>{tot[k]+=(db[k]||0)*f;});
+  });
+  const per100={};Object.keys(tot).forEach(k=>{per100[k]=tot[k]*100/totGrams;});
+  const serving=Math.max(1,+document.getElementById('nutr-serving').value||100);
+  const ps={};Object.keys(per100).forEach(k=>{ps[k]=per100[k]*serving/100;});
+  const r=n=>n.toFixed(n<10?1:0);
+  el.innerHTML=`
+    <div class="border-2 border-stone-800 rounded-lg p-3 font-mono text-xs leading-snug">
+      <p class="text-base font-extrabold border-b-4 border-stone-800 pb-1 mb-1">Nutrition Facts</p>
+      <p class="text-[10px]">Serving size ${serving}g</p>
+      <p class="text-[10px] text-stone-400">Batch total ${Math.round(totGrams)}g</p>
+      <div class="border-t-8 border-stone-800 mt-1 pt-1">
+        <div class="flex justify-between font-bold"><span>Calories</span><span>${r(ps.kcal)}</span></div>
+        <div class="text-[10px] text-right text-stone-400">% Daily Value*</div>
+      </div>
+      <div class="border-t border-stone-400 mt-0.5 space-y-0.5 text-[11px]">
+        <div class="flex justify-between"><span><b>Total Fat</b> ${r(ps.fat)}g</span><span>${r(ps.fat/78*100)}%</span></div>
+        <div class="flex justify-between"><span><b>Total Carbohydrate</b> ${r(ps.carb)}g</span><span>${r(ps.carb/275*100)}%</span></div>
+        <div class="pl-3 flex justify-between"><span>Sugars ${r(ps.sugar)}g</span></div>
+        <div class="pl-3 flex justify-between"><span>Dietary Fibre ${r(ps.fiber)}g</span></div>
+        <div class="flex justify-between"><span><b>Protein</b> ${r(ps.prot)}g</span></div>
+        <div class="flex justify-between"><span>Sodium ${r(ps.sodium)}mg</span><span>${r(ps.sodium/2300*100)}%</span></div>
+      </div>
+      <p class="text-[9px] text-stone-400 mt-1 border-t border-stone-200 pt-1">*% DV based on 2000 kcal diet. FSSAI compliant format.</p>
+    </div>
+    <p class="text-[11px] text-stone-400">Per 100g — Energy: ${r(per100.kcal)} kcal | Protein: ${r(per100.prot)}g | Carb: ${r(per100.carb)}g | Fat: ${r(per100.fat)}g | Na: ${r(per100.sodium)}mg</p>
+    <button onclick="copyNutrLabel()" class="w-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs py-2 rounded-lg transition-colors">Copy label text</button>`;
+}
+
+function copyNutrLabel(){
+  const totGrams=nutrRows.reduce((s,r)=>s+r.grams,0);
+  if(!totGrams){alert('Add ingredients first.');return;}
+  let tot={kcal:0,prot:0,carb:0,fat:0,sugar:0,fiber:0,sodium:0};
+  nutrRows.forEach(row=>{
+    const db=NUTR_DB[row.name];
+    if(!db||!row.grams)return;
+    const f=row.grams/100;
+    Object.keys(tot).forEach(k=>{tot[k]+=(db[k]||0)*f;});
+  });
+  const per100={};Object.keys(tot).forEach(k=>{per100[k]=tot[k]*100/totGrams;});
+  const serving=Math.max(1,+document.getElementById('nutr-serving').value||100);
+  const ps={};Object.keys(per100).forEach(k=>{ps[k]=per100[k]*serving/100;});
+  const r=n=>n.toFixed(1);
+  const text=[
+    'NUTRITIONAL INFORMATION',
+    `Serving size: ${serving}g`,
+    '',
+    `Energy: ${r(ps.kcal)} kcal / ${r(ps.kcal*4.184)} kJ`,
+    `Protein: ${r(ps.prot)} g`,
+    `Carbohydrate: ${r(ps.carb)} g`,
+    `  of which sugars: ${r(ps.sugar)} g`,
+    `Total Fat: ${r(ps.fat)} g`,
+    `  of which saturates: — g`,
+    `Dietary Fibre: ${r(ps.fiber)} g`,
+    `Sodium: ${r(ps.sodium)} mg`,
+    '',
+    '(Values are per serving)',
+  ].join('\n');
+  navigator.clipboard?.writeText(text).then(()=>alert('Copied!')).catch(()=>alert(text));
+}
+
+// ─── BUSINESS LOGO BUILDER ───────────────────────────────────────────────────
+let _logoName='', _logoTagline='', _logoTemplate='badge', _logoPalIdx=0;
+
+function buildLogoSVG(name,tagline,tmpl,palIdx){
+  const p=PALETTES[palIdx]||PALETTES[0];
+  const init=(name||'B').charAt(0).toUpperCase();
+  const biz=name||'Business Name';
+  const tag=tagline||'';
+  if(tmpl==='badge'){
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="90" fill="${p.bg}" stroke="${p.primary}" stroke-width="6"/>
+      <circle cx="100" cy="100" r="72" fill="${p.primary}" fill-opacity="0.12"/>
+      <text x="100" y="112" text-anchor="middle" font-size="72" font-weight="700" fill="${p.primary}" font-family="Arial,sans-serif">${init}</text>
+      <text x="100" y="148" text-anchor="middle" font-size="10" font-weight="600" fill="${p.dark}" letter-spacing="3" font-family="Arial,sans-serif">${biz.toUpperCase().slice(0,16)}</text>
+    </svg>`;
+  }
+  if(tmpl==='wordmark'){
+    const fs=biz.length>14?20:biz.length>9?24:30;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="280" height="100" viewBox="0 0 280 100">
+      <rect width="280" height="100" fill="${p.bg}" rx="12"/>
+      <text x="140" y="${tag?42:54}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${p.primary}" font-family="Arial,sans-serif">${biz}</text>
+      ${tag?`<text x="140" y="62" text-anchor="middle" font-size="11" fill="${p.dark}" font-family="Arial,sans-serif" letter-spacing="2">${tag.toUpperCase()}</text>`:''}
+      <rect x="70" y="74" width="140" height="3" rx="1.5" fill="${p.primary}"/>
+    </svg>`;
+  }
+  if(tmpl==='horizontal'){
+    const fs=biz.length>14?14:biz.length>9?16:20;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="260" height="80" viewBox="0 0 260 80">
+      <rect width="260" height="80" fill="${p.bg}" rx="12"/>
+      <circle cx="48" cy="40" r="28" fill="${p.primary}"/>
+      <text x="48" y="48" text-anchor="middle" font-size="26" font-weight="700" fill="white" font-family="Arial,sans-serif">${init}</text>
+      <text x="86" y="${tag?34:44}" font-size="${fs}" font-weight="700" fill="${p.primary}" font-family="Arial,sans-serif">${biz}</text>
+      ${tag?`<text x="86" y="52" font-size="10" fill="${p.dark}" font-family="Arial,sans-serif" letter-spacing="1.5">${tag.toUpperCase()}</text>`:''}
+    </svg>`;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="140" viewBox="0 0 200 140">
+    <rect width="200" height="140" fill="${p.bg}" rx="12"/>
+    <circle cx="100" cy="50" r="30" fill="${p.primary}"/>
+    <text x="100" y="59" text-anchor="middle" font-size="28" font-weight="700" fill="white" font-family="Arial,sans-serif">${init}</text>
+    <text x="100" y="98" text-anchor="middle" font-size="15" font-weight="700" fill="${p.primary}" font-family="Arial,sans-serif">${biz}</text>
+    ${tag?`<text x="100" y="116" text-anchor="middle" font-size="9" fill="${p.dark}" font-family="Arial,sans-serif" letter-spacing="2">${tag.toUpperCase()}</text>`:''}
+  </svg>`;
+}
+
+function updateLogo(){
+  _logoName=document.getElementById('lb-name')?.value||'';
+  _logoTagline=document.getElementById('lb-tag')?.value||'';
+  const svg=buildLogoSVG(_logoName,_logoTagline,_logoTemplate,_logoPalIdx);
+  const preview=document.getElementById('lb-preview');
+  if(preview) preview.innerHTML=svg;
+}
+
+function setLogoTemplate(tmpl,btn){
+  _logoTemplate=tmpl;
+  document.querySelectorAll('.lb-tmpl').forEach(b=>{
+    b.className=`lb-tmpl flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${b===btn?'bg-stone-800 text-white border-stone-800':'bg-stone-100 text-stone-600 border-stone-200'}`;
+  });
+  updateLogo();
+}
+
+function setLogoPalette(idx,btn){
+  _logoPalIdx=idx;
+  document.querySelectorAll('.lb-pal').forEach((b,i)=>{
+    b.style.outline=i===idx?'3px solid #1c1917':'3px solid transparent';
+  });
+  updateLogo();
+}
+
+function downloadLogo(){
+  const svg=buildLogoSVG(_logoName,_logoTagline,_logoTemplate,_logoPalIdx);
+  if(!_logoName){alert('Enter a business name first.');return;}
+  const blob=new Blob([svg],{type:'image/svg+xml'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=(_logoName||'logo').replace(/\s+/g,'_')+'.svg';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 </script>
 </body>
