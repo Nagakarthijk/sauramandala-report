@@ -1,10 +1,10 @@
 [
   {
-    "id": "a1b2c3d4-0001-0001-0001-000000000001",
+    "id": "f1a2b3c4-d5e6-7890-abcd-ef1234560001",
     "name": "OESN — New Referral Notification",
     "nodes": [
       {
-        "id": "n1",
+        "id": "aa000001-0000-0000-0000-000000000001",
         "name": "Webhook",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2,
@@ -14,19 +14,18 @@
           "path": "oesn/new-referral",
           "responseMode": "responseNode",
           "options": {}
-        }
+        },
+        "webhookId": "oesn-new-referral-hook"
       },
       {
-        "id": "n2",
+        "id": "aa000001-0000-0000-0000-000000000002",
         "name": "Notify Provider via Glific",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4,
-        "position": [480, 200],
+        "position": [520, 160],
         "parameters": {
           "method": "POST",
           "url": "https://YOUR_GLIFIC_URL/api/v1/messages",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth",
           "sendHeaders": true,
           "headerParameters": {
             "parameters": [
@@ -37,29 +36,21 @@
           "sendBody": true,
           "contentType": "json",
           "body": {
-            "flow_id": "YOUR_GLIFIC_PROVIDER_FLOW_ID",
-            "contact_id": "={{ $json.provider_glific_id }}",
-            "fields": {
-              "service_name":  "={{ $json.service_name }}",
-              "sector":        "={{ $json.sector }}",
-              "commission":    "={{ $json.commission }}",
-              "deadline_days": "={{ $json.deadline_days }}"
-            }
+            "phone":   "={{ $json.provider_phone }}",
+            "message": "=New referral: {{ $json.service_name }} for entrepreneur in {{ $json.sector }}. Commission: ₹{{ $json.commission }}. Deadline: {{ $json.deadline_days }} days. Login to OESN to view details and accept."
           },
           "options": {}
         }
       },
       {
-        "id": "n3",
+        "id": "aa000001-0000-0000-0000-000000000003",
         "name": "Notify Agent via Glific",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4,
-        "position": [480, 400],
+        "position": [520, 440],
         "parameters": {
           "method": "POST",
           "url": "https://YOUR_GLIFIC_URL/api/v1/messages",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth",
           "sendHeaders": true,
           "headerParameters": {
             "parameters": [
@@ -70,30 +61,26 @@
           "sendBody": true,
           "contentType": "json",
           "body": {
-            "flow_id": "YOUR_GLIFIC_AGENT_FLOW_ID",
-            "contact_id": "={{ $json.agent_glific_id }}",
-            "fields": {
-              "service_name": "={{ $json.service_name }}",
-              "referral_id":  "={{ $json.referral_id }}"
-            }
+            "phone":   "={{ $('Webhook').item.json.agent_phone }}",
+            "message": "=Referral created successfully for {{ $('Webhook').item.json.service_name }}. Provider notified on WhatsApp."
           },
           "options": {}
         }
       },
       {
-        "id": "n4",
+        "id": "aa000001-0000-0000-0000-000000000004",
         "name": "Log to Supabase",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4,
-        "position": [720, 300],
+        "position": [800, 300],
         "parameters": {
           "method": "POST",
           "url": "https://YOUR_SUPABASE_URL/rest/v1/whatsapp_messages",
           "sendHeaders": true,
           "headerParameters": {
             "parameters": [
-              { "name": "apikey",        "value": "YOUR_SUPABASE_ANON_KEY" },
-              { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_ANON_KEY" },
+              { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY" },
+              { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY" },
               { "name": "Content-Type",  "value": "application/json" },
               { "name": "Prefer",        "value": "return=minimal" }
             ]
@@ -101,23 +88,25 @@
           "sendBody": true,
           "contentType": "json",
           "body": {
-            "referral_id":   "={{ $('Webhook').item.json.referral_id }}",
-            "direction":     "outbound",
-            "content":       "Referral notification sent to provider and agent",
-            "message_type":  "notification"
+            "referral_id":    "={{ $('Webhook').item.json.referral_id }}",
+            "entrepreneur_id":"={{ $('Webhook').item.json.entrepreneur_id }}",
+            "agent_id":       "={{ $('Webhook').item.json.agent_id }}",
+            "direction":      "outbound",
+            "content":        "=Referral notification sent to provider and agent for {{ $('Webhook').item.json.service_name }}",
+            "message_type":   "notification"
           },
           "options": {}
         }
       },
       {
-        "id": "n5",
+        "id": "aa000001-0000-0000-0000-000000000005",
         "name": "Respond to Webhook",
         "type": "n8n-nodes-base.respondToWebhook",
         "typeVersion": 1,
-        "position": [960, 300],
+        "position": [1060, 300],
         "parameters": {
           "respondWith": "json",
-          "responseBody": "{\"ok\": true, \"message\": \"Notifications sent\"}"
+          "responseBody": "={ \"ok\": true, \"message\": \"Notifications dispatched\", \"referral_id\": \"{{ $('Webhook').item.json.referral_id }}\" }"
         }
       }
     ],
@@ -141,17 +130,25 @@
       }
     },
     "active": false,
-    "settings": { "executionOrder": "v1" },
-    "versionId": "a1b2c3d4-ver1-0001-0001-000000000001",
-    "meta": { "instanceId": "your-n8n-instance-id" }
+    "settings": {
+      "executionOrder": "v1",
+      "saveManualExecutions": true,
+      "callerPolicy": "workflowsFromSameOwner"
+    },
+    "versionId": "f1a2b3c4-d5e6-7890-abcd-ef1234560001",
+    "meta": {
+      "instanceId": "YOUR_N8N_INSTANCE_ID",
+      "templateCredsSetupCompleted": true
+    },
+    "tags": [{ "name": "oesn" }]
   },
 
   {
-    "id": "a1b2c3d4-0002-0002-0002-000000000002",
+    "id": "f1a2b3c4-d5e6-7890-abcd-ef1234560002",
     "name": "OESN — Weekly Agent Digest",
     "nodes": [
       {
-        "id": "n1",
+        "id": "aa000002-0000-0000-0000-000000000001",
         "name": "Every Monday 7am IST",
         "type": "n8n-nodes-base.scheduleTrigger",
         "typeVersion": 1,
@@ -168,34 +165,38 @@
         }
       },
       {
-        "id": "n2",
-        "name": "Fetch All Agents",
+        "id": "aa000002-0000-0000-0000-000000000002",
+        "name": "Fetch All Active Agents",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4,
         "position": [480, 300],
         "parameters": {
           "method": "GET",
-          "url": "https://YOUR_SUPABASE_URL/rest/v1/agents?select=id,name,phone&active=eq.true",
+          "url": "https://YOUR_SUPABASE_URL/rest/v1/agents?select=id,name,phone,geography,operating_model&active=eq.true",
           "sendHeaders": true,
           "headerParameters": {
             "parameters": [
               { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY" },
-              { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY" }
+              { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY" },
+              { "name": "Accept",        "value": "application/json" }
             ]
           },
           "options": {}
         }
       },
       {
-        "id": "n3",
+        "id": "aa000002-0000-0000-0000-000000000003",
         "name": "Split by Agent",
         "type": "n8n-nodes-base.splitInBatches",
         "typeVersion": 3,
         "position": [720, 300],
-        "parameters": { "batchSize": 1, "options": {} }
+        "parameters": {
+          "batchSize": 1,
+          "options": {}
+        }
       },
       {
-        "id": "n4",
+        "id": "aa000002-0000-0000-0000-000000000004",
         "name": "Fetch Agent Dashboard",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4,
@@ -213,22 +214,24 @@
           },
           "sendBody": true,
           "contentType": "json",
-          "body": { "agent_uuid": "={{ $json.id }}" },
+          "body": {
+            "agent_uuid": "={{ $json.id }}"
+          },
           "options": {}
         }
       },
       {
-        "id": "n5",
+        "id": "aa000002-0000-0000-0000-000000000005",
         "name": "Format Monday Digest",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [1200, 300],
         "parameters": {
-          "jsCode": "const agent = $('Split by Agent').item.json;\nconst dash  = $input.item.json;\n\nconst overdue    = dash.overdue_count || 0;\nconst pending    = dash.pending_earnings_total || 0;\nconst dormant    = dash.dormant_entrepreneurs || 0;\nconst rtcCount   = (dash.referrals_by_status || {}).RTC || 0;\n\nconst lines = [\n  `🌅 Good morning ${agent.name}! Here's your OESN week ahead:`,\n  ``,\n  `🔴 Overdue referrals: ${overdue}`,\n  `🟡 Ready to Close (verify these): ${rtcCount}`,\n  `😴 Dormant entrepreneurs (14+ days): ${dormant}`,\n  `💰 Pending earnings: ₹${pending.toLocaleString('en-IN')}`,\n  ``,\n  `Open the OESN app to action these. Have a great week!`\n];\n\nreturn [{\n  json: {\n    agent_id:    agent.id,\n    agent_phone: agent.phone,\n    message:     lines.join('\\n')\n  }\n}];"
+          "jsCode": "// agent item from the Split node\nconst agent = $('Split by Agent').item.json;\n// dashboard data from Supabase RPC\nconst dash = $input.item.json;\n\nconst overdue  = dash.overdue_referral_count   || 0;\nconst pending  = dash.pending_earnings_total   || 0;\nconst dormant  = dash.dormant_entrepreneurs    || 0;\nconst active   = dash.active_entrepreneurs     || 0;\nconst byStatus = dash.referrals_by_status      || {};\nconst rtc      = byStatus.RTC                  || 0;\nconst blocked  = byStatus.BLOCKED              || 0;\nconst tasks    = dash.upcoming_tasks           || [];\n\nconst taskLines = tasks.length > 0\n  ? tasks.map(t => `  • [${t.task_type}] ${t.note || 'No note'} — due ${t.due_date}`).join('\\n')\n  : '  No urgent tasks this week.';\n\nconst message = [\n  `Good morning ${agent.name}! Here's your OESN week ahead.`,\n  ``,\n  `👥 Active entrepreneurs: ${active}`,\n  `😴 Dormant (not contacted): ${dormant}`,\n  ``,\n  `📋 Referrals:`,\n  `  🔴 Overdue: ${overdue}`,\n  `  🟡 Ready to Close (needs your verification): ${rtc}`,\n  `  🚫 Blocked: ${blocked}`,\n  ``,\n  `💰 Pending earnings: ₹${(pending).toLocaleString('en-IN')}`,\n  ``,\n  `✅ This week's tasks:`,\n  taskLines,\n  ``,\n  `Open OESN to action these. Have a great week!`\n].join('\\n');\n\nreturn [{\n  json: {\n    agent_id:    agent.id,\n    agent_name:  agent.name,\n    agent_phone: agent.phone,\n    message\n  }\n}];"
         }
       },
       {
-        "id": "n6",
+        "id": "aa000002-0000-0000-0000-000000000006",
         "name": "Send WhatsApp Digest",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4,
@@ -246,11 +249,48 @@
           "sendBody": true,
           "contentType": "json",
           "body": {
-            "flow_id":   "YOUR_GLIFIC_DIGEST_FLOW_ID",
-            "phone":     "={{ $json.agent_phone }}",
-            "fields": {
-              "message": "={{ $json.message }}"
-            }
+            "phone":   "={{ $json.agent_phone }}",
+            "message": "={{ $json.message }}"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "aa000002-0000-0000-0000-000000000007",
+        "name": "Log Digest Sent",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3,
+        "position": [1680, 300],
+        "parameters": {
+          "mode": "manual",
+          "duplicateItem": false,
+          "assignments": {
+            "assignments": [
+              {
+                "id": "log-agent-id",
+                "name": "agent_id",
+                "value": "={{ $('Format Monday Digest').item.json.agent_id }}",
+                "type": "string"
+              },
+              {
+                "id": "log-agent-name",
+                "name": "agent_name",
+                "value": "={{ $('Format Monday Digest').item.json.agent_name }}",
+                "type": "string"
+              },
+              {
+                "id": "log-sent-at",
+                "name": "sent_at",
+                "value": "={{ $now.toISO() }}",
+                "type": "string"
+              },
+              {
+                "id": "log-status",
+                "name": "status",
+                "value": "digest_sent",
+                "type": "string"
+              }
+            ]
           },
           "options": {}
         }
@@ -258,9 +298,9 @@
     ],
     "connections": {
       "Every Monday 7am IST": {
-        "main": [[{ "node": "Fetch All Agents", "type": "main", "index": 0 }]]
+        "main": [[{ "node": "Fetch All Active Agents", "type": "main", "index": 0 }]]
       },
-      "Fetch All Agents": {
+      "Fetch All Active Agents": {
         "main": [[{ "node": "Split by Agent", "type": "main", "index": 0 }]]
       },
       "Split by Agent": {
@@ -273,38 +313,52 @@
         "main": [[{ "node": "Send WhatsApp Digest", "type": "main", "index": 0 }]]
       },
       "Send WhatsApp Digest": {
-        "main": [[{ "node": "Split by Agent", "type": "main", "index": 1 }]]
+        "main": [
+          [
+            { "node": "Log Digest Sent", "type": "main", "index": 0 },
+            { "node": "Split by Agent",  "type": "main", "index": 1 }
+          ]
+        ]
       }
     },
     "active": false,
-    "settings": { "executionOrder": "v1" },
-    "versionId": "a1b2c3d4-ver2-0002-0002-000000000002",
-    "meta": { "instanceId": "your-n8n-instance-id" }
+    "settings": {
+      "executionOrder": "v1",
+      "saveManualExecutions": true,
+      "callerPolicy": "workflowsFromSameOwner"
+    },
+    "versionId": "f1a2b3c4-d5e6-7890-abcd-ef1234560002",
+    "meta": {
+      "instanceId": "YOUR_N8N_INSTANCE_ID",
+      "templateCredsSetupCompleted": true
+    },
+    "tags": [{ "name": "oesn" }]
   },
 
   {
-    "id": "a1b2c3d4-0003-0003-0003-000000000003",
+    "id": "f1a2b3c4-d5e6-7890-abcd-ef1234560003",
     "name": "OESN — Entrepreneur Status Chatbot",
     "nodes": [
       {
-        "id": "n1",
+        "id": "aa000003-0000-0000-0000-000000000001",
         "name": "Inbound WhatsApp",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 2,
-        "position": [240, 300],
+        "position": [240, 340],
         "parameters": {
           "httpMethod": "POST",
           "path": "oesn/glific-inbound",
           "responseMode": "responseNode",
           "options": {}
-        }
+        },
+        "webhookId": "oesn-glific-inbound-hook"
       },
       {
-        "id": "n2",
+        "id": "aa000003-0000-0000-0000-000000000002",
         "name": "Intent Switch",
         "type": "n8n-nodes-base.switch",
         "typeVersion": 3,
-        "position": [480, 300],
+        "position": [480, 340],
         "parameters": {
           "mode": "rules",
           "rules": {
@@ -314,9 +368,21 @@
                   "options": { "caseSensitive": false },
                   "combinator": "or",
                   "conditions": [
-                    { "leftValue": "={{ $json.message_text }}", "rightValue": "status",   "operator": { "type": "string", "operation": "contains" } },
-                    { "leftValue": "={{ $json.message_text }}", "rightValue": "referral", "operator": { "type": "string", "operation": "contains" } },
-                    { "leftValue": "={{ $json.message_text }}", "rightValue": "update",   "operator": { "type": "string", "operation": "contains" } }
+                    {
+                      "leftValue":  "={{ $json.message_text }}",
+                      "rightValue": "status",
+                      "operator": { "type": "string", "operation": "contains" }
+                    },
+                    {
+                      "leftValue":  "={{ $json.message_text }}",
+                      "rightValue": "referral",
+                      "operator": { "type": "string", "operation": "contains" }
+                    },
+                    {
+                      "leftValue":  "={{ $json.message_text }}",
+                      "rightValue": "update",
+                      "operator": { "type": "string", "operation": "contains" }
+                    }
                   ]
                 },
                 "renameOutput": true,
@@ -329,27 +395,28 @@
         }
       },
       {
-        "id": "n3",
+        "id": "aa000003-0000-0000-0000-000000000003",
         "name": "Lookup Entrepreneur",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4,
         "position": [720, 200],
         "parameters": {
           "method": "GET",
-          "url": "=https://YOUR_SUPABASE_URL/rest/v1/entrepreneurs?phone=eq.{{ $('Inbound WhatsApp').item.json.from_phone }}&select=id,name,agent_id,status",
+          "url": "=https://YOUR_SUPABASE_URL/rest/v1/entrepreneurs?phone=eq.{{ $('Inbound WhatsApp').item.json.from_phone }}&select=id,name,agent_id,sector,status&limit=1",
           "sendHeaders": true,
           "headerParameters": {
             "parameters": [
               { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY" },
-              { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY" }
+              { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY" },
+              { "name": "Accept",        "value": "application/json" }
             ]
           },
           "options": {}
         }
       },
       {
-        "id": "n4",
-        "name": "Check Entrepreneur Found",
+        "id": "aa000003-0000-0000-0000-000000000004",
+        "name": "Entrepreneur Found?",
         "type": "n8n-nodes-base.switch",
         "typeVersion": 3,
         "position": [960, 200],
@@ -360,7 +427,11 @@
               {
                 "conditions": {
                   "conditions": [
-                    { "leftValue": "={{ $json.length }}", "rightValue": 0, "operator": { "type": "number", "operation": "gt" } }
+                    {
+                      "leftValue":  "={{ Array.isArray($json) ? $json.length : ($json.id ? 1 : 0) }}",
+                      "rightValue": 0,
+                      "operator": { "type": "number", "operation": "gt" }
+                    }
                   ]
                 },
                 "renameOutput": true,
@@ -373,40 +444,41 @@
         }
       },
       {
-        "id": "n5",
+        "id": "aa000003-0000-0000-0000-000000000005",
         "name": "Fetch Referrals",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4,
-        "position": [1200, 160],
+        "position": [1200, 120],
         "parameters": {
           "method": "GET",
-          "url": "=https://YOUR_SUPABASE_URL/rest/v1/referrals?entrepreneur_id=eq.{{ $json[0].id }}&select=service_name,status,deadline_date,updated_at&order=updated_at.desc&limit=3",
+          "url": "=https://YOUR_SUPABASE_URL/rest/v1/referrals?entrepreneur_id=eq.{{ Array.isArray($json) ? $json[0].id : $json.id }}&select=service_name,status,deadline_date,provider_last_update,blocker_reason&order=created_at.desc&limit=5",
           "sendHeaders": true,
           "headerParameters": {
             "parameters": [
               { "name": "apikey",        "value": "YOUR_SUPABASE_SERVICE_ROLE_KEY" },
-              { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY" }
+              { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY" },
+              { "name": "Accept",        "value": "application/json" }
             ]
           },
           "options": {}
         }
       },
       {
-        "id": "n6",
+        "id": "aa000003-0000-0000-0000-000000000006",
         "name": "Format Status Reply",
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
-        "position": [1440, 160],
+        "position": [1440, 120],
         "parameters": {
-          "jsCode": "const referrals = $input.all();\nconst contact_id = $('Inbound WhatsApp').item.json.contact_id;\n\nif (!referrals || referrals.length === 0) {\n  return [{ json: { contact_id, reply: 'No active referrals found for your number. Please contact your field agent.' } }];\n}\n\nconst statusEmoji = { IN_PROGRESS: '🔵', RTC: '🟡', COMPLETED: '✅', OVERDUE: '🔴', BLOCKED: '🚫', DISPUTED: '⚠️' };\n\nconst lines = ['📋 Your referral status:'];\nreferrals.forEach(r => {\n  const item = r.json;\n  const emoji = statusEmoji[item.status] || '⚪';\n  const date  = item.updated_at ? new Date(item.updated_at).toLocaleDateString('en-IN') : '';\n  lines.push(`${emoji} ${item.service_name}: ${item.status}${date ? ' (updated ' + date + ')' : ''}`);\n});\nlines.push('');\nlines.push('Reply HELP to contact your agent.');\n\nreturn [{ json: { contact_id, reply: lines.join('\\n') } }];"
+          "jsCode": "const contact_id  = $('Inbound WhatsApp').item.json.contact_id;\nconst from_phone  = $('Inbound WhatsApp').item.json.from_phone;\nconst referrals   = $input.all();\n\nconst statusEmoji = {\n  IN_PROGRESS: '🔵',\n  RTC:         '🟡',\n  COMPLETED:   '✅',\n  OVERDUE:     '🔴',\n  BLOCKED:     '🚫',\n  DISPUTED:    '⚠️'\n};\n\nif (!referrals || referrals.length === 0 || (referrals.length === 1 && !referrals[0].json.service_name)) {\n  return [{\n    json: {\n      contact_id,\n      reply: 'No referrals found for your number. Please contact your field agent for updates.'\n    }\n  }];\n}\n\nconst lines = ['📋 Your referral status:'];\nfor (const item of referrals) {\n  const r     = item.json;\n  const emoji = statusEmoji[r.status] || '⚪';\n  const date  = r.provider_last_update\n    ? 'Last update: ' + new Date(r.provider_last_update).toLocaleDateString('en-IN', {day:'2-digit',month:'short'})\n    : (r.deadline_date ? 'Deadline: ' + r.deadline_date : '');\n  lines.push(`${emoji} ${r.service_name}: *${r.status}*`);\n  if (date)             lines.push(`   ${date}`);\n  if (r.blocker_reason) lines.push(`   ⚠️ Blocker: ${r.blocker_reason}`);\n}\nlines.push('');\nlines.push('Reply HELP to reach your field agent.');\n\nreturn [{\n  json: {\n    contact_id,\n    reply: lines.join('\\n')\n  }\n}];"
         }
       },
       {
-        "id": "n7",
+        "id": "aa000003-0000-0000-0000-000000000007",
         "name": "Send Status Reply",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4,
-        "position": [1680, 160],
+        "position": [1680, 120],
         "parameters": {
           "method": "POST",
           "url": "https://YOUR_GLIFIC_URL/api/v1/messages",
@@ -427,11 +499,11 @@
         }
       },
       {
-        "id": "n8",
+        "id": "aa000003-0000-0000-0000-000000000008",
         "name": "Send Not Found Reply",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4,
-        "position": [1200, 360],
+        "position": [1200, 340],
         "parameters": {
           "method": "POST",
           "url": "https://YOUR_GLIFIC_URL/api/v1/messages",
@@ -446,17 +518,17 @@
           "contentType": "json",
           "body": {
             "contact_id": "={{ $('Inbound WhatsApp').item.json.contact_id }}",
-            "message":    "We couldn't find your number in the OESN system. Please contact your field agent to register."
+            "message":    "We couldn't find your number in the OESN system. Please contact your field agent to register and get help."
           },
           "options": {}
         }
       },
       {
-        "id": "n9",
+        "id": "aa000003-0000-0000-0000-000000000009",
         "name": "Send Help Message",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4,
-        "position": [720, 440],
+        "position": [720, 500],
         "parameters": {
           "method": "POST",
           "url": "https://YOUR_GLIFIC_URL/api/v1/messages",
@@ -471,20 +543,20 @@
           "contentType": "json",
           "body": {
             "contact_id": "={{ $('Inbound WhatsApp').item.json.contact_id }}",
-            "message":    "👋 Hi! I'm the OESN assistant.\n\nType:\n• STATUS — to see your referral status\n• HELP — to get your agent's contact\n\nFor urgent matters, contact your field agent directly."
+            "message":    "Hi! I'm the OESN assistant.\n\nType:\n• STATUS — to see your referral updates\n• REFERRAL — to check a specific service\n\nFor urgent help, contact your field agent directly."
           },
           "options": {}
         }
       },
       {
-        "id": "n10",
+        "id": "aa000003-0000-0000-0000-000000000010",
         "name": "Respond OK",
         "type": "n8n-nodes-base.respondToWebhook",
         "typeVersion": 1,
-        "position": [1920, 300],
+        "position": [1960, 340],
         "parameters": {
           "respondWith": "json",
-          "responseBody": "{\"ok\": true}"
+          "responseBody": "{ \"ok\": true }"
         }
       }
     ],
@@ -499,9 +571,9 @@
         ]
       },
       "Lookup Entrepreneur": {
-        "main": [[{ "node": "Check Entrepreneur Found", "type": "main", "index": 0 }]]
+        "main": [[{ "node": "Entrepreneur Found?", "type": "main", "index": 0 }]]
       },
-      "Check Entrepreneur Found": {
+      "Entrepreneur Found?": {
         "main": [
           [{ "node": "Fetch Referrals",      "type": "main", "index": 0 }],
           [{ "node": "Send Not Found Reply", "type": "main", "index": 0 }]
@@ -518,8 +590,16 @@
       "Send Help Message":    { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] }
     },
     "active": false,
-    "settings": { "executionOrder": "v1" },
-    "versionId": "a1b2c3d4-ver3-0003-0003-000000000003",
-    "meta": { "instanceId": "your-n8n-instance-id" }
+    "settings": {
+      "executionOrder": "v1",
+      "saveManualExecutions": true,
+      "callerPolicy": "workflowsFromSameOwner"
+    },
+    "versionId": "f1a2b3c4-d5e6-7890-abcd-ef1234560003",
+    "meta": {
+      "instanceId": "YOUR_N8N_INSTANCE_ID",
+      "templateCredsSetupCompleted": true
+    },
+    "tags": [{ "name": "oesn" }]
   }
 ]
