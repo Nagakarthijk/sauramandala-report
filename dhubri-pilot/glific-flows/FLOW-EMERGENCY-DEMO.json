@@ -62,7 +62,7 @@
         "emergency"
       ],
       "definition": {
-        "uuid": "d8b8678b-7f6d-4d5c-8111-1aa56a417ed6",
+        "uuid": "583a2752-4a99-48fa-8dbf-63f4e4a91b93",
         "name": "Emergency Report (Live Demo)",
         "type": "messaging",
         "spec_version": "14.3.0",
@@ -76,10 +76,144 @@
         "vars": [],
         "nodes": [
           {
-            "uuid": "a89543a7-44e2-4362-a98f-61365da942f9",
+            "uuid": "b420d021-981c-4f73-8c54-11e430ac8213",
             "actions": [
               {
-                "uuid": "90b17df5-ab33-4547-9317-a33891861eb2",
+                "uuid": "4f9422c7-6c45-4f57-9aeb-e55d7c66413a",
+                "type": "send_msg",
+                "text": "DEMO — pick a scenario:\n1. Postpartum haemorrhage — smooth response\n2. Obstructed labour, night — boatmen unresponsive, escalates\n3. Eclampsia (seizures) — facility at capacity, reroutes\n4. Precipitous labour — boat delayed by fuel shortage",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "c429eb3c-46f2-47c7-a316-1b955182f127",
+                "destination_uuid": "a4935ba4-5d32-4519-8aeb-c6368a38ec11"
+              }
+            ]
+          },
+          {
+            "uuid": "a4935ba4-5d32-4519-8aeb-c6368a38ec11",
+            "actions": [],
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "scenario",
+              "operand": "@input.text",
+              "default_category_uuid": "36b9645d-4aee-4234-8cdd-7cd2d726b0f7",
+              "categories": [
+                {
+                  "uuid": "7fe46562-c369-44c3-b48a-ab4f30ad5740",
+                  "name": "1",
+                  "exit_uuid": "80550815-ba7a-4e80-a81f-4bb60e4186be"
+                },
+                {
+                  "uuid": "9f80122f-5d21-4df7-8c3d-94ce0ee529af",
+                  "name": "2",
+                  "exit_uuid": "e0d55e5e-2666-45aa-93c0-92fd1cfd3596"
+                },
+                {
+                  "uuid": "bdd53b9c-f392-4eef-9562-d2cdfae38658",
+                  "name": "3",
+                  "exit_uuid": "4187decb-994d-413b-b468-98c13fc25a35"
+                },
+                {
+                  "uuid": "6857c28d-2b49-4bb4-b147-989175357ba6",
+                  "name": "4",
+                  "exit_uuid": "ff4b6dc0-935c-40f9-9f84-114de0347c00"
+                },
+                {
+                  "uuid": "36b9645d-4aee-4234-8cdd-7cd2d726b0f7",
+                  "name": "Other",
+                  "exit_uuid": "6d65195b-1134-4ea8-864b-b0b39497a7e7"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "6935957a-8d65-4767-a180-137f2616305f",
+                  "type": "has_any_word",
+                  "arguments": [
+                    "1"
+                  ],
+                  "category_uuid": "7fe46562-c369-44c3-b48a-ab4f30ad5740"
+                },
+                {
+                  "uuid": "c10c44bf-317e-4c9b-aafb-8c4affaa2f8e",
+                  "type": "has_any_word",
+                  "arguments": [
+                    "2"
+                  ],
+                  "category_uuid": "9f80122f-5d21-4df7-8c3d-94ce0ee529af"
+                },
+                {
+                  "uuid": "50312c1e-533c-4670-9881-ccc6a81370f3",
+                  "type": "has_any_word",
+                  "arguments": [
+                    "3"
+                  ],
+                  "category_uuid": "bdd53b9c-f392-4eef-9562-d2cdfae38658"
+                },
+                {
+                  "uuid": "31ef571e-8da9-4147-a1e1-3974b570e963",
+                  "type": "has_any_word",
+                  "arguments": [
+                    "4"
+                  ],
+                  "category_uuid": "6857c28d-2b49-4bb4-b147-989175357ba6"
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "80550815-ba7a-4e80-a81f-4bb60e4186be",
+                "destination_uuid": "ed608d7b-0a57-4084-8dcf-174986037e7a"
+              },
+              {
+                "uuid": "e0d55e5e-2666-45aa-93c0-92fd1cfd3596",
+                "destination_uuid": "ed608d7b-0a57-4084-8dcf-174986037e7a"
+              },
+              {
+                "uuid": "4187decb-994d-413b-b468-98c13fc25a35",
+                "destination_uuid": "ed608d7b-0a57-4084-8dcf-174986037e7a"
+              },
+              {
+                "uuid": "ff4b6dc0-935c-40f9-9f84-114de0347c00",
+                "destination_uuid": "ed608d7b-0a57-4084-8dcf-174986037e7a"
+              },
+              {
+                "uuid": "6d65195b-1134-4ea8-864b-b0b39497a7e7",
+                "destination_uuid": "cfe58eb2-2f84-44c4-9e56-7a4843c4ed71"
+              }
+            ]
+          },
+          {
+            "uuid": "cfe58eb2-2f84-44c4-9e56-7a4843c4ed71",
+            "actions": [
+              {
+                "uuid": "b1f5b378-9c44-4d04-b7d2-6f96b792aaee",
+                "type": "send_msg",
+                "text": "Please reply with a number 1-4.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "f6ee3e39-0f23-4624-a609-e43237a5949f",
+                "destination_uuid": "a4935ba4-5d32-4519-8aeb-c6368a38ec11"
+              }
+            ]
+          },
+          {
+            "uuid": "ed608d7b-0a57-4084-8dcf-174986037e7a",
+            "actions": [
+              {
+                "uuid": "1e6587fa-5025-431f-b8f4-85ab39e25e93",
                 "type": "send_interactive_msg",
                 "id": 920001,
                 "name": "Case Severity",
@@ -91,13 +225,13 @@
             ],
             "exits": [
               {
-                "uuid": "62b8a0f3-65d4-4161-aef3-31d7d415b000",
-                "destination_uuid": "4091bde4-5036-43b6-a730-6fb6bdd7e1ae"
+                "uuid": "e73fe679-dd4a-4d36-916a-d0f85db5c532",
+                "destination_uuid": "a2e1002e-31b1-45e6-a0d0-9df5c5ec5895"
               }
             ]
           },
           {
-            "uuid": "4091bde4-5036-43b6-a730-6fb6bdd7e1ae",
+            "uuid": "a2e1002e-31b1-45e6-a0d0-9df5c5ec5895",
             "actions": [],
             "router": {
               "wait": {
@@ -106,80 +240,80 @@
               "type": "switch",
               "result_name": "triage",
               "operand": "@input.text",
-              "default_category_uuid": "83b94e51-644e-4e21-b3c3-c3a79931f625",
+              "default_category_uuid": "ea17b724-7751-4057-a0aa-76e84a7f93c1",
               "categories": [
                 {
-                  "uuid": "fbab8049-0658-4504-894d-eec7e65d3adb",
+                  "uuid": "0931f981-bd05-4e16-b981-51871952dcab",
                   "name": "RED",
-                  "exit_uuid": "f2691047-ef32-4690-9d7a-4f15dbcc2b12"
+                  "exit_uuid": "d681402c-0725-43c2-982b-493263458162"
                 },
                 {
-                  "uuid": "cf7321ad-32a8-4880-ad1c-723592eae63e",
+                  "uuid": "f1827d23-5fc1-4629-9d2a-8e0b6387ff8d",
                   "name": "GREEN",
-                  "exit_uuid": "dcaa0976-4ae8-4db2-92f6-461f22587551"
+                  "exit_uuid": "8ba7e9a3-b198-4388-98b6-4dd6f2b708ff"
                 },
                 {
-                  "uuid": "27252cca-5a83-4f80-922c-9517ccc4e845",
+                  "uuid": "dfe454c0-99d0-422a-867d-da3fe7592040",
                   "name": "Labour Started",
-                  "exit_uuid": "759cbab8-5c41-44f5-aaeb-e551d74e4e95"
+                  "exit_uuid": "ae3ebf03-f2d2-4095-8213-be2a86c72c47"
                 },
                 {
-                  "uuid": "83b94e51-644e-4e21-b3c3-c3a79931f625",
+                  "uuid": "ea17b724-7751-4057-a0aa-76e84a7f93c1",
                   "name": "Other",
-                  "exit_uuid": "2d464b89-998d-401b-8d8f-81a79d09fb98"
+                  "exit_uuid": "011e3c3a-e592-4563-9683-3cfb5d7a069f"
                 }
               ],
               "cases": [
                 {
-                  "uuid": "9b22ec1f-5193-4bfa-afbc-369951e501df",
+                  "uuid": "a733bb94-8ce4-4e36-a5c4-a3e0b826797a",
                   "type": "has_only_phrase",
                   "arguments": [
                     "RED"
                   ],
-                  "category_uuid": "fbab8049-0658-4504-894d-eec7e65d3adb"
+                  "category_uuid": "0931f981-bd05-4e16-b981-51871952dcab"
                 },
                 {
-                  "uuid": "d9a39dd5-b770-452c-960f-387d944103db",
+                  "uuid": "2c2077a2-1bc3-4a21-b0bb-8f91b562724a",
                   "type": "has_only_phrase",
                   "arguments": [
                     "GREEN"
                   ],
-                  "category_uuid": "cf7321ad-32a8-4880-ad1c-723592eae63e"
+                  "category_uuid": "f1827d23-5fc1-4629-9d2a-8e0b6387ff8d"
                 },
                 {
-                  "uuid": "9bfcfebe-6bed-4098-9a94-e7cf495c1be7",
+                  "uuid": "970a3218-5956-4607-86ae-ada92e573d96",
                   "type": "has_only_phrase",
                   "arguments": [
                     "Labour Started"
                   ],
-                  "category_uuid": "27252cca-5a83-4f80-922c-9517ccc4e845"
+                  "category_uuid": "dfe454c0-99d0-422a-867d-da3fe7592040"
                 }
               ]
             },
             "exits": [
               {
-                "uuid": "f2691047-ef32-4690-9d7a-4f15dbcc2b12",
-                "destination_uuid": "b8f86ac4-6131-4c3b-a43d-edbbf85036e4"
+                "uuid": "d681402c-0725-43c2-982b-493263458162",
+                "destination_uuid": "cac5139b-5dfd-4f7c-862c-d090cbf40819"
               },
               {
-                "uuid": "dcaa0976-4ae8-4db2-92f6-461f22587551",
-                "destination_uuid": "b8f86ac4-6131-4c3b-a43d-edbbf85036e4"
+                "uuid": "8ba7e9a3-b198-4388-98b6-4dd6f2b708ff",
+                "destination_uuid": "cac5139b-5dfd-4f7c-862c-d090cbf40819"
               },
               {
-                "uuid": "759cbab8-5c41-44f5-aaeb-e551d74e4e95",
-                "destination_uuid": "b8f86ac4-6131-4c3b-a43d-edbbf85036e4"
+                "uuid": "ae3ebf03-f2d2-4095-8213-be2a86c72c47",
+                "destination_uuid": "cac5139b-5dfd-4f7c-862c-d090cbf40819"
               },
               {
-                "uuid": "2d464b89-998d-401b-8d8f-81a79d09fb98",
-                "destination_uuid": "b8f86ac4-6131-4c3b-a43d-edbbf85036e4"
+                "uuid": "011e3c3a-e592-4563-9683-3cfb5d7a069f",
+                "destination_uuid": "cac5139b-5dfd-4f7c-862c-d090cbf40819"
               }
             ]
           },
           {
-            "uuid": "b8f86ac4-6131-4c3b-a43d-edbbf85036e4",
+            "uuid": "cac5139b-5dfd-4f7c-862c-d090cbf40819",
             "actions": [
               {
-                "uuid": "06137d10-e489-42d3-a24c-f53d35583937",
+                "uuid": "b4e111e6-ae6f-4a26-9077-bc9ec10d22ca",
                 "type": "send_msg",
                 "text": "Exact location or landmark (e.g. nearest ghat)?",
                 "quick_replies": [],
@@ -189,13 +323,13 @@
             ],
             "exits": [
               {
-                "uuid": "3d074bc7-77f6-4e06-94ff-0ee598578edd",
-                "destination_uuid": "fa068d16-713f-474b-8d4f-635d9861e902"
+                "uuid": "fd346012-9179-4484-be66-5159c7c66da8",
+                "destination_uuid": "0d769383-f06d-4b29-815d-04f71553abd0"
               }
             ]
           },
           {
-            "uuid": "fa068d16-713f-474b-8d4f-635d9861e902",
+            "uuid": "0d769383-f06d-4b29-815d-04f71553abd0",
             "actions": [],
             "router": {
               "wait": {
@@ -204,28 +338,28 @@
               "type": "switch",
               "result_name": "location_detail",
               "operand": "@input.text",
-              "default_category_uuid": "256ee5d0-7d6b-48c4-89a3-2b98468cd049",
+              "default_category_uuid": "31b8c198-4434-44ac-9f1e-d6e584710c23",
               "categories": [
                 {
-                  "uuid": "256ee5d0-7d6b-48c4-89a3-2b98468cd049",
+                  "uuid": "31b8c198-4434-44ac-9f1e-d6e584710c23",
                   "name": "Any",
-                  "exit_uuid": "d19db1fc-d4d1-4084-9aaa-c81ce6a2d71f"
+                  "exit_uuid": "2fef4fc4-c532-4d47-81cc-5fcacfb4ca61"
                 }
               ],
               "cases": []
             },
             "exits": [
               {
-                "uuid": "d19db1fc-d4d1-4084-9aaa-c81ce6a2d71f",
-                "destination_uuid": "c405242a-578f-4a6a-874b-2fa01470975f"
+                "uuid": "2fef4fc4-c532-4d47-81cc-5fcacfb4ca61",
+                "destination_uuid": "6a818995-cd0c-4fb8-a31a-fd77e901ba5b"
               }
             ]
           },
           {
-            "uuid": "c405242a-578f-4a6a-874b-2fa01470975f",
+            "uuid": "6a818995-cd0c-4fb8-a31a-fd77e901ba5b",
             "actions": [
               {
-                "uuid": "f6885e7a-8ff0-4d63-be8c-40ba1d850870",
+                "uuid": "fb6eed0a-4b32-4469-9983-8f2694d6cf88",
                 "type": "send_msg",
                 "text": "Patient name and age (or ID as you track it)?",
                 "quick_replies": [],
@@ -235,13 +369,13 @@
             ],
             "exits": [
               {
-                "uuid": "e0426b07-f2b5-400f-983d-7fe9035497e8",
-                "destination_uuid": "858b6040-8f99-445d-8af7-4c839e60ef9d"
+                "uuid": "29383342-cddc-4eed-b9d5-fbeea34929fe",
+                "destination_uuid": "48680a65-aa90-4604-9f22-60112f43b182"
               }
             ]
           },
           {
-            "uuid": "858b6040-8f99-445d-8af7-4c839e60ef9d",
+            "uuid": "48680a65-aa90-4604-9f22-60112f43b182",
             "actions": [],
             "router": {
               "wait": {
@@ -250,28 +384,28 @@
               "type": "switch",
               "result_name": "patient_detail",
               "operand": "@input.text",
-              "default_category_uuid": "d6d32f39-2a68-462c-a721-0565644460ae",
+              "default_category_uuid": "36194a60-9d0d-4f19-b190-bfe994d47024",
               "categories": [
                 {
-                  "uuid": "d6d32f39-2a68-462c-a721-0565644460ae",
+                  "uuid": "36194a60-9d0d-4f19-b190-bfe994d47024",
                   "name": "Any",
-                  "exit_uuid": "c93533ce-0895-4202-a700-12cb37ab37be"
+                  "exit_uuid": "e9eb5bde-9cbd-4aa0-9c66-9d209813db14"
                 }
               ],
               "cases": []
             },
             "exits": [
               {
-                "uuid": "c93533ce-0895-4202-a700-12cb37ab37be",
-                "destination_uuid": "59595289-b1df-47c4-aa42-eb1b5d5a9a6f"
+                "uuid": "e9eb5bde-9cbd-4aa0-9c66-9d209813db14",
+                "destination_uuid": "eddd7ed8-5699-4507-b620-e79749fc5d0e"
               }
             ]
           },
           {
-            "uuid": "59595289-b1df-47c4-aa42-eb1b5d5a9a6f",
+            "uuid": "eddd7ed8-5699-4507-b620-e79749fc5d0e",
             "actions": [
               {
-                "uuid": "092aabab-18af-40e5-8e36-7d52080b4e71",
+                "uuid": "9f35c9a6-2cb7-4888-8373-d6f37d651d22",
                 "type": "send_msg",
                 "text": "Anything urgent to flag? (e.g. heavy bleeding, distance to landing point)",
                 "quick_replies": [],
@@ -281,13 +415,13 @@
             ],
             "exits": [
               {
-                "uuid": "e1beafc7-9f50-4e3f-b1bb-6a8581abd885",
-                "destination_uuid": "4d449bfb-4d69-4e20-95c6-bc0c30e1e450"
+                "uuid": "c5c6d40e-f673-44c0-b475-9b8811ed5908",
+                "destination_uuid": "47fe84ad-15c3-4a8b-8859-be0a92cc9e03"
               }
             ]
           },
           {
-            "uuid": "4d449bfb-4d69-4e20-95c6-bc0c30e1e450",
+            "uuid": "47fe84ad-15c3-4a8b-8859-be0a92cc9e03",
             "actions": [],
             "router": {
               "wait": {
@@ -296,28 +430,28 @@
               "type": "switch",
               "result_name": "urgency_notes",
               "operand": "@input.text",
-              "default_category_uuid": "1a19539b-f2a4-4f93-8eaa-6b02bbf0461a",
+              "default_category_uuid": "b158f925-dbb5-45b3-b844-2abb49f72e2a",
               "categories": [
                 {
-                  "uuid": "1a19539b-f2a4-4f93-8eaa-6b02bbf0461a",
+                  "uuid": "b158f925-dbb5-45b3-b844-2abb49f72e2a",
                   "name": "Any",
-                  "exit_uuid": "fd7a1961-8dcb-4eb8-94ce-0c87e062dd2f"
+                  "exit_uuid": "889eab1b-6878-4762-a112-f009beaf4fff"
                 }
               ],
               "cases": []
             },
             "exits": [
               {
-                "uuid": "fd7a1961-8dcb-4eb8-94ce-0c87e062dd2f",
-                "destination_uuid": "d3c63f4b-08c6-4a42-8e47-9384cdd1d6d1"
+                "uuid": "889eab1b-6878-4762-a112-f009beaf4fff",
+                "destination_uuid": "e2719c73-1b39-4e4c-8418-30320d3165b1"
               }
             ]
           },
           {
-            "uuid": "d3c63f4b-08c6-4a42-8e47-9384cdd1d6d1",
+            "uuid": "e2719c73-1b39-4e4c-8418-30320d3165b1",
             "actions": [
               {
-                "uuid": "eedcb6d3-b09b-42d6-91ad-eeeb9565fb83",
+                "uuid": "196e7369-96c9-464a-be17-306ecf9f6176",
                 "type": "send_msg",
                 "text": "Send a voice note, photo, or location if you have it — or type SKIP",
                 "quick_replies": [],
@@ -327,13 +461,13 @@
             ],
             "exits": [
               {
-                "uuid": "a79fa0f4-1fe5-4bdc-b277-bbe8b2710b87",
-                "destination_uuid": "8241df9c-2aa4-4500-8774-5f3bd1aa689b"
+                "uuid": "82778d6b-914e-4538-bb9b-34939c3255c2",
+                "destination_uuid": "c33ad5db-100a-4943-a197-a1e7058d61e7"
               }
             ]
           },
           {
-            "uuid": "8241df9c-2aa4-4500-8774-5f3bd1aa689b",
+            "uuid": "c33ad5db-100a-4943-a197-a1e7058d61e7",
             "actions": [],
             "router": {
               "wait": {
@@ -342,28 +476,112 @@
               "type": "switch",
               "result_name": "attachment_note",
               "operand": "@input.text",
-              "default_category_uuid": "3d50c779-55c2-4c1b-ab14-eff6ddc119cd",
+              "default_category_uuid": "2289e857-1bf8-4b12-b3d1-1f3060b5cf89",
               "categories": [
                 {
-                  "uuid": "3d50c779-55c2-4c1b-ab14-eff6ddc119cd",
+                  "uuid": "2289e857-1bf8-4b12-b3d1-1f3060b5cf89",
                   "name": "Any",
-                  "exit_uuid": "2e58639f-b256-4a82-8979-9863629d8a1d"
+                  "exit_uuid": "32f5863d-7ea2-48bb-baef-1ad6d96b2e7c"
                 }
               ],
               "cases": []
             },
             "exits": [
               {
-                "uuid": "2e58639f-b256-4a82-8979-9863629d8a1d",
-                "destination_uuid": "ec686d42-ea31-459b-a295-742c48482011"
+                "uuid": "32f5863d-7ea2-48bb-baef-1ad6d96b2e7c",
+                "destination_uuid": "a645bb39-023b-4061-a8a4-76276347fc5c"
               }
             ]
           },
           {
-            "uuid": "ec686d42-ea31-459b-a295-742c48482011",
+            "uuid": "a645bb39-023b-4061-a8a4-76276347fc5c",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "operand": "@results.scenario",
+              "result_name": "scenario_branch",
+              "default_category_uuid": "f0b86585-17e4-4658-a2be-6d57350eebdc",
+              "categories": [
+                {
+                  "uuid": "f0b86585-17e4-4658-a2be-6d57350eebdc",
+                  "name": "1",
+                  "exit_uuid": "f57765c9-cc61-4828-80fc-73539eb4ced8"
+                },
+                {
+                  "uuid": "7122fe08-d96e-4d1f-b236-7d6a31290575",
+                  "name": "2",
+                  "exit_uuid": "94a047d8-5307-4986-b2bc-4cf5a7073199"
+                },
+                {
+                  "uuid": "61a56702-2c8f-47b7-9e63-cdbdc8fd8712",
+                  "name": "3",
+                  "exit_uuid": "9bbcf6c6-098e-4a9e-967b-8525009e89e7"
+                },
+                {
+                  "uuid": "80d735b1-486f-4c45-8028-a2415f27f3eb",
+                  "name": "4",
+                  "exit_uuid": "df4c4a57-03ad-4105-8afa-1db5675ec7da"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "b252416b-75a1-4c14-9340-a3f11a065664",
+                  "type": "has_any_word",
+                  "arguments": [
+                    "1"
+                  ],
+                  "category_uuid": "f0b86585-17e4-4658-a2be-6d57350eebdc"
+                },
+                {
+                  "uuid": "a1536fc0-4dd1-4c41-a103-0e932c8affd8",
+                  "type": "has_any_word",
+                  "arguments": [
+                    "2"
+                  ],
+                  "category_uuid": "7122fe08-d96e-4d1f-b236-7d6a31290575"
+                },
+                {
+                  "uuid": "2895a3e6-25ba-45f0-ae7a-b2593d1a42bc",
+                  "type": "has_any_word",
+                  "arguments": [
+                    "3"
+                  ],
+                  "category_uuid": "61a56702-2c8f-47b7-9e63-cdbdc8fd8712"
+                },
+                {
+                  "uuid": "d88faf18-34e5-49c6-9b30-0808b6ac786b",
+                  "type": "has_any_word",
+                  "arguments": [
+                    "4"
+                  ],
+                  "category_uuid": "80d735b1-486f-4c45-8028-a2415f27f3eb"
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "f57765c9-cc61-4828-80fc-73539eb4ced8",
+                "destination_uuid": "74074097-f8ff-45bf-b12f-d91b7cabbf64"
+              },
+              {
+                "uuid": "94a047d8-5307-4986-b2bc-4cf5a7073199",
+                "destination_uuid": "cbda2735-688a-4ac1-9bbe-eaa934aebc47"
+              },
+              {
+                "uuid": "9bbcf6c6-098e-4a9e-967b-8525009e89e7",
+                "destination_uuid": "4be8d6e9-e48d-4a74-b80b-a9254e79a993"
+              },
+              {
+                "uuid": "df4c4a57-03ad-4105-8afa-1db5675ec7da",
+                "destination_uuid": "da63344a-4a26-4ee6-83d7-e10bd5079072"
+              }
+            ]
+          },
+          {
+            "uuid": "74074097-f8ff-45bf-b12f-d91b7cabbf64",
             "actions": [
               {
-                "uuid": "3efb2704-ecb0-467e-9977-2f978bd914b2",
+                "uuid": "c6e5d86e-ef91-41d4-9c00-9451cb4d1c7f",
                 "type": "send_msg",
                 "text": "🚨 Case logged — @results.triage. Broadcasting to the boatmen registry and the mapped facility now...",
                 "quick_replies": [],
@@ -373,16 +591,16 @@
             ],
             "exits": [
               {
-                "uuid": "4a5aabfb-c2bb-4090-b09d-39ba46cf4d57",
-                "destination_uuid": "6926cc35-4798-4c15-b73a-8126ab31c7df"
+                "uuid": "a3754989-4ac4-4cf3-806c-14162176a428",
+                "destination_uuid": "32fbb039-0afb-4111-a617-cefec7d6307f"
               }
             ]
           },
           {
-            "uuid": "6926cc35-4798-4c15-b73a-8126ab31c7df",
+            "uuid": "32fbb039-0afb-4111-a617-cefec7d6307f",
             "actions": [
               {
-                "uuid": "95d18113-68c1-4367-aa5a-40c710b3f4d4",
+                "uuid": "a90a62b1-d285-49ac-b8c6-623aa19a64a7",
                 "type": "wait_for_time",
                 "delay": "6"
               }
@@ -390,28 +608,28 @@
             "router": {
               "type": "switch",
               "operand": "@input.text",
-              "default_category_uuid": "7ef814ea-123d-4173-84dc-19c0624c3b08",
+              "default_category_uuid": "423c16fb-08e2-41b2-8a24-c874d42d04a2",
               "categories": [
                 {
-                  "uuid": "7ef814ea-123d-4173-84dc-19c0624c3b08",
+                  "uuid": "423c16fb-08e2-41b2-8a24-c874d42d04a2",
                   "name": "Completed",
-                  "exit_uuid": "c39c9618-9b61-4406-aa62-f1735f1e80b4"
+                  "exit_uuid": "821b6606-7782-4774-81bf-5e3924f2e7b5"
                 }
               ],
               "cases": []
             },
             "exits": [
               {
-                "uuid": "c39c9618-9b61-4406-aa62-f1735f1e80b4",
-                "destination_uuid": "35a58604-559d-46c7-baf2-dd0c96e630a6"
+                "uuid": "821b6606-7782-4774-81bf-5e3924f2e7b5",
+                "destination_uuid": "ad41b23f-dc02-4c52-bc37-3aea56fabfb5"
               }
             ]
           },
           {
-            "uuid": "35a58604-559d-46c7-baf2-dd0c96e630a6",
+            "uuid": "ad41b23f-dc02-4c52-bc37-3aea56fabfb5",
             "actions": [
               {
-                "uuid": "58ff5cb2-ad43-451c-949f-5ea181e13c28",
+                "uuid": "4005299f-52f0-46be-8711-06ccda0269ec",
                 "type": "send_msg",
                 "text": "🚤 Rafiqul Islam has ACCEPTED this case (Manual Motor boat, Night+Day availability).\nCall him directly to coordinate pickup: +91 97xxxxxxxx.",
                 "quick_replies": [],
@@ -421,16 +639,16 @@
             ],
             "exits": [
               {
-                "uuid": "75cce09a-7ccf-42db-8b33-82537ae89e7c",
-                "destination_uuid": "28c37982-5e5f-4423-9365-3a8f4eaab218"
+                "uuid": "d17c5f3c-648a-4b3e-9726-977e08355a31",
+                "destination_uuid": "17fd41a4-cea9-4ac6-ac74-0f652ed0886c"
               }
             ]
           },
           {
-            "uuid": "28c37982-5e5f-4423-9365-3a8f4eaab218",
+            "uuid": "17fd41a4-cea9-4ac6-ac74-0f652ed0886c",
             "actions": [
               {
-                "uuid": "47ace57c-fb94-4665-88c8-25e21f249a97",
+                "uuid": "e7132fe1-44b6-4df1-9faf-bfed8b3ebf41",
                 "type": "wait_for_time",
                 "delay": "5"
               }
@@ -438,28 +656,46 @@
             "router": {
               "type": "switch",
               "operand": "@input.text",
-              "default_category_uuid": "f3860c2a-a275-4a1e-98fc-39ce459b51cb",
+              "default_category_uuid": "8b08976c-cced-4e65-a63c-87e2e9004005",
               "categories": [
                 {
-                  "uuid": "f3860c2a-a275-4a1e-98fc-39ce459b51cb",
+                  "uuid": "8b08976c-cced-4e65-a63c-87e2e9004005",
                   "name": "Completed",
-                  "exit_uuid": "b49d7042-c6ee-4ba0-b639-72e1baa4e18a"
+                  "exit_uuid": "a91b2668-28a5-454e-b3bb-b812ec311920"
                 }
               ],
               "cases": []
             },
             "exits": [
               {
-                "uuid": "b49d7042-c6ee-4ba0-b639-72e1baa4e18a",
-                "destination_uuid": "754f6ed0-87d2-42bf-9350-b0d36a9cdee1"
+                "uuid": "a91b2668-28a5-454e-b3bb-b812ec311920",
+                "destination_uuid": "26bc6280-c76a-47ff-98a4-cde85cea4641"
               }
             ]
           },
           {
-            "uuid": "754f6ed0-87d2-42bf-9350-b0d36a9cdee1",
+            "uuid": "26bc6280-c76a-47ff-98a4-cde85cea4641",
             "actions": [
               {
-                "uuid": "4427df88-db29-405a-9388-36fe53e5dced",
+                "uuid": "01d47cd9-ef5a-4c33-868a-e0a7b01e5665",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "demo_scenario",
+                  "name": "demo_scenario"
+                },
+                "value": "1"
+              },
+              {
+                "uuid": "b71f7115-eae5-41e2-81f4-d71f7b80991d",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "demo_facility_name",
+                  "name": "demo_facility_name"
+                },
+                "value": "Bilasipara CHC"
+              },
+              {
+                "uuid": "9fa4b031-245f-4783-abc5-a76576c3e83c",
                 "type": "send_msg",
                 "text": "🏥 Bilasipara CHC has been alerted — they confirm they are preparing to receive a @results.triage case.",
                 "quick_replies": [],
@@ -469,16 +705,16 @@
             ],
             "exits": [
               {
-                "uuid": "fc9695b4-0d4f-45bf-9c9a-491a8f82e224",
-                "destination_uuid": "078f2aba-0cfd-421d-9bcc-5002cc0763ad"
+                "uuid": "7e0d334c-33e8-4d70-a54c-f98cfb4b6a86",
+                "destination_uuid": "7311d52b-3e55-4d23-b32c-bdc53e281b3a"
               }
             ]
           },
           {
-            "uuid": "078f2aba-0cfd-421d-9bcc-5002cc0763ad",
+            "uuid": "7311d52b-3e55-4d23-b32c-bdc53e281b3a",
             "actions": [
               {
-                "uuid": "6a704d43-c3c8-4b4e-855f-ec56ddd8634a",
+                "uuid": "e7fab38b-df63-4768-ac74-d789134953e2",
                 "type": "send_msg",
                 "text": "Reply STATUS anytime to update the case stage — try it now.",
                 "quick_replies": [],
@@ -488,7 +724,463 @@
             ],
             "exits": [
               {
-                "uuid": "d351ae81-6593-47fa-bd13-99f7783afd39",
+                "uuid": "d0ff4666-c88d-4ece-a1fe-95c3eadab21a",
+                "destination_uuid": null
+              }
+            ]
+          },
+          {
+            "uuid": "cbda2735-688a-4ac1-9bbe-eaa934aebc47",
+            "actions": [
+              {
+                "uuid": "1d3c3088-7b42-455f-b663-8bb1cac74cc0",
+                "type": "send_msg",
+                "text": "🚨 Case logged — @results.triage (night). Broadcasting to the boatmen registry now...",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "a78c7b85-cf1c-4d1a-8918-08c74ea584e0",
+                "destination_uuid": "3ddb7ec8-071d-4d08-90cd-bd27c54e92e6"
+              }
+            ]
+          },
+          {
+            "uuid": "3ddb7ec8-071d-4d08-90cd-bd27c54e92e6",
+            "actions": [
+              {
+                "uuid": "623adc88-8870-4f70-af58-6e16d8f0f991",
+                "type": "wait_for_time",
+                "delay": "7"
+              }
+            ],
+            "router": {
+              "type": "switch",
+              "operand": "@input.text",
+              "default_category_uuid": "de5c23d6-3f43-4be9-8403-ae068393862a",
+              "categories": [
+                {
+                  "uuid": "de5c23d6-3f43-4be9-8403-ae068393862a",
+                  "name": "Completed",
+                  "exit_uuid": "3155e311-4a6f-419f-9014-23f930ede552"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "3155e311-4a6f-419f-9014-23f930ede552",
+                "destination_uuid": "c989d428-9efd-4411-ac88-902ef9cdee92"
+              }
+            ]
+          },
+          {
+            "uuid": "c989d428-9efd-4411-ac88-902ef9cdee92",
+            "actions": [
+              {
+                "uuid": "0e89f616-cbe2-4546-ab4f-af4f45ca4a96",
+                "type": "send_msg",
+                "text": "⚠️ No response yet from the primary boatmen group after the initial broadcast.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "8a73d647-462d-4b37-b79c-bed0a1063f9b",
+                "destination_uuid": "9ced1ba7-badc-4b09-b82e-0c2c4ac57b2b"
+              }
+            ]
+          },
+          {
+            "uuid": "9ced1ba7-badc-4b09-b82e-0c2c4ac57b2b",
+            "actions": [
+              {
+                "uuid": "d6c08bcc-dcf4-4d5f-9faa-089cbf3f53ff",
+                "type": "wait_for_time",
+                "delay": "5"
+              }
+            ],
+            "router": {
+              "type": "switch",
+              "operand": "@input.text",
+              "default_category_uuid": "83223ad6-6826-4109-bde0-179e5a2976f7",
+              "categories": [
+                {
+                  "uuid": "83223ad6-6826-4109-bde0-179e5a2976f7",
+                  "name": "Completed",
+                  "exit_uuid": "0ad1dfaf-5ffc-4450-94ac-bea6c570da4a"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "0ad1dfaf-5ffc-4450-94ac-bea6c570da4a",
+                "destination_uuid": "d0984d9b-0488-4b71-923d-825994601d48"
+              }
+            ]
+          },
+          {
+            "uuid": "d0984d9b-0488-4b71-923d-825994601d48",
+            "actions": [
+              {
+                "uuid": "3e4e2653-2d49-467a-b216-1602123f977b",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "demo_scenario",
+                  "name": "demo_scenario"
+                },
+                "value": "2"
+              },
+              {
+                "uuid": "87894115-5e57-40c7-a1ab-d2c85d59597a",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "demo_facility_name",
+                  "name": "demo_facility_name"
+                },
+                "value": "Bilasipara CHC"
+              },
+              {
+                "uuid": "2754ff11-fe51-4146-b9df-6629cd2bb629",
+                "type": "send_msg",
+                "text": "🔁 Auto-escalating to the backup boatmen group and alerting the 108 Coordinator in parallel.\n\n🚤 Abdul Kalam (Govt boat, backup group) has ACCEPTED. ETA to landing point: ~25 min (night conditions).\n\n🏥 Bilasipara CHC has been alerted and confirms they're preparing.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "7766b94c-d5f8-4798-91e6-ad04fcdb45eb",
+                "destination_uuid": "27176c7e-78ec-41cc-bb7e-c59d8235bb70"
+              }
+            ]
+          },
+          {
+            "uuid": "27176c7e-78ec-41cc-bb7e-c59d8235bb70",
+            "actions": [
+              {
+                "uuid": "856acba8-809e-49b6-aeb1-60141b1f9aae",
+                "type": "send_msg",
+                "text": "Reply STATUS anytime to update the case stage — try it now.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "4df62c07-5f09-477a-a7c4-8dfdd41bc783",
+                "destination_uuid": null
+              }
+            ]
+          },
+          {
+            "uuid": "4be8d6e9-e48d-4a74-b80b-a9254e79a993",
+            "actions": [
+              {
+                "uuid": "87951294-a66c-423e-806e-ebb95dfb9fab",
+                "type": "send_msg",
+                "text": "🚨 Case logged — @results.triage (seizure activity noted). Broadcasting now...",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "809bb9e5-2da1-4ead-b985-f944503bd9f8",
+                "destination_uuid": "4a026938-01db-4458-b3fe-23314f1a7f6d"
+              }
+            ]
+          },
+          {
+            "uuid": "4a026938-01db-4458-b3fe-23314f1a7f6d",
+            "actions": [
+              {
+                "uuid": "93bd42f2-2d6f-40f6-8696-8368d15d365c",
+                "type": "wait_for_time",
+                "delay": "4"
+              }
+            ],
+            "router": {
+              "type": "switch",
+              "operand": "@input.text",
+              "default_category_uuid": "63d5baee-096c-4f81-a523-1d9e48aa94d6",
+              "categories": [
+                {
+                  "uuid": "63d5baee-096c-4f81-a523-1d9e48aa94d6",
+                  "name": "Completed",
+                  "exit_uuid": "19824500-d327-4344-bf51-ef5ae8d03a60"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "19824500-d327-4344-bf51-ef5ae8d03a60",
+                "destination_uuid": "40ed6ce3-97fd-41a4-baf9-0e39b250e87c"
+              }
+            ]
+          },
+          {
+            "uuid": "40ed6ce3-97fd-41a4-baf9-0e39b250e87c",
+            "actions": [
+              {
+                "uuid": "53f5dddf-1ad4-4f32-99b1-d1c7259833a9",
+                "type": "send_msg",
+                "text": "🚤 Rafiqul Islam has ACCEPTED immediately, given the severity noted.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "db75d56f-fc0d-4360-a263-79eac3f66285",
+                "destination_uuid": "912bb6a4-4b61-4b4a-bb31-8a7cbdd67275"
+              }
+            ]
+          },
+          {
+            "uuid": "912bb6a4-4b61-4b4a-bb31-8a7cbdd67275",
+            "actions": [
+              {
+                "uuid": "12225961-c5fc-4863-bfa4-deed9c13084f",
+                "type": "wait_for_time",
+                "delay": "5"
+              }
+            ],
+            "router": {
+              "type": "switch",
+              "operand": "@input.text",
+              "default_category_uuid": "243f8a39-6193-4351-90c2-12c6a4be3e08",
+              "categories": [
+                {
+                  "uuid": "243f8a39-6193-4351-90c2-12c6a4be3e08",
+                  "name": "Completed",
+                  "exit_uuid": "1fe62d95-ea5f-4ed7-abd3-216fad0f295d"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "1fe62d95-ea5f-4ed7-abd3-216fad0f295d",
+                "destination_uuid": "d4daeb35-ef66-492e-9be9-e20a5c66294b"
+              }
+            ]
+          },
+          {
+            "uuid": "d4daeb35-ef66-492e-9be9-e20a5c66294b",
+            "actions": [
+              {
+                "uuid": "aadd7c27-3068-470f-9695-6436d5891a3b",
+                "type": "send_msg",
+                "text": "⚠️ Bilasipara CHC reports at capacity — no obstetric bed currently available.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "eb33a8ae-f92e-4c53-a5e3-2d59a215287e",
+                "destination_uuid": "5e86c773-69ef-4426-8d0c-2361dbaec5a9"
+              }
+            ]
+          },
+          {
+            "uuid": "5e86c773-69ef-4426-8d0c-2361dbaec5a9",
+            "actions": [
+              {
+                "uuid": "dd236e18-d8d2-468d-89ca-cde74c874234",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "demo_scenario",
+                  "name": "demo_scenario"
+                },
+                "value": "3"
+              },
+              {
+                "uuid": "1eb5fcf2-7795-44cf-9128-87066bf10d88",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "demo_facility_name",
+                  "name": "demo_facility_name"
+                },
+                "value": "Dhubri Civil Hospital (backup)"
+              },
+              {
+                "uuid": "a9678e66-73c7-404e-aa80-8a24aab0becd",
+                "type": "send_msg",
+                "text": "🔁 Rerouting the facility alert to the backup: Dhubri Civil Hospital. They confirm ready to receive.\n\nReply STATUS anytime to update the case stage — try it now.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "05721c5d-55b8-4bed-884b-fd2ad165fa1f",
+                "destination_uuid": null
+              }
+            ]
+          },
+          {
+            "uuid": "da63344a-4a26-4ee6-83d7-e10bd5079072",
+            "actions": [
+              {
+                "uuid": "eafb42a9-a460-45fb-849e-ee6c0adf47fb",
+                "type": "send_msg",
+                "text": "🚨 Case logged — @results.triage (rapid progression noted). Broadcasting now...",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "92d65a52-1fbd-4630-a317-615148ba675e",
+                "destination_uuid": "0a3a7efa-94ff-458e-a583-ce863bec257a"
+              }
+            ]
+          },
+          {
+            "uuid": "0a3a7efa-94ff-458e-a583-ce863bec257a",
+            "actions": [
+              {
+                "uuid": "4426c6d9-5875-41d1-b0de-9511262076a8",
+                "type": "wait_for_time",
+                "delay": "6"
+              }
+            ],
+            "router": {
+              "type": "switch",
+              "operand": "@input.text",
+              "default_category_uuid": "8385c425-c8fd-4b0d-8867-fed3ddacaea8",
+              "categories": [
+                {
+                  "uuid": "8385c425-c8fd-4b0d-8867-fed3ddacaea8",
+                  "name": "Completed",
+                  "exit_uuid": "5656c8e5-5c68-481b-994c-4bb60d7c899c"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "5656c8e5-5c68-481b-994c-4bb60d7c899c",
+                "destination_uuid": "3560286d-5963-4c25-b215-7b37f161b794"
+              }
+            ]
+          },
+          {
+            "uuid": "3560286d-5963-4c25-b215-7b37f161b794",
+            "actions": [
+              {
+                "uuid": "3314b4b7-da99-4547-90b1-9b1ee70bf783",
+                "type": "send_msg",
+                "text": "🚤 Rafiqul Islam has ACCEPTED, but flags: boat fuel is low, nearest fuel point adds ~15 min.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "b43c6058-5e96-4d9b-942f-4596f7442243",
+                "destination_uuid": "aa4beea4-1f9e-4d35-99c5-095c2e8f55f7"
+              }
+            ]
+          },
+          {
+            "uuid": "aa4beea4-1f9e-4d35-99c5-095c2e8f55f7",
+            "actions": [
+              {
+                "uuid": "652e25a5-3ce0-4949-96fb-809946e89901",
+                "type": "wait_for_time",
+                "delay": "5"
+              }
+            ],
+            "router": {
+              "type": "switch",
+              "operand": "@input.text",
+              "default_category_uuid": "d0275887-8c5f-4745-9450-52b397c25e1f",
+              "categories": [
+                {
+                  "uuid": "d0275887-8c5f-4745-9450-52b397c25e1f",
+                  "name": "Completed",
+                  "exit_uuid": "6b76adf5-bcad-4b52-8910-4450e12bb777"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "6b76adf5-bcad-4b52-8910-4450e12bb777",
+                "destination_uuid": "9779bb40-8d6e-49b7-bbbc-bc55e07e6ab2"
+              }
+            ]
+          },
+          {
+            "uuid": "9779bb40-8d6e-49b7-bbbc-bc55e07e6ab2",
+            "actions": [
+              {
+                "uuid": "52f6752a-b191-492c-a13f-67900b4129f3",
+                "type": "send_msg",
+                "text": "⏱ Revised ETA to pickup: ~40 min (vs. the usual ~15 min) due to the fuel shortage.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "2578542e-2d7e-4aed-bd48-8313c14992a8",
+                "destination_uuid": "6995ebe4-08f7-4e69-8cb8-7e7e00914192"
+              }
+            ]
+          },
+          {
+            "uuid": "6995ebe4-08f7-4e69-8cb8-7e7e00914192",
+            "actions": [
+              {
+                "uuid": "23b39aea-6253-4df4-875d-03397771819d",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "demo_scenario",
+                  "name": "demo_scenario"
+                },
+                "value": "4"
+              },
+              {
+                "uuid": "3b28d7ea-472a-4f88-9cef-ea96d87ecdd4",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "demo_facility_name",
+                  "name": "demo_facility_name"
+                },
+                "value": "Bilasipara CHC"
+              },
+              {
+                "uuid": "ff753083-a77a-457f-84c4-f2a9c065500d",
+                "type": "send_msg",
+                "text": "🏥 Bilasipara CHC has been alerted with the revised ETA and confirms they are preparing.\n\nReply STATUS anytime to update the case stage — try it now.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "9e97f035-dba0-4cc3-8aa6-32bdaa51670d",
                 "destination_uuid": null
               }
             ]

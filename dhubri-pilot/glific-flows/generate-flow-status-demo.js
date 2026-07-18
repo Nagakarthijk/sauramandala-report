@@ -6,6 +6,12 @@
 // to a real facility Contact. Nothing here depends on char-config.js or any
 // Group/Contact existing — safe to run on a single test phone with zero setup.
 //
+// References @contact.fields.demo_facility_name.value — set by whichever scenario
+// FLOW-EMERGENCY-DEMO.json's picker just ran, so "which facility" stays
+// consistent with the scenario (e.g. the eclampsia scenario's reroute to the
+// backup facility). Run the emergency demo first in the same session so this
+// field is actually set.
+//
 // Run: node generate-flow-status-demo.js
 
 const fs = require('fs');
@@ -52,12 +58,12 @@ const nodes = [
   actionNode([msgAction('Logged: Waiting at landing point. Reply STATUS again to update further.')], null, ids.stage_4),
 
   // Stage 5 — simulated facility notification, paced with a short delay.
-  actionNode([msgAction('Notifying Bilasipara CHC that the patient is on the way...')], ids.stage5_delay, ids.stage5_notify),
+  actionNode([msgAction('Notifying @contact.fields.demo_facility_name.value that the patient is on the way...')], ids.stage5_delay, ids.stage5_notify),
   waitForTimeNode(4, ids.stage5_ack, ids.stage5_delay),
   actionNode([msgAction('🏥 Facility confirms: ready to receive. Reply STATUS again once you reach the facility.')], null, ids.stage5_ack),
 
   // Stage 6 — simulated arrival confirmation, closes the case.
-  actionNode([msgAction('Notifying Bilasipara CHC that the patient has arrived...')], ids.stage6_delay, ids.stage6_notify),
+  actionNode([msgAction('Notifying @contact.fields.demo_facility_name.value that the patient has arrived...')], ids.stage6_delay, ids.stage6_notify),
   waitForTimeNode(4, ids.stage6_ack, ids.stage6_delay),
   actionNode([msgAction('🏥 Facility confirms: patient received.\n\nCase closed — thank you for coordinating this response.')], null, ids.stage6_ack)
 ];
