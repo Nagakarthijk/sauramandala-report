@@ -218,13 +218,13 @@ const OESN = (() => {
       { id:'note_ana_1', entrepreneur_id:'ent_anand',   agent_id:'agent_arjun', note_type:'visit',  media_url:null, text:'Met Anand at the block office. Tailoring business is stable but he has no active referrals. Discussed possible scheme matching.', created_at:_daysAgo(25) },
       { id:'note_ana_2', entrepreneur_id:'ent_anand',   agent_id:'agent_arjun', note_type:'update', media_url:null, text:'Last contact 21 days ago. No open referrals. Task created to re-engage.', created_at:_daysAgo(21) },
       { id:'note_mee_1', entrepreneur_id:'ent_meera',   agent_id:'agent_arjun', note_type:'call',   media_url:null, text:"Meera's handicraft market linkage is progressing well. Buyer from Bengaluru is interested in a regular monthly supply.", created_at:_daysAgo(5) },
-      { id:'note_mee_2', entrepreneur_id:'ent_meera',   agent_id:'agent_arjun', note_type:'update', media_url:null, text:'RTC submitted for market linkage. Verified today — buyer confirmed, first order placed. Earning of Rs250 triggered.', created_at:_daysAgo(0) },
+      { id:'note_mee_2', entrepreneur_id:'ent_meera',   agent_id:'agent_arjun', note_type:'update', media_url:null, text:'RTC submitted for market linkage. Verified today — buyer confirmed, first order placed. Earning of Rs.250 triggered.', created_at:_daysAgo(0) },
       { id:'note_raj_1', entrepreneur_id:'ent_rajan',   agent_id:'agent_arjun', note_type:'visit',  media_url:null, text:"Rajan completed label design for Kavitha's agarbatti pack. High quality output. Filed RTC claim today.", created_at:_daysAgo(1) },
       { id:'note_raj_2', entrepreneur_id:'ent_rajan',   agent_id:'agent_arjun', note_type:'call',   media_url:null, text:'Rajan interested in more design work. Discussed possibility of becoming an empanelled design provider under the programme.', created_at:_daysAgo(3) },
       { id:'note_lax_1', entrepreneur_id:'ent_laxmi',   agent_id:'agent_arjun', note_type:'update', media_url:null, text:"Laxmi's FSSAI application submitted through the programme. Documents uploaded to portal.", created_at:_daysAgo(7) },
       { id:'note_lax_2', entrepreneur_id:'ent_laxmi',   agent_id:'agent_arjun', note_type:'call',   media_url:null, text:'Checked FSSAI portal — status shows under review. Expected in 10-12 days. Will follow up.', created_at:_daysAgo(2) },
       { id:'note_sur_1', entrepreneur_id:'ent_suresh',  agent_id:'agent_arjun', note_type:'visit',  media_url:null, text:'Suresh is a registered farmer with 3 acres. Eligible for PM Kisan. Helping him complete the self-registration.', created_at:_daysAgo(5) },
-      { id:'note_gee_1', entrepreneur_id:'ent_geeta',   agent_id:'agent_arjun', note_type:'visit',  media_url:null, text:'Geeta wants to expand her salon — needs Rs2L. Referred to Raichur NBFC Mudra Loan. Application submitted.', created_at:_daysAgo(6) },
+      { id:'note_gee_1', entrepreneur_id:'ent_geeta',   agent_id:'agent_arjun', note_type:'visit',  media_url:null, text:'Geeta wants to expand her salon — needs Rs.2L. Referred to Raichur NBFC Mudra Loan. Application submitted.', created_at:_daysAgo(6) },
       { id:'note_vin_1', entrepreneur_id:'ent_vinod',   agent_id:'agent_arjun', note_type:'visit',  media_url:null, text:"Unit costing completed for Vinod's carpentry. Now looking for relevant government schemes.", created_at:_daysAgo(8) },
     ];
 
@@ -776,11 +776,11 @@ const OESN = (() => {
   // ─── Formatting Helpers ───────────────────────────────────────────────
 
   function formatINR(n) {
-    if (n === null || n === undefined || isNaN(n)) return 'Rs0';
+    if (n === null || n === undefined || isNaN(n)) return '₹0';
     const v = Number(n);
-    if (v < 1000)   return 'Rs' + Math.round(v);
-    if (v < 100000) return 'Rs' + (v / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-    return 'Rs' + (v / 100000).toFixed(1).replace(/\.0$/, '') + 'L';
+    if (v < 1000)   return '₹' + Math.round(v);
+    if (v < 100000) return '₹' + (v / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return '₹' + (v / 100000).toFixed(1).replace(/\.0$/, '') + 'L';
   }
 
   function relativeTime(iso) {
