@@ -50,7 +50,10 @@ const {
 } = require('./_lib');
 
 const flowUuid = uuid();
-const triageTemplateId = 920001;
+// Bumped from 920001 — if you previously imported this flow, Glific may keep serving the old
+// interactive_templates content for a reused source_id rather than overwrite it on re-import.
+// A fresh id forces a genuinely new template instead of relying on that being safe.
+const triageTemplateId = 920002;
 
 const triageContent = {
   type: 'quick_reply',
@@ -141,7 +144,8 @@ const ids = {
   triage_msg: uuid(), triage_wait: uuid(),
   type_branch: uuid(),
   scenario_branch: uuid(),
-  att_msg: uuid(), att_wait: uuid()
+  att_msg: uuid(), att_wait: uuid(),
+  captured_msg: uuid()
 };
 for (const t of ['maternal', 'child', 'adult']) {
   for (const q of ['q1', 'q1w', 'q2', 'q2w', 'q3', 'q3w', 'q4', 'q4w']) ids[`${t}_${q}`] = uuid();
@@ -202,9 +206,21 @@ const nodes = [
   actionNode([msgAction('Any prior cardiac history or medication?')], ids.adult_q4w, ids.adult_q4),
   waitAnyNode('anc_detail', ids.att_msg, ids.adult_q4w),
 
-  // Shared attachment question, then into the scenario-specific relay.
+  // Shared attachment question, then a captured-data echo — proving what she just typed is what
+  // actually gets relayed onward, not a disconnected script — then into the scenario relay.
   actionNode([msgAction('Send a voice note, photo, or location if you have it — or type SKIP')], ids.att_wait, ids.att_msg),
-  waitAnyNode('attachment_note', ids.scenario_branch, ids.att_wait),
+  waitAnyNode('attachment_note', ids.captured_msg, ids.att_wait),
+
+  actionNode([msgAction(
+    '📝 Case captured from your answers:\n' +
+    'Severity: @results.triage\n' +
+    'Patient: @results.patient_detail\n' +
+    'Location: @results.location_detail\n' +
+    'Details: @results.hrp_detail\n' +
+    'History/ANC: @results.anc_detail\n' +
+    'Attachment: @results.attachment_note\n\n' +
+    'Sending this exact information to the boatmen registry, 108, and the facility now...'
+  )], ids.scenario_branch, ids.captured_msg),
 
   {
     uuid: ids.scenario_branch,
@@ -231,12 +247,14 @@ for (const s of SCENARIOS) {
     ? '🚤 Boatman, 🚑 108 Coordinator, 🏥 Facility, and 🪖 BSF Border Post'
     : '🚤 Boatman, 🚑 108 Coordinator, and 🏥 Facility';
 
-  // Beat A — parallel referral alert.
+  // Beat A — parallel referral alert. Boatman/facility lines carry HER actual answers
+  // (@results.*), not just the scripted scenario names — this is the "your data really is
+  // what's being sent onward" proof, not a canned narrative running alongside it.
   const beatA = [
     `📡 ${s.caseId} — referral alert sent, parallel to ${parties}:`,
-    `🚤 ${s.boatman}: "Go to ${s.ghat}. Pickup case, destination ${s.facility}."`,
+    `🚤 ${s.boatman}: "Go to @results.location_detail. Patient: @results.patient_detail. Destination ${s.facility}."`,
     `🚑 108: "Dispatch request ${s.caseId} — confirm dispatch and ETA within 10 min."`,
-    `🏥 ${s.facility}: "Incoming ${s.caseId} referral — ${s.facilityPrep}."`
+    `🏥 ${s.facility}: "Incoming ${s.caseId} referral — @results.patient_detail. @results.hrp_detail. ${s.facilityPrep}."`
   ];
   if (s.bsf) beatA.push('🪖 BSF Border Post: "Movement clearance requested — patient transfer near the international border, night hours."');
   nodes.push(actionNode([msgAction(beatA.join('\n'))], ids[`s${s.n}_b`], ids[`s${s.n}_a`]));

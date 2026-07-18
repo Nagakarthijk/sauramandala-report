@@ -20,8 +20,11 @@ node deploy-live-demo.js
 2. **Pick a scenario** (numbered menu, reply 1-6 — see below).
 3. Tap a **severity button** (RED / GREEN / YELLOW — standard triage colours, not maternal-specific, since two of the six scenarios aren't maternal cases).
 4. Answer four questions — **these now differ by case type**, not one generic form: a maternal case asks about gestation/HRP/ANC visits, a child case asks about danger signs, an adult case asks about symptoms and history. Same structure, real fields, matching what the scenario actually needs to know.
-5. Watch the four-beat relay play out: **referral alert** (parallel to Boatman/108/Facility[/BSF]) → **boatman confirmed** → **108 confirms dispatch + ETA** → **facility ready** (or reroute). Every beat shows you exactly what each party is being told, in their own words.
-6. Text **`status`** — three stages now, matching what she actually triggers herself: boat journey started → patient handed to 108 → reached facility (outcome logged, case closed).
+5. A **"Case captured" message echoes back exactly what you just typed** — proof the referral that follows is built from her real answers, not a disconnected script. The referral alert's boatman/facility lines then repeat her actual location and patient details, not scripted stand-ins.
+6. Watch the four-beat relay play out: **referral alert** (parallel to Boatman/108/Facility[/BSF]) → **boatman confirmed** → **108 confirms dispatch + ETA** → **facility ready** (or reroute). Every beat shows you exactly what each party is being told, in their own words.
+7. Text **`status`** — three stages now, matching what she actually triggers herself: boat journey started → patient handed to 108 → reached facility (outcome logged, case closed).
+
+**Important — redeploy, don't just re-download:** the severity button's underlying template id was bumped (Glific may not overwrite an existing interactive template's content on re-import against the same id) — if you'd already imported an earlier version, you must re-run `node deploy-live-demo.js` (or re-import `FLOW-EMERGENCY-DEMO.json` fresh) for the RED/GREEN/YELLOW options to actually replace whatever was there before. Just having the new file on disk isn't enough — Glific only sees what's actually been imported and published.
 
 ## The six scenarios
 
