@@ -1,6 +1,6 @@
 # Live Demo Script — One Phone, One Actor, Full Story
 
-Centered entirely on the frontline worker — the one real recurring user of this system. Every other party (Boatman, 108 Coordinator, Health Facility, BRC, and — for one scenario — BSF) is simulated as narrated messages into her own thread, so this works with **one phone, zero other people, zero registry setup.**
+Centered entirely on the frontline worker — the one real recurring user of this system. Every other party (Boatman, 108 Coordinator, Health Facility, and — for one scenario — BSF) is simulated as narrated messages into her own thread, so this works with **one phone, zero other people, zero registry setup.** This demo is meant to be shown with different possible actor configurations in mind — swap who's in the loop as the conversation with your team clarifies who's actually involved (e.g. the wireframe this is built from also showed a Block Referral Coordinator; left out here since the team confirmed that's not an existing role).
 
 This version is rebuilt against the team's own "Communication alerts" wireframe — real message wording per role, real case-ID format (`DHB-XXXX`), real reply-time thresholds (108: 10 min, facility: 30 min), and the team's stated design principle: **parallel activation** — every relevant party gets notified simultaneously, each with their own wording, not one generic broadcast. Every beat below narrates what the *other* parties are being told, specifically so nothing in the chat goes quiet during a delay — that was the main complaint on the previous version.
 
@@ -20,7 +20,7 @@ node deploy-live-demo.js
 2. **Pick a scenario** (numbered menu, reply 1-6 — see below).
 3. Tap a **severity button** (RED / GREEN / YELLOW — standard triage colours, not maternal-specific, since two of the six scenarios aren't maternal cases).
 4. Answer four questions — **these now differ by case type**, not one generic form: a maternal case asks about gestation/HRP/ANC visits, a child case asks about danger signs, an adult case asks about symptoms and history. Same structure, real fields, matching what the scenario actually needs to know.
-5. Watch the four-beat relay play out: **referral alert** (parallel to Boatman/108/Facility/BRC[/BSF]) → **boatman confirmed** → **108 confirms dispatch + ETA** → **facility ready** (or reroute). Every beat shows you exactly what each party is being told, in their own words.
+5. Watch the four-beat relay play out: **referral alert** (parallel to Boatman/108/Facility[/BSF]) → **boatman confirmed** → **108 confirms dispatch + ETA** → **facility ready** (or reroute). Every beat shows you exactly what each party is being told, in their own words.
 6. Text **`status`** — three stages now, matching what she actually triggers herself: boat journey started → patient handed to 108 → reached facility (outcome logged, case closed).
 
 ## The six scenarios
@@ -51,4 +51,4 @@ The case-capture questions in this demo are plain sequential WhatsApp messages (
 
 ## Don't deploy this alongside the real flows
 
-`FLOW-EMERGENCY-DEMO.json`/`FLOW-STATUS-DEMO.json` use the same keywords (`emergency`/`status`) as `FLOW-EMERGENCY-REPORT.json`/`FLOW-STATUS-UPDATE.json` — importing both into the same org at once will collide. Use the demo pair today; swap to the real pair once `char-config.js` and the registry are actually populated (see `REGISTRY_SHEET_DESIGN.md`). Note the real pair hasn't yet been updated to match this pass's richer per-role relay and BRC/BSF additions — that's the next piece of work, not done in this session.
+`FLOW-EMERGENCY-DEMO.json`/`FLOW-STATUS-DEMO.json` use the same keywords (`emergency`/`status`) as `FLOW-EMERGENCY-REPORT.json`/`FLOW-STATUS-UPDATE.json` — importing both into the same org at once will collide. Use the demo pair today; swap to the real pair once `char-config.js` and the registry are actually populated (see `REGISTRY_SHEET_DESIGN.md`). Note the real pair hasn't yet been updated to match this pass's richer per-role relay and BSF addition — that's the next piece of work, not done in this session.

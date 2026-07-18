@@ -1,16 +1,17 @@
 // generate-flow-emergency-demo.js — builds FLOW-EMERGENCY-DEMO.json.
 //
-// v3: rebuilt against the team's own "Communication alerts" wireframe — a
+// v4: rebuilt against the team's own "Communication alerts" wireframe — a
 // real message-flow design showing exactly what ASHA, Boatman, 108
-// Coordinator, Health Facility, and BRC each receive, worded differently per
+// Coordinator, and Health Facility each receive, worded differently per
 // role, activated IN PARALLEL at every step (their stated design principle).
-// Previously this demo simplified that down to one generic broadcast per
-// beat and dropped the BRC entirely — this version narrates all four (five,
-// where BSF applies) parties' own message content at every beat, so nothing
-// in the chat is ever silent while a wait_for_time delay runs. Real case ID
-// format (DHB-XXXX), real per-role message shapes, and real reply-time
-// thresholds (108: 10 min, facility: 30 min) all carried over from the
-// wireframe as closely as the demo format allows.
+// (The wireframe's cards also showed a Block Referral Coordinator — dropped
+// here since the team confirmed BRC isn't an actual existing actor; this
+// demo is meant to show different possible actor configurations, not lock
+// in one.) This version narrates every party's own message content at every
+// beat, so nothing in the chat is ever silent while a wait_for_time delay
+// runs. Real case ID format (DHB-XXXX), real per-role message shapes, and
+// real reply-time thresholds (108: 10 min, facility: 30 min) all carried
+// over from the wireframe as closely as the demo format allows.
 //
 // Six scenarios now, not four — added two non-maternal cases (this system
 // isn't only for childbirth) and a near-border case bringing BSF into the
@@ -222,21 +223,20 @@ const branchNode = nodes.find(n => n.uuid === ids.scenario_branch);
 branchNode.exits = branchNode.router.categories.map((cat, i) => ({ uuid: cat.exit_uuid, destination_uuid: ids[`s${SCENARIOS[i].n}_a`] }));
 
 // ── Per-scenario 4-beat relay, mirroring the wireframe: referral alert (parallel to Boatman,
-// 108, Facility, BRC[, BSF]) → boatman confirmed (relayed) → 108 confirmed+ETA (relayed) →
+// 108, Facility[, BSF]) → boatman confirmed (relayed) → 108 confirmed+ETA (relayed) →
 // facility ready/reroute (relayed) → handoff. Every beat narrates what OTHER parties are being
 // told, so nothing is silent during the wait_for_time gaps either side of it.
 for (const s of SCENARIOS) {
   const parties = s.bsf
-    ? '🚤 Boatman, 🚑 108 Coordinator, 🏥 Facility, 📋 BRC, and 🪖 BSF Border Post'
-    : '🚤 Boatman, 🚑 108 Coordinator, 🏥 Facility, and 📋 BRC';
+    ? '🚤 Boatman, 🚑 108 Coordinator, 🏥 Facility, and 🪖 BSF Border Post'
+    : '🚤 Boatman, 🚑 108 Coordinator, and 🏥 Facility';
 
   // Beat A — parallel referral alert.
   const beatA = [
     `📡 ${s.caseId} — referral alert sent, parallel to ${parties}:`,
     `🚤 ${s.boatman}: "Go to ${s.ghat}. Pickup case, destination ${s.facility}."`,
     `🚑 108: "Dispatch request ${s.caseId} — confirm dispatch and ETA within 10 min."`,
-    `🏥 ${s.facility}: "Incoming ${s.caseId} referral — ${s.facilityPrep}."`,
-    `📋 BRC: "Case opened — ${s.caseId}."`
+    `🏥 ${s.facility}: "Incoming ${s.caseId} referral — ${s.facilityPrep}."`
   ];
   if (s.bsf) beatA.push('🪖 BSF Border Post: "Movement clearance requested — patient transfer near the international border, night hours."');
   nodes.push(actionNode([msgAction(beatA.join('\n'))], ids[`s${s.n}_b`], ids[`s${s.n}_a`]));
@@ -250,41 +250,39 @@ for (const s of SCENARIOS) {
 
   // Beat B — boatman confirmation relayed (or "no response" branch for scenario 2).
   if (s.noResponse) {
-    nodes.push(actionNode([msgAction(`⚠️ ${s.caseId} — no response yet from ${s.boatman.split(' (')[0]}'s group after the initial alert. 108 and BRC remain on standby.`)], ids[`s${s.n}_f`], ids[`s${s.n}_${afterBsf}`]));
+    nodes.push(actionNode([msgAction(`⚠️ ${s.caseId} — no response yet from ${s.boatman.split(' (')[0]}'s group after the initial alert. 108 remains on standby.`)], ids[`s${s.n}_f`], ids[`s${s.n}_${afterBsf}`]));
     nodes.push(waitForTimeNode(5, ids[`s${s.n}_g`], ids[`s${s.n}_f`]));
     nodes.push(actionNode([msgAction(
       `🔁 ${s.caseId} — auto-escalated to the backup boatmen group.\n` +
-      `🚤 ${s.boatman}: "Started for ${s.ghat}." — relayed to you, 108, and BRC.\n` +
-      `📋 BRC: "Boatman responded — ${s.caseId}. Response time: 9 min (escalated)."`
+      `🚤 ${s.boatman}: "Started for ${s.ghat}." — relayed to you and 108.\n` +
+      `🚑 108: "Boatman responded — ${s.caseId}. Response time: 9 min (escalated)."`
     )], ids[`s${s.n}_h`], ids[`s${s.n}_g`]));
   } else {
     nodes.push(actionNode([msgAction(
-      `✅ ${s.caseId} — boatman confirmed, relayed to you, 108, and BRC:\n` +
+      `✅ ${s.caseId} — boatman confirmed, relayed to you and 108:\n` +
       `🚤 "${s.boatman.split(' (')[0]} has started for ${s.ghat}. Crossing will begin shortly."\n` +
-      `🚑 108: "Boatman en route — ${s.caseId}."\n` +
-      `📋 BRC: "Boatman responded — ${s.caseId}. Response time: 6 min."`
+      `🚑 108: "Boatman en route — ${s.caseId}."`
     )], ids[`s${s.n}_h`], ids[`s${s.n}_${afterBsf}`]));
   }
   nodes.push(waitForTimeNode(4, ids[`s${s.n}_2wait`] = uuid(), ids[`s${s.n}_h`]));
 
-  // Beat C — 108 confirms dispatch and ETA, relayed to worker, facility, BRC.
+  // Beat C — 108 confirms dispatch and ETA, relayed to worker and facility.
   const cId = ids[`s${s.n}_2wait`];
   const dId = uuid();
   nodes.push(actionNode([msgAction(
-    `🚑 ${s.caseId} — 108 confirmed dispatch, relayed to you, facility, and BRC:\n` +
+    `🚑 ${s.caseId} — 108 confirmed dispatch, relayed to you and facility:\n` +
     `"108 dispatched — ${s.caseId}. ETA to ghat: ${s.etaGhat} min. ETA to facility: ${s.etaFacility} min. Unit: ${s.unit}. Driver: ${s.driver}, ${s.driverPhone}."\n` +
-    `🏥 Facility: "108 en route — ETA ${s.etaFacility} min."\n` +
-    `📋 BRC: "108 confirmed — within 10-min threshold. Timer closed."` +
+    `🏥 Facility: "108 en route — ETA ${s.etaFacility} min."` +
     (s.fuelDelay ? `\n\n⚠️ Note: boatman flagged low fuel — nearest fuel point adds time; the ETA above already reflects that delay.` : '')
   )], dId, cId));
   const eId = uuid();
   nodes.push(waitForTimeNode(5, eId, dId));
 
-  // Beat D — facility replies ready or not ready (reroute for scenario 3), relayed to worker, 108, BRC.
+  // Beat D — facility replies ready or not ready (reroute for scenario 3), relayed to worker and 108.
   const fId = uuid();
   if (s.facilityReroute) {
     nodes.push(actionNode([msgAction(
-      `⚠️ ${s.caseId} — ${s.facility} reports at capacity, no bed available. Relayed to 108 and BRC.`
+      `⚠️ ${s.caseId} — ${s.facility} reports at capacity, no bed available. Relayed to 108.`
     )], fId, eId));
     const gId = uuid();
     nodes.push(waitForTimeNode(4, gId, fId));
@@ -296,8 +294,7 @@ for (const s of SCENARIOS) {
       setFieldAction('demo_outcome', s.outcome),
       msgAction(
         `🔁 ${s.caseId} — rerouting to backup: ${s.backupFacility} (${s.etaFacility} min by road from the ghat).\n` +
-        `🚑 108: destination updated, relayed to driver ${s.driver}.\n` +
-        `📋 BRC: "Facility diversion logged — ${s.caseId}."\n\n` +
+        `🚑 108: destination updated, relayed to driver ${s.driver}.\n\n` +
         'Reply STATUS anytime to update the case stage — try it now.'
       )
     ], null, gId));
@@ -309,9 +306,8 @@ for (const s of SCENARIOS) {
       setFieldAction('demo_case_type', s.caseType),
       setFieldAction('demo_outcome', s.outcome),
       msgAction(
-        `🏥 ${s.caseId} — ${s.facility} confirms ready to receive. Relayed to 108 and BRC:\n` +
-        `🚑 108: "Destination unchanged — proceed to ${s.facility}."\n` +
-        `📋 BRC: "Facility responded within 30-min threshold. Timer closed."\n\n` +
+        `🏥 ${s.caseId} — ${s.facility} confirms ready to receive. Relayed to 108:\n` +
+        `🚑 108: "Destination unchanged — proceed to ${s.facility}."\n\n` +
         'Reply STATUS anytime to update the case stage — try it now.'
       )
     ], null, eId));

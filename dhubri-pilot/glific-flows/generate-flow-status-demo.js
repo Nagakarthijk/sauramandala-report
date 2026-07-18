@@ -9,8 +9,11 @@
 //   7. Patient boarded 108 / ambulance journey started (at the mainland ghat)
 //   8. Reached facility — outcome logged, case closed
 //
-// Each stage relays to 108/facility/BRC the same way the wireframe shows,
-// and stage 3 closes with the scenario's real outcome line (mode of
+// (The wireframe's cards also showed a Block Referral Coordinator — dropped
+// here since the team confirmed BRC isn't an actual existing actor; this
+// demo is meant to show different possible actor configurations, not lock
+// in one.) Each stage relays to 108/facility the same way the wireframe
+// shows, and stage 3 closes with the scenario's real outcome line (mode of
 // delivery / treatment outcome) plus an HMIS-updated / honorarium-logged
 // note, matching the wireframe's closing card. Reads
 // @contact.fields.demo_* fields set by whichever scenario
@@ -46,37 +49,35 @@ const nodes = [
 
   actionNode([msgAction('Please reply with a number 1-3.')], ids.menu_wait, ids.reprompt),
 
-  // Stage 1 — boat journey started: relayed to 108, facility, BRC with a timestamp-style note,
-  // same as the wireframe's "Crossing started" cards.
-  actionNode([msgAction('Logging boat departure — relaying to 108, @contact.fields.demo_facility_name.value, and BRC...')], ids.stage1_delay, ids.stage1_notify),
+  // Stage 1 — boat journey started: relayed to 108 and facility, same as the wireframe's
+  // "Crossing started" cards.
+  actionNode([msgAction('Logging boat departure — relaying to 108 and @contact.fields.demo_facility_name.value...')], ids.stage1_delay, ids.stage1_notify),
   waitForTimeNode(4, ids.stage1_ack, ids.stage1_delay),
   actionNode([msgAction(
     '✅ Relayed:\n' +
     `🚑 108: "Crossing started — @contact.fields.demo_case_id.value. Departed."\n` +
-    `🏥 Facility: "Patient en route — crossing started."\n` +
-    `📋 BRC: "Crossing timer started — @contact.fields.demo_case_id.value. Escalation if past threshold."\n\n` +
+    `🏥 Facility: "Patient en route — crossing started."\n\n` +
     'Reply STATUS again once the patient is handed to 108 at the landing point.'
   )], null, ids.stage1_ack),
 
   // Stage 2 — patient boarded 108 at the mainland ghat: the actual boat-to-ambulance handover.
-  actionNode([msgAction('Logging handover to 108 at the landing point — relaying to 108, facility, and BRC...')], ids.stage2_delay, ids.stage2_notify),
+  actionNode([msgAction('Logging handover to 108 at the landing point — relaying to 108 and facility...')], ids.stage2_delay, ids.stage2_notify),
   waitForTimeNode(4, ids.stage2_ack, ids.stage2_delay),
   actionNode([msgAction(
     '✅ Relayed:\n' +
     `🚑 108: "Patient boarded — @contact.fields.demo_case_id.value. Departed from the ghat."\n` +
-    `🏥 @contact.fields.demo_facility_name.value: "Final approach — patient in ambulance, arriving shortly."\n` +
-    `📋 BRC: "Road leg started — @contact.fields.demo_case_id.value. Crossing log closed."\n\n` +
+    `🏥 @contact.fields.demo_facility_name.value: "Final approach — patient in ambulance, arriving shortly."\n\n` +
     'Reply STATUS again once you reach the facility.'
   )], null, ids.stage2_ack),
 
   // Stage 3 — reached facility: outcome logged, case closed, HMIS + honorarium noted (matches
   // the wireframe's closing card), acknowledging she likely travelled the whole way.
-  actionNode([msgAction('Logging arrival — notifying @contact.fields.demo_facility_name.value and BRC, closing the case...')], ids.stage3_delay, ids.stage3_notify),
+  actionNode([msgAction('Logging arrival — notifying @contact.fields.demo_facility_name.value, closing the case...')], ids.stage3_delay, ids.stage3_notify),
   waitForTimeNode(4, ids.stage3_ack, ids.stage3_delay),
   actionNode([msgAction(
     `🏥 Case closed — @contact.fields.demo_case_id.value\n` +
     `@contact.fields.demo_outcome.value\n\n` +
-    `📋 BRC: "Case closed — @contact.fields.demo_case_id.value. HMIS record updated. Honorarium logged for the boatman."\n\n` +
+    `HMIS record updated. Honorarium logged for the boatman.\n\n` +
     'Case closed — thank you for coordinating this response and accompanying the patient throughout.'
   )], null, ids.stage3_ack)
 ];
