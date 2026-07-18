@@ -1,16 +1,25 @@
 // generate-flow-status-demo.js — builds FLOW-STATUS-DEMO.json.
 //
-// Same numbered-stage menu as FLOW-STATUS-UPDATE.json, but self-contained for
-// a live demo: stages 5/6 simulate the facility's acknowledgement (a timed
-// message back into the worker's own thread) instead of a real send_broadcast
-// to a real facility Contact. Nothing here depends on char-config.js or any
-// Group/Contact existing — safe to run on a single test phone with zero setup.
+// v2: extended to the full river-then-road journey — the boat only ever
+// reaches the bank, not the facility; 108 Ambulance has to be waiting there,
+// then it's a road leg to the facility. The stage list now reflects that
+// handover explicitly (stage 5), and stage 4 simulates the real-time ETA
+// share that lets 108 actually be positioned in time, rather than jumping
+// straight from "picked up" to "at facility."
 //
-// References @contact.fields.demo_facility_name.value — set by whichever scenario
-// FLOW-EMERGENCY-DEMO.json's picker just ran, so "which facility" stays
-// consistent with the scenario (e.g. the eclampsia scenario's reroute to the
-// backup facility). Run the emergency demo first in the same session so this
-// field is actually set.
+// Self-contained for a live demo: stages 4-6 simulate 108/facility
+// acknowledgement (timed messages back into the worker's own thread) instead
+// of a real send_broadcast to real Contacts. Nothing here depends on
+// char-config.js or any Group/Contact existing.
+//
+// References @contact.fields.demo_facility_name.value — set by whichever
+// scenario FLOW-EMERGENCY-DEMO.json's picker just ran. Run the emergency demo
+// first in the same session so this field is actually set.
+//
+// The closing message acknowledges that the frontline worker typically
+// travels with the patient the whole way — the system's value here is
+// exactly that: everyone downstream (108, facility) knows the plan and
+// timing without her needing to make voice calls while in transit.
 //
 // Run: node generate-flow-status-demo.js
 
@@ -22,25 +31,23 @@ const flowUuid = uuid();
 const STAGES = [
   { n: '1', label: 'Boatman informed' },
   { n: '2', label: 'Boatman accepted' },
-  { n: '3', label: 'Patient picked up' },
-  { n: '4', label: 'Waiting at landing point' },
-  { n: '5', label: 'On the way to facility' },
-  { n: '6', label: 'Reached facility' }
+  { n: '3', label: 'Patient picked up (boarded boat)' },
+  { n: '4', label: 'Approaching the landing point' },
+  { n: '5', label: 'Reached landing point — transferred to 108' },
+  { n: '6', label: 'En route to facility by road' },
+  { n: '7', label: 'Reached facility' }
 ];
 
 const ids = { menu_msg: uuid(), menu_wait: uuid(), reprompt: uuid() };
-for (const s of ['1', '2', '3', '4']) ids[`stage_${s}`] = uuid();
-ids.stage5_notify = uuid();
-ids.stage5_delay = uuid();
-ids.stage5_ack = uuid();
-ids.stage6_notify = uuid();
-ids.stage6_delay = uuid();
-ids.stage6_ack = uuid();
+for (const s of ['1', '2', '3']) ids[`stage_${s}`] = uuid();
+for (const s of ['4', '5', '6', '7']) {
+  ids[`stage${s}_notify`] = uuid();
+  ids[`stage${s}_delay`] = uuid();
+  ids[`stage${s}_ack`] = uuid();
+}
 
 function stageDestUuid(n) {
-  if (n === '5') return ids.stage5_notify;
-  if (n === '6') return ids.stage6_notify;
-  return ids[`stage_${n}`];
+  return ['4', '5', '6', '7'].includes(n) ? ids[`stage${n}_notify`] : ids[`stage_${n}`];
 }
 
 const nodes = [
@@ -50,22 +57,32 @@ const nodes = [
 
   waitOptionsNode('stage', STAGES.map(s => ({ title: s.n, destUuid: stageDestUuid(s.n) })), ids.reprompt, ids.menu_wait, 'has_any_word'),
 
-  actionNode([msgAction('Please reply with a number 1-6.')], ids.menu_wait, ids.reprompt),
+  actionNode([msgAction('Please reply with a number 1-7.')], ids.menu_wait, ids.reprompt),
 
   actionNode([msgAction('Logged: Boatman informed. Reply STATUS again to update further.')], null, ids.stage_1),
   actionNode([msgAction('Logged: Boatman accepted. Reply STATUS again to update further.')], null, ids.stage_2),
   actionNode([msgAction('Logged: Patient picked up. Reply STATUS again to update further.')], null, ids.stage_3),
-  actionNode([msgAction('Logged: Waiting at landing point. Reply STATUS again to update further.')], null, ids.stage_4),
 
-  // Stage 5 — simulated facility notification, paced with a short delay.
-  actionNode([msgAction('Notifying @contact.fields.demo_facility_name.value that the patient is on the way...')], ids.stage5_delay, ids.stage5_notify),
-  waitForTimeNode(4, ids.stage5_ack, ids.stage5_delay),
-  actionNode([msgAction('🏥 Facility confirms: ready to receive. Reply STATUS again once you reach the facility.')], null, ids.stage5_ack),
+  // Stage 4 — the real-time ETA share that actually lets 108 be positioned in time,
+  // instead of jumping straight from "picked up" to "at the bank."
+  actionNode([msgAction('Sharing your updated ETA with 108 Ambulance and @contact.fields.demo_facility_name.value...')], ids.stage4_delay, ids.stage4_notify),
+  waitForTimeNode(4, ids.stage4_ack, ids.stage4_delay),
+  actionNode([msgAction('🚑 108 confirms: positioned at the landing point, ready for your arrival. Reply STATUS again once you reach it.')], null, ids.stage4_ack),
 
-  // Stage 6 — simulated arrival confirmation, closes the case.
-  actionNode([msgAction('Notifying @contact.fields.demo_facility_name.value that the patient has arrived...')], ids.stage6_delay, ids.stage6_notify),
+  // Stage 5 — the actual boat-to-ambulance handover.
+  actionNode([msgAction('Logging handover to 108 Ambulance at the landing point...')], ids.stage5_delay, ids.stage5_notify),
+  waitForTimeNode(3, ids.stage5_ack, ids.stage5_delay),
+  actionNode([msgAction('🚑 108 Ambulance confirms: patient received, departing for @contact.fields.demo_facility_name.value now. Reply STATUS again once on the road.')], null, ids.stage5_ack),
+
+  // Stage 6 — facility gets a heads-up the ambulance is now inbound by road.
+  actionNode([msgAction('Notifying @contact.fields.demo_facility_name.value that the ambulance is en route...')], ids.stage6_delay, ids.stage6_notify),
   waitForTimeNode(4, ids.stage6_ack, ids.stage6_delay),
-  actionNode([msgAction('🏥 Facility confirms: patient received.\n\nCase closed — thank you for coordinating this response.')], null, ids.stage6_ack)
+  actionNode([msgAction('🏥 Facility confirms: ready to receive. Reply STATUS again once you reach the facility.')], null, ids.stage6_ack),
+
+  // Stage 7 — arrival, closes the case. Acknowledges she likely travelled the whole way with the patient.
+  actionNode([msgAction('Notifying @contact.fields.demo_facility_name.value that the patient has arrived...')], ids.stage7_delay, ids.stage7_notify),
+  waitForTimeNode(4, ids.stage7_ack, ids.stage7_delay),
+  actionNode([msgAction('🏥 Facility confirms: patient received.\n\nCase closed — thank you for coordinating this response and accompanying the patient throughout.')], null, ids.stage7_ack)
 ];
 
 const flow = wrapFlow({ uuid: flowUuid, name: 'Status Update (Live Demo)', keywords: ['status'], nodes });

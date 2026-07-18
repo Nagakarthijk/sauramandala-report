@@ -1,25 +1,29 @@
 // generate-flow-emergency-demo.js — builds FLOW-EMERGENCY-DEMO.json.
 //
-// v2: now a scenario picker — one real case-capture form (shared across all
-// scenarios), branching into four different medically-grounded aftermaths.
-// Still centered entirely on the frontline worker, still zero setup risk:
-// no char-config.js, no real boatmen/facility Contacts, no send_broadcast.
-// The "other actors" are simulated, wait_for_time-paced messages into her
-// own thread — this time varied enough to show the system handling
-// complications, not just the happy path.
+// v3: added the 108 ambulance as its own actor in the journey — the boat only
+// ever reaches the river bank, not the facility itself; 108 has to be
+// physically waiting at that bank when the boat arrives, then it's a road
+// leg to the facility. Getting 108 positioned at the right time depends
+// entirely on the boat's ETA being shared accurately — that ETA/location
+// handoff between boatman → 108 → facility is the actual coordination gap
+// this system is meant to close, so every scenario below now threads a
+// concrete ETA through all three parties instead of just confirming "a boat
+// is coming." Still centered entirely on the frontline worker, still zero
+// setup risk: no char-config.js, no real Contacts, no send_broadcast — the
+// other actors (boatman, 108, facility) are simulated, wait_for_time-paced
+// messages into her own thread.
 //
 // Scenarios (grounded in real obstetric emergency categories an ASHA/ANM
 // would actually be trained to recognise, not invented for flavour):
-//   1. Postpartum haemorrhage — everything works smoothly (the original demo)
+//   1. Postpartum haemorrhage — smooth response, full boat→108→facility chain
 //   2. Obstructed labour, night — primary boatmen don't respond, auto-escalates
-//      to a backup boatmen group (the "what if nobody accepts" safety net,
-//      finally shown instead of just described)
-//   3. Eclampsia (seizures) — boatman accepts immediately given severity, but
-//      the primary facility reports at capacity and the alert reroutes to the
-//      backup facility (pays off REGISTRY_SHEET_DESIGN.md's "Backup Facility"
-//      column with an actual scenario)
-//   4. Precipitous labour + fuel shortage — boatman accepts but flags a longer
-//      ETA, echoing the fuel-shortage scenario from whatsapp-journey.json
+//      to a backup boatmen group; 108 repositions once the new ETA is known
+//   3. Eclampsia (seizures) — boatman accepts immediately, 108 positions fast,
+//      but the primary facility is at capacity and reroutes to the backup
+//      (pays off REGISTRY_SHEET_DESIGN.md's "Backup Facility" column)
+//   4. Precipitous labour + fuel shortage — boatman's ETA slips; 108 adjusts
+//      its own standby time to match rather than waiting idle at the bank
+//      for the wrong ETA — a real, recognisable pain point on its own
 //
 // Stores `demo_scenario`/`demo_facility_name` contact fields so
 // FLOW-STATUS-DEMO.json's messages can reference the right facility name for
@@ -45,9 +49,10 @@ const ids = {
   n5_msg: uuid(), n5_wait: uuid(),
   scenario_branch: uuid()
 };
+// a-g: up to seven beats per scenario (broadcast, delay, boatman, delay, 108, delay, facility+handoff)
 for (const s of ['1', '2', '3', '4']) {
-  ids[`s${s}_a`] = uuid(); ids[`s${s}_b`] = uuid(); ids[`s${s}_c`] = uuid();
-  ids[`s${s}_d`] = uuid(); ids[`s${s}_e`] = uuid(); ids[`s${s}_handoff`] = uuid();
+  for (const step of ['a', 'b', 'c', 'd', 'e', 'f', 'g']) ids[`s${s}_${step}`] = uuid();
+  ids[`s${s}_handoff`] = uuid();
 }
 
 const triageContent = {
@@ -104,53 +109,64 @@ const nodes = [
     exits: SCENARIOS.map((s, i) => ({ uuid: null, destination_uuid: ids[`s${s.n}_a`] })) // placeholder, fixed below
   },
 
-  // Scenario 1 — postpartum haemorrhage, smooth response.
-  actionNode([msgAction('🚨 Case logged — @results.triage. Broadcasting to the boatmen registry and the mapped facility now...')], ids.s1_b, ids.s1_a),
+  // Scenario 1 — postpartum haemorrhage, smooth response. Full boat → 108 → facility chain,
+  // each leg carrying a concrete ETA/location, not just "help is coming."
+  actionNode([msgAction('🚨 Case logged — @results.triage. Broadcasting to the boatmen registry and alerting 108 Ambulance in parallel...')], ids.s1_b, ids.s1_a),
   waitForTimeNode(6, ids.s1_c, ids.s1_b),
-  actionNode([msgAction("🚤 Rafiqul Islam has ACCEPTED this case (Manual Motor boat, Night+Day availability).\nCall him directly to coordinate pickup: +91 97xxxxxxxx.")], ids.s1_d, ids.s1_c),
-  waitForTimeNode(5, ids.s1_e, ids.s1_d),
+  actionNode([msgAction('🚤 Rafiqul Islam has ACCEPTED (Manual Motor boat, Night+Day availability). ETA to Fakirganj Ghat: ~15 min.\nCall him directly: +91 97xxxxxxxx.')], ids.s1_d, ids.s1_c),
+  waitForTimeNode(4, ids.s1_e, ids.s1_d),
+  actionNode([msgAction('🚑 108 Ambulance confirms: positioning at Fakirganj Ghat now, timed to the boat\'s ~15 min ETA.')], ids.s1_f, ids.s1_e),
+  waitForTimeNode(5, ids.s1_g, ids.s1_f),
   actionNode([
     setFieldAction('demo_scenario', '1'),
     setFieldAction('demo_facility_name', 'Bilasipara CHC'),
-    msgAction('🏥 Bilasipara CHC has been alerted — they confirm they are preparing to receive a @results.triage case.')
-  ], ids.s1_handoff, ids.s1_e),
+    msgAction('🏥 Bilasipara CHC has been alerted — preparing to receive a @results.triage case arriving by road after the ghat handover.')
+  ], ids.s1_handoff, ids.s1_g),
   actionNode([msgAction('Reply STATUS anytime to update the case stage — try it now.')], null, ids.s1_handoff),
 
   // Scenario 2 — obstructed labour, night, boatmen unresponsive, escalates to backup.
-  actionNode([msgAction('🚨 Case logged — @results.triage (night). Broadcasting to the boatmen registry now...')], ids.s2_b, ids.s2_a),
+  // 108 stays on standby through the delay, then repositions once the real ETA is known.
+  actionNode([msgAction('🚨 Case logged — @results.triage (night). Broadcasting to the boatmen registry and alerting 108 Ambulance in parallel...')], ids.s2_b, ids.s2_a),
   waitForTimeNode(7, ids.s2_c, ids.s2_b),
-  actionNode([msgAction('⚠️ No response yet from the primary boatmen group after the initial broadcast.')], ids.s2_d, ids.s2_c),
+  actionNode([msgAction('⚠️ No response yet from the primary boatmen group after the initial broadcast. 108 remains on standby.')], ids.s2_d, ids.s2_c),
   waitForTimeNode(5, ids.s2_e, ids.s2_d),
+  actionNode([msgAction("🔁 Auto-escalating to the backup boatmen group.\n\n🚤 Abdul Kalam (Govt boat, backup group) has ACCEPTED. ETA to the ghat: ~25 min (night conditions).")], ids.s2_f, ids.s2_e),
+  waitForTimeNode(4, ids.s2_g, ids.s2_f),
   actionNode([
     setFieldAction('demo_scenario', '2'),
     setFieldAction('demo_facility_name', 'Bilasipara CHC'),
-    msgAction("🔁 Auto-escalating to the backup boatmen group and alerting the 108 Coordinator in parallel.\n\n🚤 Abdul Kalam (Govt boat, backup group) has ACCEPTED. ETA to landing point: ~25 min (night conditions).\n\n🏥 Bilasipara CHC has been alerted and confirms they're preparing.")
-  ], ids.s2_handoff, ids.s2_e),
+    msgAction("🚑 108 Ambulance repositioning to match the ~25 min ETA — will be waiting at the ghat, not idling early.\n\n🏥 Bilasipara CHC has been alerted and confirms they're preparing.")
+  ], ids.s2_handoff, ids.s2_g),
   actionNode([msgAction('Reply STATUS anytime to update the case stage — try it now.')], null, ids.s2_handoff),
 
   // Scenario 3 — eclampsia (seizures), facility at capacity, reroutes to backup facility.
-  actionNode([msgAction('🚨 Case logged — @results.triage (seizure activity noted). Broadcasting now...')], ids.s3_b, ids.s3_a),
+  // Everything moves fast given the severity — 108 is positioned before the facility issue even surfaces.
+  actionNode([msgAction('🚨 Case logged — @results.triage (seizure activity noted). Broadcasting and alerting 108 Ambulance now...')], ids.s3_b, ids.s3_a),
   waitForTimeNode(4, ids.s3_c, ids.s3_b),
-  actionNode([msgAction('🚤 Rafiqul Islam has ACCEPTED immediately, given the severity noted.')], ids.s3_d, ids.s3_c),
-  waitForTimeNode(5, ids.s3_e, ids.s3_d),
-  actionNode([msgAction('⚠️ Bilasipara CHC reports at capacity — no obstetric bed currently available.')], ids.s3_handoff, ids.s3_e),
+  actionNode([msgAction('🚤 Rafiqul Islam has ACCEPTED immediately, given the severity. ETA to the ghat: ~12 min.')], ids.s3_d, ids.s3_c),
+  waitForTimeNode(3, ids.s3_e, ids.s3_d),
+  actionNode([msgAction('🚑 108 Ambulance confirms positioned at the ghat, ready for the ~12 min ETA.')], ids.s3_f, ids.s3_e),
+  waitForTimeNode(5, ids.s3_g, ids.s3_f),
+  actionNode([msgAction('⚠️ Bilasipara CHC reports at capacity — no obstetric bed currently available.')], ids.s3_handoff, ids.s3_g),
   actionNode([
     setFieldAction('demo_scenario', '3'),
     setFieldAction('demo_facility_name', 'Dhubri Civil Hospital (backup)'),
-    msgAction('🔁 Rerouting the facility alert to the backup: Dhubri Civil Hospital. They confirm ready to receive.\n\nReply STATUS anytime to update the case stage — try it now.')
+    msgAction('🔁 Rerouting to the backup facility: Dhubri Civil Hospital (~25 min by road from the ghat). 108 Ambulance briefed on the new destination — they confirm ready.\n\nReply STATUS anytime to update the case stage — try it now.')
   ], null, ids.s3_handoff),
 
-  // Scenario 4 — precipitous labour, boat delayed by fuel shortage.
-  actionNode([msgAction('🚨 Case logged — @results.triage (rapid progression noted). Broadcasting now...')], ids.s4_b, ids.s4_a),
+  // Scenario 4 — precipitous labour, boat delayed by fuel shortage. The point here specifically:
+  // 108 adjusts its own standby timing rather than waiting idle at the ghat on the original ETA.
+  actionNode([msgAction('🚨 Case logged — @results.triage (rapid progression noted). Broadcasting and alerting 108 Ambulance now...')], ids.s4_b, ids.s4_a),
   waitForTimeNode(6, ids.s4_c, ids.s4_b),
-  actionNode([msgAction('🚤 Rafiqul Islam has ACCEPTED, but flags: boat fuel is low, nearest fuel point adds ~15 min.')], ids.s4_d, ids.s4_c),
-  waitForTimeNode(5, ids.s4_e, ids.s4_d),
-  actionNode([msgAction('⏱ Revised ETA to pickup: ~40 min (vs. the usual ~15 min) due to the fuel shortage.')], ids.s4_handoff, ids.s4_e),
+  actionNode([msgAction('🚤 Rafiqul Islam has ACCEPTED, but flags: boat fuel is low, nearest fuel point adds ~15 min. Revised ETA to the ghat: ~40 min (vs. the usual ~15 min).')], ids.s4_d, ids.s4_c),
+  waitForTimeNode(4, ids.s4_e, ids.s4_d),
+  actionNode([msgAction("🚑 108 Ambulance adjusting its own standby time to match the revised ~40 min ETA — avoids sitting idle at the ghat waiting on the wrong number.")], ids.s4_f, ids.s4_e),
+  waitForTimeNode(5, ids.s4_g, ids.s4_f),
   actionNode([
     setFieldAction('demo_scenario', '4'),
     setFieldAction('demo_facility_name', 'Bilasipara CHC'),
     msgAction('🏥 Bilasipara CHC has been alerted with the revised ETA and confirms they are preparing.\n\nReply STATUS anytime to update the case stage — try it now.')
-  ], null, ids.s4_handoff)
+  ], null, ids.s4_g)
 ];
 
 // Fix up the scenario_branch node's placeholder exits now that real exit uuids exist inside its router.
