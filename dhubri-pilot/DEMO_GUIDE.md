@@ -16,7 +16,7 @@ A simpler 5-scenario version of the same idea, predates the blueprint reconcilia
 
 ## Want it on real WhatsApp instead of a browser mockup?
 
-See [`glific-flows/DEMO_ON_WHATSAPP.md`](./glific-flows/DEMO_ON_WHATSAPP.md) — a step up from the browser demo above: the same conversations, running on a real Glific instance, arriving on real phones in real WhatsApp. Still no n8n, no Supabase, nothing to learn beyond a Glific login — just three phones, three keywords (`emergency`, `boatjob`, `brcalert`), and one setup script someone technical runs once beforehand.
+See [`glific-flows/README.md`](./glific-flows/README.md) — a step up from the browser demo above: the same kind of conversation, running on a real Glific instance, arriving on real phones in real WhatsApp. Three keywords across two phones: a frontline worker texts `emergency`, a boatman texts `accept` (or `*`), and the worker texts `status` any time after to update the case stage. Needs a Glific login and a few real Groups/Contacts configured first (see `glific-flows/char-config.js` and `glific-flows/REGISTRY_SHEET_DESIGN.md`) — still no n8n, no Supabase.
 
 ## Optional, needs 2+ people in the same room on their phones: `game/`
 
@@ -30,4 +30,4 @@ A live multiplayer training exercise — real people play worker/boatmen/facilit
 
 ## If someone technical asks "can we run this on Glific for real"
 
-Yes — see `glific-flows/README.md` and `GLIFIC_SETUP.md`. Short version: import `FLOW-W1.json`/`FLOW-B1.json`/`FLOW-BRC1.json` via Glific's GraphQL API (not the UI import button, which the team's own notes flag as unreliable), publish each, then use Glific's built-in Simulator. The conversational back-and-forth will work; the real dispatch/case-creation webhook calls won't do anything until a backend is actually deployed.
+Yes — see `glific-flows/README.md`. Short version: fill in real Group/Contact UUIDs in `glific-flows/char-config.js`, then run `node deploy-flows.js` (login, import, publish all three flows in one command — not the UI import button, which the team's own notes flag as unreliable). The conversational back-and-forth is real; the one unconfirmed piece is whether Glific's `send_broadcast` action works with plain text inside an active session (see `glific-flows/README.md`'s "one thing that isn't independently confirmed") — worth testing on its own before a live demo.

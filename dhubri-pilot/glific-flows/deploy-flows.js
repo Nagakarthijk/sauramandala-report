@@ -1,23 +1,27 @@
-// deploy-demo-flows.js — one command to get the three DEMO flows live on a
-// real Glific instance: login, import, publish, for all three files. This is
-// the entire "setup" step for the WhatsApp demo — nothing else to install,
-// no n8n, no Supabase. Needs Node 18+ (for global fetch) and a Glific login.
+// deploy-flows.js — one command: login, import, publish all three real flows
+// (FLOW-EMERGENCY-REPORT.json, FLOW-BOATMAN-ACCEPT.json, FLOW-STATUS-UPDATE.json)
+// against a real Glific instance. No n8n, no Supabase, nothing else to install.
 //
 // Usage:
 //   export GLIFIC_API_URL=https://api.<your-org>.glific.com   (no trailing /api)
 //   export GLIFIC_PHONE=<your Glific login phone>
 //   export GLIFIC_PASSWORD=<your Glific login password>
-//   node deploy-demo-flows.js
+//   node deploy-flows.js
 //
-// What it does, per file (FLOW-W1-DEMO.json, FLOW-B1-DEMO.json, FLOW-BRC1-DEMO.json):
-//   1. Logs in via POST /api/v1/session (same pattern as backend/functions/_shared/glific-client.ts)
-//   2. Calls importFlow(flow: <file contents>) via GraphQL
-//   3. Calls publishFlow(uuid: <flow's own uuid>) — REQUIRED, imported flows are
-//      drafts and drafts never respond in real WhatsApp chat, only in Glific's Simulator.
+// Before running this for the first time:
+//   1. Replace every REPLACE_WITH_* placeholder in char-config.js with real
+//      Glific Group/Contact UUIDs (see REGISTRY_SHEET_DESIGN.md's "Onboarding"
+//      section for how to get them), then regenerate:
+//        node generate-flow-emergency-report.js
+//        node generate-flow-boatman-accept.js
+//        node generate-flow-status-update.js
+//   2. Set at least one real test contact's `role` field to `frontline_worker`
+//      and another's to `boatman`, and both their `char_id` fields to a char
+//      you configured in char-config.js — otherwise every flow's gate check
+//      will fall through to the "unregistered" branch.
 //
-// If step 2 or 3 fails, the error printed is Glific's own — that's genuinely useful
-// information (usually a keyword collision with an existing flow, or a bad login),
-// not something to guess around.
+// importFlow on a flow with the same uuid updates it in place — safe to re-run
+// after any edit + regenerate.
 
 const fs = require('fs');
 const path = require('path');
@@ -27,11 +31,11 @@ const PHONE = process.env.GLIFIC_PHONE;
 const PASSWORD = process.env.GLIFIC_PASSWORD;
 
 if (!API_URL || !PHONE || !PASSWORD) {
-  console.error('Set GLIFIC_API_URL, GLIFIC_PHONE, GLIFIC_PASSWORD as environment variables first — see the comment at the top of this file.');
+  console.error('Set GLIFIC_API_URL, GLIFIC_PHONE, GLIFIC_PASSWORD as environment variables first.');
   process.exit(1);
 }
 
-const FILES = ['FLOW-W1-DEMO.json', 'FLOW-B1-DEMO.json', 'FLOW-BRC1-DEMO.json'];
+const FILES = ['FLOW-EMERGENCY-REPORT.json', 'FLOW-BOATMAN-ACCEPT.json', 'FLOW-STATUS-UPDATE.json'];
 
 async function login() {
   const res = await fetch(`${API_URL}/api/v1/session`, {
@@ -87,7 +91,7 @@ async function main() {
     console.log('  Published — live now.\n');
   }
 
-  console.log('Done. Confirm each flow shows "Published" in Glific\'s Flows list before the demo.');
+  console.log('Done. Confirm each flow shows "Published" in Glific\'s Flows list before testing.');
 }
 
 main().catch(err => {

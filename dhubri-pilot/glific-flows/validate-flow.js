@@ -9,7 +9,7 @@
 // "message + wait combined in one node" shape confirmed wrong against a real,
 // already-imported-and-published export (see _lib.js's header comment).
 //
-// Run: node validate-flow.js FLOW-W1.json
+// Run: node validate-flow.js FLOW-EMERGENCY-REPORT.json
 
 const fs = require('fs');
 

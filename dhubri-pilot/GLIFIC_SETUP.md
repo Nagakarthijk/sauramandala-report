@@ -1,6 +1,6 @@
 # Dhubri Pilot — Glific + Gupshup + Exotel Setup (Draft v0.1)
 
-**Purpose:** Concrete configuration steps to stand up the WhatsApp (Glific + Gupshup) and SMS/IVR (Exotel) sides of the ecosystem, plus a literal node-by-node build of `FLOW-W1` (worker emergency report) — the one flow in `FLOWS.md` with no open questions blocking it, so it's the right first thing to actually build and test.
+**Purpose:** Concrete configuration steps to stand up the WhatsApp (Glific + Gupshup) and SMS/IVR (Exotel) sides of the ecosystem, and how to deploy the real, importable flows in `glific-flows/` — built directly from the team's own detailed process description.
 
 This is a configuration guide, not a place to store real credentials — every ID/key/URL below is a placeholder to replace with your actual account details. Companion to `CONCEPT.md` §6a (the corrected Gupshup/Exotel architecture) and `backend/` (the code that ties both together).
 
@@ -53,25 +53,20 @@ Use this for: SOP-3's actual job broadcast to boatmen who are SMS/voice-only, an
 
 ## 3. Glific — Groups, Contact Fields, Auth
 
-1. Create four groups: `Workers`, `Boatmen`, `Facility`, `Admin` (per `FLOWS.md`'s table).
-2. Create contact fields: `char_id`, `facility_id`, `role`, `capability`, `availability_status`, `active_case_id`, `channel` (same table).
-3. Glific's own API (what the backend uses to push messages/start flows — see step 4) authenticates via REST, not GraphQL: `POST https://api.<org>.glific.com/api/v1/session` with the registered phone+password to get an `access_token` (short-lived — needs periodic renewal via the accompanying `renewal_token`; the backend's `glific-client.ts` handles this). **Confirm the exact session/renewal endpoint shape against your own Glific instance's API docs before wiring this up** — Glific's REST auth surface has shifted slightly across versions and this guide shouldn't be trusted blindly on that detail.
-4. The mutation the backend uses to push a case-relevant message to a contact is `startContactFlow(flowId: ID!, contactId: ID!, result: JSON!)` — it starts a specific flow for a specific contact and seeds it with JSON context (e.g. `{case_id, char_name, risk_flag, eta_min}`) that the flow's message nodes can reference as `@results.<key>` (no `.value` suffix — that's only for persisted `@contact.fields.<key>.value`). This is how the backend triggers FLOW-B1 (boatman broadcast) and FLOW-BRC1 (BRC alert) for each relevant contact — the backend decides *who* and *with what data*, Glific/Gupshup handles *delivery*. Corrected from an earlier `defaultResults`/snake_case guess in this file — `glific-client.ts` uses the right shape now.
+1. Create one Group per char for boatmen (e.g. `Boatmen - Char A`) — see `glific-flows/char-config.js` and `glific-flows/REGISTRY_SHEET_DESIGN.md` for the full registry design this now follows.
+2. Create contact fields: `char_id`, `role` (`frontline_worker` / `boatman` / `facility`), `active_case_status`, `emergency_flagged`.
+3. Glific's own API authenticates via REST, not GraphQL: `POST https://api.<org>.glific.com/api/v1/session` with the registered phone+password to get an `access_token`. **Confirm the exact session/renewal endpoint shape against your own Glific instance's API docs** — Glific's REST auth surface has shifted slightly across versions.
 
 ---
 
-## 4. Deploying FLOW-W1 — use the real JSON, not a manual UI build
+## 4. Deploying the real flows
 
-**Don't hand-build this in the Flow Editor.** `glific-flows/FLOW-W1.json` (and `FLOW-B1.json`, `FLOW-BRC1.json`) are real, importable Glific flow JSON, corrected against the team's own live-instance-tested notes (`GLIFIC-API-REFERENCE.md`) — spec_version, real `send_interactive_msg` quick-reply buttons, real variable syntax, and a Google Sheets lookup node. Deploy them instead of retyping the same logic node-by-node in the UI:
+**⚠ Superseded note:** this section previously described `FLOW-W1`/`FLOW-B1`/`FLOW-BRC1`, driven by a backend calling `startContactFlow`. Those have been replaced by a from-scratch rebuild — `glific-flows/FLOW-EMERGENCY-REPORT.json`, `FLOW-BOATMAN-ACCEPT.json`, `FLOW-STATUS-UPDATE.json` — built directly from the team's own detailed process description, all independently keyword-triggered (no backend needed to start them). See `glific-flows/README.md` for the full design and honesty caveats (one `send_broadcast` assumption not yet independently confirmed).
 
-1. **Import via the GraphQL API directly, not the "Import Flow" UI button** — the team's own notes flag the UI importer as unreliable ("broken as of mid-2026"). Authenticate (`POST /api/v1/session`), then call `importFlow(flow: $flow)` with the *entire contents* of `FLOW-W1.json` (it's already wrapped as `{ flows: [...], interactive_templates: [...] }`, which is what `importFlow` expects) as the `$flow` variable. A short script or a single Postman/Insomnia request is enough.
-2. **Publish it** — `publishFlow(uuid: <flow uuid from FLOW-W1.json>)`. Imported flows sit as drafts; drafts only respond in Glific's own Simulator, never in real WhatsApp chat. This step is easy to forget and the failure mode (nothing happens, no error) is confusing.
-3. Before importing, replace the two placeholders in `FLOW-W1.json`: the `cases-create`/`case-details` webhook URLs (point at your deployed `backend/` functions) and the `link_google_sheet` node's `url`/`sheet_id` (register your actual char→facility sheet in Glific's Sheets UI first — Settings → Sheets → Add Sheet — to get the real org-specific `sheet_id`; or delete that node if you're not ready to stand up the sheet yet).
-4. Test with Glific's built-in **Simulator** first, then a real sandbox Gupshup number, before pointing it at the pilot number.
-
-`FLOW-B1.json` and `FLOW-BRC1.json` deploy the same way (import + publish), but are never keyword-triggered — they're started via the backend's `startContactFlow` call, per §3.4 above. See `glific-flows/README.md` for the full deploy checklist and what changed from the earlier hand-guessed version.
-
-The remaining flows in `FLOWS.md` (family report + verification, two-checklist facility alert, dual-ETA ambulance dispatch, case close + reflection) don't have JSON generators yet — `glific-flows/generate-flow-w1.js` etc. are the template pattern to extend; see `glific-flows/README.md`'s "Extending to the rest of FLOWS.md".
+1. Fill in real Group/Contact UUIDs in `glific-flows/char-config.js` (placeholders by default).
+2. `cd glific-flows && node generate-flow-emergency-report.js && node generate-flow-boatman-accept.js && node generate-flow-status-update.js`
+3. Set `GLIFIC_API_URL`/`GLIFIC_PHONE`/`GLIFIC_PASSWORD` and run `node deploy-flows.js` — logs in, imports, and publishes all three in one go. (Not the "Import Flow" UI button — the team's own notes flag it as unreliable.)
+4. Test with Glific's built-in **Simulator** first, then real test contacts with `role`/`char_id` fields set, before a real pilot number.
 
 ---
 

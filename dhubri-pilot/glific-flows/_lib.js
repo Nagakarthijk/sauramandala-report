@@ -53,6 +53,53 @@ function webhookAction(method, url, resultName, body) {
   return { uuid: uuid(), type: 'call_webhook', method, url, result_name: resultName, body };
 }
 
+// Confirmed shape (GLIFIC-API-REFERENCE.md + matches CMYC_mPowerClub.json's set_contact_field
+// actions for full_name/centre_name/etc verbatim).
+function setFieldAction(key, value) {
+  return { uuid: uuid(), type: 'set_contact_field', field: { key, name: key }, value };
+}
+
+// NOT independently confirmed against a real working export the way the rest of this
+// file is — the one captured send_broadcast example (GLIFIC-API-REFERENCE.md) uses an
+// HSM `templating` reference with `text: ""`, for messaging outside the 24h session
+// window. Whether a plain `text` broadcast (no templating, inside an active session —
+// the case for everything this helper is used for here) works the same way is this
+// build's single biggest unconfirmed assumption. Test one in isolation first — a 2-node
+// flow that just calls this against a real test contact — before relying on it live.
+// contacts/groups: [{uuid, name}]
+function broadcastAction(text, { contacts = [], groups = [] } = {}) {
+  return { uuid: uuid(), type: 'send_broadcast', text, groups, contacts, attachments: [] };
+}
+
+// An immediate (non-waiting) router: evaluates `operand` right away against known values,
+// no user reply needed. Confirmed pattern — same shape as wait_for_time's router and the
+// link_google_sheet node's router in earlier builds here: a node with no `wait` key free-routes
+// the instant execution reaches it. Used for role/group gating and per-char branching.
+// options: [{ value, destUuid }]; matchType defaults to exact-phrase, use 'has_any_word' for
+// single-digit menu replies (confirmed pattern from CMYC_mPowerClub.json's numbered menus).
+function switchNode(operand, resultName, options, otherDestUuid, nodeUuid = uuid(), matchType = 'has_only_phrase') {
+  const categories = [];
+  const cases = [];
+  const exits = [];
+  for (const { value, destUuid } of options) {
+    const catUuid = uuid();
+    const exitUuid = uuid();
+    categories.push({ uuid: catUuid, name: value, exit_uuid: exitUuid });
+    cases.push({ uuid: uuid(), type: matchType, arguments: [value], category_uuid: catUuid });
+    exits.push({ uuid: exitUuid, destination_uuid: destUuid });
+  }
+  const otherCatUuid = uuid();
+  const otherExitUuid = uuid();
+  categories.push({ uuid: otherCatUuid, name: 'Other', exit_uuid: otherExitUuid });
+  exits.push({ uuid: otherExitUuid, destination_uuid: otherDestUuid });
+  return {
+    uuid: nodeUuid,
+    actions: [],
+    router: { type: 'switch', result_name: resultName, operand, default_category_uuid: otherCatUuid, categories, cases },
+    exits
+  };
+}
+
 // A wait-for-any-reply node: empty actions, router with a single "Any" category.
 function waitAnyNode(resultName, destUuid, nodeUuid = uuid()) {
   const catUuid = uuid();
@@ -76,7 +123,7 @@ function waitAnyNode(resultName, destUuid, nodeUuid = uuid()) {
 // A wait-for-a-specific-set-of-button-replies node: empty actions, router matching each
 // option's exact title via has_only_phrase, plus an "Other" fallback.
 // options: [{ title, destUuid }]; otherDestUuid: where an unrecognised reply goes.
-function waitOptionsNode(resultName, options, otherDestUuid, nodeUuid = uuid()) {
+function waitOptionsNode(resultName, options, otherDestUuid, nodeUuid = uuid(), matchType = 'has_only_phrase') {
   const categories = [];
   const cases = [];
   const exits = [];
@@ -84,7 +131,7 @@ function waitOptionsNode(resultName, options, otherDestUuid, nodeUuid = uuid()) 
     const catUuid = uuid();
     const exitUuid = uuid();
     categories.push({ uuid: catUuid, name: title, exit_uuid: exitUuid });
-    cases.push({ uuid: uuid(), type: 'has_only_phrase', arguments: [title], category_uuid: catUuid });
+    cases.push({ uuid: uuid(), type: matchType, arguments: [title], category_uuid: catUuid });
     exits.push({ uuid: exitUuid, destination_uuid: destUuid });
   }
   const otherCatUuid = uuid();
@@ -161,6 +208,6 @@ function assemble(flows, interactiveTemplates = [], contactFields = []) {
 }
 
 module.exports = {
-  uuid, actionNode, msgAction, interactiveAction, webhookAction,
-  waitAnyNode, waitOptionsNode, waitForTimeNode, interactiveTemplate, wrapFlow, assemble
+  uuid, actionNode, msgAction, interactiveAction, webhookAction, setFieldAction, broadcastAction,
+  waitAnyNode, waitOptionsNode, waitForTimeNode, switchNode, interactiveTemplate, wrapFlow, assemble
 };

@@ -1,0 +1,216 @@
+{
+  "interactive_templates": [],
+  "contact_field": [],
+  "collections": [],
+  "flows": [
+    {
+      "keywords": [
+        "accept",
+        "*"
+      ],
+      "definition": {
+        "uuid": "d6f63a3f-5ce2-45e6-ae05-2f2c93130174",
+        "name": "Boatman Accept",
+        "type": "messaging",
+        "spec_version": "14.3.0",
+        "language": "base",
+        "expire_after_minutes": 10080,
+        "localization": {},
+        "_ui": {
+          "nodes": {},
+          "stickies": {}
+        },
+        "vars": [],
+        "nodes": [
+          {
+            "uuid": "1b2b7a23-977d-4cad-85b7-3eb542fdb91e",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "result_name": "sender_role",
+              "operand": "@contact.fields.role.value",
+              "default_category_uuid": "4436d096-151f-4a1c-9912-189c0495aed1",
+              "categories": [
+                {
+                  "uuid": "c55a2a46-c944-44d6-a3e9-1cdaf2fcf4fd",
+                  "name": "boatman",
+                  "exit_uuid": "cffbdb9f-e573-46a5-91f2-3ed27b385f1b"
+                },
+                {
+                  "uuid": "4436d096-151f-4a1c-9912-189c0495aed1",
+                  "name": "Other",
+                  "exit_uuid": "4abee5cb-46cc-48ed-985c-82d1f08e01b0"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "0fad4714-3a98-46f7-92db-fe6198aa2bfc",
+                  "type": "has_only_phrase",
+                  "arguments": [
+                    "boatman"
+                  ],
+                  "category_uuid": "c55a2a46-c944-44d6-a3e9-1cdaf2fcf4fd"
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "cffbdb9f-e573-46a5-91f2-3ed27b385f1b",
+                "destination_uuid": "2684fd98-6657-4b55-b215-6b447ef5242e"
+              },
+              {
+                "uuid": "4abee5cb-46cc-48ed-985c-82d1f08e01b0",
+                "destination_uuid": null
+              }
+            ]
+          },
+          {
+            "uuid": "2684fd98-6657-4b55-b215-6b447ef5242e",
+            "actions": [
+              {
+                "uuid": "262cad5a-59c7-439c-aef4-8398d74aa33d",
+                "type": "send_msg",
+                "text": "Thanks — you're marked as accepted for the current case. The frontline worker will call you shortly to coordinate pickup.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "092fb499-6045-4afd-b544-e1339b09c760",
+                "destination_uuid": "942e9e84-2195-4502-a5b2-8d61ea421c39"
+              }
+            ]
+          },
+          {
+            "uuid": "942e9e84-2195-4502-a5b2-8d61ea421c39",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "result_name": "char_branch",
+              "operand": "@contact.fields.char_id.value",
+              "default_category_uuid": "070838fb-0379-4e1a-9fb4-ea7caa5dbac2",
+              "categories": [
+                {
+                  "uuid": "3c3850e7-684c-4a7e-94de-b48523fa39e6",
+                  "name": "char_a",
+                  "exit_uuid": "b3705902-a610-4e5f-95da-8aaa8c702377"
+                },
+                {
+                  "uuid": "895e9be8-eace-42be-b1ef-5ae4c800abb7",
+                  "name": "char_b",
+                  "exit_uuid": "54dbf50f-270d-4625-a15e-2aab6a7f541c"
+                },
+                {
+                  "uuid": "070838fb-0379-4e1a-9fb4-ea7caa5dbac2",
+                  "name": "Other",
+                  "exit_uuid": "c271f9e7-4a56-4f0e-bad7-faa91bfe6424"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "0cdb408f-8f0f-4eb4-90a8-fffcde2b2cc4",
+                  "type": "has_only_phrase",
+                  "arguments": [
+                    "char_a"
+                  ],
+                  "category_uuid": "3c3850e7-684c-4a7e-94de-b48523fa39e6"
+                },
+                {
+                  "uuid": "2971038f-2691-4e26-89ab-eb479493bde3",
+                  "type": "has_only_phrase",
+                  "arguments": [
+                    "char_b"
+                  ],
+                  "category_uuid": "895e9be8-eace-42be-b1ef-5ae4c800abb7"
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "b3705902-a610-4e5f-95da-8aaa8c702377",
+                "destination_uuid": "41079b75-5162-4f33-9008-945f003a6bbf"
+              },
+              {
+                "uuid": "54dbf50f-270d-4625-a15e-2aab6a7f541c",
+                "destination_uuid": "d5431936-d0cc-4958-8858-78ecc8595ddd"
+              },
+              {
+                "uuid": "c271f9e7-4a56-4f0e-bad7-faa91bfe6424",
+                "destination_uuid": "849fdab7-b637-4d3a-b9de-52505502e728"
+              }
+            ]
+          },
+          {
+            "uuid": "41079b75-5162-4f33-9008-945f003a6bbf",
+            "actions": [
+              {
+                "uuid": "e7b0ca3d-27f1-4367-abe8-db2c760012fa",
+                "type": "send_broadcast",
+                "text": "Boatman @contact.name (@contact.phone) has accepted the case. Please call them to coordinate pickup.",
+                "groups": [],
+                "contacts": [
+                  {
+                    "uuid": "REPLACE_WITH_REAL_CONTACT_UUID",
+                    "name": "Frontline Worker - Char A"
+                  }
+                ],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "9633c722-d1ed-45b8-8078-18aeb2294b37",
+                "destination_uuid": null
+              }
+            ]
+          },
+          {
+            "uuid": "d5431936-d0cc-4958-8858-78ecc8595ddd",
+            "actions": [
+              {
+                "uuid": "3a535567-d8ee-44d0-bfd3-cdc0469897fd",
+                "type": "send_broadcast",
+                "text": "Boatman @contact.name (@contact.phone) has accepted the case. Please call them to coordinate pickup.",
+                "groups": [],
+                "contacts": [
+                  {
+                    "uuid": "REPLACE_WITH_REAL_CONTACT_UUID",
+                    "name": "Frontline Worker - Char B"
+                  }
+                ],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "9d928571-9220-4fe7-9dbc-b90292cd8881",
+                "destination_uuid": null
+              }
+            ]
+          },
+          {
+            "uuid": "849fdab7-b637-4d3a-b9de-52505502e728",
+            "actions": [
+              {
+                "uuid": "43b45691-2ca1-44e0-b35e-30f54546a454",
+                "type": "send_msg",
+                "text": "Thanks for accepting — please also message your Block Coordinator directly so they can connect you with the frontline worker.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "c6b8b1d9-3bc6-49ed-906c-25003339b229",
+                "destination_uuid": null
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
