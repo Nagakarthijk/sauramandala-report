@@ -60,3 +60,4 @@ Then, on real test contacts: set one worker's `role` field to `frontline_worker`
 - `deploy-flows.js` — one command: login, import, publish all three against a real Glific instance
 - `validate-flow.js` — structural consistency checker, run against any flow JSON here
 - `REGISTRY_SHEET_DESIGN.md` — the Google Sheet design and the real reason it isn't the live dispatch mechanism
+- `csv-templates/` — bulk-onboard real people into Glific via its native Import/Move Contacts screens (no code) — sets up collections, `role`, `char_id` in two CSV uploads

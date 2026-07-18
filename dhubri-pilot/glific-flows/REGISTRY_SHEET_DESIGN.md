@@ -62,14 +62,15 @@ Glific's native Google Sheets action (`link_google_sheet`) reads **one row** and
 
 ## Keeping the sheet and Glific in sync
 
-Today: manually. When a new boatman joins, add him to Tab 2, then in Glific: make sure he's messaged the WhatsApp number once (so he exists as a Contact), set his `role` field to `boatman` and `char_id` field to his char, and add him to that char's Boatmen group. Copy his new Glific Contact UUID back into Tab 2.
+Today: manually, but in **bulk**, not one person at a time — see "Onboarding" below. When people are added or change char/role, update the Sheet, then re-run the same two-CSV process for whoever changed.
 
-Later, if this grows past hand-editing: this is exactly the kind of job the team's existing n8n pattern (discussed earlier in this project) is built for — a scheduled n8n workflow reading the sheet and calling Glific's `updateContact`/`updateContactGroups` mutations to reconcile any differences. Not needed yet at pilot scale.
+Later, if this grows past hand-editing: this is exactly the kind of job the team's existing n8n pattern (discussed earlier in this project) is built for — a scheduled n8n workflow reading the sheet and calling Glific's `updateContact`/`updateContactGroups` mutations to reconcile any differences automatically. Not needed yet at pilot scale, especially now that bulk CSV upload exists.
 
-## Onboarding a new frontline worker / boatman / facility contact into Glific (once, per person)
+## Onboarding frontline workers / boatmen / facility contacts into Glific, in bulk
 
-1. They send any message to the org's WhatsApp number (creates them as a Glific Contact).
-2. In Glific's Contacts screen, open their profile, note their Contact UUID.
-3. Set their contact fields: `role` (`frontline_worker` / `boatman` / `facility`) and `char_id` (must match a `char-config.js` entry).
-4. Add them to the relevant Group if they're a boatman (Contacts screen → Groups, or via the Groups screen itself).
-5. Record their UUID in the matching Sheet tab and in `char-config.js` (facility/worker contacts) so the flows can reach them.
+Confirmed against Glific's real Contact Management screen (`Import contacts` / `Move contacts`) — **no code, no per-person WhatsApp opt-in message needed, no one-by-one field-setting.** Two CSV uploads per batch:
+
+1. **Import contacts** (`name, phone, language, delete`) — creates everyone as a Glific Contact and sends the opt-in message automatically, for as many people as you list.
+2. **Move contacts** (`name, phone, collection, role, char_id`) — assigns each contact to their collection (Glific's name for the Groups `char-config.js` targets — must match its collection name exactly for boatmen) and sets their `role`/`char_id` contact fields, all in one upload.
+
+Ready-to-edit templates for both: [`csv-templates/`](./csv-templates/) — see its own README for the exact columns, a caveat on the `role`/`char_id`-via-CSV piece (Glific's own UI says it works, not yet independently verified with a captured example), and what this still doesn't replace (the real Group/Contact UUIDs still need copying into `char-config.js` by hand, once, after this).
