@@ -8,6 +8,8 @@ Real, importable Glific flow JSON built directly from the actual process as desc
 | `FLOW-BOATMAN-ACCEPT.json` | `accept`, `*` | Boatman | Confirms acceptance, tells that char's frontline worker who accepted so she can call them |
 | `FLOW-STATUS-UPDATE.json` | `status` | Frontline worker | Numbered menu of case stages (informed → accepted → picked up → waiting → on the way → reached facility); the last two also notify the facility |
 
+**Demoing today, on one phone, with nothing set up yet? See [`LIVE_DEMO_SCRIPT.md`](./LIVE_DEMO_SCRIPT.md)** — `FLOW-EMERGENCY-DEMO.json`/`FLOW-STATUS-DEMO.json` are self-contained variants centered entirely on the frontline worker: no char-config, no real boatmen/facility contacts, no send_broadcast — the boatman's acceptance and facility's readiness are simulated as timed messages into her own thread. `node deploy-live-demo.js` to stand them up.
+
 Both worker-facing flows only respond to contacts whose Glific `role` contact field matches (`frontline_worker`/`boatman`) — anyone else gets no automated reply at all (see "How the process actually works" below for what happens instead).
 
 ## Read this before importing

@@ -1,0 +1,500 @@
+{
+  "interactive_templates": [
+    {
+      "source_id": 920001,
+      "type": "quick_reply",
+      "label": "Case Severity",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "Case status?",
+          "text": "Grade the severity per protocol."
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "RED"
+          },
+          {
+            "type": "text",
+            "title": "GREEN"
+          },
+          {
+            "type": "text",
+            "title": "Labour Started"
+          }
+        ]
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "Case status?",
+            "text": "Grade the severity per protocol."
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "RED"
+            },
+            {
+              "type": "text",
+              "title": "GREEN"
+            },
+            {
+              "type": "text",
+              "title": "Labour Started"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "contact_field": [],
+  "collections": [],
+  "flows": [
+    {
+      "keywords": [
+        "emergency"
+      ],
+      "definition": {
+        "uuid": "d8b8678b-7f6d-4d5c-8111-1aa56a417ed6",
+        "name": "Emergency Report (Live Demo)",
+        "type": "messaging",
+        "spec_version": "14.3.0",
+        "language": "base",
+        "expire_after_minutes": 10080,
+        "localization": {},
+        "_ui": {
+          "nodes": {},
+          "stickies": {}
+        },
+        "vars": [],
+        "nodes": [
+          {
+            "uuid": "a89543a7-44e2-4362-a98f-61365da942f9",
+            "actions": [
+              {
+                "uuid": "90b17df5-ab33-4547-9317-a33891861eb2",
+                "type": "send_interactive_msg",
+                "id": 920001,
+                "name": "Case Severity",
+                "text": "{\"type\":\"quick_reply\",\"content\":{\"type\":\"text\",\"header\":\"Case status?\",\"text\":\"Grade the severity per protocol.\"},\"options\":[{\"type\":\"text\",\"title\":\"RED\"},{\"type\":\"text\",\"title\":\"GREEN\"},{\"type\":\"text\",\"title\":\"Labour Started\"}]}",
+                "labels": [],
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "62b8a0f3-65d4-4161-aef3-31d7d415b000",
+                "destination_uuid": "4091bde4-5036-43b6-a730-6fb6bdd7e1ae"
+              }
+            ]
+          },
+          {
+            "uuid": "4091bde4-5036-43b6-a730-6fb6bdd7e1ae",
+            "actions": [],
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "triage",
+              "operand": "@input.text",
+              "default_category_uuid": "83b94e51-644e-4e21-b3c3-c3a79931f625",
+              "categories": [
+                {
+                  "uuid": "fbab8049-0658-4504-894d-eec7e65d3adb",
+                  "name": "RED",
+                  "exit_uuid": "f2691047-ef32-4690-9d7a-4f15dbcc2b12"
+                },
+                {
+                  "uuid": "cf7321ad-32a8-4880-ad1c-723592eae63e",
+                  "name": "GREEN",
+                  "exit_uuid": "dcaa0976-4ae8-4db2-92f6-461f22587551"
+                },
+                {
+                  "uuid": "27252cca-5a83-4f80-922c-9517ccc4e845",
+                  "name": "Labour Started",
+                  "exit_uuid": "759cbab8-5c41-44f5-aaeb-e551d74e4e95"
+                },
+                {
+                  "uuid": "83b94e51-644e-4e21-b3c3-c3a79931f625",
+                  "name": "Other",
+                  "exit_uuid": "2d464b89-998d-401b-8d8f-81a79d09fb98"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "9b22ec1f-5193-4bfa-afbc-369951e501df",
+                  "type": "has_only_phrase",
+                  "arguments": [
+                    "RED"
+                  ],
+                  "category_uuid": "fbab8049-0658-4504-894d-eec7e65d3adb"
+                },
+                {
+                  "uuid": "d9a39dd5-b770-452c-960f-387d944103db",
+                  "type": "has_only_phrase",
+                  "arguments": [
+                    "GREEN"
+                  ],
+                  "category_uuid": "cf7321ad-32a8-4880-ad1c-723592eae63e"
+                },
+                {
+                  "uuid": "9bfcfebe-6bed-4098-9a94-e7cf495c1be7",
+                  "type": "has_only_phrase",
+                  "arguments": [
+                    "Labour Started"
+                  ],
+                  "category_uuid": "27252cca-5a83-4f80-922c-9517ccc4e845"
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "f2691047-ef32-4690-9d7a-4f15dbcc2b12",
+                "destination_uuid": "b8f86ac4-6131-4c3b-a43d-edbbf85036e4"
+              },
+              {
+                "uuid": "dcaa0976-4ae8-4db2-92f6-461f22587551",
+                "destination_uuid": "b8f86ac4-6131-4c3b-a43d-edbbf85036e4"
+              },
+              {
+                "uuid": "759cbab8-5c41-44f5-aaeb-e551d74e4e95",
+                "destination_uuid": "b8f86ac4-6131-4c3b-a43d-edbbf85036e4"
+              },
+              {
+                "uuid": "2d464b89-998d-401b-8d8f-81a79d09fb98",
+                "destination_uuid": "b8f86ac4-6131-4c3b-a43d-edbbf85036e4"
+              }
+            ]
+          },
+          {
+            "uuid": "b8f86ac4-6131-4c3b-a43d-edbbf85036e4",
+            "actions": [
+              {
+                "uuid": "06137d10-e489-42d3-a24c-f53d35583937",
+                "type": "send_msg",
+                "text": "Exact location or landmark (e.g. nearest ghat)?",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "3d074bc7-77f6-4e06-94ff-0ee598578edd",
+                "destination_uuid": "fa068d16-713f-474b-8d4f-635d9861e902"
+              }
+            ]
+          },
+          {
+            "uuid": "fa068d16-713f-474b-8d4f-635d9861e902",
+            "actions": [],
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "location_detail",
+              "operand": "@input.text",
+              "default_category_uuid": "256ee5d0-7d6b-48c4-89a3-2b98468cd049",
+              "categories": [
+                {
+                  "uuid": "256ee5d0-7d6b-48c4-89a3-2b98468cd049",
+                  "name": "Any",
+                  "exit_uuid": "d19db1fc-d4d1-4084-9aaa-c81ce6a2d71f"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "d19db1fc-d4d1-4084-9aaa-c81ce6a2d71f",
+                "destination_uuid": "c405242a-578f-4a6a-874b-2fa01470975f"
+              }
+            ]
+          },
+          {
+            "uuid": "c405242a-578f-4a6a-874b-2fa01470975f",
+            "actions": [
+              {
+                "uuid": "f6885e7a-8ff0-4d63-be8c-40ba1d850870",
+                "type": "send_msg",
+                "text": "Patient name and age (or ID as you track it)?",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "e0426b07-f2b5-400f-983d-7fe9035497e8",
+                "destination_uuid": "858b6040-8f99-445d-8af7-4c839e60ef9d"
+              }
+            ]
+          },
+          {
+            "uuid": "858b6040-8f99-445d-8af7-4c839e60ef9d",
+            "actions": [],
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "patient_detail",
+              "operand": "@input.text",
+              "default_category_uuid": "d6d32f39-2a68-462c-a721-0565644460ae",
+              "categories": [
+                {
+                  "uuid": "d6d32f39-2a68-462c-a721-0565644460ae",
+                  "name": "Any",
+                  "exit_uuid": "c93533ce-0895-4202-a700-12cb37ab37be"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "c93533ce-0895-4202-a700-12cb37ab37be",
+                "destination_uuid": "59595289-b1df-47c4-aa42-eb1b5d5a9a6f"
+              }
+            ]
+          },
+          {
+            "uuid": "59595289-b1df-47c4-aa42-eb1b5d5a9a6f",
+            "actions": [
+              {
+                "uuid": "092aabab-18af-40e5-8e36-7d52080b4e71",
+                "type": "send_msg",
+                "text": "Anything urgent to flag? (e.g. heavy bleeding, distance to landing point)",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "e1beafc7-9f50-4e3f-b1bb-6a8581abd885",
+                "destination_uuid": "4d449bfb-4d69-4e20-95c6-bc0c30e1e450"
+              }
+            ]
+          },
+          {
+            "uuid": "4d449bfb-4d69-4e20-95c6-bc0c30e1e450",
+            "actions": [],
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "urgency_notes",
+              "operand": "@input.text",
+              "default_category_uuid": "1a19539b-f2a4-4f93-8eaa-6b02bbf0461a",
+              "categories": [
+                {
+                  "uuid": "1a19539b-f2a4-4f93-8eaa-6b02bbf0461a",
+                  "name": "Any",
+                  "exit_uuid": "fd7a1961-8dcb-4eb8-94ce-0c87e062dd2f"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "fd7a1961-8dcb-4eb8-94ce-0c87e062dd2f",
+                "destination_uuid": "d3c63f4b-08c6-4a42-8e47-9384cdd1d6d1"
+              }
+            ]
+          },
+          {
+            "uuid": "d3c63f4b-08c6-4a42-8e47-9384cdd1d6d1",
+            "actions": [
+              {
+                "uuid": "eedcb6d3-b09b-42d6-91ad-eeeb9565fb83",
+                "type": "send_msg",
+                "text": "Send a voice note, photo, or location if you have it — or type SKIP",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "a79fa0f4-1fe5-4bdc-b277-bbe8b2710b87",
+                "destination_uuid": "8241df9c-2aa4-4500-8774-5f3bd1aa689b"
+              }
+            ]
+          },
+          {
+            "uuid": "8241df9c-2aa4-4500-8774-5f3bd1aa689b",
+            "actions": [],
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "attachment_note",
+              "operand": "@input.text",
+              "default_category_uuid": "3d50c779-55c2-4c1b-ab14-eff6ddc119cd",
+              "categories": [
+                {
+                  "uuid": "3d50c779-55c2-4c1b-ab14-eff6ddc119cd",
+                  "name": "Any",
+                  "exit_uuid": "2e58639f-b256-4a82-8979-9863629d8a1d"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "2e58639f-b256-4a82-8979-9863629d8a1d",
+                "destination_uuid": "ec686d42-ea31-459b-a295-742c48482011"
+              }
+            ]
+          },
+          {
+            "uuid": "ec686d42-ea31-459b-a295-742c48482011",
+            "actions": [
+              {
+                "uuid": "3efb2704-ecb0-467e-9977-2f978bd914b2",
+                "type": "send_msg",
+                "text": "🚨 Case logged — @results.triage. Broadcasting to the boatmen registry and the mapped facility now...",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "4a5aabfb-c2bb-4090-b09d-39ba46cf4d57",
+                "destination_uuid": "6926cc35-4798-4c15-b73a-8126ab31c7df"
+              }
+            ]
+          },
+          {
+            "uuid": "6926cc35-4798-4c15-b73a-8126ab31c7df",
+            "actions": [
+              {
+                "uuid": "95d18113-68c1-4367-aa5a-40c710b3f4d4",
+                "type": "wait_for_time",
+                "delay": "6"
+              }
+            ],
+            "router": {
+              "type": "switch",
+              "operand": "@input.text",
+              "default_category_uuid": "7ef814ea-123d-4173-84dc-19c0624c3b08",
+              "categories": [
+                {
+                  "uuid": "7ef814ea-123d-4173-84dc-19c0624c3b08",
+                  "name": "Completed",
+                  "exit_uuid": "c39c9618-9b61-4406-aa62-f1735f1e80b4"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "c39c9618-9b61-4406-aa62-f1735f1e80b4",
+                "destination_uuid": "35a58604-559d-46c7-baf2-dd0c96e630a6"
+              }
+            ]
+          },
+          {
+            "uuid": "35a58604-559d-46c7-baf2-dd0c96e630a6",
+            "actions": [
+              {
+                "uuid": "58ff5cb2-ad43-451c-949f-5ea181e13c28",
+                "type": "send_msg",
+                "text": "🚤 Rafiqul Islam has ACCEPTED this case (Manual Motor boat, Night+Day availability).\nCall him directly to coordinate pickup: +91 97xxxxxxxx.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "75cce09a-7ccf-42db-8b33-82537ae89e7c",
+                "destination_uuid": "28c37982-5e5f-4423-9365-3a8f4eaab218"
+              }
+            ]
+          },
+          {
+            "uuid": "28c37982-5e5f-4423-9365-3a8f4eaab218",
+            "actions": [
+              {
+                "uuid": "47ace57c-fb94-4665-88c8-25e21f249a97",
+                "type": "wait_for_time",
+                "delay": "5"
+              }
+            ],
+            "router": {
+              "type": "switch",
+              "operand": "@input.text",
+              "default_category_uuid": "f3860c2a-a275-4a1e-98fc-39ce459b51cb",
+              "categories": [
+                {
+                  "uuid": "f3860c2a-a275-4a1e-98fc-39ce459b51cb",
+                  "name": "Completed",
+                  "exit_uuid": "b49d7042-c6ee-4ba0-b639-72e1baa4e18a"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "b49d7042-c6ee-4ba0-b639-72e1baa4e18a",
+                "destination_uuid": "754f6ed0-87d2-42bf-9350-b0d36a9cdee1"
+              }
+            ]
+          },
+          {
+            "uuid": "754f6ed0-87d2-42bf-9350-b0d36a9cdee1",
+            "actions": [
+              {
+                "uuid": "4427df88-db29-405a-9388-36fe53e5dced",
+                "type": "send_msg",
+                "text": "🏥 Bilasipara CHC has been alerted — they confirm they are preparing to receive a @results.triage case.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "fc9695b4-0d4f-45bf-9c9a-491a8f82e224",
+                "destination_uuid": "078f2aba-0cfd-421d-9bcc-5002cc0763ad"
+              }
+            ]
+          },
+          {
+            "uuid": "078f2aba-0cfd-421d-9bcc-5002cc0763ad",
+            "actions": [
+              {
+                "uuid": "6a704d43-c3c8-4b4e-855f-ec56ddd8634a",
+                "type": "send_msg",
+                "text": "Reply STATUS anytime to update the case stage — try it now.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "d351ae81-6593-47fa-bd13-99f7783afd39",
+                "destination_uuid": null
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
