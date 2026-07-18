@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OESN Setup</title>
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #FAFAF8; color: #1C1917; }
+    .card { background: #fff; border: 1px solid #E7E5E4; border-radius: 12px; }
+    .badge-ok  { background: #D1FAE5; color: #065F46; }
+    .badge-off { background: #F5F5F4; color: #78716C; }
+    .badge-err { background: #FEE2E2; color: #991B1B; }
+    input[type=text], input[type=password], input[type=url] {
+      width: 100%; padding: 10px 12px; border: 1px solid #D6D3D1;
+      border-radius: 8px; font-size: 14px; background: #FAFAF8;
+      outline: none; transition: border-color .15s;
+    }
+    input:focus { border-color: #D97706; }
+    .btn-primary {
+      background: #D97706; color: #fff; border: none;
+      padding: 10px 20px; border-radius: 8px; font-weight: 600;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-primary:hover  { background: #B45309; }
+    .btn-primary:disabled { background: #A8A29E; cursor: not-allowed; }
+    .btn-ghost {
+      background: transparent; color: #57534E; border: 1px solid #D6D3D1;
+      padding: 10px 20px; border-radius: 8px; font-weight: 500;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-ghost:hover { background: #F5F5F4; }
+  </style>
+</head>
+<body class="min-h-screen p-4 pb-12">
+
+  <!-- Header -->
+  <div class="max-w-lg mx-auto">
+    <div class="flex items-center gap-3 mb-6 pt-2">
+      <a href="oesn.html" class="text-stone-400 hover:text-stone-600">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+      </a>
+      <div>
+        <h1 class="text-xl font-bold text-stone-900">OESN Setup</h1>
+        <p class="text-sm text-stone-500">Connect your Supabase + n8n backends</p>
+      </div>
+    </div>
+
+    <!-- Status Overview -->
+    <div class="card p-4 mb-4">
+      <h2 class="font-semibold text-stone-800 mb-3 text-sm uppercase tracking-wide">Current Status</h2>
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-stone-600">Data mode</span>
+          <span id="badge-mode" class="text-xs font-semibold px-2.5 py-1 rounded-full badge-off">Loading…</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-stone-600">Supabase</span>
+          <span id="badge-sb" class="text-xs font-semibold px-2.5 py-1 rounded-full badge-off">Not configured</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-stone-600">n8n automation</span>
+          <span id="badge-n8n" class="text-xs font-semibold px-2.5 py-1 rounded-full badge-off">Not configured</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supabase Config -->
+    <div class="card p-4 mb-4">
+      <h2 class="font-semibold text-stone-800 mb-1">Supabase Database</h2>
+      <p class="text-xs text-stone-500 mb-4">Creates real-time data sync across all devices. Free plan at supabase.com.</p>
+
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-stone-600 mb-1">Project URL</label>
+        <input type="url" id="sb-url" placeholder="https://xxxx.supabase.co" autocomplete="off">
+        <p class="text-xs text-stone-400 mt-1">Found in Supabase → Settings → API → Project URL</p>
+      </div>
+      <div class="mb-4">
+        <label class="block text-xs font-medium text-stone-600 mb-1">Anon / Public Key</label>
+        <input type="password" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…" autocomplete="off">
+        <p class="text-xs text-stone-400 mt-1">Found in Supabase → Settings → API → anon public key</p>
+      </div>
+
+      <div class="flex gap-2">
+        <button class="btn-primary" onclick="testAndSaveSupabase()" id="btn-sb-test">Test & Save</button>
+        <button class="btn-ghost" onclick="clearSupabase()">Clear</button>
+      </div>
+      <p id="sb-result" class="text-xs mt-3 hidden"></p>
+    </div>
+
+    <!-- n8n Config -->
+    <div class="card p-4 mb-4">
+      <h2 class="font-semibold text-stone-800 mb-1">n8n Automation</h2>
+      <p class="text-xs text-stone-500 mb-4">Enables WhatsApp notifications via Glific when referrals are created or updated. Self-host n8n or use n8n.cloud.</p>
+
+      <div class="mb-4">
+        <label class="block text-xs font-medium text-stone-600 mb-1">n8n Base URL</label>
+        <input type="url" id="n8n-url" placeholder="https://your-n8n.example.com" autocomplete="off">
+        <p class="text-xs text-stone-400 mt-1">Your n8n instance URL (no trailing slash). Webhooks will be posted to <code class="bg-stone-100 px-1 rounded">/webhook/oesn/…</code></p>
+      </div>
+
+      <div class="flex gap-2">
+        <button class="btn-primary" onclick="saveN8n()">Save</button>
+        <button class="btn-ghost" onclick="clearN8n()">Clear</button>
+      </div>
+      <p id="n8n-result" class="text-xs mt-3 hidden"></p>
+    </div>
+
+    <!-- Glific Guidance -->
+    <div class="card p-4 mb-4">
+      <h2 class="font-semibold text-stone-800 mb-1">Glific (WhatsApp)</h2>
+      <p class="text-xs text-stone-500 mb-3">Glific credentials are NOT stored in this app. They go into your n8n workflows only.</p>
+
+      <div class="space-y-2 text-sm text-stone-700">
+        <div class="flex gap-2"><span class="text-stone-400 mt-0.5">1.</span><span>Sign up at <strong>glific.org</strong> (free for NGOs in India)</span></div>
+        <div class="flex gap-2"><span class="text-stone-400 mt-0.5">2.</span><span>Get your Glific API key from Settings → Access Token</span></div>
+        <div class="flex gap-2"><span class="text-stone-400 mt-0.5">3.</span><span>Import <code class="bg-stone-100 px-1 rounded">n8n-workflows.json</code> into your n8n instance</span></div>
+        <div class="flex gap-2"><span class="text-stone-400 mt-0.5">4.</span><span>Replace <code class="bg-stone-100 px-1 rounded">YOUR_GLIFIC_URL</code> and <code class="bg-stone-100 px-1 rounded">YOUR_GLIFIC_API_KEY</code> in each workflow</span></div>
+        <div class="flex gap-2"><span class="text-stone-400 mt-0.5">5.</span><span>Activate the workflows in n8n</span></div>
+      </div>
+
+      <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+        <p class="text-xs text-amber-800"><strong>Download the n8n workflow file:</strong> <a href="n8n-workflows.json" download class="underline font-medium">n8n-workflows.json</a></p>
+      </div>
+    </div>
+
+    <!-- Supabase Schema Guidance -->
+    <div class="card p-4 mb-6">
+      <h2 class="font-semibold text-stone-800 mb-1">Supabase Schema Setup</h2>
+      <p class="text-xs text-stone-500 mb-3">One-time setup: run the SQL file in your Supabase SQL Editor.</p>
+
+      <div class="space-y-2 text-sm text-stone-700">
+        <div class="flex gap-2"><span class="text-stone-400 mt-0.5">1.</span><span>Open your Supabase project → SQL Editor</span></div>
+        <div class="flex gap-2"><span class="text-stone-400 mt-0.5">2.</span><span>Copy and run the contents of <code class="bg-stone-100 px-1 rounded">oesn-schema.sql</code></span></div>
+        <div class="flex gap-2"><span class="text-stone-400 mt-0.5">3.</span><span>Enable Email OTP in Supabase → Auth → Providers → Email</span></div>
+        <div class="flex gap-2"><span class="text-stone-400 mt-0.5">4.</span><span>Set the Site URL to your GitHub Pages URL in Auth → URL Configuration</span></div>
+      </div>
+
+      <div class="mt-4 p-3 bg-stone-50 border border-stone-200 rounded-lg">
+        <p class="text-xs text-stone-700"><strong>Download the schema file:</strong> <a href="oesn-schema.sql" download class="underline font-medium text-amber-700">oesn-schema.sql</a></p>
+      </div>
+    </div>
+
+    <!-- Back button -->
+    <div class="flex gap-3">
+      <a href="oesn.html" class="btn-ghost flex-1 text-center text-sm">← Back to OESN Home</a>
+      <a href="agent.html" class="btn-primary flex-1 text-center text-sm">Open Field App →</a>
+    </div>
+  </div>
+
+<script>
+  // ── Populate fields from localStorage ───────────────────────────────
+  document.getElementById('sb-url').value  = localStorage.getItem('oesn_sb_url')  || '';
+  document.getElementById('sb-key').value  = localStorage.getItem('oesn_sb_key')  || '';
+  document.getElementById('n8n-url').value = localStorage.getItem('oesn_n8n_url') || '';
+
+  // ── Render status badges ─────────────────────────────────────────────
+  function refreshStatus() {
+    const sbUrl = (localStorage.getItem('oesn_sb_url') || '').trim();
+    const sbKey = (localStorage.getItem('oesn_sb_key') || '').trim();
+    const n8nUrl= (localStorage.getItem('oesn_n8n_url') || '').trim();
+    const sbOk  = sbUrl && !sbUrl.includes('YOUR-') && sbKey && !sbKey.includes('YOUR-');
+    const n8nOk = n8nUrl && !n8nUrl.includes('YOUR-');
+
+    const modeBadge = document.getElementById('badge-mode');
+    const sbBadge   = document.getElementById('badge-sb');
+    const n8nBadge  = document.getElementById('badge-n8n');
+
+    if (sbOk) {
+      modeBadge.textContent = 'Supabase';
+      modeBadge.className   = 'text-xs font-semibold px-2.5 py-1 rounded-full badge-ok';
+      sbBadge.textContent   = 'Configured';
+      sbBadge.className     = 'text-xs font-semibold px-2.5 py-1 rounded-full badge-ok';
+    } else {
+      modeBadge.textContent = 'localStorage (demo)';
+      modeBadge.className   = 'text-xs font-semibold px-2.5 py-1 rounded-full badge-off';
+      sbBadge.textContent   = sbUrl ? 'Incomplete' : 'Not configured';
+      sbBadge.className     = 'text-xs font-semibold px-2.5 py-1 rounded-full ' + (sbUrl ? 'badge-err' : 'badge-off');
+    }
+
+    n8nBadge.textContent = n8nOk ? 'Configured' : 'Not configured';
+    n8nBadge.className   = 'text-xs font-semibold px-2.5 py-1 rounded-full ' + (n8nOk ? 'badge-ok' : 'badge-off');
+  }
+
+  refreshStatus();
+
+  // ── Supabase test & save ─────────────────────────────────────────────
+  async function testAndSaveSupabase() {
+    const url = document.getElementById('sb-url').value.trim().replace(/\/$/, '');
+    const key = document.getElementById('sb-key').value.trim();
+    const res = document.getElementById('sb-result');
+    const btn = document.getElementById('btn-sb-test');
+
+    if (!url || !key) {
+      showResult(res, 'Please enter both URL and key.', 'err');
+      return;
+    }
+    if (!url.startsWith('https://') || !url.includes('.supabase.co')) {
+      showResult(res, 'URL should look like https://xxxx.supabase.co', 'err');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Testing…';
+
+    try {
+      const client = supabase.createClient(url, key);
+      const { error } = await client.auth.getSession();
+      if (error) throw error;
+
+      localStorage.setItem('oesn_sb_url', url);
+      localStorage.setItem('oesn_sb_key', key);
+      showResult(res, '✓ Connected! Supabase is ready. Reload the app to sync data.', 'ok');
+      refreshStatus();
+    } catch (err) {
+      showResult(res, '✗ Connection failed: ' + (err.message || 'Unknown error. Check URL and key.'), 'err');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Test & Save';
+    }
+  }
+
+  function clearSupabase() {
+    localStorage.removeItem('oesn_sb_url');
+    localStorage.removeItem('oesn_sb_key');
+    document.getElementById('sb-url').value = '';
+    document.getElementById('sb-key').value = '';
+    showResult(document.getElementById('sb-result'), 'Cleared. App will use localStorage.', 'off');
+    refreshStatus();
+  }
+
+  // ── n8n save ─────────────────────────────────────────────────────────
+  function saveN8n() {
+    const url = document.getElementById('n8n-url').value.trim().replace(/\/$/, '');
+    const res = document.getElementById('n8n-result');
+
+    if (!url) {
+      showResult(res, 'Enter your n8n base URL.', 'err');
+      return;
+    }
+    localStorage.setItem('oesn_n8n_url', url);
+    showResult(res, '✓ Saved! Webhooks will POST to ' + url + '/webhook/oesn/…', 'ok');
+    refreshStatus();
+  }
+
+  function clearN8n() {
+    localStorage.removeItem('oesn_n8n_url');
+    document.getElementById('n8n-url').value = '';
+    showResult(document.getElementById('n8n-result'), 'Cleared.', 'off');
+    refreshStatus();
+  }
+
+  // ── Utility ──────────────────────────────────────────────────────────
+  function showResult(el, msg, type) {
+    el.textContent  = msg;
+    el.className    = 'text-xs mt-3 ' + { ok: 'text-emerald-700', err: 'text-red-600', off: 'text-stone-500' }[type];
+    el.classList.remove('hidden');
+  }
+</script>
+</body>
+</html>

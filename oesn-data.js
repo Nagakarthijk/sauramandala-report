@@ -1,9 +1,65 @@
 // oesn-data.js — OESN Field Agent PWA · Shared Data Layer
-// All storage via localStorage. No remote calls.
-// Keys: oesn_entrepreneurs, oesn_referrals, oesn_earnings,
-//       oesn_tasks, oesn_notes, oesn_diagnostics, oesn_programme, oesn_seeded
+// Dual-mode: localStorage (always) + Supabase (when configured).
+// Configure via oesn-setup.html or by setting localStorage keys:
+//   oesn_sb_url, oesn_sb_key, oesn_n8n_url
 
 const OESN = (() => {
+
+  // ─── Supabase / n8n detection ─────────────────────────────────────
+  const _sbUrl  = (localStorage.getItem('oesn_sb_url')  || '').trim();
+  const _sbKey  = (localStorage.getItem('oesn_sb_key')  || '').trim();
+  const _n8nUrl = (localStorage.getItem('oesn_n8n_url') || '').trim();
+
+  // True only when URL/key look real AND supabase-js is loaded on the page
+  const _SUPABASE = !!(
+    _sbUrl && !_sbUrl.includes('YOUR-') && !_sbUrl.includes('your-') &&
+    _sbKey && !_sbKey.includes('YOUR-') && !_sbKey.includes('your-') &&
+    typeof supabase !== 'undefined'
+  );
+
+  const _sb = _SUPABASE ? supabase.createClient(_sbUrl, _sbKey) : null;
+
+  // POST a lightweight event to n8n (fire-and-forget)
+  async function _notifyWebhook(event_type, payload) {
+    if (!_n8nUrl || _n8nUrl.includes('YOUR-')) return;
+    try {
+      await fetch(_n8nUrl.replace(/\/$/, '') + '/webhook/oesn/' + event_type, {
+        method  : 'POST',
+        headers : { 'Content-Type': 'application/json' },
+        body    : JSON.stringify(payload),
+      });
+    } catch { /* network errors are silent */ }
+  }
+
+  // Pull fresh data from Supabase into localStorage (async, non-blocking)
+  async function _syncFromSupabase() {
+    if (!_sb) return;
+    try {
+      const [ents, refs, earns, tsks, nts] = await Promise.all([
+        _sb.from('entrepreneurs').select('*'),
+        _sb.from('referrals').select('*'),
+        _sb.from('earnings').select('*'),
+        _sb.from('tasks').select('*'),
+        _sb.from('conversation_notes').select('body,entrepreneur_id,agent_id,created_at,id,note_type').order('created_at'),
+      ]);
+      if (ents.data?.length)  save(KEY.entrepreneurs, ents.data);
+      if (refs.data?.length)  save(KEY.referrals,     refs.data);
+      if (earns.data?.length) save(KEY.earnings,       earns.data);
+      if (tsks.data?.length)  save(KEY.tasks,          tsks.data);
+      if (nts.data?.length)   save(KEY.notes,          nts.data.map(n => ({ ...n, body: n.body || '' })));
+      window.dispatchEvent(new CustomEvent('oesn:synced', { detail: { source: 'supabase' } }));
+    } catch (err) {
+      console.warn('[OESN] Supabase sync failed, using localStorage', err);
+    }
+  }
+
+  // Write a record to a Supabase table (fire-and-forget; never blocks UI)
+  function _push(table, record) {
+    if (!_sb) return;
+    _sb.from(table).upsert(record).then(({ error }) => {
+      if (error) console.warn('[OESN] Supabase write error on', table, error.message);
+    });
+  }
 
   // ─── localStorage Keys ──────────────────────────────────────────────
   const KEY = {
@@ -949,6 +1005,7 @@ const OESN = (() => {
    */
   function init() {
     seed();
+    if (_SUPABASE) _syncFromSupabase(); // async, non-blocking
   }
 
   // ── Entrepreneurs ─────────────────────────────────────────────────────
@@ -966,6 +1023,7 @@ const OESN = (() => {
     const entry = { ...obj, id: obj.id || 'ent_' + uid(), created_at: now(), updated_at: now() };
     list.push(entry);
     save(KEY.entrepreneurs, list);
+    _push('entrepreneurs', entry);
     return entry;
   }
 
@@ -991,8 +1049,13 @@ const OESN = (() => {
     const list = load(KEY.referrals);
     const idx  = list.findIndex(r => r.id === id);
     if (idx === -1) return null;
-    list[idx] = { ...list[idx], ...updates, updated_at: now() };
+    const old = list[idx];
+    list[idx] = { ...old, ...updates, updated_at: now() };
     save(KEY.referrals, list);
+    _push('referrals', list[idx]);
+    if (updates.status && updates.status !== old.status) {
+      _notifyWebhook('referral_status_change', { referral_id: id, old_status: old.status, new_status: updates.status });
+    }
     return list[idx];
   }
 
@@ -1001,6 +1064,8 @@ const OESN = (() => {
     const entry = { ...obj, id: obj.id || 'ref_' + uid(), created_at: now(), updated_at: now() };
     list.push(entry);
     save(KEY.referrals, list);
+    _push('referrals', entry);
+    _notifyWebhook('new_referral', { referral_id: entry.id, service_name: entry.service, agent_id: entry.agent_id });
     return entry;
   }
 
@@ -1025,6 +1090,7 @@ const OESN = (() => {
     if (idx === -1) return null;
     list[idx] = { ...list[idx], ...updates, updated_at: now() };
     save(KEY.earnings, list);
+    _push('earnings', list[idx]);
     return list[idx];
   }
 
@@ -1033,6 +1099,7 @@ const OESN = (() => {
     const entry = { ...obj, id: obj.id || 'earn_' + uid(), created_at: now(), updated_at: now() };
     list.push(entry);
     save(KEY.earnings, list);
+    _push('earnings', entry);
     return entry;
   }
 
@@ -1061,6 +1128,7 @@ const OESN = (() => {
     };
     list.push(entry);
     save(KEY.tasks, list);
+    _push('tasks', entry);
     return entry;
   }
 
@@ -1070,6 +1138,7 @@ const OESN = (() => {
     if (idx === -1) return null;
     list[idx] = { ...list[idx], status: 'DONE', completed_at: now(), updated_at: now() };
     save(KEY.tasks, list);
+    _push('tasks', list[idx]);
     return list[idx];
   }
 
@@ -1084,12 +1153,14 @@ const OESN = (() => {
     const entry = { ...note, id: note.id || 'note_' + uid(), created_at: note.created_at || now() };
     list.push(entry);
     save(KEY.notes, list);
+    _push('conversation_notes', entry);
     // Bump last_contact on the entrepreneur
     const entrepreneurs = getEntrepreneurs();
     const idx = entrepreneurs.findIndex(e => e.id === note.entrepreneur_id);
     if (idx !== -1) {
       entrepreneurs[idx].last_contact = entry.created_at;
       save(KEY.entrepreneurs, entrepreneurs);
+      _push('entrepreneurs', { id: entrepreneurs[idx].id, last_contact: entry.created_at });
     }
     return entry;
   }
@@ -1187,6 +1258,9 @@ const OESN = (() => {
   // ─── Expose Public Surface ────────────────────────────────────────────
   return {
     init,
+    // Mode info
+    mode         : _SUPABASE ? 'supabase' : 'localStorage',
+    supabaseReady: _SUPABASE,
     // Entrepreneurs
     getEntrepreneurs,
     getEntrepreneur,

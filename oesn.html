@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="oesn-data.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
@@ -144,16 +145,22 @@
       </p>
     </div>
 
-    <!-- Demo notice -->
-    <p class="text-center text-xs text-stone-400 pb-10">
-      Demo mode — all data stored on this device only
-    </p>
+    <!-- Setup / mode notice -->
+    <div class="text-center pb-10">
+      <p id="mode-notice" class="text-xs text-stone-400 mb-2">Demo mode — all data stored on this device only</p>
+      <a href="oesn-setup.html" class="text-xs text-amber-600 font-medium hover:underline">⚙ Connect Supabase &amp; n8n →</a>
+    </div>
 
   </main>
 
   <script>
     if (typeof OESN !== 'undefined') {
       try { OESN.init(); } catch(e) {}
+      const notice = document.getElementById('mode-notice');
+      if (notice && OESN.supabaseReady) {
+        notice.textContent = 'Supabase connected — data syncs across devices';
+        notice.classList.replace('text-stone-400', 'text-emerald-600');
+      }
     }
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
