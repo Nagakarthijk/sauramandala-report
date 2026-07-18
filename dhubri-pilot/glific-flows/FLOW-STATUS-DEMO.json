@@ -8,7 +8,7 @@
         "status"
       ],
       "definition": {
-        "uuid": "9251e97c-bf15-4277-a8a8-6c82d5907734",
+        "uuid": "31291034-289d-43d4-90d1-bffaa0504857",
         "name": "Status Update (Live Demo)",
         "type": "messaging",
         "spec_version": "14.3.0",
@@ -22,12 +22,12 @@
         "vars": [],
         "nodes": [
           {
-            "uuid": "15c434dd-9980-44f8-ba58-53fcdf7b78f9",
+            "uuid": "a150a029-14dd-4da2-9a93-faec78ab35f7",
             "actions": [
               {
-                "uuid": "4a550237-e509-4be6-bba7-711783132517",
+                "uuid": "cf90d74a-a13f-44f5-bd06-23a8290f49f2",
                 "type": "send_msg",
-                "text": "What's the current status? Reply with a number:\n1. Boatman informed\n2. Boatman accepted\n3. Patient picked up (boarded boat)\n4. Approaching the landing point\n5. Reached landing point — transferred to 108\n6. En route to facility by road\n7. Reached facility",
+                "text": "What's the current status? Reply with a number:\n1. Boat journey started\n2. Patient boarded 108 (ambulance journey started)\n3. Reached facility — outcome logged, case closed",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -35,13 +35,13 @@
             ],
             "exits": [
               {
-                "uuid": "f3e9dd71-2cee-482b-8911-a39aa877047a",
-                "destination_uuid": "3721688e-d7b6-4800-af80-26224878a9b9"
+                "uuid": "29266655-71b6-4419-a9ef-6d390c18f1b2",
+                "destination_uuid": "7001b0fa-73d1-4523-addc-44ee08865bb0"
               }
             ]
           },
           {
-            "uuid": "3721688e-d7b6-4800-af80-26224878a9b9",
+            "uuid": "7001b0fa-73d1-4523-addc-44ee08865bb0",
             "actions": [],
             "router": {
               "wait": {
@@ -50,150 +50,82 @@
               "type": "switch",
               "result_name": "stage",
               "operand": "@input.text",
-              "default_category_uuid": "72169dfb-ac97-4aec-a225-e3118c42a467",
+              "default_category_uuid": "fc4931ac-7e0e-4a52-a01a-fdfda7f46d3d",
               "categories": [
                 {
-                  "uuid": "2e8ab0e2-58b2-414f-a35f-4cba0f0084b7",
+                  "uuid": "05d2d379-5db0-4759-8e5b-45447d6156a0",
                   "name": "1",
-                  "exit_uuid": "13cd5da9-cedd-480d-88be-6fea63bfd638"
+                  "exit_uuid": "99f76824-44f5-4611-901e-c73ec1a7df5b"
                 },
                 {
-                  "uuid": "f651e0c0-c166-452a-a359-ce5ce0a3210a",
+                  "uuid": "81870b9a-ad8c-4222-b724-81473ab772b6",
                   "name": "2",
-                  "exit_uuid": "e4f3e1a9-b9ad-4609-8cda-bdcd7849d07f"
+                  "exit_uuid": "6280c29b-e3e3-4c1f-b0a3-0aa4dfa8315f"
                 },
                 {
-                  "uuid": "5fbfd796-e76d-4c04-9ee7-2e6e86544817",
+                  "uuid": "45906c5a-19f1-47d0-abdd-db2cdb702d19",
                   "name": "3",
-                  "exit_uuid": "bd436251-bb12-4618-ad58-374ba1559ffa"
+                  "exit_uuid": "e4b9ae9f-3cf1-4648-a7d4-916fe1572544"
                 },
                 {
-                  "uuid": "3546f9e9-4ef8-437b-81b4-c263559fae13",
-                  "name": "4",
-                  "exit_uuid": "bfa392d4-0c11-4ef3-bf69-d7c70693aede"
-                },
-                {
-                  "uuid": "d478e96b-f165-4523-a810-f9514863115a",
-                  "name": "5",
-                  "exit_uuid": "d4806478-28c0-4a70-a343-c49b64a7a62a"
-                },
-                {
-                  "uuid": "808990ed-1445-4b1e-90bc-1fdb52cb627c",
-                  "name": "6",
-                  "exit_uuid": "89c6d122-a977-49d7-a6d2-57fdb7385b16"
-                },
-                {
-                  "uuid": "b8c061a4-536d-44e4-86d6-4b18155cbe12",
-                  "name": "7",
-                  "exit_uuid": "6b21ea05-9d24-405e-9053-b165ae7c35be"
-                },
-                {
-                  "uuid": "72169dfb-ac97-4aec-a225-e3118c42a467",
+                  "uuid": "fc4931ac-7e0e-4a52-a01a-fdfda7f46d3d",
                   "name": "Other",
-                  "exit_uuid": "9e0e27fc-d166-4c92-883d-76c800875a0c"
+                  "exit_uuid": "10f9936e-cf08-4476-9815-e773b0f6b922"
                 }
               ],
               "cases": [
                 {
-                  "uuid": "561f63bb-ba62-49df-b80e-bc09fd7012d9",
+                  "uuid": "047ce5ad-81d3-49ec-bff7-44808980478d",
                   "type": "has_any_word",
                   "arguments": [
                     "1"
                   ],
-                  "category_uuid": "2e8ab0e2-58b2-414f-a35f-4cba0f0084b7"
+                  "category_uuid": "05d2d379-5db0-4759-8e5b-45447d6156a0"
                 },
                 {
-                  "uuid": "71cab92e-1995-4df8-a392-25beac2bea67",
+                  "uuid": "acc41083-d777-4725-b89f-585629f984a8",
                   "type": "has_any_word",
                   "arguments": [
                     "2"
                   ],
-                  "category_uuid": "f651e0c0-c166-452a-a359-ce5ce0a3210a"
+                  "category_uuid": "81870b9a-ad8c-4222-b724-81473ab772b6"
                 },
                 {
-                  "uuid": "eda8c7ec-f11b-4268-b58f-cc37c9a1f7df",
+                  "uuid": "0c3c41cb-449e-42d0-9a94-2f165b9633d0",
                   "type": "has_any_word",
                   "arguments": [
                     "3"
                   ],
-                  "category_uuid": "5fbfd796-e76d-4c04-9ee7-2e6e86544817"
-                },
-                {
-                  "uuid": "2d8588c4-3d8e-4ee5-a5c7-f50fcecfb66e",
-                  "type": "has_any_word",
-                  "arguments": [
-                    "4"
-                  ],
-                  "category_uuid": "3546f9e9-4ef8-437b-81b4-c263559fae13"
-                },
-                {
-                  "uuid": "81fc3be9-0691-45d0-b042-ee1dd44edb9c",
-                  "type": "has_any_word",
-                  "arguments": [
-                    "5"
-                  ],
-                  "category_uuid": "d478e96b-f165-4523-a810-f9514863115a"
-                },
-                {
-                  "uuid": "26337dca-17e8-4662-adc5-8199eab31595",
-                  "type": "has_any_word",
-                  "arguments": [
-                    "6"
-                  ],
-                  "category_uuid": "808990ed-1445-4b1e-90bc-1fdb52cb627c"
-                },
-                {
-                  "uuid": "4a21aff3-24ed-4b82-8376-f7750dd09a97",
-                  "type": "has_any_word",
-                  "arguments": [
-                    "7"
-                  ],
-                  "category_uuid": "b8c061a4-536d-44e4-86d6-4b18155cbe12"
+                  "category_uuid": "45906c5a-19f1-47d0-abdd-db2cdb702d19"
                 }
               ]
             },
             "exits": [
               {
-                "uuid": "13cd5da9-cedd-480d-88be-6fea63bfd638",
-                "destination_uuid": "a88f9448-e27f-47c3-ae39-40282b1d003c"
+                "uuid": "99f76824-44f5-4611-901e-c73ec1a7df5b",
+                "destination_uuid": "974dd7ea-564c-4048-9af6-b241c3d30b56"
               },
               {
-                "uuid": "e4f3e1a9-b9ad-4609-8cda-bdcd7849d07f",
-                "destination_uuid": "93901b06-ddd7-4714-8eed-2970c744a088"
+                "uuid": "6280c29b-e3e3-4c1f-b0a3-0aa4dfa8315f",
+                "destination_uuid": "6e02e2bb-ebb5-4843-bc4b-7d1fd37f986a"
               },
               {
-                "uuid": "bd436251-bb12-4618-ad58-374ba1559ffa",
-                "destination_uuid": "b932db63-dab5-4f15-a052-aff6fa24ff6f"
+                "uuid": "e4b9ae9f-3cf1-4648-a7d4-916fe1572544",
+                "destination_uuid": "286bb478-3a9b-437c-a32d-0176d9bce910"
               },
               {
-                "uuid": "bfa392d4-0c11-4ef3-bf69-d7c70693aede",
-                "destination_uuid": "438f653c-5a4f-4295-9476-2ead55d4f68e"
-              },
-              {
-                "uuid": "d4806478-28c0-4a70-a343-c49b64a7a62a",
-                "destination_uuid": "8c8dd9af-6356-464f-ba3c-4a001d90a217"
-              },
-              {
-                "uuid": "89c6d122-a977-49d7-a6d2-57fdb7385b16",
-                "destination_uuid": "91d730e9-020b-4688-9ef0-fcce5270938e"
-              },
-              {
-                "uuid": "6b21ea05-9d24-405e-9053-b165ae7c35be",
-                "destination_uuid": "b852fd87-abda-4ae1-9826-2960361ed515"
-              },
-              {
-                "uuid": "9e0e27fc-d166-4c92-883d-76c800875a0c",
-                "destination_uuid": "e42291c5-2a5a-44aa-aeb0-eb79c9597868"
+                "uuid": "10f9936e-cf08-4476-9815-e773b0f6b922",
+                "destination_uuid": "510d6d7a-17e3-4db8-a0b3-56ce74f50efb"
               }
             ]
           },
           {
-            "uuid": "e42291c5-2a5a-44aa-aeb0-eb79c9597868",
+            "uuid": "510d6d7a-17e3-4db8-a0b3-56ce74f50efb",
             "actions": [
               {
-                "uuid": "6ad4e419-ab4f-4eb7-b3fc-f7452ca7c99f",
+                "uuid": "2abd8664-cd55-4de8-a55f-6c800d6e0ca2",
                 "type": "send_msg",
-                "text": "Please reply with a number 1-7.",
+                "text": "Please reply with a number 1-3.",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -201,18 +133,18 @@
             ],
             "exits": [
               {
-                "uuid": "410d9e27-0d90-4236-b727-b19cf57d3a24",
-                "destination_uuid": "3721688e-d7b6-4800-af80-26224878a9b9"
+                "uuid": "57c080e1-e36e-44f5-8df4-630f5b6ff3d6",
+                "destination_uuid": "7001b0fa-73d1-4523-addc-44ee08865bb0"
               }
             ]
           },
           {
-            "uuid": "a88f9448-e27f-47c3-ae39-40282b1d003c",
+            "uuid": "974dd7ea-564c-4048-9af6-b241c3d30b56",
             "actions": [
               {
-                "uuid": "8e92cf47-e259-4299-acf6-9944682a37b3",
+                "uuid": "4a6de819-6328-4793-ac48-49932b36c7ec",
                 "type": "send_msg",
-                "text": "Logged: Boatman informed. Reply STATUS again to update further.",
+                "text": "Logging boat departure — relaying to 108, @contact.fields.demo_facility_name.value, and BRC...",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -220,73 +152,16 @@
             ],
             "exits": [
               {
-                "uuid": "72739bc8-eb47-4303-b9f1-7bd2a9e8dbd1",
-                "destination_uuid": null
+                "uuid": "0bd2ec29-9a8e-4e3a-87e6-823656695740",
+                "destination_uuid": "b76835ab-aa6b-4354-9430-e30ce9bca23d"
               }
             ]
           },
           {
-            "uuid": "93901b06-ddd7-4714-8eed-2970c744a088",
+            "uuid": "b76835ab-aa6b-4354-9430-e30ce9bca23d",
             "actions": [
               {
-                "uuid": "afc30329-d757-4c35-ac9f-00dff32e6eb2",
-                "type": "send_msg",
-                "text": "Logged: Boatman accepted. Reply STATUS again to update further.",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "6081e0d4-8f6b-4b50-8e55-e76c1e956cc1",
-                "destination_uuid": null
-              }
-            ]
-          },
-          {
-            "uuid": "b932db63-dab5-4f15-a052-aff6fa24ff6f",
-            "actions": [
-              {
-                "uuid": "8edc592a-9e53-4f6c-a4e0-43e291a67c94",
-                "type": "send_msg",
-                "text": "Logged: Patient picked up. Reply STATUS again to update further.",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "f98f5409-0105-42af-bc12-961438b746b8",
-                "destination_uuid": null
-              }
-            ]
-          },
-          {
-            "uuid": "438f653c-5a4f-4295-9476-2ead55d4f68e",
-            "actions": [
-              {
-                "uuid": "2b8d4e2c-1fa7-4b8e-9987-2e9dde102800",
-                "type": "send_msg",
-                "text": "Sharing your updated ETA with 108 Ambulance and @contact.fields.demo_facility_name.value...",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "6322b20e-df69-4aab-8db1-861c76be5b68",
-                "destination_uuid": "085edeb6-9f7d-4a5f-866c-1ed292e5f704"
-              }
-            ]
-          },
-          {
-            "uuid": "085edeb6-9f7d-4a5f-866c-1ed292e5f704",
-            "actions": [
-              {
-                "uuid": "fe68d661-1416-414e-9b58-e75b08c12111",
+                "uuid": "617252b4-15ab-4d64-b410-3867146278a8",
                 "type": "wait_for_time",
                 "delay": "4"
               }
@@ -294,30 +169,30 @@
             "router": {
               "type": "switch",
               "operand": "@input.text",
-              "default_category_uuid": "c83b5349-6927-4fb7-a3ac-7702b0660e96",
+              "default_category_uuid": "5e5556c5-91f8-432f-aff9-983444bf9ced",
               "categories": [
                 {
-                  "uuid": "c83b5349-6927-4fb7-a3ac-7702b0660e96",
+                  "uuid": "5e5556c5-91f8-432f-aff9-983444bf9ced",
                   "name": "Completed",
-                  "exit_uuid": "61465b7c-dc6d-40ed-9121-951c5d018eaa"
+                  "exit_uuid": "97d65d70-c164-4dba-82e3-d32a6a9e6dab"
                 }
               ],
               "cases": []
             },
             "exits": [
               {
-                "uuid": "61465b7c-dc6d-40ed-9121-951c5d018eaa",
-                "destination_uuid": "888e2000-5b92-4fab-9980-bdfb3da63817"
+                "uuid": "97d65d70-c164-4dba-82e3-d32a6a9e6dab",
+                "destination_uuid": "42b758bc-f7c5-4316-bc98-20ee94f8cb64"
               }
             ]
           },
           {
-            "uuid": "888e2000-5b92-4fab-9980-bdfb3da63817",
+            "uuid": "42b758bc-f7c5-4316-bc98-20ee94f8cb64",
             "actions": [
               {
-                "uuid": "1e5be0a7-ae8d-4ece-9860-b689172ae872",
+                "uuid": "7b335ad0-c82d-46a9-bca4-c675d78fffa5",
                 "type": "send_msg",
-                "text": "🚑 108 confirms: positioned at the landing point, ready for your arrival. Reply STATUS again once you reach it.",
+                "text": "✅ Relayed:\n🚑 108: \"Crossing started — @contact.fields.demo_case_id.value. Departed.\"\n🏥 Facility: \"Patient en route — crossing started.\"\n📋 BRC: \"Crossing timer started — @contact.fields.demo_case_id.value. Escalation if past threshold.\"\n\nReply STATUS again once the patient is handed to 108 at the landing point.",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -325,18 +200,18 @@
             ],
             "exits": [
               {
-                "uuid": "4727f188-1275-44d3-b4c6-faa2e10a04c0",
+                "uuid": "d332d03e-19fd-47f9-9480-63cb29c2122c",
                 "destination_uuid": null
               }
             ]
           },
           {
-            "uuid": "8c8dd9af-6356-464f-ba3c-4a001d90a217",
+            "uuid": "6e02e2bb-ebb5-4843-bc4b-7d1fd37f986a",
             "actions": [
               {
-                "uuid": "1695f50c-6367-4e29-88d3-9bba1b0e5df0",
+                "uuid": "ba05d4ad-f066-41e9-ad09-1b7393aeec6c",
                 "type": "send_msg",
-                "text": "Logging handover to 108 Ambulance at the landing point...",
+                "text": "Logging handover to 108 at the landing point — relaying to 108, facility, and BRC...",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -344,83 +219,16 @@
             ],
             "exits": [
               {
-                "uuid": "4ce778c9-b774-4d0c-acec-c8c84cb4ec91",
-                "destination_uuid": "7d39a3ba-4010-42e6-84fa-8bf164fb704e"
+                "uuid": "461ed2b9-ddb6-42a1-9540-792fbe518f28",
+                "destination_uuid": "7eb008d6-41a9-4114-8513-b9e9ed042f67"
               }
             ]
           },
           {
-            "uuid": "7d39a3ba-4010-42e6-84fa-8bf164fb704e",
+            "uuid": "7eb008d6-41a9-4114-8513-b9e9ed042f67",
             "actions": [
               {
-                "uuid": "0997d98b-0785-440b-ac4d-15cfad48cd36",
-                "type": "wait_for_time",
-                "delay": "3"
-              }
-            ],
-            "router": {
-              "type": "switch",
-              "operand": "@input.text",
-              "default_category_uuid": "7db51524-6d73-4634-a2c5-3e490a101063",
-              "categories": [
-                {
-                  "uuid": "7db51524-6d73-4634-a2c5-3e490a101063",
-                  "name": "Completed",
-                  "exit_uuid": "d0e07048-3e1f-45cc-98d4-0d4aebfaf198"
-                }
-              ],
-              "cases": []
-            },
-            "exits": [
-              {
-                "uuid": "d0e07048-3e1f-45cc-98d4-0d4aebfaf198",
-                "destination_uuid": "f5a5220e-420b-4b69-8e26-d249c4e8a9ec"
-              }
-            ]
-          },
-          {
-            "uuid": "f5a5220e-420b-4b69-8e26-d249c4e8a9ec",
-            "actions": [
-              {
-                "uuid": "00f4fc44-19df-4334-b7da-d34beef900d8",
-                "type": "send_msg",
-                "text": "🚑 108 Ambulance confirms: patient received, departing for @contact.fields.demo_facility_name.value now. Reply STATUS again once on the road.",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "e5bb20ee-226f-42c6-9e59-744ce535d5df",
-                "destination_uuid": null
-              }
-            ]
-          },
-          {
-            "uuid": "91d730e9-020b-4688-9ef0-fcce5270938e",
-            "actions": [
-              {
-                "uuid": "718567e2-ee95-4a37-ac4d-dd95f5ac1422",
-                "type": "send_msg",
-                "text": "Notifying @contact.fields.demo_facility_name.value that the ambulance is en route...",
-                "quick_replies": [],
-                "labels": [],
-                "attachments": []
-              }
-            ],
-            "exits": [
-              {
-                "uuid": "e898b46a-fed3-42ce-b262-b11268b94249",
-                "destination_uuid": "493d8817-adee-4944-8ae4-d8f2308beda7"
-              }
-            ]
-          },
-          {
-            "uuid": "493d8817-adee-4944-8ae4-d8f2308beda7",
-            "actions": [
-              {
-                "uuid": "16255502-b341-4ef4-8ca0-7eacf0c560fb",
+                "uuid": "268ad081-8f75-419c-a2e3-2665533d007a",
                 "type": "wait_for_time",
                 "delay": "4"
               }
@@ -428,30 +236,30 @@
             "router": {
               "type": "switch",
               "operand": "@input.text",
-              "default_category_uuid": "00270cb0-e41b-42ae-9c54-17fc5eb0eabe",
+              "default_category_uuid": "d164802b-a29e-4044-a8b6-80ff9356d965",
               "categories": [
                 {
-                  "uuid": "00270cb0-e41b-42ae-9c54-17fc5eb0eabe",
+                  "uuid": "d164802b-a29e-4044-a8b6-80ff9356d965",
                   "name": "Completed",
-                  "exit_uuid": "e2c3ab57-e383-4c90-afae-1a0086bcc40b"
+                  "exit_uuid": "642046b6-6287-4488-9e0b-118f8c6baea7"
                 }
               ],
               "cases": []
             },
             "exits": [
               {
-                "uuid": "e2c3ab57-e383-4c90-afae-1a0086bcc40b",
-                "destination_uuid": "cf4c415d-6ba6-43f4-a08e-099897a0ce20"
+                "uuid": "642046b6-6287-4488-9e0b-118f8c6baea7",
+                "destination_uuid": "ce54f2e5-4514-4946-923d-8b22d889bbc4"
               }
             ]
           },
           {
-            "uuid": "cf4c415d-6ba6-43f4-a08e-099897a0ce20",
+            "uuid": "ce54f2e5-4514-4946-923d-8b22d889bbc4",
             "actions": [
               {
-                "uuid": "6ec0b8d5-d3c5-48fd-acf0-a063edb74e2a",
+                "uuid": "a1e63c2a-2640-44b4-80bf-19668c415d02",
                 "type": "send_msg",
-                "text": "🏥 Facility confirms: ready to receive. Reply STATUS again once you reach the facility.",
+                "text": "✅ Relayed:\n🚑 108: \"Patient boarded — @contact.fields.demo_case_id.value. Departed from the ghat.\"\n🏥 @contact.fields.demo_facility_name.value: \"Final approach — patient in ambulance, arriving shortly.\"\n📋 BRC: \"Road leg started — @contact.fields.demo_case_id.value. Crossing log closed.\"\n\nReply STATUS again once you reach the facility.",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -459,18 +267,18 @@
             ],
             "exits": [
               {
-                "uuid": "cb8de4c4-563b-41a1-acc1-5fb04a1c02c1",
+                "uuid": "cc09ea04-c9aa-40e5-9382-efc0b8ebd4c8",
                 "destination_uuid": null
               }
             ]
           },
           {
-            "uuid": "b852fd87-abda-4ae1-9826-2960361ed515",
+            "uuid": "286bb478-3a9b-437c-a32d-0176d9bce910",
             "actions": [
               {
-                "uuid": "851132bc-757f-493e-8738-35a232d13cdc",
+                "uuid": "828ef221-b00c-44d3-8b2a-2e5f1fe2daff",
                 "type": "send_msg",
-                "text": "Notifying @contact.fields.demo_facility_name.value that the patient has arrived...",
+                "text": "Logging arrival — notifying @contact.fields.demo_facility_name.value and BRC, closing the case...",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -478,16 +286,16 @@
             ],
             "exits": [
               {
-                "uuid": "f5922374-e16a-4d96-b6af-e9ee30991f46",
-                "destination_uuid": "475a6a35-2ddf-4417-9c52-149a48b52663"
+                "uuid": "16887fe8-0672-4ae0-b74a-6f3cae352e3d",
+                "destination_uuid": "bae95677-3723-4016-8b5a-6d12220b0d6f"
               }
             ]
           },
           {
-            "uuid": "475a6a35-2ddf-4417-9c52-149a48b52663",
+            "uuid": "bae95677-3723-4016-8b5a-6d12220b0d6f",
             "actions": [
               {
-                "uuid": "6fd0e9d6-a35b-4fca-b15f-6f4b3f96a86b",
+                "uuid": "702d9991-2817-4307-a1d4-7d6e62f7a760",
                 "type": "wait_for_time",
                 "delay": "4"
               }
@@ -495,30 +303,30 @@
             "router": {
               "type": "switch",
               "operand": "@input.text",
-              "default_category_uuid": "cdc902eb-a692-42d3-8eae-dcb186336725",
+              "default_category_uuid": "df4ea981-fc69-4faf-bb4a-9302626872d3",
               "categories": [
                 {
-                  "uuid": "cdc902eb-a692-42d3-8eae-dcb186336725",
+                  "uuid": "df4ea981-fc69-4faf-bb4a-9302626872d3",
                   "name": "Completed",
-                  "exit_uuid": "27aba623-b435-4ff7-8c3f-c8136702a4f4"
+                  "exit_uuid": "1e4f9356-abf4-4354-8835-a5ae8b8c15f1"
                 }
               ],
               "cases": []
             },
             "exits": [
               {
-                "uuid": "27aba623-b435-4ff7-8c3f-c8136702a4f4",
-                "destination_uuid": "7091ae84-c617-4cdf-820d-7e27bab8c76e"
+                "uuid": "1e4f9356-abf4-4354-8835-a5ae8b8c15f1",
+                "destination_uuid": "9d712bac-8155-4f0c-a575-98848b7fd901"
               }
             ]
           },
           {
-            "uuid": "7091ae84-c617-4cdf-820d-7e27bab8c76e",
+            "uuid": "9d712bac-8155-4f0c-a575-98848b7fd901",
             "actions": [
               {
-                "uuid": "37fb923e-7e4a-4a11-af9c-dbc920299007",
+                "uuid": "9dd16df0-386b-4953-9cf6-1750f75f30d9",
                 "type": "send_msg",
-                "text": "🏥 Facility confirms: patient received.\n\nCase closed — thank you for coordinating this response and accompanying the patient throughout.",
+                "text": "🏥 Case closed — @contact.fields.demo_case_id.value\n@contact.fields.demo_outcome.value\n\n📋 BRC: \"Case closed — @contact.fields.demo_case_id.value. HMIS record updated. Honorarium logged for the boatman.\"\n\nCase closed — thank you for coordinating this response and accompanying the patient throughout.",
                 "quick_replies": [],
                 "labels": [],
                 "attachments": []
@@ -526,7 +334,7 @@
             ],
             "exits": [
               {
-                "uuid": "2a887f3c-957f-40f4-a724-c08377b64cce",
+                "uuid": "28d1274c-2b3b-49b4-bbd3-cc18f071cc7c",
                 "destination_uuid": null
               }
             ]
