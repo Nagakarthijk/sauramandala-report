@@ -10,6 +10,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="oesn-data.js"></script>
+  <script src="oesn-auth.js"></script>
   <style>
     :root {
       --ground: #FAFAF8;
@@ -31,6 +32,8 @@
   </style>
 </head>
 <body class="min-h-screen">
+
+<div id="user-bar"></div>
 
 <!-- Overlay -->
 <div id="overlay" class="overlay fixed inset-0 bg-black/50 z-40" onclick="closeSheets()"></div>
@@ -313,8 +316,18 @@
 </div>
 
 <script>
-// ─── INIT ──────────────────────────────────────────────────────────────
-OESN.init();
+// ─── AUTH GUARD + INIT ─────────────────────────────────────────────────
+OESNAuth.guard('agent').then(ctx => {
+  if (!ctx) return; // redirecting
+  OESNAuth.renderUserBar(ctx, 'user-bar');
+  OESN.init();
+  renderDashboard();
+  renderPeopleTab();
+  renderReferralsTab();
+  renderEarnTab();
+});
+
+function _boot() { /* no-op — boot is handled above */ }
 
 // ─── TAB SWITCHING ─────────────────────────────────────────────────────
 const NAV_IDS = ['dashboard','people','referrals','earn','tools'];
@@ -834,8 +847,6 @@ function calcSolar() {
     <div class="flex justify-between"><span class="text-stone-400">Payback</span><span class="mono font-medium">${payback} yrs</span></div>`;
 }
 
-// ─── BOOT ──────────────────────────────────────────────────────────────
-renderDashboard();
 renderSolarRows();
 
 // Populate entrepreneur dropdown for unit costing

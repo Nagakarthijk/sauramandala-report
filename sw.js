@@ -1,16 +1,20 @@
 // OESN Service Worker — offline-first cache
 // Cache name: bump version to force refresh on deploy
-const CACHE_NAME = 'oesn-v2';
+const CACHE_NAME = 'oesn-v3';
 
 // App shell: all pages and the data layer
 const APP_SHELL = [
   './oesn.html',
+  './oesn-login.html',
   './oesn-setup.html',
   './agent.html',
   './provider.html',
   './programme.html',
+  './admin.html',
   './oesn-data.js',
+  './oesn-auth.js',
   './oesn-schema.sql',
+  './oesn-schema-patch.sql',
   './n8n-workflows.json',
   './manifest.json'
 ];

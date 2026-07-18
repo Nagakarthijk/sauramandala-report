@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OESN Admin</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="oesn-data.js"></script>
+  <script src="oesn-auth.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #0C0A09; color: #E7E5E4; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .stat-card { background: #1C1917; border: 1px solid #292524; border-radius: 12px; }
+    .row-card  { background: #1C1917; border: 1px solid #292524; border-radius: 10px; }
+    .credit-bar { height: 6px; border-radius: 9999px; background: #292524; }
+    .credit-fill { height: 6px; border-radius: 9999px; transition: width .5s ease; }
+    input, textarea, select {
+      background: #292524; border: 1px solid #3D3834; border-radius: 8px;
+      color: #E7E5E4; padding: 8px 12px; font-size: 14px; width: 100%;
+    }
+    input:focus, textarea:focus { outline: none; border-color: #D97706; }
+    .btn-primary { background:#D97706; color:#0C0A09; border:none; padding:9px 18px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; }
+    .btn-primary:hover { background:#B45309; }
+    .btn-sm { padding:5px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; border:none; }
+    .badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:9999px; font-size:11px; font-weight:600; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- User bar -->
+  <div id="user-bar"></div>
+
+  <!-- Top header -->
+  <header class="border-b border-stone-800 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-stone-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-bold text-stone-100 text-base leading-none">OESN Admin</h1>
+        <p class="text-stone-500 text-xs mt-0.5">Network management console</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="refreshAll()" class="text-stone-400 hover:text-white text-xs flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-stone-800 transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        Refresh
+      </button>
+      <a href="oesn-setup.html" class="text-stone-400 hover:text-white text-xs px-3 py-2 rounded-lg hover:bg-stone-800 transition-colors">Setup</a>
+    </div>
+  </header>
+
+  <!-- System stats row -->
+  <div class="px-6 py-4 grid grid-cols-2 lg:grid-cols-5 gap-3" id="stats-row">
+    <div class="stat-card p-4 col-span-1">
+      <p class="text-stone-500 text-xs">Agents</p>
+      <p class="mono text-2xl font-semibold text-stone-100 mt-1" id="stat-agents">—</p>
+    </div>
+    <div class="stat-card p-4">
+      <p class="text-stone-500 text-xs">Entrepreneurs</p>
+      <p class="mono text-2xl font-semibold text-stone-100 mt-1" id="stat-ents">—</p>
+    </div>
+    <div class="stat-card p-4">
+      <p class="text-stone-500 text-xs">Active referrals</p>
+      <p class="mono text-2xl font-semibold text-amber-400 mt-1" id="stat-refs">—</p>
+    </div>
+    <div class="stat-card p-4">
+      <p class="text-stone-500 text-xs">Pending earnings</p>
+      <p class="mono text-2xl font-semibold text-emerald-400 mt-1" id="stat-earn">—</p>
+    </div>
+    <div class="stat-card p-4">
+      <p class="text-stone-500 text-xs">Pending vendors</p>
+      <p class="mono text-2xl font-semibold text-red-400 mt-1" id="stat-vendors">—</p>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="border-b border-stone-800 px-6">
+    <div class="flex gap-1 overflow-x-auto">
+      <button class="tab-btn px-4 py-2.5 text-sm font-medium whitespace-nowrap text-amber-400 border-b-2 border-amber-400" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+      <button class="tab-btn px-4 py-2.5 text-sm font-medium whitespace-nowrap text-stone-400 border-b-2 border-transparent hover:text-stone-200 transition-colors" data-tab="agents" onclick="switchTab('agents')">Agents</button>
+      <button class="tab-btn px-4 py-2.5 text-sm font-medium whitespace-nowrap text-stone-400 border-b-2 border-transparent hover:text-stone-200 transition-colors" data-tab="vendors" onclick="switchTab('vendors')">Vendors <span id="vendor-badge" class="hidden ml-1 bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full"></span></button>
+      <button class="tab-btn px-4 py-2.5 text-sm font-medium whitespace-nowrap text-stone-400 border-b-2 border-transparent hover:text-stone-200 transition-colors" data-tab="programmes" onclick="switchTab('programmes')">Programmes</button>
+      <button class="tab-btn px-4 py-2.5 text-sm font-medium whitespace-nowrap text-stone-400 border-b-2 border-transparent hover:text-stone-200 transition-colors" data-tab="escalations" onclick="switchTab('escalations')">Escalations <span id="esc-badge" class="hidden ml-1 bg-amber-500 text-stone-900 text-[10px] font-bold px-1.5 rounded-full"></span></button>
+      <button class="tab-btn px-4 py-2.5 text-sm font-medium whitespace-nowrap text-stone-400 border-b-2 border-transparent hover:text-stone-200 transition-colors" data-tab="invite" onclick="switchTab('invite')">Invite / Users</button>
+    </div>
+  </div>
+
+  <!-- Tab contents -->
+  <main class="px-6 py-5 max-w-7xl mx-auto">
+
+    <!-- OVERVIEW TAB -->
+    <div id="tab-overview" class="tab-content active space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Referral status breakdown -->
+        <div class="lg:col-span-2 row-card p-5">
+          <h3 class="text-sm font-semibold text-stone-300 mb-4">Referrals by Status</h3>
+          <div id="status-breakdown" class="space-y-3"></div>
+        </div>
+        <!-- Recent escalations preview -->
+        <div class="row-card p-5">
+          <h3 class="text-sm font-semibold text-stone-300 mb-4">Open Escalations</h3>
+          <div id="esc-preview" class="space-y-3 text-sm text-stone-500">Loading…</div>
+        </div>
+      </div>
+      <!-- Dormant portfolio heat row -->
+      <div class="row-card p-5">
+        <h3 class="text-sm font-semibold text-stone-300 mb-4">Agents needing attention <span class="text-stone-600 font-normal text-xs">(overdue referrals or dormant entrepreneurs)</span></h3>
+        <div id="agents-heat" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
+      </div>
+    </div>
+
+    <!-- AGENTS TAB -->
+    <div id="tab-agents" class="tab-content space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-stone-200 font-semibold">Field Agents <span id="agent-count" class="text-stone-500 font-normal text-sm"></span></h2>
+        <button onclick="switchTab('invite')" class="btn-primary text-sm">+ Invite Agent</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-stone-500 text-xs border-b border-stone-800">
+              <th class="pb-2 font-medium pr-4">Name</th>
+              <th class="pb-2 font-medium pr-4">Geography</th>
+              <th class="pb-2 font-medium pr-4">Model</th>
+              <th class="pb-2 font-medium pr-4 text-right">Portfolio</th>
+              <th class="pb-2 font-medium pr-4 text-right">Active</th>
+              <th class="pb-2 font-medium pr-4 text-right">Overdue</th>
+              <th class="pb-2 font-medium pr-4 text-right">Pending ₹</th>
+              <th class="pb-2 font-medium">Status</th>
+            </tr>
+          </thead>
+          <tbody id="agents-tbody" class="divide-y divide-stone-800/60"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VENDORS TAB -->
+    <div id="tab-vendors" class="tab-content space-y-5">
+      <!-- Pending queue -->
+      <div>
+        <h2 class="text-stone-200 font-semibold mb-3">Pending Empanelment <span id="pending-vendor-count" class="text-stone-500 font-normal text-sm"></span></h2>
+        <div id="vendors-pending" class="space-y-3"></div>
+      </div>
+      <hr class="border-stone-800">
+      <!-- Active vendors -->
+      <div>
+        <h2 class="text-stone-200 font-semibold mb-3">Active Vendors</h2>
+        <div id="vendors-active" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      </div>
+    </div>
+
+    <!-- PROGRAMMES TAB -->
+    <div id="tab-programmes" class="tab-content space-y-4">
+      <h2 class="text-stone-200 font-semibold mb-1">Active Programmes</h2>
+      <div id="programmes-list" class="space-y-4"></div>
+    </div>
+
+    <!-- ESCALATIONS TAB -->
+    <div id="tab-escalations" class="tab-content space-y-4">
+      <h2 class="text-stone-200 font-semibold">Open Escalations</h2>
+      <div id="escalations-list" class="space-y-3"></div>
+    </div>
+
+    <!-- INVITE / USERS TAB -->
+    <div id="tab-invite" class="tab-content max-w-lg space-y-5">
+      <h2 class="text-stone-200 font-semibold">Invite Users</h2>
+
+      <div class="row-card p-5 space-y-4">
+        <h3 class="text-sm font-semibold text-stone-300">Invite a new user</h3>
+        <p class="text-xs text-stone-500">The user will receive a sign-in link by email. You then assign their role below by adding them to the agents, providers, or admins table.</p>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs text-stone-400 mb-1">Email address</label>
+            <input type="email" id="invite-email" placeholder="agent@example.com">
+          </div>
+          <div>
+            <label class="block text-xs text-stone-400 mb-1">Role</label>
+            <select id="invite-role">
+              <option value="agent">Field Agent</option>
+              <option value="provider">Service Provider</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div id="invite-agent-fields" class="space-y-3">
+            <div>
+              <label class="block text-xs text-stone-400 mb-1">Full Name</label>
+              <input type="text" id="invite-name" placeholder="Arjun Kumar">
+            </div>
+            <div>
+              <label class="block text-xs text-stone-400 mb-1">Phone</label>
+              <input type="tel" id="invite-phone" placeholder="9876543210">
+            </div>
+            <div>
+              <label class="block text-xs text-stone-400 mb-1">Geography / District</label>
+              <input type="text" id="invite-geography" placeholder="Raichur, Karnataka">
+            </div>
+            <div>
+              <label class="block text-xs text-stone-400 mb-1">Operating Model</label>
+              <select id="invite-model">
+                <option value="independent">Independent</option>
+                <option value="csr">CSR Programme</option>
+                <option value="govt">Government</option>
+              </select>
+            </div>
+          </div>
+          <div id="invite-provider-fields" class="space-y-3 hidden">
+            <div>
+              <label class="block text-xs text-stone-400 mb-1">Organisation Name</label>
+              <input type="text" id="invite-org" placeholder="Rajan Creatives">
+            </div>
+            <div>
+              <label class="block text-xs text-stone-400 mb-1">Phone</label>
+              <input type="tel" id="invite-prov-phone" placeholder="9876543210">
+            </div>
+          </div>
+          <button onclick="inviteUser()" class="btn-primary w-full">Send invite & create profile</button>
+          <p id="invite-msg" class="text-xs text-center hidden"></p>
+        </div>
+      </div>
+
+      <div class="row-card p-5">
+        <h3 class="text-sm font-semibold text-stone-300 mb-3">Existing users</h3>
+        <div id="users-list" class="space-y-2 text-sm text-stone-500">Loading…</div>
+      </div>
+    </div>
+
+  </main>
+
+<script>
+  let _ctx = null;
+  let _sb  = null;
+
+  // ── Boot ──────────────────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', async () => {
+    _ctx = await OESNAuth.guard('admin');
+    if (!_ctx) return;
+
+    OESNAuth.renderUserBar(_ctx, 'user-bar');
+
+    if (_ctx.mode === 'demo') {
+      // Demo mode: show static placeholder data
+      loadDemoData();
+      return;
+    }
+
+    _sb = _ctx.sb;
+    await refreshAll();
+  });
+
+  // ── Role toggle for invite form ───────────────────────────────────────
+  document.getElementById('invite-role')?.addEventListener('change', e => {
+    const r = e.target.value;
+    document.getElementById('invite-agent-fields').classList.toggle('hidden', r !== 'agent');
+    document.getElementById('invite-provider-fields').classList.toggle('hidden', r !== 'provider');
+  });
+
+  // ── Tabs ──────────────────────────────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      const active = btn.dataset.tab === name;
+      btn.classList.toggle('text-amber-400', active);
+      btn.classList.toggle('border-amber-400', active);
+      btn.classList.toggle('text-stone-400', !active);
+      btn.classList.toggle('border-transparent', !active);
+    });
+  }
+
+  // ── Load all data ─────────────────────────────────────────────────────
+  async function refreshAll() {
+    if (!_sb) return;
+    await Promise.all([loadStats(), loadAgents(), loadVendors(), loadProgrammes(), loadEscalations(), loadUsers()]);
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────────────
+  async function loadStats() {
+    const [agents, ents, refs, earns, vendors] = await Promise.all([
+      _sb.from('agents').select('id', { count: 'exact', head: true }).eq('active', true),
+      _sb.from('entrepreneurs').select('id', { count: 'exact', head: true }),
+      _sb.from('referrals').select('id,status', { count: 'exact' }).in('status', ['IN_PROGRESS','RTC','OVERDUE','BLOCKED']),
+      _sb.from('earnings').select('amount').eq('status', 'PENDING'),
+      _sb.from('providers').select('id', { count: 'exact', head: true }).eq('empanelment_status', 'pending'),
+    ]);
+
+    setText('stat-agents', agents.count ?? '—');
+    setText('stat-ents',   ents.count   ?? '—');
+    setText('stat-refs',   refs.count   ?? '—');
+    const pendingTotal = (earns.data || []).reduce((s, e) => s + (e.amount || 0), 0);
+    setText('stat-earn',   OESN.formatINR(pendingTotal));
+    setText('stat-vendors', vendors.count ?? '—');
+
+    // Vendor badge
+    if (vendors.count > 0) {
+      const vb = document.getElementById('vendor-badge');
+      vb.textContent = vendors.count;
+      vb.classList.remove('hidden');
+    }
+
+    // Status breakdown
+    const statusCount = {};
+    (refs.data || []).forEach(r => { statusCount[r.status] = (statusCount[r.status] || 0) + 1; });
+    const total = refs.count || 1;
+    const colors = { IN_PROGRESS:'bg-blue-500', RTC:'bg-amber-500', OVERDUE:'bg-red-500', BLOCKED:'bg-red-700', COMPLETED:'bg-emerald-500' };
+    const labels = { IN_PROGRESS:'In Progress', RTC:'Ready to Close', OVERDUE:'Overdue', BLOCKED:'Blocked' };
+    document.getElementById('status-breakdown').innerHTML = Object.entries(statusCount).map(([s, n]) => `
+      <div>
+        <div class="flex justify-between text-xs text-stone-400 mb-1">
+          <span>${labels[s] || s}</span>
+          <span class="font-medium text-stone-200">${n}</span>
+        </div>
+        <div class="credit-bar">
+          <div class="credit-fill ${colors[s] || 'bg-stone-500'}" style="width:${Math.round(n/total*100)}%"></div>
+        </div>
+      </div>`).join('') || '<p class="text-stone-600 text-sm">No active referrals</p>';
+  }
+
+  // ── Agents ────────────────────────────────────────────────────────────
+  async function loadAgents() {
+    const { data: agents } = await _sb.from('agents').select('*').eq('active', true).order('name');
+    if (!agents?.length) { document.getElementById('agents-tbody').innerHTML = '<tr><td colspan="8" class="py-6 text-center text-stone-600 text-sm">No agents found</td></tr>'; return; }
+
+    setText('agent-count', `(${agents.length})`);
+
+    // For each agent load dashboard via RPC (parallel, max 10 at a time)
+    const dashboards = await Promise.all(
+      agents.map(a => _sb.rpc('get_agent_dashboard', { p_agent_id: a.id }).then(r => r.data || {}).catch(() => ({})))
+    );
+
+    const rows = agents.map((a, i) => {
+      const d = dashboards[i];
+      const overdue = d.overdue_count || 0;
+      const pending = OESN.formatINR(d.pending_earnings_total || 0);
+      const ents = d.active_entrepreneurs || 0;
+      const activeRefs = (d.referrals_by_status?.IN_PROGRESS || 0) + (d.referrals_by_status?.RTC || 0);
+      const modelBadge = { independent:'bg-blue-900 text-blue-300', csr:'bg-purple-900 text-purple-300', govt:'bg-green-900 text-green-300' }[a.operating_model] || 'bg-stone-800 text-stone-400';
+
+      return `<tr class="hover:bg-stone-900/40 transition-colors">
+        <td class="py-3 pr-4 font-medium text-stone-200">${a.name}</td>
+        <td class="py-3 pr-4 text-stone-400">${a.geography || '—'}</td>
+        <td class="py-3 pr-4"><span class="badge ${modelBadge}">${a.operating_model}</span></td>
+        <td class="py-3 pr-4 text-right mono text-stone-300">${ents}</td>
+        <td class="py-3 pr-4 text-right mono text-stone-300">${activeRefs}</td>
+        <td class="py-3 pr-4 text-right mono ${overdue > 0 ? 'text-red-400 font-semibold' : 'text-stone-500'}">${overdue}</td>
+        <td class="py-3 pr-4 text-right mono text-emerald-400">${pending}</td>
+        <td class="py-3"><span class="badge bg-emerald-900/50 text-emerald-400">Active</span></td>
+      </tr>`;
+    });
+
+    document.getElementById('agents-tbody').innerHTML = rows.join('');
+
+    // Heat row for overview tab
+    const heat = agents.map((a, i) => {
+      const d = dashboards[i];
+      const overdue = d.overdue_count || 0;
+      const dormant = d.dormant_entrepreneurs || 0;
+      const alert = overdue + dormant;
+      if (alert === 0) return '';
+      return `<div class="row-card p-3">
+        <p class="font-semibold text-stone-200 text-sm">${a.name}</p>
+        <p class="text-stone-500 text-xs">${a.geography || ''}</p>
+        <div class="flex gap-2 mt-2">
+          ${overdue > 0 ? `<span class="badge bg-red-900/50 text-red-400">${overdue} overdue</span>` : ''}
+          ${dormant > 0 ? `<span class="badge bg-stone-800 text-stone-400">${dormant} dormant</span>` : ''}
+        </div>
+      </div>`;
+    }).filter(Boolean).join('');
+    document.getElementById('agents-heat').innerHTML = heat || '<p class="text-stone-600 text-sm col-span-4">All agents on track 👍</p>';
+  }
+
+  // ── Vendors ───────────────────────────────────────────────────────────
+  async function loadVendors() {
+    const { data: providers } = await _sb.from('providers').select('*').order('created_at', { ascending: false });
+    if (!providers) return;
+
+    const pending = providers.filter(p => p.empanelment_status === 'pending');
+    const active  = providers.filter(p => p.empanelment_status === 'active');
+
+    setText('pending-vendor-count', `(${pending.length})`);
+
+    document.getElementById('vendors-pending').innerHTML = pending.length ? pending.map(p => `
+      <div class="row-card p-4 flex items-center justify-between gap-4">
+        <div>
+          <p class="font-semibold text-stone-200">${p.org_name}</p>
+          <p class="text-stone-500 text-xs mt-0.5">${p.phone || ''} · Applied ${OESN.relativeTime(p.created_at)}</p>
+          <p class="text-stone-600 text-xs mt-1">${(p.services || []).map(s => s.service_type || s.name || s).join(', ')}</p>
+        </div>
+        <div class="flex gap-2 shrink-0">
+          <button onclick="setVendorStatus('${p.id}','active')"
+            class="btn-sm bg-emerald-700 hover:bg-emerald-600 text-white">Approve</button>
+          <button onclick="setVendorStatus('${p.id}','suspended')"
+            class="btn-sm bg-red-900 hover:bg-red-800 text-red-300">Reject</button>
+        </div>
+      </div>`) .join('') : '<p class="text-stone-600 text-sm">No pending applications</p>';
+
+    document.getElementById('vendors-active').innerHTML = active.map(p => `
+      <div class="row-card p-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="font-semibold text-stone-200">${p.org_name}</p>
+            <p class="text-stone-500 text-xs mt-0.5">${p.phone || ''}</p>
+          </div>
+          <span class="badge bg-emerald-900/50 text-emerald-400">Active</span>
+        </div>
+        <p class="text-stone-600 text-xs mt-2">${(p.services || []).map(s => s.name || s.service_type).slice(0,3).join(' · ')}</p>
+        <button onclick="setVendorStatus('${p.id}','suspended')"
+          class="btn-sm bg-stone-800 hover:bg-red-900 text-stone-400 hover:text-red-300 transition-colors mt-3">Suspend</button>
+      </div>`).join('') || '<p class="text-stone-600 text-sm">No active vendors yet</p>';
+  }
+
+  async function setVendorStatus(providerId, status) {
+    await _sb.from('providers').update({ empanelment_status: status }).eq('id', providerId);
+    await loadVendors();
+    await loadStats();
+  }
+
+  // ── Programmes ────────────────────────────────────────────────────────
+  async function loadProgrammes() {
+    const { data: progs } = await _sb.from('programmes').select('*').order('created_at', { ascending: false });
+    if (!progs?.length) { document.getElementById('programmes-list').innerHTML = '<p class="text-stone-600 text-sm">No programmes yet</p>'; return; }
+
+    document.getElementById('programmes-list').innerHTML = progs.map(p => {
+      const credits = p.credits || {};
+      const creditBars = Object.entries(credits).map(([type, c]) => {
+        const pct = c.total > 0 ? Math.round(c.used / c.total * 100) : 0;
+        const color = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500';
+        return `<div>
+          <div class="flex justify-between text-xs text-stone-500 mb-1">
+            <span>${type.replace(/_/g,' ')}</span>
+            <span>${c.used}/${c.total}</span>
+          </div>
+          <div class="credit-bar"><div class="credit-fill ${color}" style="width:${pct}%"></div></div>
+        </div>`;
+      }).join('');
+
+      return `<div class="row-card p-5">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <h3 class="font-semibold text-stone-200">${p.name}</h3>
+            <p class="text-stone-500 text-xs mt-0.5">${p.funder_name} · Budget: ${OESN.formatINR(p.total_budget)}</p>
+          </div>
+          <span class="badge bg-blue-900/50 text-blue-300">${p.start_date} → ${p.end_date || 'ongoing'}</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${creditBars}</div>
+        <div class="mt-4 pt-4 border-t border-stone-800 flex gap-3">
+          <div class="text-xs text-stone-500">Agent salary: <span class="text-stone-200 font-medium">${OESN.formatINR(p.agent_salary)}/mo</span></div>
+          <div class="text-xs text-stone-500">Commission on delivery: <span class="text-stone-200 font-medium">${p.agent_commission_on_prebuy ? 'Yes' : 'No'}</span></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Escalations ───────────────────────────────────────────────────────
+  async function loadEscalations() {
+    const { data: escs } = await _sb.from('referrals')
+      .select('id,service_name,status,escalation_status,escalated_at,blocker_reason,agents(name),entrepreneurs(sector,geography)')
+      .not('escalation_status', 'is', null)
+      .neq('escalation_status', 'resolved')
+      .order('escalated_at', { ascending: false })
+      .limit(20);
+
+    // Escalation badge count
+    if (escs?.length) {
+      const eb = document.getElementById('esc-badge');
+      eb.textContent = escs.length;
+      eb.classList.remove('hidden');
+    }
+
+    // Preview in overview tab
+    document.getElementById('esc-preview').innerHTML = escs?.length
+      ? escs.slice(0, 4).map(e => `
+          <div class="border-l-2 border-amber-500 pl-3">
+            <p class="text-stone-300 text-xs font-medium">${e.service_name}</p>
+            <p class="text-stone-600 text-xs">${e.agents?.name || ''} · ${OESN.relativeTime(e.escalated_at)}</p>
+          </div>`).join('')
+      : '<p class="text-stone-600">No open escalations</p>';
+
+    document.getElementById('escalations-list').innerHTML = escs?.length
+      ? escs.map(e => `
+        <div class="row-card p-4 flex items-start justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="badge bg-amber-900/50 text-amber-400">${e.escalation_status}</span>
+              <span class="text-stone-400 text-xs">${e.service_name}</span>
+            </div>
+            <p class="text-stone-300 text-sm">${e.blocker_reason || 'No reason given'}</p>
+            <p class="text-stone-600 text-xs mt-1">${e.agents?.name || ''} · ${e.entrepreneurs?.sector || ''}, ${e.entrepreneurs?.geography || ''} · ${OESN.relativeTime(e.escalated_at)}</p>
+          </div>
+          <button onclick="resolveEscalation('${e.id}')"
+            class="btn-sm bg-emerald-800 hover:bg-emerald-700 text-emerald-300 shrink-0">Resolve</button>
+        </div>`).join('')
+      : '<p class="text-stone-600 text-sm">No open escalations</p>';
+  }
+
+  async function resolveEscalation(refId) {
+    await _sb.from('referrals').update({ escalation_status: 'resolved' }).eq('id', refId);
+    await loadEscalations();
+  }
+
+  // ── Users list ────────────────────────────────────────────────────────
+  async function loadUsers() {
+    const [agents, providers, admins] = await Promise.all([
+      _sb.from('agents').select('id,name,user_id').eq('active', true),
+      _sb.from('providers').select('id,org_name,user_id'),
+      _sb.from('admins').select('id,name,user_id'),
+    ]);
+
+    const rows = [
+      ...(agents.data || []).map(a => ({ name: a.name, role: 'agent',    linked: !!a.user_id })),
+      ...(providers.data || []).map(p => ({ name: p.org_name, role: 'provider', linked: !!p.user_id })),
+      ...(admins.data || []).map(a => ({ name: a.name,    role: 'admin',    linked: !!a.user_id })),
+    ];
+
+    document.getElementById('users-list').innerHTML = rows.length
+      ? rows.map(r => `
+          <div class="flex items-center justify-between py-2 border-b border-stone-800 last:border-0">
+            <div class="flex items-center gap-2">
+              <span class="badge ${{ agent:'bg-blue-900/50 text-blue-300', provider:'bg-emerald-900/50 text-emerald-300', admin:'bg-red-900/50 text-red-400' }[r.role]}">${r.role}</span>
+              <span class="text-stone-300">${r.name}</span>
+            </div>
+            <span class="text-xs ${r.linked ? 'text-emerald-500' : 'text-stone-600'}">${r.linked ? '✓ linked' : 'no login yet'}</span>
+          </div>`).join('')
+      : '<p class="text-stone-600">No users yet</p>';
+  }
+
+  // ── Invite user ───────────────────────────────────────────────────────
+  async function inviteUser() {
+    const email    = document.getElementById('invite-email').value.trim();
+    const role     = document.getElementById('invite-role').value;
+    const name     = document.getElementById('invite-name').value.trim();
+    const phone    = document.getElementById('invite-phone').value.trim();
+    const geo      = document.getElementById('invite-geography').value.trim();
+    const model    = document.getElementById('invite-model').value;
+    const org      = document.getElementById('invite-org').value.trim();
+    const provPhone= document.getElementById('invite-prov-phone').value.trim();
+
+    if (!email) { showInviteMsg('Enter an email address.', 'error'); return; }
+
+    // 1. Send OTP magic link via Supabase Auth
+    const { error: authErr } = await _sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+    if (authErr) { showInviteMsg('Failed to send invite: ' + authErr.message, 'error'); return; }
+
+    // 2. Create profile record in the appropriate table (user_id will be linked when they sign in)
+    if (role === 'agent') {
+      if (!name) { showInviteMsg('Enter the agent name.', 'error'); return; }
+      const { error } = await _sb.from('agents').insert({ name, phone, geography: geo, operating_model: model, active: true });
+      if (error) { showInviteMsg('Invite sent but profile creation failed: ' + error.message, 'warn'); return; }
+    } else if (role === 'provider') {
+      if (!org) { showInviteMsg('Enter the organisation name.', 'error'); return; }
+      const { error } = await _sb.from('providers').insert({ org_name: org, phone: provPhone, empanelment_status: 'pending' });
+      if (error) { showInviteMsg('Invite sent but provider creation failed: ' + error.message, 'warn'); return; }
+    } else if (role === 'admin') {
+      if (!name) { showInviteMsg('Enter the admin name.', 'error'); return; }
+      const { error } = await _sb.from('admins').insert({ name });
+      if (error) { showInviteMsg('Invite sent but admin record creation failed: ' + error.message, 'warn'); return; }
+    }
+
+    showInviteMsg(`✓ Invite sent to ${email}. They'll receive a sign-in link and be assigned as ${role}.`, 'ok');
+    // Clear form
+    ['invite-email','invite-name','invite-phone','invite-geography','invite-org','invite-prov-phone'].forEach(id => { document.getElementById(id).value = ''; });
+    await loadUsers();
+  }
+
+  function showInviteMsg(msg, type) {
+    const el = document.getElementById('invite-msg');
+    el.textContent = msg;
+    el.className = 'text-xs mt-2 text-center ' + ({ ok:'text-emerald-400', error:'text-red-400', warn:'text-amber-400' }[type] || 'text-stone-400');
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 6000);
+  }
+
+  // ── Demo mode placeholder ─────────────────────────────────────────────
+  function loadDemoData() {
+    setText('stat-agents', 2);
+    setText('stat-ents', 10);
+    setText('stat-refs', 5);
+    setText('stat-earn', '₹4.5k');
+    setText('stat-vendors', 1);
+    document.getElementById('status-breakdown').innerHTML = '<p class="text-stone-500 text-sm">Demo mode — connect Supabase to see live data</p>';
+    document.getElementById('esc-preview').innerHTML = '<p class="text-stone-600 text-sm">No escalations in demo</p>';
+    document.getElementById('agents-heat').innerHTML = '<p class="text-stone-600 text-sm col-span-4">Connect Supabase to see agent heat map</p>';
+    document.getElementById('agents-tbody').innerHTML = '<tr><td colspan="8" class="py-6 text-center text-stone-600 text-sm">Connect Supabase to see agent data</td></tr>';
+    document.getElementById('vendors-pending').innerHTML = '<p class="text-stone-600 text-sm">Demo mode</p>';
+    document.getElementById('vendors-active').innerHTML = '';
+    document.getElementById('programmes-list').innerHTML = '<p class="text-stone-600 text-sm">Demo mode</p>';
+    document.getElementById('escalations-list').innerHTML = '<p class="text-stone-600 text-sm">No escalations in demo</p>';
+    document.getElementById('users-list').innerHTML = '<p class="text-stone-600">Connect Supabase to manage users</p>';
+  }
+
+  // ── Utility ───────────────────────────────────────────────────────────
+  function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+</script>
+</body>
+</html>

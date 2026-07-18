@@ -9,6 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="oesn-data.js" onerror="window.OESN=null"></script>
+  <script src="oesn-auth.js"></script>
   <style>
     :root {
       --ground:  #f5f4f1;
@@ -52,6 +53,8 @@
   </style>
 </head>
 <body class="min-h-screen">
+
+<div id="user-bar"></div>
 
   <!-- ── FIXED HEADER ── -->
   <header class="fixed top-0 left-0 right-0 z-50 bg-[#f5f4f1] border-b border-stone-200">
@@ -425,7 +428,14 @@
     }
 
     // ── Init ─────────────────────────────────────────────────────────────────
-    renderOverview();
+    (async () => {
+      if (typeof OESNAuth !== 'undefined') {
+        const ctx = await OESNAuth.guard('programme');
+        if (!ctx) return;
+        OESNAuth.renderUserBar(ctx, 'user-bar');
+      }
+      renderOverview();
+    })();
     renderCreditsSummary();
     renderCreditsDetail();
 
