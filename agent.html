@@ -223,6 +223,21 @@
   </div>
 </div>
 
+<!-- ═══ SHEET 7: Need Journey Detail ══════════════════════════════════════ -->
+<div id="need-sheet" class="sheet fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-h-[90vh] overflow-y-auto">
+  <div class="w-12 h-1.5 bg-stone-300 rounded-full mx-auto mt-3"></div>
+  <div class="flex items-start justify-between px-5 pt-3 pb-3 border-b border-stone-100">
+    <div>
+      <div id="ns-title" class="text-base font-bold text-stone-900"></div>
+      <div id="ns-sub" class="text-xs text-stone-400 mt-0.5"></div>
+    </div>
+    <button onclick="closeSheets()" class="text-stone-400 p-1 mt-0.5" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div id="ns-body" class="px-5 pb-10 space-y-4 text-sm"></div>
+</div>
+
 <!-- ═══ BOTTOM NAV ══════════════════════════════════════════════════════════ -->
 <nav class="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-stone-200 flex" style="padding-bottom:env(safe-area-inset-bottom)">
   <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[52px] text-amber-700" aria-label="Dashboard">
@@ -601,9 +616,48 @@ let _ents = [];             // cached entrepreneurs for name lookups
 let _noteEntId = '';
 let _noteType  = 'visit';
 let _diagEntId = '';
-let _diagState = {};        // { tag: 'done' | 'gap' | 'na' }
+let _diagState = {};        // { tag: { present:'gap'|'done'|'na', aspiration, confidence, payment, observation } }
 let _nrEntId   = '';
 let _nrPreset  = null;      // pre-selected service when opening from diagnostic
+let _needEntId = '';
+let _needTag   = '';
+
+// ─── NEED JOURNEY HELPERS ────────────────────────────────────────────────────
+const NEED_STAGE = {
+  observed   : { label:'Observed',    cls:'bg-stone-100 text-stone-500',       dot:'bg-stone-300' },
+  explored   : { label:'Exploring',   cls:'bg-blue-100 text-blue-700',         dot:'bg-blue-400'  },
+  decided    : { label:'Ready to act',cls:'bg-amber-100 text-amber-800',       dot:'bg-amber-400' },
+  in_progress: { label:'In Progress', cls:'bg-blue-500 text-white',            dot:'bg-blue-500'  },
+  resolved   : { label:'Resolved',    cls:'bg-emerald-100 text-emerald-700',   dot:'bg-emerald-400'},
+  deferred   : { label:'Deferred',    cls:'bg-stone-100 text-stone-400 italic',dot:'bg-stone-200' },
+};
+
+function needBadge(stage) {
+  const s = NEED_STAGE[stage] || NEED_STAGE.observed;
+  return `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${s.cls}">${s.label}</span>`;
+}
+
+function needFactors(asp, conf, pay) {
+  const aspClr = {high:'text-amber-500',medium:'text-stone-400',low:'text-stone-200'};
+  const confClr = {high:'text-emerald-500',medium:'text-stone-400',low:'text-stone-200'};
+  const payClr = {yes:'text-emerald-500',partial:'text-amber-500',no:'text-stone-300'};
+  const aspTip = {high:'Aspiration: High',medium:'Aspiration: Medium',low:'Aspiration: Low'};
+  const confTip = {high:'Readiness: High',medium:'Readiness: Medium',low:'Readiness: Low'};
+  const payTip = {yes:'Can pay',partial:'Partial payment',no:'Cannot pay'};
+  const a = asp  ? `<span class="${aspClr[asp]||'text-stone-200'}" title="${aspTip[asp]||''}">▲</span>` : '';
+  const c = conf ? `<span class="${confClr[conf]||'text-stone-200'}" title="${confTip[conf]||''}">●</span>` : '';
+  const p = pay  ? `<span class="font-bold ${payClr[pay]||'text-stone-200'}" title="${payTip[pay]||''}">₹</span>` : '';
+  return `<span class="flex gap-0.5 text-sm">${a}${c}${p}</span>`;
+}
+
+function computeNeedStage(s) {
+  if (s.present === 'done') return 'resolved';
+  if (s.present !== 'gap')  return null;
+  if (!s.aspiration)        return 'observed';
+  if (s.aspiration === 'low') return 'deferred';
+  if (s.confidence === 'high' && (s.payment === 'yes' || s.payment === 'partial')) return 'decided';
+  return 'explored';
+}
 
 // ─── AUTH GUARD ─────────────────────────────────────────────────────────────
 OESNAuth.guard('agent').then(async ctx => {
@@ -655,7 +709,7 @@ function switchTab(name) {
 }
 
 // ─── SHEETS ─────────────────────────────────────────────────────────────────
-const ALL_SHEETS = ['ref-sheet','ent-sheet','add-ent-sheet','diag-sheet','note-sheet','new-ref-sheet'];
+const ALL_SHEETS = ['ref-sheet','ent-sheet','add-ent-sheet','diag-sheet','note-sheet','new-ref-sheet','need-sheet'];
 function openSheet(id) {
   ALL_SHEETS.forEach(s => document.getElementById(s).classList.remove('open'));
   document.getElementById(id).classList.add('open');
@@ -907,9 +961,9 @@ async function openEntSheet(entId) {
   document.getElementById('es-body').innerHTML = '<p class="text-stone-400 text-sm py-4 text-center">Loading…</p>';
   openSheet('ent-sheet');
 
-  const [e, tags, entRefs, notes] = await Promise.all([
+  const [e, needJourneys, entRefs, notes] = await Promise.all([
     OESN.getEntrepreneur(entId),
-    OESN.getCapabilityTags(entId),
+    OESN.getNeedJourneys(entId),
     OESN.getReferrals({ entrepreneur_id: entId }),
     OESN.getConversationNotes(entId)
   ]);
@@ -918,17 +972,31 @@ async function openEntSheet(entId) {
   document.getElementById('es-name').textContent = e.name;
   document.getElementById('es-sub').textContent = `${e.business||e.sector||'Unknown business'} — ${e.location||''}`;
 
-  const confirmedTags = tags.filter(t=>t.confirmed);
-  const gapTags = tags.filter(t=>!t.confirmed);
-  const tagColor = { unit_costing:'bg-blue-100 text-blue-700', fssai:'bg-green-100 text-green-700', market_linkage:'bg-amber-100 text-amber-700', loan_ready:'bg-emerald-100 text-emerald-700', solar_viable:'bg-yellow-100 text-yellow-700', gst_registered:'bg-purple-100 text-purple-700', udyam_registered:'bg-indigo-100 text-indigo-700', digital_presence:'bg-pink-100 text-pink-700' };
-  const tagLabel = { unit_costing:'Unit Costing', fssai:'FSSAI', market_linkage:'Market Access', loan_ready:'Finance Ready', solar_viable:'Solar Viable', gst_registered:'GST Regd', udyam_registered:'Udyam Regd', digital_presence:'Digital' };
+  // Sort needs: decided → in_progress → explored → observed → resolved → deferred
+  const stageOrder = ['decided','in_progress','explored','observed','resolved','deferred'];
+  const sortedNeeds = [...needJourneys].sort((a,b) => stageOrder.indexOf(a.stage) - stageOrder.indexOf(b.stage));
 
-  const capHtml = confirmedTags.length
-    ? confirmedTags.map(t=>`<span class="text-[11px] px-2 py-0.5 rounded-full font-medium ${tagColor[t.tag]||'bg-stone-100 text-stone-600'}">${tagLabel[t.tag]||t.tag}</span>`).join(' ')
-    : '<span class="text-xs text-stone-400">No assessment done yet</span>';
-  const gapHtml = gapTags.length
-    ? gapTags.map(t=>`<span class="text-[11px] px-2 py-0.5 rounded-full font-medium bg-red-50 text-red-600 border border-red-200">${tagLabel[t.tag]||t.tag}</span>`).join(' ')
-    : '';
+  const needCards = sortedNeeds.map(nj => {
+    const cap = CAPABILITIES.find(c=>c.tag===nj.need);
+    if (!cap) return '';
+    const lastObs = (nj.observations||[]).slice(-1)[0];
+    const refBtn = nj.stage === 'decided' && cap.ref_service
+      ? `<button onclick="event.stopPropagation();closeSheets();setTimeout(()=>{_nrPreset='${cap.ref_service}';openNewRefSheet('${entId}')},80)" class="mt-2 w-full bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold text-xs py-1.5 rounded-lg transition-colors">Create referral →</button>`
+      : '';
+    const deferNote = nj.stage==='deferred' && nj.deferred_reason
+      ? `<p class="text-[10px] text-stone-400 italic mt-1">"${nj.deferred_reason}"</p>` : '';
+    return `<div class="bg-stone-50 rounded-xl p-3 cursor-pointer" onclick="openNeedSheet('${entId}','${nj.need}')">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-xs font-semibold text-stone-700">${cap.label}</span>
+        ${needBadge(nj.stage)}
+      </div>
+      <div class="flex items-center gap-2">
+        ${needFactors(nj.aspiration, nj.confidence, nj.payment)}
+        ${lastObs?`<span class="text-[11px] text-stone-400 truncate flex-1">${lastObs.text}</span>`:''}
+      </div>
+      ${deferNote}${refBtn}
+    </div>`;
+  }).join('');
 
   const activeRefs = entRefs.filter(r=>!['COMPLETED'].includes(r.status));
   const refsHtml = activeRefs.length
@@ -950,11 +1018,10 @@ async function openEntSheet(entId) {
       <span>KYC: <span class="font-medium ${e.kyc_done?'text-emerald-600':'text-amber-700'}">${e.kyc_done?'Done':'Pending'}</span></span>
       <span>Status: <span class="font-medium text-stone-700">${e.status||'—'}</span></span>
     </div>
-    ${confirmedTags.length||gapTags.length?`<div>
-      <p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Assessment</p>
-      <div class="flex flex-wrap gap-1.5">${capHtml}</div>
-      ${gapHtml?`<div class="flex flex-wrap gap-1.5 mt-1.5">${gapHtml}</div>`:''}
-    </div>`:''}
+    ${sortedNeeds.length?`<div>
+      <p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Needs (${sortedNeeds.length})</p>
+      <div class="space-y-2">${needCards}</div>
+    </div>`:'<p class="text-xs text-stone-400 italic">No assessment done yet — run a diagnostic.</p>'}
     <div>
       <p class="text-xs text-stone-400 uppercase tracking-widest mb-2">Active referrals (${activeRefs.length})</p>
       <div class="space-y-2">${refsHtml}</div>
@@ -963,7 +1030,7 @@ async function openEntSheet(entId) {
     <div class="grid grid-cols-3 gap-2 pt-1">
       <button onclick="closeSheets();setTimeout(()=>openNewRefSheet('${entId}'),50)" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold text-xs py-2.5 rounded-xl transition-colors">New Referral</button>
       <button onclick="closeSheets();setTimeout(()=>openNoteSheet('${entId}'),50)" class="bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs py-2.5 rounded-xl transition-colors">Log Note</button>
-      <button onclick="closeSheets();setTimeout(()=>openDiagSheet('${entId}'),50)" class="bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs py-2.5 rounded-xl transition-colors">Diagnostic</button>
+      <button onclick="closeSheets();setTimeout(()=>openDiagSheet('${entId}'),50)" class="bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs py-2.5 rounded-xl transition-colors">Assessment</button>
     </div>`;
 }
 
@@ -1031,19 +1098,59 @@ async function openDiagSheet(entId) {
   const e = _ents.find(e=>e.id===entId);
   document.getElementById('diag-sub').textContent = e ? `For ${e.name}` : 'Mark what applies';
 
-  // Load existing tags to pre-fill
-  const existing = await OESN.getCapabilityTags(entId);
-  existing.forEach(t => { _diagState[t.tag] = t.confirmed ? 'done' : 'gap'; });
+  // Load existing need journeys to pre-fill
+  const existing = await OESN.getNeedJourneys(entId);
+  existing.forEach(nj => {
+    const present = nj.stage === 'resolved' ? 'done'
+                  : nj.stage === 'deferred' ? 'gap'
+                  : (nj.stage && nj.stage !== 'observed') ? 'gap'
+                  : null;
+    if (!present) return;
+    _diagState[nj.need] = {
+      present,
+      aspiration : nj.aspiration || null,
+      confidence : nj.confidence || null,
+      payment    : nj.payment    || null,
+      observation: (nj.observations||[]).slice(-1)[0]?.text || '',
+    };
+  });
 
-  document.getElementById('diag-body').innerHTML = CAPABILITIES.map((cap,i) => {
-    const state = _diagState[cap.tag] || null;
-    return `<div class="bg-stone-50 rounded-xl p-3">
+  document.getElementById('diag-body').innerHTML = CAPABILITIES.map(cap => {
+    const s = _diagState[cap.tag] || {};
+    const isGap = s.present === 'gap';
+    const isDone = s.present === 'done';
+    const isNA  = s.present === 'na';
+    const fBtn = (factor, val, label) => {
+      const active = s[factor] === val;
+      const activeCls = factor==='aspiration'?(val==='high'?'bg-amber-100 text-amber-800 border-amber-300':val==='medium'?'bg-stone-200 text-stone-700 border-stone-300':'bg-stone-100 text-stone-400 border-stone-200')
+        :factor==='confidence'?(val==='high'?'bg-emerald-100 text-emerald-800 border-emerald-300':val==='medium'?'bg-stone-200 text-stone-700 border-stone-300':'bg-stone-100 text-stone-400 border-stone-200')
+        :(val==='yes'?'bg-emerald-100 text-emerald-800 border-emerald-300':val==='partial'?'bg-amber-100 text-amber-800 border-amber-300':'bg-red-50 text-red-600 border-red-200');
+      return `<button onclick="setDiagFactor('${cap.tag}','${factor}','${val}',this)" class="flex-1 text-xs py-1.5 rounded-lg border transition-colors ${active?activeCls:'border-stone-200 text-stone-400'}">${label}</button>`;
+    };
+    return `<div class="bg-stone-50 rounded-xl p-3" id="diag-cap-${cap.tag}">
       <p class="text-xs font-semibold text-stone-700 mb-0.5">${cap.label}</p>
-      <p class="text-xs text-stone-500 mb-2 leading-snug">${cap.q}</p>
+      <p class="text-xs text-stone-400 mb-2 leading-snug">${cap.q}</p>
       <div class="flex gap-2">
-        <button onclick="setDiagState('${cap.tag}','done',this)" class="diag-opt flex-1 border border-stone-200 rounded-lg py-1.5 text-xs font-semibold text-stone-500 ${state==='done'?'active-done':''}">Done</button>
-        <button onclick="setDiagState('${cap.tag}','gap',this)" class="diag-opt flex-1 border border-stone-200 rounded-lg py-1.5 text-xs font-semibold text-stone-500 ${state==='gap'?'active-gap':''}">Gap</button>
-        <button onclick="setDiagState('${cap.tag}','na',this)" class="diag-opt flex-1 border border-stone-200 rounded-lg py-1.5 text-xs font-semibold text-stone-500 ${state==='na'?'active-na':''}">N/A</button>
+        <button onclick="setDiagState('${cap.tag}','done',this)" class="diag-opt flex-1 border border-stone-200 rounded-lg py-1.5 text-xs font-semibold text-stone-500 ${isDone?'active-done':''}">Done</button>
+        <button onclick="setDiagState('${cap.tag}','gap',this)" class="diag-opt flex-1 border border-stone-200 rounded-lg py-1.5 text-xs font-semibold text-stone-500 ${isGap?'active-gap':''}">Gap</button>
+        <button onclick="setDiagState('${cap.tag}','na',this)" class="diag-opt flex-1 border border-stone-200 rounded-lg py-1.5 text-xs font-semibold text-stone-500 ${isNA?'active-na':''}">N/A</button>
+      </div>
+      <div id="diag-expand-${cap.tag}" class="${isGap?'':'hidden'} mt-2 pt-2 border-t border-stone-200 space-y-2">
+        <div class="flex gap-1.5 items-center">
+          <span class="text-[10px] text-stone-400 w-14 shrink-0">Aspiration</span>
+          ${fBtn('aspiration','high','High')}${fBtn('aspiration','medium','Med')}${fBtn('aspiration','low','Low')}
+        </div>
+        <div class="flex gap-1.5 items-center">
+          <span class="text-[10px] text-stone-400 w-14 shrink-0">Readiness</span>
+          ${fBtn('confidence','high','High')}${fBtn('confidence','medium','Med')}${fBtn('confidence','low','Low')}
+        </div>
+        <div class="flex gap-1.5 items-center">
+          <span class="text-[10px] text-stone-400 w-14 shrink-0">Can pay?</span>
+          ${fBtn('payment','yes','Yes')}${fBtn('payment','partial','Partial')}${fBtn('payment','no','No')}
+        </div>
+        <input type="text" placeholder="Quick observation (optional)…" value="${s.observation||''}"
+          oninput="if(!_diagState['${cap.tag}'])_diagState['${cap.tag}']={};_diagState['${cap.tag}'].observation=this.value"
+          class="w-full bg-white border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs placeholder-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-400">
       </div>
     </div>`;
   }).join('');
@@ -1052,36 +1159,240 @@ async function openDiagSheet(entId) {
 }
 
 function setDiagState(tag, state, btn) {
-  _diagState[tag] = state;
+  if (!_diagState[tag]) _diagState[tag] = {};
+  _diagState[tag].present = state;
   const row = btn.parentElement;
-  row.querySelectorAll('.diag-opt').forEach(b => {
-    b.classList.remove('active-done','active-gap','active-na');
-  });
+  row.querySelectorAll('.diag-opt').forEach(b => b.classList.remove('active-done','active-gap','active-na'));
   btn.classList.add('active-' + state);
+  const expand = document.getElementById('diag-expand-' + tag);
+  if (expand) expand.classList.toggle('hidden', state !== 'gap');
+}
+
+function setDiagFactor(tag, factor, val, btn) {
+  if (!_diagState[tag]) _diagState[tag] = {};
+  _diagState[tag][factor] = val;
+  const row = btn.parentElement;
+  row.querySelectorAll('button').forEach(b => {
+    b.className = b.className.replace(/bg-\S+|text-\S+|border-\S+/g, '').trim() + ' flex-1 text-xs py-1.5 rounded-lg border transition-colors border-stone-200 text-stone-400';
+  });
+  const activeCls = factor==='aspiration'?(val==='high'?'bg-amber-100 text-amber-800 border-amber-300':val==='medium'?'bg-stone-200 text-stone-700 border-stone-300':'bg-stone-100 text-stone-400 border-stone-200')
+    :factor==='confidence'?(val==='high'?'bg-emerald-100 text-emerald-800 border-emerald-300':val==='medium'?'bg-stone-200 text-stone-700 border-stone-300':'bg-stone-100 text-stone-400 border-stone-200')
+    :(val==='yes'?'bg-emerald-100 text-emerald-800 border-emerald-300':val==='partial'?'bg-amber-100 text-amber-800 border-amber-300':'bg-red-50 text-red-600 border-red-200');
+  btn.className = `flex-1 text-xs py-1.5 rounded-lg border transition-colors ${activeCls}`;
 }
 
 async function saveDiagnostic() {
   const entId = _diagEntId;
   const saves = [];
-  for (const cap of CAPABILITIES) {
-    const s = _diagState[cap.tag];
-    if (s === 'done') saves.push(OESN.saveCapabilityTag(entId, cap.tag, true, {}));
-    if (s === 'gap')  saves.push(OESN.saveCapabilityTag(entId, cap.tag, false, {}));
-  }
-  await Promise.all(saves);
+  const actionableGaps = [];
 
-  const gaps = CAPABILITIES.filter(c => _diagState[c.tag]==='gap' && c.ref_service);
+  for (const cap of CAPABILITIES) {
+    const s = _diagState[cap.tag] || {};
+    if (!s.present || s.present === 'na') continue;
+    const stage = computeNeedStage(s);
+    if (!stage) continue;
+    saves.push(OESN.upsertNeedJourney(entId, cap.tag, {
+      stage,
+      aspiration     : s.aspiration || null,
+      confidence     : s.confidence || null,
+      payment        : s.payment || null,
+      deferred_reason: stage === 'deferred' ? (s.observation || 'Deferred by entrepreneur') : null,
+    }));
+    if (s.observation) saves.push(OESN.addNeedObservation(entId, cap.tag, s.observation));
+    if (stage === 'decided' && cap.ref_service) actionableGaps.push(cap);
+  }
+
+  await Promise.all(saves);
   closeSheets();
 
-  if (gaps.length) {
-    const gapList = gaps.map(g=>g.label).join(', ');
-    if (confirm(`Diagnostic saved.\n\nGaps identified: ${gapList}.\n\nCreate a referral for "${gaps[0].ref_service}"?`)) {
-      _nrPreset = gaps[0].ref_service;
+  if (actionableGaps.length) {
+    const names = actionableGaps.map(g=>g.label).join(', ');
+    if (confirm(`Assessment saved.\n\nReady to act on: ${names}.\n\nCreate a referral for "${actionableGaps[0].ref_service}"?`)) {
+      _nrPreset = actionableGaps[0].ref_service;
       setTimeout(() => openNewRefSheet(entId), 100);
     }
   } else {
-    alert('Diagnostic saved.');
+    await renderDashboard();
   }
+}
+
+// ─── NEED JOURNEY SHEET ─────────────────────────────────────────────────────
+async function openNeedSheet(entId, need) {
+  _needEntId = entId;
+  _needTag   = need;
+
+  const cap = CAPABILITIES.find(c => c.tag === need);
+  const e   = _ents.find(e => e.id === entId);
+  document.getElementById('ns-title').textContent = cap ? cap.label : need;
+  document.getElementById('ns-sub').textContent   = e ? e.name : '';
+  document.getElementById('ns-body').innerHTML    = '<p class="text-stone-400 text-sm py-4 text-center">Loading…</p>';
+  openSheet('need-sheet');
+
+  const nj = await OESN.getNeedJourney(entId, need);
+  if (!nj) {
+    document.getElementById('ns-body').innerHTML = '<p class="text-stone-400 text-sm py-4 text-center">No data for this need.</p>';
+    return;
+  }
+
+  // Factor button builder
+  const fBtn = (factor, val, label) => {
+    const active = nj[factor] === val;
+    const activeCls = factor==='aspiration'
+      ? (val==='high'?'bg-amber-100 text-amber-800 border-amber-300':val==='medium'?'bg-stone-200 text-stone-700 border-stone-300':'bg-stone-100 text-stone-400 border-stone-200')
+      : factor==='confidence'
+        ? (val==='high'?'bg-emerald-100 text-emerald-800 border-emerald-300':val==='medium'?'bg-stone-200 text-stone-700 border-stone-300':'bg-stone-100 text-stone-400 border-stone-200')
+        : (val==='yes'?'bg-emerald-100 text-emerald-800 border-emerald-300':val==='partial'?'bg-amber-100 text-amber-800 border-amber-300':'bg-red-50 text-red-600 border-red-200');
+    return `<button onclick="nsSetFactor('${factor}','${val}',this)" class="flex-1 text-xs py-1.5 rounded-lg border transition-colors ${active?activeCls:'border-stone-200 text-stone-400'}">${label}</button>`;
+  };
+
+  // Observations timeline
+  const obs = (nj.observations || []);
+  const obsHtml = obs.length
+    ? obs.slice().reverse().map(o =>
+        `<div class="flex gap-3 items-start">
+          <div class="w-1.5 h-1.5 rounded-full bg-stone-300 mt-1.5 shrink-0"></div>
+          <div class="flex-1">
+            <p class="text-sm text-stone-700 leading-snug">${o.text}</p>
+            <p class="text-[10px] text-stone-400 mt-0.5">${OESN.relativeTime(o.created_at)}</p>
+          </div>
+        </div>`).join('')
+    : '<p class="text-stone-400 text-xs italic">No observations yet.</p>';
+
+  // Linked referral
+  const refHtml = nj.referral_id
+    ? `<button onclick="closeSheets();setTimeout(()=>openRefSheet('${nj.referral_id}'),50)"
+         class="flex items-center gap-2 bg-stone-50 rounded-xl px-3 py-2 text-xs text-stone-600 w-full text-left">
+         <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 4h12M4 10h12M4 16h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+         View linked referral →
+       </button>`
+    : '';
+
+  // Stage advance buttons (only show relevant transitions)
+  const stageOrder = ['observed','explored','decided','in_progress','resolved'];
+  const curIdx = stageOrder.indexOf(nj.stage);
+  const nextStage = curIdx >= 0 && curIdx < stageOrder.length-1 ? stageOrder[curIdx+1] : null;
+  const advanceBtn = nextStage && nj.stage !== 'deferred'
+    ? `<button onclick="nsAdvanceStage('${nextStage}')" class="flex-1 bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold text-xs py-2.5 rounded-xl transition-colors">Mark as ${NEED_STAGE[nextStage]?.label||nextStage} →</button>`
+    : '';
+  const deferBtn = !['resolved','deferred'].includes(nj.stage)
+    ? `<button onclick="nsDeferNeed()" class="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-600 font-semibold text-xs py-2.5 rounded-xl transition-colors">Defer</button>`
+    : '';
+
+  const deferNote = nj.stage === 'deferred' && nj.deferred_reason
+    ? `<p class="text-xs text-stone-400 italic bg-stone-50 rounded-xl px-3 py-2">"${nj.deferred_reason}"</p>` : '';
+
+  // Create referral CTA for decided needs
+  const refCta = nj.stage === 'decided' && cap?.ref_service
+    ? `<button onclick="closeSheets();setTimeout(()=>{_nrPreset='${cap.ref_service}';openNewRefSheet('${entId}')},80)"
+         class="w-full bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold text-sm py-3 rounded-xl transition-colors">
+         Create Referral for ${cap.label} →
+       </button>`
+    : '';
+
+  document.getElementById('ns-body').innerHTML = `
+    <div class="flex items-center gap-2">
+      ${needBadge(nj.stage)}
+      <span class="text-xs text-stone-400">Updated ${OESN.relativeTime(nj.updated_at)}</span>
+    </div>
+    ${deferNote}
+
+    <div class="bg-stone-50 rounded-xl p-3 space-y-2">
+      <p class="text-[10px] font-semibold text-stone-400 uppercase tracking-widest">Factors</p>
+      <div class="flex gap-1.5 items-center">
+        <span class="text-[10px] text-stone-400 w-16 shrink-0">Aspiration</span>
+        ${fBtn('aspiration','high','High')}${fBtn('aspiration','medium','Med')}${fBtn('aspiration','low','Low')}
+      </div>
+      <div class="flex gap-1.5 items-center">
+        <span class="text-[10px] text-stone-400 w-16 shrink-0">Readiness</span>
+        ${fBtn('confidence','high','High')}${fBtn('confidence','medium','Med')}${fBtn('confidence','low','Low')}
+      </div>
+      <div class="flex gap-1.5 items-center">
+        <span class="text-[10px] text-stone-400 w-16 shrink-0">Can pay?</span>
+        ${fBtn('payment','yes','Yes')}${fBtn('payment','partial','Partial')}${fBtn('payment','no','No')}
+      </div>
+      <button onclick="nsSaveFactors()" class="w-full mt-1 bg-stone-800 hover:bg-stone-700 text-white font-semibold text-xs py-2 rounded-lg transition-colors">Update factors</button>
+    </div>
+
+    <div>
+      <p class="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">Observations (${obs.length})</p>
+      <div class="space-y-3 mb-3">${obsHtml}</div>
+      <div class="flex gap-2">
+        <input id="ns-obs-input" type="text" placeholder="Add observation…"
+          class="flex-1 bg-stone-100 rounded-xl px-3 py-2 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+        <button onclick="nsAddObservation()" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold text-xs px-3 rounded-xl transition-colors">Add</button>
+      </div>
+    </div>
+
+    ${refHtml ? `<div>${refHtml}</div>` : ''}
+    ${refCta}
+
+    ${advanceBtn || deferBtn ? `<div class="flex gap-2">${advanceBtn}${deferBtn}</div>` : ''}
+  `;
+}
+
+// Current need journey state (for factor buttons)
+let _nsNJ = null;
+
+async function _nsReload() {
+  const nj = await OESN.getNeedJourney(_needEntId, _needTag);
+  _nsNJ = nj;
+  return nj;
+}
+
+function nsSetFactor(factor, val, btn) {
+  const row = btn.parentElement;
+  const activeCls = factor==='aspiration'
+    ? (val==='high'?'bg-amber-100 text-amber-800 border-amber-300':val==='medium'?'bg-stone-200 text-stone-700 border-stone-300':'bg-stone-100 text-stone-400 border-stone-200')
+    : factor==='confidence'
+      ? (val==='high'?'bg-emerald-100 text-emerald-800 border-emerald-300':val==='medium'?'bg-stone-200 text-stone-700 border-stone-300':'bg-stone-100 text-stone-400 border-stone-200')
+      : (val==='yes'?'bg-emerald-100 text-emerald-800 border-emerald-300':val==='partial'?'bg-amber-100 text-amber-800 border-amber-300':'bg-red-50 text-red-600 border-red-200');
+  row.querySelectorAll('button').forEach(b => {
+    b.className = 'flex-1 text-xs py-1.5 rounded-lg border transition-colors border-stone-200 text-stone-400';
+  });
+  btn.className = `flex-1 text-xs py-1.5 rounded-lg border transition-colors ${activeCls}`;
+  // Persist to temp storage so nsSaveFactors() can read
+  if (!window._nsPending) window._nsPending = {};
+  window._nsPending[factor] = val;
+}
+
+async function nsSaveFactors() {
+  if (!window._nsPending || !Object.keys(window._nsPending).length) return;
+  const updates = { ...window._nsPending };
+  // Recompute stage from merged factors
+  const nj = await OESN.getNeedJourney(_needEntId, _needTag);
+  if (nj) {
+    const merged = { present: nj.stage === 'resolved' ? 'done' : 'gap', ...Object.fromEntries(
+      ['aspiration','confidence','payment'].map(k=>[k, updates[k]||nj[k]])
+    )};
+    const newStage = computeNeedStage(merged);
+    if (newStage) updates.stage = newStage;
+  }
+  await OESN.upsertNeedJourney(_needEntId, _needTag, updates);
+  window._nsPending = {};
+  await openNeedSheet(_needEntId, _needTag);
+}
+
+async function nsAddObservation() {
+  const inp = document.getElementById('ns-obs-input');
+  const text = (inp?.value||'').trim();
+  if (!text) return;
+  inp.value = '';
+  await OESN.addNeedObservation(_needEntId, _needTag, text);
+  await openNeedSheet(_needEntId, _needTag);
+}
+
+async function nsAdvanceStage(stage) {
+  await OESN.upsertNeedJourney(_needEntId, _needTag, { stage });
+  await openNeedSheet(_needEntId, _needTag);
+}
+
+async function nsDeferNeed() {
+  const reason = prompt('Why is this need being deferred? (optional)') ?? '';
+  await OESN.upsertNeedJourney(_needEntId, _needTag, {
+    stage: 'deferred',
+    deferred_reason: reason || 'Deferred by entrepreneur',
+  });
+  await openNeedSheet(_needEntId, _needTag);
 }
 
 // ─── LOG NOTE ───────────────────────────────────────────────────────────────

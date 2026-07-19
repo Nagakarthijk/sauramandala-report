@@ -12,10 +12,12 @@ const OESN = (() => {
     earnings      : 'oesn_earnings',
     tasks         : 'oesn_tasks',
     notes         : 'oesn_notes',
-    diagnostics   : 'oesn_diagnostics',
+    need_journeys : 'oesn_need_journeys',
     programme     : 'oesn_programme',
     seeded        : 'oesn_seeded',
   };
+
+  const SEED_VERSION = '3';
 
   // ─── Helpers ─────────────────────────────────────────────────────────
 
@@ -63,7 +65,7 @@ const OESN = (() => {
   // ─── Seed Data ───────────────────────────────────────────────────────
 
   function seed() {
-    if (localStorage.getItem(KEY.seeded)) return;
+    if (localStorage.getItem(KEY.seeded) === SEED_VERSION) return;
 
     // ── Entrepreneurs ──────────────────────────────────────────────────
     const entrepreneurs = [
@@ -773,128 +775,61 @@ const OESN = (() => {
       },
     ];
 
-    // ── Diagnostics (capability tags + parameters per entrepreneur) ────
-    const diagnostics = [
-      {
-        entrepreneur_id : 'ent_kavitha',
-        tags            : ['unit_costing', 'fssai', 'market_linkage', 'gst_registered', 'udyam_registered'],
-        parameters      : {
-          annual_turnover : 180000,
-          employees       : 3,
-          product_type    : 'agarbatti',
-          export_interest : false,
-          loan_ready      : false,
-        },
-        updated_at      : daysAgo(7),
-      },
-      {
-        entrepreneur_id : 'ent_bhaskar',
-        tags            : ['solar_viable', 'udyam_registered'],
-        parameters      : {
-          annual_turnover : 240000,
-          employees       : 2,
-          product_type    : 'solar_installation',
-          export_interest : false,
-          loan_ready      : true,
-        },
-        updated_at      : daysAgo(12),
-      },
-      {
-        entrepreneur_id : 'ent_padma',
-        tags            : ['loan_ready'],
-        parameters      : {
-          annual_turnover : 90000,
-          employees       : 1,
-          product_type    : 'food_processing',
-          export_interest : false,
-          loan_ready      : true,
-        },
-        updated_at      : daysAgo(22),
-      },
-      {
-        entrepreneur_id : 'ent_anand',
-        tags            : ['unit_costing'],
-        parameters      : {
-          annual_turnover : 60000,
-          employees       : 1,
-          product_type    : 'tailoring',
-          export_interest : false,
-          loan_ready      : false,
-        },
-        updated_at      : daysAgo(30),
-      },
-      {
-        entrepreneur_id : 'ent_meera',
-        tags            : ['unit_costing', 'market_linkage', 'udyam_registered'],
-        parameters      : {
-          annual_turnover : 120000,
-          employees       : 2,
-          product_type    : 'handicrafts',
-          export_interest : true,
-          loan_ready      : false,
-        },
-        updated_at      : daysAgo(5),
-      },
-      {
-        entrepreneur_id : 'ent_rajan',
-        tags            : ['unit_costing', 'gst_registered'],
-        parameters      : {
-          annual_turnover : 300000,
-          employees       : 1,
-          product_type    : 'printing_design',
-          export_interest : false,
-          loan_ready      : false,
-        },
-        updated_at      : daysAgo(3),
-      },
-      {
-        entrepreneur_id : 'ent_laxmi',
-        tags            : ['unit_costing', 'fssai'],
-        parameters      : {
-          annual_turnover : 100000,
-          employees       : 2,
-          product_type    : 'food_processing',
-          export_interest : false,
-          loan_ready      : false,
-        },
-        updated_at      : daysAgo(7),
-      },
-      {
-        entrepreneur_id : 'ent_suresh',
-        tags            : ['unit_costing'],
-        parameters      : {
-          annual_turnover : 75000,
-          employees       : 0,
-          product_type    : 'agriculture',
-          export_interest : false,
-          loan_ready      : false,
-        },
-        updated_at      : daysAgo(5),
-      },
-      {
-        entrepreneur_id : 'ent_geeta',
-        tags            : ['loan_ready'],
-        parameters      : {
-          annual_turnover : 150000,
-          employees       : 1,
-          product_type    : 'beauty_salon',
-          export_interest : false,
-          loan_ready      : true,
-        },
-        updated_at      : daysAgo(6),
-      },
-      {
-        entrepreneur_id : 'ent_vinod',
-        tags            : ['unit_costing'],
-        parameters      : {
-          annual_turnover : 80000,
-          employees       : 1,
-          product_type    : 'carpentry',
-          export_interest : false,
-          loan_ready      : false,
-        },
-        updated_at      : daysAgo(8),
-      },
+    // ── Need Journeys — each entrepreneur × each need has its own stage ──
+    // stage: observed | explored | decided | in_progress | resolved | deferred
+    // aspiration/confidence/payment: high | medium | low (null = not yet assessed)
+    // payment: yes | partial | no (null = not yet assessed)
+    const needJourneys = [
+      // ── Kavitha ───────────────────────────────────────────────────────
+      { entrepreneur_id:'ent_kavitha', need:'unit_costing',    stage:'resolved',    aspiration:'high',   confidence:'high',   payment:'yes',     observations:[{text:'Did not know cost per unit — pricing by gut feel. Production scaling decision was guesswork.',             created_at:daysAgo(35)}], referral_id:'ref_kavitha_costing', deferred_reason:null, created_at:daysAgo(35), updated_at:daysAgo(22) },
+      { entrepreneur_id:'ent_kavitha', need:'fssai',           stage:'resolved',    aspiration:'high',   confidence:'high',   payment:'yes',     observations:[{text:'Hubli bulk buyer requires FSSAI cert. She is ready and has all documents.',                               created_at:daysAgo(30)}], referral_id:'ref_kavitha_fssai',    deferred_reason:null, created_at:daysAgo(30), updated_at:daysAgo(7)  },
+      { entrepreneur_id:'ent_kavitha', need:'market_linkage',  stage:'in_progress', aspiration:'high',   confidence:'high',   payment:'yes',     observations:[{text:'Has local buyers but wants a stable long-term contract with a bulk buyer for Q3 season.',               created_at:daysAgo(20)}], referral_id:'ref_kavitha_market',   deferred_reason:null, created_at:daysAgo(20), updated_at:daysAgo(1)  },
+      { entrepreneur_id:'ent_kavitha', need:'digital_presence',stage:'deferred',    aspiration:'low',    confidence:'low',    payment:'no',      observations:[{text:'Husband manages the phone. She thinks social media is not right for her product.',                        created_at:daysAgo(10)}], referral_id:null,                    deferred_reason:'Husband manages phone; not interested in social media for now', created_at:daysAgo(10), updated_at:daysAgo(10) },
+      { entrepreneur_id:'ent_kavitha', need:'gst_registered',  stage:'resolved',    aspiration:'high',   confidence:'high',   payment:'yes',     observations:[{text:'Already GST registered — helped her understand input credit.',                                           created_at:daysAgo(30)}], referral_id:null,                    deferred_reason:null, created_at:daysAgo(30), updated_at:daysAgo(30) },
+
+      // ── Bhaskar ───────────────────────────────────────────────────────
+      { entrepreneur_id:'ent_bhaskar', need:'solar_viable',    stage:'in_progress', aspiration:'high',   confidence:'high',   payment:'partial', observations:[{text:'Monthly bill ₹4,200. Has south-facing roof. Wants to reduce electricity cost for the workshop.',         created_at:daysAgo(18)}], referral_id:'ref_bhaskar_solar',    deferred_reason:null, created_at:daysAgo(18), updated_at:daysAgo(5)  },
+      { entrepreneur_id:'ent_bhaskar', need:'loan_ready',      stage:'explored',    aspiration:'medium', confidence:'medium', payment:'partial', observations:[{text:'Interested in expansion loan but unsure about collateral. Wants to see solar ROI first.',                  created_at:daysAgo(12)}], referral_id:null,                    deferred_reason:null, created_at:daysAgo(12), updated_at:daysAgo(12) },
+      { entrepreneur_id:'ent_bhaskar', need:'udyam_registered',stage:'decided',     aspiration:'high',   confidence:'high',   payment:'yes',     observations:[{text:'Not registered under Udyam yet. Keen to get it done — wants access to priority sector benefits.',         created_at:daysAgo(12)}], referral_id:null,                    deferred_reason:null, created_at:daysAgo(12), updated_at:daysAgo(12) },
+
+      // ── Padma ─────────────────────────────────────────────────────────
+      { entrepreneur_id:'ent_padma',   need:'loan_ready',      stage:'in_progress', aspiration:'high',   confidence:'medium', payment:'partial', observations:[{text:'Wants ₹1.5L for food processing equipment. Aware of docs needed but slow to collect them.',              created_at:daysAgo(22)}], referral_id:'ref_padma_loan',       deferred_reason:null, created_at:daysAgo(22), updated_at:daysAgo(18) },
+      { entrepreneur_id:'ent_padma',   need:'fssai',           stage:'explored',    aspiration:'medium', confidence:'low',    payment:'no',      observations:[{text:'Sells pickles locally. FSSAI registration feels overwhelming. Cost is a concern.',                         created_at:daysAgo(22)}], referral_id:null,                    deferred_reason:null, created_at:daysAgo(22), updated_at:daysAgo(22) },
+      { entrepreneur_id:'ent_padma',   need:'unit_costing',    stage:'observed',    aspiration:null,     confidence:null,     payment:null,      observations:[],                                                                                                                                        referral_id:null,                    deferred_reason:null, created_at:daysAgo(22), updated_at:daysAgo(22) },
+
+      // ── Anand ─────────────────────────────────────────────────────────
+      { entrepreneur_id:'ent_anand',   need:'unit_costing',    stage:'decided',     aspiration:'high',   confidence:'medium', payment:'yes',     observations:[{text:'Anand admits he prices entirely by gut feel. Keen to learn proper costing — says "I want to know if I am making any profit."', created_at:daysAgo(25)}], referral_id:null, deferred_reason:null, created_at:daysAgo(25), updated_at:daysAgo(25) },
+      { entrepreneur_id:'ent_anand',   need:'market_linkage',  stage:'deferred',    aspiration:'low',    confidence:'low',    payment:'no',      observations:[{text:'Not interested in expansion. Happy with current local customers — "my life is stable, I do not want risk."',                      created_at:daysAgo(25)}], referral_id:null, deferred_reason:'Not interested in market expansion — prefers stability', created_at:daysAgo(25), updated_at:daysAgo(25) },
+      { entrepreneur_id:'ent_anand',   need:'digital_presence',stage:'observed',    aspiration:null,     confidence:null,     payment:null,      observations:[],                                                                                                                                          referral_id:null, deferred_reason:null, created_at:daysAgo(21), updated_at:daysAgo(21) },
+
+      // ── Meera ─────────────────────────────────────────────────────────
+      { entrepreneur_id:'ent_meera',   need:'market_linkage',  stage:'resolved',    aspiration:'high',   confidence:'high',   payment:'yes',     observations:[{text:'Wants to reach Bengaluru bulk buyers for handicrafts. Has capacity to supply 200 units/month.',             created_at:daysAgo(25)}], referral_id:'ref_meera_market',     deferred_reason:null, created_at:daysAgo(25), updated_at:daysAgo(0)  },
+      { entrepreneur_id:'ent_meera',   need:'unit_costing',    stage:'decided',     aspiration:'high',   confidence:'medium', payment:'yes',     observations:[{text:'Now that she has a buyer, she wants to price accurately. Said "I do not want to lose money on the Bengaluru order."', created_at:daysAgo(5)}], referral_id:null, deferred_reason:null, created_at:daysAgo(5), updated_at:daysAgo(5) },
+      { entrepreneur_id:'ent_meera',   need:'digital_presence',stage:'explored',    aspiration:'medium', confidence:'low',    payment:'partial', observations:[{text:'Interested in Instagram but does not have a smartphone of her own.',                                         created_at:daysAgo(5)}],  referral_id:null,                    deferred_reason:null, created_at:daysAgo(5),  updated_at:daysAgo(5)  },
+
+      // ── Rajan ─────────────────────────────────────────────────────────
+      { entrepreneur_id:'ent_rajan',   need:'gst_registered',  stage:'resolved',    aspiration:'high',   confidence:'high',   payment:'yes',     observations:[{text:'Already GST registered. Wanted help understanding input credit mechanism.',                                  created_at:daysAgo(35)}], referral_id:null,                    deferred_reason:null, created_at:daysAgo(35), updated_at:daysAgo(35) },
+      { entrepreneur_id:'ent_rajan',   need:'market_linkage',  stage:'decided',     aspiration:'high',   confidence:'high',   payment:'yes',     observations:[{text:'Wants to offer label and design services to more entrepreneurs in the programme — "I can be a provider."',   created_at:daysAgo(3)}],  referral_id:null,                    deferred_reason:null, created_at:daysAgo(3),  updated_at:daysAgo(3)  },
+
+      // ── Laxmi ─────────────────────────────────────────────────────────
+      { entrepreneur_id:'ent_laxmi',   need:'fssai',           stage:'in_progress', aspiration:'high',   confidence:'medium', payment:'yes',     observations:[{text:'Sells pickles and spice mixes. Buyer from town market asking for FSSAI number before stocking.',             created_at:daysAgo(7)}],  referral_id:'ref_laxmi_fssai',      deferred_reason:null, created_at:daysAgo(7),  updated_at:daysAgo(2)  },
+      { entrepreneur_id:'ent_laxmi',   need:'unit_costing',    stage:'decided',     aspiration:'high',   confidence:'medium', payment:'yes',     observations:[{text:'FSSAI in progress — wants to get costing right before scaling up for the new buyer.',                         created_at:daysAgo(7)}],  referral_id:null,                    deferred_reason:null, created_at:daysAgo(7),  updated_at:daysAgo(7)  },
+      { entrepreneur_id:'ent_laxmi',   need:'market_linkage',  stage:'observed',    aspiration:null,     confidence:null,     payment:null,      observations:[],                                                                                                                                         referral_id:null,                    deferred_reason:null, created_at:daysAgo(7),  updated_at:daysAgo(7)  },
+
+      // ── Suresh ────────────────────────────────────────────────────────
+      { entrepreneur_id:'ent_suresh',  need:'loan_ready',      stage:'deferred',    aspiration:'low',    confidence:'medium', payment:'no',      observations:[{text:'Seasonal income — not comfortable with fixed EMI. "I will think about it after the harvest."',                created_at:daysAgo(5)}],  referral_id:null,                    deferred_reason:'Seasonal income — not ready for fixed EMI commitment', created_at:daysAgo(5), updated_at:daysAgo(5) },
+      { entrepreneur_id:'ent_suresh',  need:'market_linkage',  stage:'decided',     aspiration:'high',   confidence:'high',   payment:'yes',     observations:[{text:'Wants to sell produce directly to hotels and restaurants in town. Has consistent supply.',                    created_at:daysAgo(5)}],  referral_id:null,                    deferred_reason:null, created_at:daysAgo(5),  updated_at:daysAgo(5)  },
+      { entrepreneur_id:'ent_suresh',  need:'udyam_registered',stage:'explored',    aspiration:'medium', confidence:'medium', payment:'yes',     observations:[{text:'Eligible but has not registered. Aware of benefits — needs hand-holding through the portal.',                 created_at:daysAgo(5)}],  referral_id:null,                    deferred_reason:null, created_at:daysAgo(5),  updated_at:daysAgo(5)  },
+
+      // ── Geeta ─────────────────────────────────────────────────────────
+      { entrepreneur_id:'ent_geeta',   need:'loan_ready',      stage:'in_progress', aspiration:'high',   confidence:'high',   payment:'yes',     observations:[{text:'Wants ₹2L for advanced salon equipment. Stable income and clear repayment plan.',                           created_at:daysAgo(6)}],  referral_id:'ref_geeta_mudra',      deferred_reason:null, created_at:daysAgo(6),  updated_at:daysAgo(3)  },
+      { entrepreneur_id:'ent_geeta',   need:'digital_presence',stage:'explored',    aspiration:'medium', confidence:'medium', payment:'partial', observations:[{text:'Wants Instagram page for the salon but not sure how to start or maintain it.',                                created_at:daysAgo(6)}],  referral_id:null,                    deferred_reason:null, created_at:daysAgo(6),  updated_at:daysAgo(6)  },
+      { entrepreneur_id:'ent_geeta',   need:'udyam_registered',stage:'decided',     aspiration:'high',   confidence:'high',   payment:'yes',     observations:[{text:'Not registered. Wants to access MSME benefits — especially subsidised loan rates.',                          created_at:daysAgo(6)}],  referral_id:null,                    deferred_reason:null, created_at:daysAgo(6),  updated_at:daysAgo(6)  },
+
+      // ── Vinod ─────────────────────────────────────────────────────────
+      { entrepreneur_id:'ent_vinod',   need:'unit_costing',    stage:'resolved',    aspiration:'high',   confidence:'high',   payment:'yes',     observations:[{text:'Was pricing entirely by feel. Now knows exact cost per piece after costing session.',                         created_at:daysAgo(14)}], referral_id:'ref_vinod_costing',    deferred_reason:null, created_at:daysAgo(14), updated_at:daysAgo(8)  },
+      { entrepreneur_id:'ent_vinod',   need:'loan_ready',      stage:'observed',    aspiration:null,     confidence:null,     payment:null,      observations:[],                                                                                                                                         referral_id:null,                    deferred_reason:null, created_at:daysAgo(8),  updated_at:daysAgo(8)  },
+      { entrepreneur_id:'ent_vinod',   need:'market_linkage',  stage:'explored',    aspiration:'medium', confidence:'low',    payment:'partial', observations:[{text:'Interested in interior contractor relationships but nervous about volume commitments.',                        created_at:daysAgo(8)}],  referral_id:null,                    deferred_reason:null, created_at:daysAgo(8),  updated_at:daysAgo(8)  },
     ];
 
     // ── Programme data (Anant Foundation CSR) ─────────────────────────
@@ -936,9 +871,9 @@ const OESN = (() => {
     save(KEY.earnings,      earnings);
     save(KEY.tasks,         tasks);
     save(KEY.notes,         notes);
-    save(KEY.diagnostics,   diagnostics);
+    save(KEY.need_journeys, needJourneys);
     localStorage.setItem(KEY.programme, JSON.stringify(programme));
-    localStorage.setItem(KEY.seeded, '1');
+    localStorage.setItem(KEY.seeded, SEED_VERSION);
   }
 
   // ─── Public API ───────────────────────────────────────────────────────
@@ -1094,29 +1029,106 @@ const OESN = (() => {
     return entry;
   }
 
-  // ── Diagnostics ───────────────────────────────────────────────────────
+  // ── Need Journeys ─────────────────────────────────────────────────────
+  // Each entrepreneur × need pair has an independent journey with stage,
+  // aspiration/confidence/payment factors, and an observations log.
 
-  function getDiagnostic(entrepreneur_id) {
-    const list = load(KEY.diagnostics);
-    return list.find(d => d.entrepreneur_id === entrepreneur_id) || null;
+  function getNeedJourneys(entrepreneur_id) {
+    return load(KEY.need_journeys).filter(n => n.entrepreneur_id === entrepreneur_id);
+  }
+
+  function getNeedJourney(entrepreneur_id, need) {
+    return load(KEY.need_journeys).find(n => n.entrepreneur_id === entrepreneur_id && n.need === need) || null;
   }
 
   /**
-   * updateDiagnostic(entrepreneur_id, updates) — upsert capability tags and parameters.
-   * updates: { tags?, parameters?, ...other }
+   * upsertNeedJourney — create or update a need journey entry.
+   * updates: { stage?, aspiration?, confidence?, payment?, deferred_reason?, referral_id? }
    */
-  function updateDiagnostic(entrepreneur_id, updates) {
-    const list = load(KEY.diagnostics);
-    const idx  = list.findIndex(d => d.entrepreneur_id === entrepreneur_id);
+  function upsertNeedJourney(entrepreneur_id, need, updates) {
+    const list = load(KEY.need_journeys);
+    const idx  = list.findIndex(n => n.entrepreneur_id === entrepreneur_id && n.need === need);
     if (idx === -1) {
-      const entry = { entrepreneur_id, ...updates, updated_at: now() };
+      const entry = {
+        entrepreneur_id, need,
+        stage: 'observed', aspiration: null, confidence: null, payment: null,
+        observations: [], referral_id: null, deferred_reason: null,
+        ...updates, created_at: now(), updated_at: now(),
+      };
       list.push(entry);
-      save(KEY.diagnostics, list);
+      save(KEY.need_journeys, list);
       return entry;
     }
     list[idx] = { ...list[idx], ...updates, updated_at: now() };
-    save(KEY.diagnostics, list);
+    save(KEY.need_journeys, list);
     return list[idx];
+  }
+
+  /**
+   * addNeedObservation — append an observation to a specific need's log.
+   */
+  function addNeedObservation(entrepreneur_id, need, text) {
+    const list = load(KEY.need_journeys);
+    const idx  = list.findIndex(n => n.entrepreneur_id === entrepreneur_id && n.need === need);
+    if (idx === -1) return null;
+    const obs = { text, created_at: now() };
+    list[idx] = { ...list[idx], observations: [...(list[idx].observations || []), obs], updated_at: now() };
+    save(KEY.need_journeys, list);
+    return list[idx];
+  }
+
+  // Backward-compat shims — agent.html calls these; they map to need_journeys
+  function getCapabilityTags(entrepreneur_id) {
+    return getNeedJourneys(entrepreneur_id).map(nj => ({
+      tag      : nj.need,
+      confirmed: nj.stage === 'resolved',
+      stage    : nj.stage,
+      aspiration: nj.aspiration,
+      confidence: nj.confidence,
+      payment  : nj.payment,
+      observations: nj.observations || [],
+    }));
+  }
+
+  function saveCapabilityTag(entrepreneur_id, tag, confirmed, extras) {
+    return upsertNeedJourney(entrepreneur_id, tag, {
+      stage: confirmed ? 'resolved' : (extras.stage || 'observed'),
+      ...extras,
+    });
+  }
+
+  // ── Referral lifecycle helpers ────────────────────────────────────────
+
+  /**
+   * verifyOutcome — mark a referral COMPLETED and confirm its earning.
+   */
+  function verifyOutcome(referralId) {
+    const ref = updateReferral(referralId, { status: 'COMPLETED', completed_at: now() });
+    if (!ref) return null;
+    const earnings = load(KEY.earnings);
+    const idx = earnings.findIndex(e => e.referral_id === referralId);
+    if (idx !== -1) {
+      earnings[idx] = { ...earnings[idx], status: 'CONFIRMED', updated_at: now() };
+      save(KEY.earnings, earnings);
+    }
+    return ref;
+  }
+
+  /**
+   * escalateToNFO — log an escalation note on a referral.
+   */
+  function escalateToNFO(referralId) {
+    return updateReferral(referralId, { escalated: true, escalated_at: now() });
+  }
+
+  /**
+   * isSupabaseMode — returns false in localStorage-only demo mode.
+   * Stub: always false. Override when Supabase is configured.
+   */
+  function isSupabaseMode() {
+    const url = (localStorage.getItem('oesn_sb_url') || '').trim();
+    const key = (localStorage.getItem('oesn_sb_key') || '').trim();
+    return !!(url && key);
   }
 
   // ── Programme ─────────────────────────────────────────────────────────
@@ -1207,9 +1219,14 @@ const OESN = (() => {
     // Notes
     getConversationNotes,
     addConversationNote,
-    // Diagnostics
-    getDiagnostic,
-    updateDiagnostic,
+    // Need Journeys
+    getNeedJourneys,
+    getNeedJourney,
+    upsertNeedJourney,
+    addNeedObservation,
+    // Backward-compat shims
+    getCapabilityTags,
+    saveCapabilityTag,
     // Formatting
     formatINR,
     relativeTime,
@@ -1217,6 +1234,10 @@ const OESN = (() => {
     // Programme
     getProgramme,
     updateProgramme,
+    // Lifecycle
+    verifyOutcome,
+    escalateToNFO,
+    isSupabaseMode,
   };
 
 })();
