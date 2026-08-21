@@ -15,7 +15,7 @@ const OESNAuth = (() => {
     agent             : 'agent.html',
     provider          : 'provider.html',
     programme_officer : 'programme.html',
-    admin             : 'admin.html',
+    admin             : 'agent.html',
   };
 
   // ── guard(requiredRole?) ──────────────────────────────────────────────────
