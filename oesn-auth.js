@@ -1,14 +1,10 @@
-// oesn-auth.js — OESN shared authentication + role guard
-// Load AFTER supabase-js and oesn-data.js on every protected page.
+// oesn-auth.js — DRIVE shared authentication + role guard
+// Load AFTER supabase-js and drive-config.js on every page.
 //
 // Usage:
-//   OESNAuth.guard('agent')     — redirects to login if no session, wrong role → right page
-//   OESNAuth.guard('provider')
-//   OESNAuth.guard('admin')
-//   OESNAuth.guard()            — just checks session, any role ok
-//
 //   const ctx = await OESNAuth.guard('agent');
-//   // ctx = { user, role, profile } or null (redirect already triggered)
+//   // ctx = { mode, user, role, profile, orgId } or null (redirect triggered)
+//   OESNAuth.renderUserBar(ctx, 'user-bar');
 
 const OESNAuth = (() => {
   'use strict';
@@ -16,93 +12,92 @@ const OESNAuth = (() => {
   const LOGIN_PAGE = 'oesn-login.html';
 
   const ROLE_HOME = {
-    agent    : 'agent.html',
-    provider : 'provider.html',
-    admin    : 'admin.html',
-    programme: 'programme.html',
+    agent             : 'agent.html',
+    provider          : 'provider.html',
+    programme_officer : 'programme.html',
+    admin             : 'admin.html',
   };
 
-  // ── Internal: detect role from Supabase tables ────────────────────────
-  async function _detectRole(sb, userId) {
-    const [adminRes, agentRes, provRes] = await Promise.all([
-      sb.from('admins').select('id,name').eq('user_id', userId).maybeSingle(),
-      sb.from('agents').select('id,name,geography,operating_model,programme_id').eq('user_id', userId).maybeSingle(),
-      sb.from('providers').select('id,org_name,empanelment_status').eq('user_id', userId).maybeSingle(),
-    ]);
-    if (adminRes.data)  return { role: 'admin',    profile: adminRes.data };
-    if (agentRes.data)  return { role: 'agent',    profile: agentRes.data };
-    if (provRes.data)   return { role: 'provider', profile: provRes.data };
-    return { role: 'unknown', profile: null };
-  }
-
-  // ── guard(requiredRole?) ──────────────────────────────────────────────
-  // Returns auth context or null (redirect already issued).
+  // ── guard(requiredRole?) ──────────────────────────────────────────────────
   async function guard(requiredRole) {
-    // Demo mode: no auth needed
-    if (!OESN.isSupabaseMode()) {
-      return { mode: 'demo', role: requiredRole || 'agent', profile: null, user: null };
+    // Demo mode: no Supabase configured
+    if (!window.DRIVE_SB) {
+      return { mode: 'demo', role: requiredRole || 'agent', profile: null, user: null, orgId: null };
     }
 
-    // Check Supabase session
-    const sbUrl = (localStorage.getItem('oesn_sb_url') || '').trim();
-    const sbKey = (localStorage.getItem('oesn_sb_key') || '').trim();
-    const sb    = supabase.createClient(sbUrl, sbKey);
+    const sb = window.DRIVE_SB;
 
+    // Check session
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
-      const next = encodeURIComponent(location.pathname.split('/').pop() + location.search);
+      const next = encodeURIComponent(location.pathname.split('/').pop());
       location.replace(LOGIN_PAGE + (next ? '?next=' + next : ''));
       return null;
     }
 
-    const user = session.user;
-    const { role, profile } = await _detectRole(sb, user.id);
+    // Load profile
+    const { data: profile, error } = await sb
+      .from('profiles')
+      .select('*, organisations(name,slug)')
+      .eq('id', session.user.id)
+      .single();
 
-    // Admin can access any page
-    if (role === 'admin' && requiredRole !== 'admin') {
-      // Allow through — admin can view any page
-      return { mode: 'supabase', user, role, profile, sb };
-    }
-
-    // Wrong role → redirect to their page
-    if (requiredRole && role !== requiredRole) {
-      const home = ROLE_HOME[role] || 'oesn.html';
-      location.replace(home);
+    if (error || !profile) {
+      location.replace(LOGIN_PAGE);
       return null;
     }
 
-    return { mode: 'supabase', user, role, profile, sb };
+    const role = profile.role;
+
+    // Admin can access any page
+    if (role === 'admin') {
+      return { mode: 'supabase', user: session.user, role, profile, orgId: profile.org_id, sb };
+    }
+
+    // Wrong role for this page → redirect to their home
+    if (requiredRole && role !== requiredRole) {
+      location.replace(ROLE_HOME[role] || 'oesn.html');
+      return null;
+    }
+
+    return { mode: 'supabase', user: session.user, role, profile, orgId: profile.org_id, sb };
   }
 
-  // ── signOut() ─────────────────────────────────────────────────────────
+  // ── signOut() ─────────────────────────────────────────────────────────────
   async function signOut() {
-    await OESN.signOut();
+    if (window.DRIVE_SB) await window.DRIVE_SB.auth.signOut();
     location.replace(LOGIN_PAGE);
   }
 
-  // ── renderUserBar(ctx, containerId) ──────────────────────────────────
-  // Injects a slim top bar showing user + role + logout.
+  // ── renderUserBar(ctx, containerId) ──────────────────────────────────────
   function renderUserBar(ctx, containerId) {
     const el = document.getElementById(containerId);
     if (!el || !ctx) return;
 
-    const name  = ctx.profile?.name || ctx.profile?.org_name || ctx.user?.email || 'User';
-    const badge = {
-      agent    : 'bg-blue-100 text-blue-800',
-      provider : 'bg-emerald-100 text-emerald-800',
-      admin    : 'bg-red-100 text-red-800',
-      demo     : 'bg-amber-100 text-amber-800',
-    }[ctx.role] || 'bg-stone-100 text-stone-600';
+    if (ctx.mode === 'demo') {
+      el.innerHTML = `
+        <div class="flex items-center justify-between px-4 py-2 bg-amber-50 border-b border-amber-200 text-xs">
+          <span class="text-amber-800 font-medium">Demo mode — data stays on this device only</span>
+          <a href="${LOGIN_PAGE}" class="text-amber-700 font-semibold underline">Sign in</a>
+        </div>`;
+      return;
+    }
+
+    const name  = ctx.profile?.name || ctx.user?.email || 'User';
+    const org   = ctx.profile?.organisations?.name || '';
+    const badge = { agent:'bg-blue-100 text-blue-800', provider:'bg-emerald-100 text-emerald-800',
+                    programme_officer:'bg-purple-100 text-purple-800', admin:'bg-red-100 text-red-800' }[ctx.role]
+                  || 'bg-stone-100 text-stone-600';
 
     el.innerHTML = `
       <div class="flex items-center justify-between px-4 py-2 bg-stone-900 text-white text-xs">
         <div class="flex items-center gap-2">
-          <span class="font-bold text-amber-400">OESN</span>
-          <span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${badge}">${ctx.role}</span>
-          <span class="text-stone-400 truncate max-w-[160px]">${name}</span>
+          <span class="font-bold text-amber-400">DRIVE</span>
+          <span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${badge}">${ctx.role.replace('_',' ')}</span>
+          <span class="text-stone-300 truncate max-w-[140px]">${name}</span>
+          ${org ? `<span class="text-stone-500 hidden sm:inline">· ${org}</span>` : ''}
         </div>
-        <button onclick="OESNAuth.signOut()"
-          class="text-stone-400 hover:text-white transition-colors text-xs">Sign out</button>
+        <button onclick="OESNAuth.signOut()" class="text-stone-400 hover:text-white transition-colors">Sign out</button>
       </div>`;
   }
 

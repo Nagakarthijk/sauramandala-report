@@ -58,6 +58,24 @@ const OESN = (() => {
     catch { return fallback; }
   }
 
+  // ─── Supabase state ───────────────────────────────────────────────────────
+  let _sb          = null;   // Supabase client (null in demo mode)
+  let _orgId       = null;   // current user's organisation UUID
+  let _agentId     = null;   // current user's profile UUID
+  let _initPromise = null;   // resolves when init() is complete
+
+  async function _initSB() {
+    _sb = window.DRIVE_SB;
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) return;
+    const { data: profile } = await _sb
+      .from('profiles').select('id,org_id').eq('id', session.user.id).single();
+    if (profile) { _orgId = profile.org_id; _agentId = profile.id; }
+  }
+
+  // Await this inside every Supabase function to ensure init completed
+  async function _ready() { if (_initPromise) await _initPromise; }
+
   function save(key, data) {
     localStorage.setItem(key, JSON.stringify(data));
   }
@@ -878,39 +896,60 @@ const OESN = (() => {
 
   // ─── Public API ───────────────────────────────────────────────────────
 
-  /**
-   * init() — call on every page load; seeds demo data if not already seeded.
-   * Check is via localStorage key "oesn_seeded".
-   */
+  // init() — call on every page. Returns a Promise (safe to await).
   function init() {
-    seed();
+    if (window.DRIVE_SB) {
+      _initPromise = _initSB();
+    } else {
+      seed();
+      _initPromise = Promise.resolve();
+    }
+    return _initPromise;
   }
 
-  // ── Entrepreneurs ─────────────────────────────────────────────────────
+  // ── Entrepreneurs ─────────────────────────────────────────────────────────
 
-  function getEntrepreneurs() {
+  async function getEntrepreneurs() {
+    if (_sb) {
+      await _ready();
+      const { data } = await _sb.from('entrepreneurs').select('*').order('created_at', { ascending: false });
+      return data || [];
+    }
     return load(KEY.entrepreneurs);
   }
 
-  function getEntrepreneur(id) {
-    return getEntrepreneurs().find(e => e.id === id) || null;
+  async function getEntrepreneur(id) {
+    if (_sb) {
+      await _ready();
+      const { data } = await _sb.from('entrepreneurs').select('*').eq('id', id).single();
+      return data || null;
+    }
+    return load(KEY.entrepreneurs).find(e => e.id === id) || null;
   }
 
-  function addEntrepreneur(obj) {
-    const list  = getEntrepreneurs();
-    const entry = { ...obj, id: obj.id || 'ent_' + uid(), created_at: now(), updated_at: now() };
-    list.push(entry);
-    save(KEY.entrepreneurs, list);
-    return entry;
+  async function addEntrepreneur(obj) {
+    if (_sb) {
+      await _ready();
+      const { data } = await _sb.from('entrepreneurs')
+        .insert({ ...obj, org_id: _orgId, created_by: _agentId }).select().single();
+      return data || null;
+    }
+    const list  = load(KEY.entrepreneurs);
+    const entry = { ...obj, id: 'ent_' + uid(), created_at: now(), updated_at: now() };
+    list.push(entry); save(KEY.entrepreneurs, list); return entry;
   }
 
-  // ── Referrals ─────────────────────────────────────────────────────────
+  // ── Referrals ─────────────────────────────────────────────────────────────
 
-  /**
-   * getReferrals(filter?) — returns all referrals or filtered subset.
-   * filter: { entrepreneur_id?, status? }
-   */
-  function getReferrals(filter) {
+  async function getReferrals(filter) {
+    if (_sb) {
+      await _ready();
+      let q = _sb.from('referrals').select('*').order('created_at', { ascending: false });
+      if (filter?.entrepreneur_id) q = q.eq('entrepreneur_id', filter.entrepreneur_id);
+      if (filter?.status)          q = q.eq('status', filter.status);
+      if (filter?.created_by)      q = q.eq('created_by', filter.created_by);
+      const { data } = await q; return data || [];
+    }
     let list = load(KEY.referrals);
     if (!filter) return list;
     if (filter.entrepreneur_id) list = list.filter(r => r.entrepreneur_id === filter.entrepreneur_id);
@@ -918,34 +957,54 @@ const OESN = (() => {
     return list;
   }
 
-  function getReferral(id) {
+  async function getReferral(id) {
+    if (_sb) {
+      await _ready();
+      const { data } = await _sb.from('referrals')
+        .select('*, entrepreneurs(name,phone,business)').eq('id', id).single();
+      return data || null;
+    }
     return load(KEY.referrals).find(r => r.id === id) || null;
   }
 
-  function updateReferral(id, updates) {
+  async function updateReferral(id, updates) {
+    if (_sb) {
+      await _ready();
+      const { data } = await _sb.from('referrals')
+        .update({ ...updates, updated_at: now() }).eq('id', id).select().single();
+      return data || null;
+    }
     const list = load(KEY.referrals);
     const idx  = list.findIndex(r => r.id === id);
     if (idx === -1) return null;
     list[idx] = { ...list[idx], ...updates, updated_at: now() };
-    save(KEY.referrals, list);
-    return list[idx];
+    save(KEY.referrals, list); return list[idx];
   }
 
-  function addReferral(obj) {
+  async function addReferral(obj) {
+    if (_sb) {
+      await _ready();
+      const { data } = await _sb.from('referrals')
+        .insert({ ...obj, org_id: _orgId, created_by: _agentId }).select().single();
+      return data || null;
+    }
     const list  = load(KEY.referrals);
-    const entry = { ...obj, id: obj.id || 'ref_' + uid(), created_at: now(), updated_at: now() };
-    list.push(entry);
-    save(KEY.referrals, list);
-    return entry;
+    const entry = { ...obj, id: 'ref_' + uid(), created_at: now(), updated_at: now() };
+    list.push(entry); save(KEY.referrals, list); return entry;
   }
 
-  // ── Earnings ──────────────────────────────────────────────────────────
+  // ── Earnings ──────────────────────────────────────────────────────────────
 
-  /**
-   * getEarnings(filter?) — returns all earnings or filtered subset.
-   * filter: { entrepreneur_id?, status?, referral_id? }
-   */
-  function getEarnings(filter) {
+  async function getEarnings(filter) {
+    if (_sb) {
+      await _ready();
+      let q = _sb.from('earnings').select('*, referrals(service,status,entrepreneurs(name))')
+        .order('created_at', { ascending: false });
+      if (filter?.agent_id)    q = q.eq('agent_id', filter.agent_id || _agentId);
+      if (filter?.status)      q = q.eq('status', filter.status);
+      if (filter?.referral_id) q = q.eq('referral_id', filter.referral_id);
+      const { data } = await q; return data || [];
+    }
     let list = load(KEY.earnings);
     if (!filter) return list;
     if (filter.entrepreneur_id) list = list.filter(e => e.entrepreneur_id === filter.entrepreneur_id);
@@ -954,30 +1013,33 @@ const OESN = (() => {
     return list;
   }
 
-  function updateEarning(id, updates) {
+  async function updateEarning(id, updates) {
+    if (_sb) {
+      await _ready();
+      const { data } = await _sb.from('earnings').update(updates).eq('id', id).select().single();
+      return data || null;
+    }
     const list = load(KEY.earnings);
     const idx  = list.findIndex(e => e.id === id);
     if (idx === -1) return null;
-    list[idx] = { ...list[idx], ...updates, updated_at: now() };
-    save(KEY.earnings, list);
-    return list[idx];
+    list[idx] = { ...list[idx], ...updates }; save(KEY.earnings, list); return list[idx];
   }
 
-  function addEarning(obj) {
+  async function addEarning(obj) {
+    if (_sb) {
+      await _ready();
+      const { data } = await _sb.from('earnings')
+        .insert({ ...obj, org_id: _orgId, agent_id: obj.agent_id || _agentId }).select().single();
+      return data || null;
+    }
     const list  = load(KEY.earnings);
-    const entry = { ...obj, id: obj.id || 'earn_' + uid(), created_at: now(), updated_at: now() };
-    list.push(entry);
-    save(KEY.earnings, list);
-    return entry;
+    const entry = { ...obj, id: 'earn_' + uid(), created_at: now() };
+    list.push(entry); save(KEY.earnings, list); return entry;
   }
 
-  // ── Tasks ─────────────────────────────────────────────────────────────
+  // ── Tasks (agent-local, always localStorage) ──────────────────────────────
 
-  /**
-   * getTasks(filter?) — returns all tasks or filtered subset.
-   * filter: { entrepreneur_id?, status? }
-   */
-  function getTasks(filter) {
+  async function getTasks(filter) {
     let list = load(KEY.tasks);
     if (!filter) return list;
     if (filter.entrepreneur_id) list = list.filter(t => t.entrepreneur_id === filter.entrepreneur_id);
@@ -985,47 +1047,46 @@ const OESN = (() => {
     return list;
   }
 
-  function addTask(obj) {
+  async function addTask(obj) {
     const list  = load(KEY.tasks);
-    const entry = {
-      ...obj,
-      id         : obj.id || 'task_' + uid(),
-      status     : obj.status || 'OPEN',
-      created_at : now(),
-      updated_at : now(),
-    };
-    list.push(entry);
-    save(KEY.tasks, list);
-    return entry;
+    const entry = { ...obj, id: 'task_' + uid(), status: obj.status || 'OPEN', created_at: now(), updated_at: now() };
+    list.push(entry); save(KEY.tasks, list); return entry;
   }
 
-  function completeTask(id) {
+  async function completeTask(id) {
     const list = load(KEY.tasks);
     const idx  = list.findIndex(t => t.id === id);
     if (idx === -1) return null;
     list[idx] = { ...list[idx], status: 'DONE', completed_at: now(), updated_at: now() };
-    save(KEY.tasks, list);
-    return list[idx];
+    save(KEY.tasks, list); return list[idx];
   }
 
-  // ── Conversation Notes ────────────────────────────────────────────────
+  // ── Conversation Notes ────────────────────────────────────────────────────
 
-  function getConversationNotes(entrepreneur_id) {
+  async function getConversationNotes(entrepreneur_id) {
+    if (_sb) {
+      await _ready();
+      const { data } = await _sb.from('conversation_notes')
+        .select('*').eq('entrepreneur_id', entrepreneur_id)
+        .order('created_at', { ascending: false });
+      return data || [];
+    }
     return load(KEY.notes).filter(n => n.entrepreneur_id === entrepreneur_id);
   }
 
-  function addConversationNote(note) {
-    const list  = load(KEY.notes);
-    const entry = { ...note, id: note.id || 'note_' + uid(), created_at: note.created_at || now() };
-    list.push(entry);
-    save(KEY.notes, list);
-    // Bump last_contact on the entrepreneur
-    const entrepreneurs = getEntrepreneurs();
-    const idx = entrepreneurs.findIndex(e => e.id === note.entrepreneur_id);
-    if (idx !== -1) {
-      entrepreneurs[idx].last_contact = entry.created_at;
-      save(KEY.entrepreneurs, entrepreneurs);
+  async function addConversationNote(note) {
+    if (_sb) {
+      await _ready();
+      const { data } = await _sb.from('conversation_notes')
+        .insert({ ...note, org_id: _orgId, created_by: _agentId }).select().single();
+      return data || null;
     }
+    const list  = load(KEY.notes);
+    const entry = { ...note, id: 'note_' + uid(), created_at: now() };
+    list.push(entry); save(KEY.notes, list);
+    const ents = load(KEY.entrepreneurs);
+    const idx  = ents.findIndex(e => e.id === note.entrepreneur_id);
+    if (idx !== -1) { ents[idx].last_contact = entry.created_at; save(KEY.entrepreneurs, ents); }
     return entry;
   }
 
@@ -1033,103 +1094,101 @@ const OESN = (() => {
   // Each entrepreneur × need pair has an independent journey with stage,
   // aspiration/confidence/payment factors, and an observations log.
 
-  function getNeedJourneys(entrepreneur_id) {
+  async function getNeedJourneys(entrepreneur_id) {
+    if (_sb) {
+      await _ready();
+      const [{ data: journeys }, { data: obs }] = await Promise.all([
+        _sb.from('need_journeys').select('*').eq('entrepreneur_id', entrepreneur_id),
+        _sb.from('need_observations').select('*').eq('entrepreneur_id', entrepreneur_id).order('created_at'),
+      ]);
+      return (journeys || []).map(j => ({ ...j, observations: (obs || []).filter(o => o.need === j.need) }));
+    }
     return load(KEY.need_journeys).filter(n => n.entrepreneur_id === entrepreneur_id);
   }
 
-  function getNeedJourney(entrepreneur_id, need) {
+  async function getNeedJourney(entrepreneur_id, need) {
+    if (_sb) {
+      await _ready();
+      const [{ data: journey }, { data: obs }] = await Promise.all([
+        _sb.from('need_journeys').select('*').eq('entrepreneur_id', entrepreneur_id).eq('need', need).single(),
+        _sb.from('need_observations').select('*').eq('entrepreneur_id', entrepreneur_id).eq('need', need).order('created_at'),
+      ]);
+      return journey ? { ...journey, observations: obs || [] } : null;
+    }
     return load(KEY.need_journeys).find(n => n.entrepreneur_id === entrepreneur_id && n.need === need) || null;
   }
 
-  /**
-   * upsertNeedJourney — create or update a need journey entry.
-   * updates: { stage?, aspiration?, confidence?, payment?, deferred_reason?, referral_id? }
-   */
-  function upsertNeedJourney(entrepreneur_id, need, updates) {
+  async function upsertNeedJourney(entrepreneur_id, need, updates) {
+    if (_sb) {
+      await _ready();
+      const { data } = await _sb.from('need_journeys')
+        .upsert({ ...updates, entrepreneur_id, need, org_id: _orgId, updated_at: new Date().toISOString() },
+                 { onConflict: 'entrepreneur_id,need' })
+        .select().single();
+      return data || null;
+    }
     const list = load(KEY.need_journeys);
     const idx  = list.findIndex(n => n.entrepreneur_id === entrepreneur_id && n.need === need);
     if (idx === -1) {
-      const entry = {
-        entrepreneur_id, need,
-        stage: 'observed', aspiration: null, confidence: null, payment: null,
-        observations: [], referral_id: null, deferred_reason: null,
-        ...updates, created_at: now(), updated_at: now(),
-      };
-      list.push(entry);
-      save(KEY.need_journeys, list);
-      return entry;
+      const entry = { entrepreneur_id, need, stage: 'observed', aspiration: null, confidence: null,
+        payment: null, observations: [], referral_id: null, deferred_reason: null,
+        ...updates, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+      list.push(entry); save(KEY.need_journeys, list); return entry;
     }
-    list[idx] = { ...list[idx], ...updates, updated_at: now() };
-    save(KEY.need_journeys, list);
-    return list[idx];
+    list[idx] = { ...list[idx], ...updates, updated_at: new Date().toISOString() };
+    save(KEY.need_journeys, list); return list[idx];
   }
 
-  /**
-   * addNeedObservation — append an observation to a specific need's log.
-   */
-  function addNeedObservation(entrepreneur_id, need, text) {
+  async function addNeedObservation(entrepreneur_id, need, text) {
+    if (_sb) {
+      await _ready();
+      const { data } = await _sb.from('need_observations')
+        .insert({ entrepreneur_id, need, text, org_id: _orgId, created_by: _agentId })
+        .select().single();
+      return data || null;
+    }
     const list = load(KEY.need_journeys);
     const idx  = list.findIndex(n => n.entrepreneur_id === entrepreneur_id && n.need === need);
     if (idx === -1) return null;
-    const obs = { text, created_at: now() };
-    list[idx] = { ...list[idx], observations: [...(list[idx].observations || []), obs], updated_at: now() };
-    save(KEY.need_journeys, list);
-    return list[idx];
+    const obs = { text, created_at: new Date().toISOString() };
+    list[idx] = { ...list[idx], observations: [...(list[idx].observations || []), obs], updated_at: new Date().toISOString() };
+    save(KEY.need_journeys, list); return list[idx];
   }
 
-  // Backward-compat shims — agent.html calls these; they map to need_journeys
-  function getCapabilityTags(entrepreneur_id) {
-    return getNeedJourneys(entrepreneur_id).map(nj => ({
-      tag      : nj.need,
-      confirmed: nj.stage === 'resolved',
-      stage    : nj.stage,
-      aspiration: nj.aspiration,
-      confidence: nj.confidence,
-      payment  : nj.payment,
+  async function getCapabilityTags(entrepreneur_id) {
+    const journeys = await getNeedJourneys(entrepreneur_id);
+    return journeys.map(nj => ({
+      tag: nj.need, confirmed: nj.stage === 'resolved', stage: nj.stage,
+      aspiration: nj.aspiration, confidence: nj.confidence, payment: nj.payment,
       observations: nj.observations || [],
     }));
   }
 
-  function saveCapabilityTag(entrepreneur_id, tag, confirmed, extras) {
+  async function saveCapabilityTag(entrepreneur_id, tag, confirmed, extras) {
     return upsertNeedJourney(entrepreneur_id, tag, {
-      stage: confirmed ? 'resolved' : (extras.stage || 'observed'),
-      ...extras,
+      stage: confirmed ? 'resolved' : (extras.stage || 'observed'), ...extras,
     });
   }
 
-  // ── Referral lifecycle helpers ────────────────────────────────────────
-
-  /**
-   * verifyOutcome — mark a referral COMPLETED and confirm its earning.
-   */
-  function verifyOutcome(referralId) {
-    const ref = updateReferral(referralId, { status: 'COMPLETED', completed_at: now() });
+  async function verifyOutcome(referralId) {
+    const ref = await updateReferral(referralId, { status: 'COMPLETED' });
     if (!ref) return null;
-    const earnings = load(KEY.earnings);
-    const idx = earnings.findIndex(e => e.referral_id === referralId);
-    if (idx !== -1) {
-      earnings[idx] = { ...earnings[idx], status: 'CONFIRMED', updated_at: now() };
-      save(KEY.earnings, earnings);
+    if (_sb) {
+      await _sb.from('earnings').update({ status: 'CONFIRMED', confirmed_at: new Date().toISOString() }).eq('referral_id', referralId);
+    } else {
+      const earnings = load(KEY.earnings);
+      const idx = earnings.findIndex(e => e.referral_id === referralId);
+      if (idx !== -1) { earnings[idx].status = 'CONFIRMED'; save(KEY.earnings, earnings); }
     }
     return ref;
   }
 
-  /**
-   * escalateToNFO — log an escalation note on a referral.
-   */
-  function escalateToNFO(referralId) {
-    return updateReferral(referralId, { escalated: true, escalated_at: now() });
+  async function escalateToNFO(referralId) {
+    return updateReferral(referralId, { escalated: true });
   }
 
-  /**
-   * isSupabaseMode — returns false in localStorage-only demo mode.
-   * Stub: always false. Override when Supabase is configured.
-   */
-  function isSupabaseMode() {
-    const url = (localStorage.getItem('oesn_sb_url') || '').trim();
-    const key = (localStorage.getItem('oesn_sb_key') || '').trim();
-    return !!(url && key);
-  }
+  function isSupabaseMode() { return !!_sb; }
+
 
   // ── Programme ─────────────────────────────────────────────────────────
 

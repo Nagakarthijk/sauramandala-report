@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OESN Field Agent</title>
+  <title>DRIVE Field Agent</title>
   <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="drive-config.js"></script>
   <script src="oesn-data.js"></script>
   <script src="oesn-auth.js"></script>
   <style>
@@ -663,7 +664,7 @@ function computeNeedStage(s) {
 OESNAuth.guard('agent').then(async ctx => {
   if (!ctx) return;
   OESNAuth.renderUserBar(ctx, 'user-bar');
-  OESN.init();
+  await OESN.init();
 
   // Set greeting
   const h = new Date().getHours();

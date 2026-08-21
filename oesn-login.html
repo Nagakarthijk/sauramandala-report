@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DRIVE — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="drive-config.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #FAFAF8; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+
+  <div class="w-full max-w-sm">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500 mb-4">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <path d="M3 9l9-6 9 6v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M9 21V12h6v9" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold text-stone-900">DRIVE</h1>
+      <p class="text-sm text-stone-400 mt-1">Doorstep Incubation for Thriving Enterprises</p>
+    </div>
+
+    <!-- Demo mode notice (shown when no Supabase configured) -->
+    <div id="demo-notice" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 text-sm text-amber-800">
+      <p class="font-semibold mb-1">Running in demo mode</p>
+      <p class="text-xs">Supabase is not configured. All data stays on this device. <a href="agent.html" class="font-semibold underline">Continue as demo agent →</a></p>
+    </div>
+
+    <!-- Sign in form -->
+    <div id="signin-form" class="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 space-y-4">
+      <h2 class="text-base font-semibold text-stone-900">Sign in</h2>
+
+      <div>
+        <label class="text-xs font-semibold text-stone-500 block mb-1">Email</label>
+        <input id="email" type="email" autocomplete="email" placeholder="you@example.com"
+          class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-stone-500 block mb-1">Password</label>
+        <input id="password" type="password" autocomplete="current-password" placeholder="••••••••"
+          class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+      </div>
+
+      <div id="error-msg" class="hidden text-xs text-red-600 font-medium"></div>
+
+      <button onclick="signIn()"
+        class="w-full bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold py-3 rounded-xl text-sm transition-colors">
+        Sign in
+      </button>
+
+      <button onclick="sendMagicLink()"
+        class="w-full text-stone-400 hover:text-stone-600 text-xs py-1 transition-colors">
+        Forgot password? Send magic link instead
+      </button>
+    </div>
+
+    <!-- Magic link sent confirmation -->
+    <div id="magic-sent" class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center">
+      <div class="text-3xl mb-3">📬</div>
+      <p class="font-semibold text-emerald-800 mb-1">Check your email</p>
+      <p class="text-sm text-emerald-700">We sent a sign-in link to <span id="magic-email" class="font-medium"></span>. Click it to sign in — no password needed.</p>
+    </div>
+  </div>
+
+  <script>
+    const ROLE_HOME = {
+      agent             : 'agent.html',
+      provider          : 'provider.html',
+      programme_officer : 'programme.html',
+      admin             : 'admin.html',
+    };
+
+    // Show demo notice if Supabase not configured
+    if (!window.DRIVE_SB) {
+      document.getElementById('demo-notice').classList.remove('hidden');
+      document.getElementById('signin-form').classList.add('opacity-50', 'pointer-events-none');
+    }
+
+    async function signIn() {
+      if (!window.DRIVE_SB) return;
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const errEl    = document.getElementById('error-msg');
+      errEl.classList.add('hidden');
+
+      if (!email || !password) {
+        errEl.textContent = 'Please enter your email and password.';
+        errEl.classList.remove('hidden'); return;
+      }
+
+      const btn = document.querySelector('button[onclick="signIn()"]');
+      btn.disabled = true; btn.textContent = 'Signing in…';
+
+      const { data, error } = await window.DRIVE_SB.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        errEl.textContent = error.message || 'Sign in failed. Check your email and password.';
+        errEl.classList.remove('hidden');
+        btn.disabled = false; btn.textContent = 'Sign in'; return;
+      }
+
+      // Load profile to get role
+      const { data: profile } = await window.DRIVE_SB.from('profiles')
+        .select('role').eq('id', data.user.id).single();
+
+      const next = new URLSearchParams(location.search).get('next');
+      location.replace(next || ROLE_HOME[profile?.role] || 'agent.html');
+    }
+
+    async function sendMagicLink() {
+      if (!window.DRIVE_SB) return;
+      const email = document.getElementById('email').value.trim();
+      if (!email) { alert('Enter your email first.'); return; }
+
+      await window.DRIVE_SB.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: location.origin + '/agent.html' }
+      });
+
+      document.getElementById('signin-form').classList.add('hidden');
+      document.getElementById('magic-email').textContent = email;
+      document.getElementById('magic-sent').classList.remove('hidden');
+    }
+
+    // If user lands here already signed in, redirect to their page
+    if (window.DRIVE_SB) {
+      window.DRIVE_SB.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          window.DRIVE_SB.from('profiles').select('role').eq('id', session.user.id).single()
+            .then(({ data: profile }) => {
+              const next = new URLSearchParams(location.search).get('next');
+              location.replace(next || ROLE_HOME[profile?.role] || 'agent.html');
+            });
+        }
+      });
+    }
+  </script>
+</body>
+</html>
