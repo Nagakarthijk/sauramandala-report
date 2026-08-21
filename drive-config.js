@@ -6,8 +6,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DRIVE_CONFIG = {
-  supabaseUrl : 'https://zitxdtycwxphsebgggnc.supabase.co/rest/v1/',   // ← paste here
-  supabaseKey : 'sb_publishable_2chBi0sBFJeuCLvAg4vTQQ_Z8aEnu42',                    // ← paste here
+  supabaseUrl : 'https://zitxdtycwxphsebgggnc.supabase.co',
+  supabaseKey : 'sb_publishable_2chBi0sBFJeuCLvAg4vTQQ_Z8aEnu42',
 };
 
 // Leave this alone — it connects to Supabase using the values above
