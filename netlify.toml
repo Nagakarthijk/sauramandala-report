@@ -1,0 +1,9 @@
+[build]
+  publish = "."
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[edge_functions]]
+  path = "/ai-extract"
+  function = "ai-extract"

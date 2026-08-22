@@ -1,6 +1,6 @@
 // OESN Service Worker — offline-first cache
 // Cache name: bump version to force refresh on deploy
-const CACHE_NAME = 'drive-v2';
+const CACHE_NAME = 'drive-v3';
 
 // App shell: all pages and the data layer
 const APP_SHELL = [
@@ -10,6 +10,7 @@ const APP_SHELL = [
   './admin.html',
   './oesn-data.js',
   './oesn-auth.js',
+  './oesn-ai.js',
   './drive-config.js',
   './manifest.json'
 ];
