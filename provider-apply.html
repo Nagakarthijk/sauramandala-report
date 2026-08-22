@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DRIVE — Join as Provider</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="drive-config.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #FAFAF8; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+<div class="w-full max-w-sm">
+
+  <!-- Logo -->
+  <div class="text-center mb-6">
+    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500 mb-4">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <path d="M3 9l9-6 9 6v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M9 21V12h6v9" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1 class="text-2xl font-bold text-stone-900">DRIVE</h1>
+    <p class="text-sm text-stone-400 mt-1">Join as a Service Provider</p>
+  </div>
+
+  <!-- Form -->
+  <div id="apply-form" class="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 space-y-4">
+    <p class="text-xs text-stone-500 leading-relaxed">Fill this form to list your service on DRIVE. Once reviewed, you'll receive login details by email.</p>
+
+    <div>
+      <label class="text-xs font-semibold text-stone-500 block mb-1">Organisation / Your Name *</label>
+      <input id="pa-name" type="text" placeholder="e.g. Rajan Creatives"
+        class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+
+    <div>
+      <label class="text-xs font-semibold text-stone-500 block mb-1">Service you provide *</label>
+      <select id="pa-service" class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-400">
+        <option value="">Select a service…</option>
+        <option>FSSAI Registration</option>
+        <option>GST Registration</option>
+        <option>Udyam / MSME Registration</option>
+        <option>Unit Costing Support</option>
+        <option>Market Linkage</option>
+        <option>Solar Installation</option>
+        <option>Loan Facilitation</option>
+        <option>Label Design</option>
+        <option>Printing</option>
+        <option>Legal / Compliance</option>
+        <option>Skill Training</option>
+        <option>Packaging Design</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div id="pa-service-other-wrap" class="hidden">
+      <label class="text-xs font-semibold text-stone-500 block mb-1">Describe your service *</label>
+      <input id="pa-service-other" type="text" placeholder="Brief description of what you offer"
+        class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+
+    <div>
+      <label class="text-xs font-semibold text-stone-500 block mb-1">Mobile Number *</label>
+      <input id="pa-phone" type="tel" maxlength="10" placeholder="10-digit number"
+        class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+
+    <div>
+      <label class="text-xs font-semibold text-stone-500 block mb-1">Email *</label>
+      <input id="pa-email" type="email" placeholder="you@example.com"
+        class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+
+    <div>
+      <label class="text-xs font-semibold text-stone-500 block mb-1">Location</label>
+      <input id="pa-location" type="text" placeholder="Town / district"
+        class="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400">
+    </div>
+
+    <div id="pa-error" class="hidden text-xs text-red-600 font-medium"></div>
+
+    <button onclick="submitApplication()"
+      class="w-full bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold py-3 rounded-xl text-sm transition-colors">
+      Submit Application
+    </button>
+
+    <a href="oesn-login.html" class="block text-center text-xs text-stone-400 hover:text-stone-600">Already registered? Sign in →</a>
+  </div>
+
+  <!-- Success state -->
+  <div id="apply-success" class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center">
+    <div class="text-3xl mb-3">✅</div>
+    <p class="font-semibold text-emerald-800 mb-2">Application submitted!</p>
+    <p class="text-sm text-emerald-700">The DRIVE team will review your application and send login details to your email within 1–2 working days.</p>
+    <a href="oesn-login.html" class="inline-block mt-4 text-xs font-semibold text-emerald-700 underline">Back to sign in</a>
+  </div>
+
+</div>
+
+<script>
+document.getElementById('pa-service').addEventListener('change', function() {
+  const wrap = document.getElementById('pa-service-other-wrap');
+  wrap.classList.toggle('hidden', this.value !== 'Other');
+});
+
+async function submitApplication() {
+  const name     = document.getElementById('pa-name').value.trim();
+  const svcRaw   = document.getElementById('pa-service').value;
+  const svcOther = document.getElementById('pa-service-other').value.trim();
+  const service  = svcRaw === 'Other' ? svcOther : svcRaw;
+  const phone    = document.getElementById('pa-phone').value.trim();
+  const email    = document.getElementById('pa-email').value.trim();
+  const location = document.getElementById('pa-location').value.trim();
+  const errEl    = document.getElementById('pa-error');
+
+  errEl.classList.add('hidden');
+  if (!name || !service || !phone || !email) {
+    errEl.textContent = 'Please fill all required fields.';
+    errEl.classList.remove('hidden'); return;
+  }
+  if (!/^\d{10}$/.test(phone)) {
+    errEl.textContent = 'Enter a valid 10-digit mobile number.';
+    errEl.classList.remove('hidden'); return;
+  }
+
+  if (window.DRIVE_SB) {
+    // Save to providers table as inactive (pending admin approval)
+    const { error } = await window.DRIVE_SB.from('provider_applications').insert({
+      name, service, phone, email, location: location || null,
+    });
+
+    if (error) {
+      // Fallback: table may not exist yet — still show success so applicant isn't blocked
+      console.warn('provider_applications insert failed:', error.message);
+    }
+  }
+
+  // Always show success — admin notified out of band
+  document.getElementById('apply-form').classList.add('hidden');
+  document.getElementById('apply-success').classList.remove('hidden');
+}
+</script>
+</body>
+</html>

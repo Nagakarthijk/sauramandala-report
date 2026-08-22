@@ -687,13 +687,25 @@ OESNAuth.guard('agent').then(async ctx => {
   const dateEl = document.getElementById('dash-date');
   if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
 
-  // Populate service catalog dropdown
+  // Populate service catalog dropdown — from DB in Supabase mode, static in demo
   const sel = document.getElementById('nr-service');
-  SERVICE_CATALOG.forEach(s => {
-    const o = document.createElement('option');
-    o.value = s.service; o.textContent = s.service;
-    sel.appendChild(o);
-  });
+  if (OESN.isSupabaseMode()) {
+    const providers = await OESN.getProviders();
+    window._DB_PROVIDERS = providers;
+    const services = [...new Set(providers.map(p => p.service))].sort();
+    services.forEach(svc => {
+      const o = document.createElement('option');
+      o.value = svc; o.textContent = svc;
+      sel.appendChild(o);
+    });
+  } else {
+    window._DB_PROVIDERS = null;
+    SERVICE_CATALOG.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.service; o.textContent = s.service;
+      sel.appendChild(o);
+    });
+  }
 
   // Populate entrepreneur dropdown for unit costing tool (must be after OESN.init())
   const ucEnt = document.getElementById('uc-ent');
@@ -1508,17 +1520,38 @@ function openNewRefSheet(entId) {
 
 function onNRServiceChange() {
   const svc = document.getElementById('nr-service').value;
-  const c = SERVICE_CATALOG.find(x=>x.service===svc);
-  if (!c) {
+  if (!svc) {
     document.getElementById('nr-provider').innerHTML = '<option value="">— select service first —</option>';
     document.getElementById('nr-intake').innerHTML = '';
     return;
   }
-  document.getElementById('nr-provider').innerHTML = `<option value="${c.prov_id}">${c.prov}</option>`;
-  document.getElementById('nr-commission').value = c.commission;
-  const d = new Date();
-  d.setDate(d.getDate() + c.days);
-  document.getElementById('nr-deadline').value = d.toISOString().split('T')[0];
+
+  if (window._DB_PROVIDERS) {
+    // Supabase mode: filter real providers
+    const matches = window._DB_PROVIDERS.filter(p => p.service === svc);
+    if (!matches.length) {
+      document.getElementById('nr-provider').innerHTML = '<option value="">No providers for this service yet</option>';
+      document.getElementById('nr-commission').value = '';
+      document.getElementById('nr-deadline').value = '';
+      document.getElementById('nr-intake').innerHTML = '';
+      return;
+    }
+    document.getElementById('nr-provider').innerHTML = matches.map(p =>
+      `<option value="${p.id}">${p.name}${p.location ? ' — ' + p.location : ''}</option>`
+    ).join('');
+    // Default commission from first provider if stored
+    document.getElementById('nr-commission').value = matches[0].commission || '';
+    const d = new Date(); d.setDate(d.getDate() + (matches[0].sla_days || 21));
+    document.getElementById('nr-deadline').value = d.toISOString().split('T')[0];
+  } else {
+    // Demo mode: use static catalog
+    const c = SERVICE_CATALOG.find(x=>x.service===svc);
+    if (!c) return;
+    document.getElementById('nr-provider').innerHTML = `<option value="${c.prov_id}">${c.prov}</option>`;
+    document.getElementById('nr-commission').value = c.commission;
+    const d = new Date(); d.setDate(d.getDate() + c.days);
+    document.getElementById('nr-deadline').value = d.toISOString().split('T')[0];
+  }
   renderIntakeForm(svc);
 }
 
@@ -1570,8 +1603,11 @@ function collectIntakeNotes(svc) {
 async function saveNewReferral() {
   const svc    = document.getElementById('nr-service').value;
   const provEl = document.getElementById('nr-provider');
-  const provId = provEl.value;
-  const provName = provEl.options[provEl.selectedIndex]?.text||'';
+  const rawId  = provEl.value;
+  // Only treat as real UUID if it looks like one (DB mode); demo IDs start with 'prov_'
+  const isUUID = rawId && /^[0-9a-f-]{36}$/.test(rawId);
+  const provId   = isUUID ? rawId : null;
+  const provName = provEl.options[provEl.selectedIndex]?.text || rawId || '';
   const commission = +document.getElementById('nr-commission').value||0;
   const deadline   = document.getElementById('nr-deadline').value;
   const intakeNotes = collectIntakeNotes(svc);
@@ -1579,7 +1615,7 @@ async function saveNewReferral() {
   const notes      = [intakeNotes, userNotes].filter(Boolean).join('\n');
   const errEl      = document.getElementById('nr-error');
 
-  if (!svc||!provId) {
+  if (!svc) {
     errEl.textContent = 'Please select a service.';
     errEl.classList.remove('hidden'); return;
   }

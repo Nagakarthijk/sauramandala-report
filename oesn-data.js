@@ -944,10 +944,13 @@ const OESN = (() => {
   async function getReferrals(filter) {
     if (_sb) {
       await _ready();
-      let q = _sb.from('referrals').select('*').order('created_at', { ascending: false });
+      let q = _sb.from('referrals')
+        .select('*, entrepreneurs(name,location,sector)')
+        .order('created_at', { ascending: false });
       if (filter?.entrepreneur_id) q = q.eq('entrepreneur_id', filter.entrepreneur_id);
       if (filter?.status)          q = q.eq('status', filter.status);
       if (filter?.created_by)      q = q.eq('created_by', filter.created_by);
+      if (filter?.provider_id)     q = q.eq('provider_id', filter.provider_id);
       const { data } = await q; return data || [];
     }
     let list = load(KEY.referrals);
@@ -1187,6 +1190,43 @@ const OESN = (() => {
     return updateReferral(referralId, { escalated: true });
   }
 
+  // ── Providers ─────────────────────────────────────────────────────────────
+
+  async function getProviders(filter) {
+    if (_sb) {
+      await _ready();
+      let q = _sb.from('providers').select('*').eq('active', true).order('name');
+      if (filter?.service) q = q.eq('service', filter.service);
+      const { data } = await q; return data || [];
+    }
+    // Demo mode: return built-in catalog as provider-shaped objects
+    const catalog = window._DEMO_PROVIDERS || [];
+    if (filter?.service) return catalog.filter(p => p.service === filter.service);
+    return catalog;
+  }
+
+  async function addProvider(obj) {
+    if (_sb) {
+      await _ready();
+      const { data, error } = await _sb.from('providers')
+        .insert({ ...obj, org_id: _orgId, active: obj.active !== false }).select().single();
+      return error ? null : data;
+    }
+    const list = window._DEMO_PROVIDERS || [];
+    const entry = { ...obj, id: 'prov_' + uid(), active: true, created_at: now() };
+    window._DEMO_PROVIDERS = [...list, entry];
+    return entry;
+  }
+
+  async function updateProvider(id, updates) {
+    if (_sb) {
+      await _ready();
+      const { data } = await _sb.from('providers').update(updates).eq('id', id).select().single();
+      return data || null;
+    }
+    return null;
+  }
+
   function isSupabaseMode() { return !!_sb; }
 
 
@@ -1293,6 +1333,10 @@ const OESN = (() => {
     // Programme
     getProgramme,
     updateProgramme,
+    // Providers
+    getProviders,
+    addProvider,
+    updateProvider,
     // Lifecycle
     verifyOutcome,
     escalateToNFO,
