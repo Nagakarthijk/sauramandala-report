@@ -11,13 +11,12 @@
 const DEFAULT_MODELS = {
   openrouter: 'meta-llama/llama-3.1-8b-instruct',
   anthropic:  'claude-haiku-4-5-20251001',
-  google:     'gemini-1.5-flash-8b',
-  groq:       'llama-3.3-70b-versatile',
+  google:     'gemini-1.5-flash',
+  groq:       'llama-3.1-8b-instant',
 };
 
 const OPENAI_COMPAT_ENDPOINTS = {
   openrouter: 'https://openrouter.ai/api/v1/chat/completions',
-  google:     'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
   groq:       'https://api.groq.com/openai/v1/chat/completions',
 };
 
@@ -52,47 +51,53 @@ async function callAI(systemPrompt, userContent, provider, apiKey, model) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model,
-        max_tokens: 400,
+        model, max_tokens: 400,
         system: systemPrompt,
         messages: [{ role: 'user', content: userContent }],
       }),
     });
-    if (!resp.ok) {
-      const e = await resp.json();
-      throw new Error(e.error?.message || `Anthropic error ${resp.status}`);
-    }
-    const data = await resp.json();
-    return data.content?.[0]?.text || '';
+    if (!resp.ok) { const e = await resp.json(); throw new Error(e.error?.message || `Anthropic ${resp.status}`); }
+    const d = await resp.json();
+    return d.content?.[0]?.text || '';
   }
 
-  // OpenAI-compatible: openrouter, google, groq
+  if (provider === 'google') {
+    // Use Google's native generateContent API — more reliable than their OpenAI wrapper
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: 'user', parts: [{ text: userContent }] }],
+        generationConfig: { maxOutputTokens: 400, temperature: 0.1 },
+      }),
+    });
+    if (!resp.ok) { const e = await resp.json(); throw new Error(e.error?.message || `Google ${resp.status}`); }
+    const d = await resp.json();
+    return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  }
+
+  // OpenAI-compatible: openrouter, groq
   const endpoint = OPENAI_COMPAT_ENDPOINTS[provider] || OPENAI_COMPAT_ENDPOINTS.openrouter;
   const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` };
   if (provider === 'openrouter') {
     headers['HTTP-Referer'] = 'https://sauramandala.org';
     headers['X-Title'] = 'DRIVE Field App';
   }
-
   const resp = await fetch(endpoint, {
-    method: 'POST',
-    headers,
+    method: 'POST', headers,
     body: JSON.stringify({
-      model,
-      max_tokens: 400,
-      temperature: 0.1,
+      model, max_tokens: 400, temperature: 0.1,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user',   content: userContent },
       ],
     }),
   });
-  if (!resp.ok) {
-    const e = await resp.json();
-    throw new Error(e.error?.message || `${provider} error ${resp.status}`);
-  }
-  const data = await resp.json();
-  return data.choices?.[0]?.message?.content || '';
+  if (!resp.ok) { const e = await resp.json(); throw new Error(e.error?.message || `${provider} ${resp.status}`); }
+  const d = await resp.json();
+  return d.choices?.[0]?.message?.content || '';
 }
 
 export default async (request) => {
