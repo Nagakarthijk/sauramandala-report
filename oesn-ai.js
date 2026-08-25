@@ -4,12 +4,10 @@
 const DriveAI = (() => {
   'use strict';
 
-  // Points to our Netlify Edge Function proxy. In demo/local mode calls are mocked.
   const AI_ENDPOINT = '/ai-extract';
 
   let _recognition = null;
   let _isListening = false;
-  let _onTranscript = null; // callback(text)
 
   // ── Speech recognition ────────────────────────────────────────────────────
 
@@ -66,11 +64,7 @@ const DriveAI = (() => {
   async function extract(transcript, mode) {
     if (!transcript.trim()) return null;
 
-    // Demo fallback: return mock data so it works without an API key
-    if (!window.DRIVE_SB) {
-      return _mockExtract(transcript, mode);
-    }
-
+    // Always try the real API first. Only fall back to mock if it fails.
     try {
       const resp = await fetch(AI_ENDPOINT, {
         method: 'POST',
@@ -79,19 +73,26 @@ const DriveAI = (() => {
       });
       const data = await resp.json();
       if (data.error) throw new Error(data.error);
+      if (!data.fields) throw new Error('No fields returned from AI');
       return data.fields;
     } catch (err) {
-      console.warn('[DriveAI] Extraction failed, using mock:', err.message);
-      return _mockExtract(transcript, mode);
+      console.warn('[DriveAI] API call failed:', err.message);
+      // Only use mock if this is clearly a demo/local environment with no API configured
+      const isDemoMode = !navigator.onLine ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+      if (isDemoMode) return _mockExtract(transcript, mode);
+      throw err; // re-throw so _runExtract can show the error
     }
   }
 
   function _mockExtract(transcript, mode) {
-    // Very basic keyword extraction for demo/offline mode
     if (mode === 'entrepreneur') {
       const phoneMatch = transcript.match(/\b[6-9]\d{9}\b/);
+      const words = transcript.split(/\s+/);
       return {
         phone: phoneMatch ? phoneMatch[0] : '',
+        name: words.slice(0, 2).join(' '),
         observation: transcript.length > 20 ? transcript.trim() : '',
       };
     }
@@ -99,14 +100,15 @@ const DriveAI = (() => {
   }
 
   // ── SmartNote modal ───────────────────────────────────────────────────────
-  // Opens a bottom sheet with mic + text area + Extract button.
-  // mode: 'entrepreneur' | 'observation' | 'general'
-  // onFill(fields): called with extracted fields object when user taps "Fill fields"
 
   function openSmartNote(opts = {}) {
-    const { mode = 'general', onFill, placeholder = 'Speak or type your notes here…', title = 'Smart Note' } = opts;
+    const {
+      mode = 'general',
+      onFill,
+      placeholder = 'Speak or type your notes here…',
+      title = 'Smart Note',
+    } = opts;
 
-    // Remove existing if any
     const existing = document.getElementById('smart-note-modal');
     if (existing) existing.remove();
 
@@ -136,16 +138,24 @@ const DriveAI = (() => {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 1a4 4 0 014 4v7a4 4 0 01-8 0V5a4 4 0 014-4z" stroke="currentColor" stroke-width="1.8"/><path d="M19 11a7 7 0 01-14 0M12 19v4M8 23h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
               <span id="sn-mic-label">Hold to speak</span>
             </button>` : ''}
-            <button onclick="DriveAI._runExtract('${mode}', window._snFillCb)"
+            <button id="sn-extract-btn"
               style="flex:1;background:#f59e0b;border:none;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:700;color:#1c1917;cursor:pointer;">
               ✨ Extract &amp; Fill Fields
             </button>
           </div>
           <div id="sn-preview" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;font-size:12px;color:#166534;"></div>
+          <button id="sn-confirm-btn" style="display:none;width:100%;background:#22c55e;border:none;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;">
+            ✓ Confirm &amp; Fill Fields
+          </button>
         </div>
       </div>`;
     document.body.appendChild(el);
-    window._snFillCb = onFill;
+
+    // Wire extract button — capture onFill in closure (no global _snFillCb needed)
+    document.getElementById('sn-extract-btn').addEventListener('click', () => {
+      _runExtract(mode, onFill);
+    });
+
     setTimeout(() => document.getElementById('sn-text')?.focus(), 100);
   }
 
@@ -153,26 +163,25 @@ const DriveAI = (() => {
     stopListening();
     const el = document.getElementById('smart-note-modal');
     if (el) el.remove();
-    window._snFillCb = null;
   }
 
   async function _toggleMic() {
-    const btn = document.getElementById('sn-mic-btn');
-    const label = document.getElementById('sn-mic-label');
+    const btn    = document.getElementById('sn-mic-btn');
+    const label  = document.getElementById('sn-mic-label');
     const status = document.getElementById('sn-status');
-    const ta = document.getElementById('sn-text');
+    const ta     = document.getElementById('sn-text');
 
     if (isListening()) {
       stopListening();
-      if (btn) btn.style.background = '#f5f5f4';
-      if (label) label.textContent = 'Hold to speak';
-      if (status) status.textContent = '';
+      if (btn)   btn.style.background = '#f5f5f4';
+      if (label) label.textContent    = 'Hold to speak';
+      if (status) status.textContent  = '';
       return;
     }
 
-    if (btn) btn.style.background = '#fef3c7';
-    if (label) label.textContent = 'Listening…';
-    if (status) status.textContent = '🎙 Speak now — tap mic again to stop';
+    if (btn)   btn.style.background = '#fef3c7';
+    if (label) label.textContent    = 'Listening…';
+    if (status) status.textContent  = '🎙 Speak now — tap mic again to stop';
 
     let baseText = (ta?.value || '').trimEnd();
     if (baseText) baseText += ' ';
@@ -180,48 +189,73 @@ const DriveAI = (() => {
     startListening(
       (live) => { if (ta) ta.value = baseText + live; },
       (final) => {
-        if (ta) ta.value = (baseText + final).trim();
-        if (btn) btn.style.background = '#f5f5f4';
+        if (ta)    ta.value          = (baseText + final).trim();
+        if (btn)   btn.style.background = '#f5f5f4';
         if (label) label.textContent = 'Hold to speak';
-        if (status) status.textContent = final ? '✓ Done — review then tap Extract' : '';
+        if (status) status.textContent = final ? '✓ Done — tap Extract to fill fields' : '';
       }
     );
   }
 
-  async function _runExtract(mode, cb) {
-    const ta = document.getElementById('sn-text');
-    const status = document.getElementById('sn-status');
-    const preview = document.getElementById('sn-preview');
-    const text = ta?.value?.trim();
+  async function _runExtract(mode, onFill) {
+    const ta         = document.getElementById('sn-text');
+    const status     = document.getElementById('sn-status');
+    const preview    = document.getElementById('sn-preview');
+    const extractBtn = document.getElementById('sn-extract-btn');
+    const confirmBtn = document.getElementById('sn-confirm-btn');
+    const text       = ta?.value?.trim();
 
-    if (!text) { if (status) status.textContent = 'Add some text first.'; return; }
-    if (status) status.textContent = '✨ Extracting…';
+    if (!text) {
+      if (status) status.textContent = 'Add some text first.';
+      return;
+    }
 
-    const fields = await extract(text, mode);
-    if (!fields) { if (status) status.textContent = 'Could not extract — check your connection.'; return; }
+    // Loading state
+    if (extractBtn) { extractBtn.disabled = true; extractBtn.textContent = '✨ Extracting…'; }
+    if (status)     status.textContent    = '';
+    if (preview)    preview.style.display = 'none';
+    if (confirmBtn) confirmBtn.style.display = 'none';
+
+    let fields;
+    try {
+      fields = await extract(text, mode);
+    } catch (err) {
+      if (status) status.textContent = `⚠ AI error: ${err.message}`;
+      if (extractBtn) { extractBtn.disabled = false; extractBtn.textContent = '✨ Extract & Fill Fields'; }
+      return;
+    }
+
+    if (!fields) {
+      if (status) status.textContent = 'Nothing extracted — try adding more detail.';
+      if (extractBtn) { extractBtn.disabled = false; extractBtn.textContent = '✨ Extract & Fill Fields'; }
+      return;
+    }
+
+    // Restore extract button
+    if (extractBtn) { extractBtn.disabled = false; extractBtn.textContent = '✨ Extract & Fill Fields'; }
 
     // Show preview
     if (preview) {
-      preview.style.display = 'block';
       const lines = Object.entries(fields)
         .filter(([, v]) => v && (typeof v === 'string' ? v.trim() : true))
         .map(([k, v]) => `<b>${k.replace(/_/g, ' ')}:</b> ${Array.isArray(v) ? v.join(', ') : v}`)
         .join('<br>');
-      preview.innerHTML = lines || 'Nothing extracted — try adding more detail.';
+      preview.innerHTML = lines || 'Nothing extracted — try adding more detail to your note.';
+      preview.style.display = 'block';
     }
 
-    if (status) status.textContent = '✓ Review above then confirm';
+    if (status) status.textContent = '✓ Looks right? Confirm to fill the form.';
 
-    // Replace Extract button with Confirm
-    const extractBtn = preview?.previousElementSibling?.querySelector('button:last-child');
-    if (extractBtn) {
-      extractBtn.textContent = '✓ Confirm & Fill';
-      extractBtn.style.background = '#22c55e';
-      extractBtn.style.color = '#fff';
-      extractBtn.onclick = () => {
-        if (cb) cb(fields, text);
+    // Show dedicated confirm button — no fragile DOM traversal
+    if (confirmBtn) {
+      confirmBtn.style.display = 'block';
+      // Remove any previous listener by replacing the node
+      const fresh = confirmBtn.cloneNode(true);
+      confirmBtn.parentNode.replaceChild(fresh, confirmBtn);
+      fresh.addEventListener('click', () => {
+        if (onFill) onFill(fields, text);
         closeSmartNote();
-      };
+      });
     }
   }
 
