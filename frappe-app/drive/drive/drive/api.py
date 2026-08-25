@@ -251,7 +251,7 @@ def add_conversation_note(entrepreneur, note_type="visit", content=""):
 #   anthropic   — https://console.anthropic.com  Claude Haiku (~₹0.08/note), best quality
 
 _AI_DEFAULT_MODELS = {
-    "openrouter": "google/gemini-flash-1.5-8b:free",
+    "openrouter": "meta-llama/llama-3.1-8b-instruct:free",
     "anthropic":  "claude-haiku-4-5-20251001",
     "google":     "gemini-1.5-flash-8b",
     "groq":       "llama-3.3-70b-versatile",

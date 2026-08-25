@@ -9,7 +9,7 @@
 // Backwards-compatible: ANTHROPIC_API_KEY still works if AI_API_KEY isn't set.
 
 const DEFAULT_MODELS = {
-  openrouter: 'google/gemini-flash-1.5-8b:free',
+  openrouter: 'meta-llama/llama-3.1-8b-instruct:free',
   anthropic:  'claude-haiku-4-5-20251001',
   google:     'gemini-1.5-flash-8b',
   groq:       'llama-3.3-70b-versatile',
