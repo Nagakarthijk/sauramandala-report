@@ -111,7 +111,7 @@ export default async (request) => {
   }
 
   const provider = Deno.env.get('AI_PROVIDER') || 'openrouter';
-  const apiKey   = Deno.env.get('AI_API_KEY') || Deno.env.get('ANTHROPIC_API_KEY') || '';
+  const apiKey   = Deno.env.get('AI_API_KEY') || Deno.env.get('DRIVE_OPENROUTER') || Deno.env.get('ANTHROPIC_API_KEY') || '';
   const model    = Deno.env.get('AI_MODEL') || DEFAULT_MODELS[provider] || DEFAULT_MODELS.openrouter;
 
   if (!apiKey) {
