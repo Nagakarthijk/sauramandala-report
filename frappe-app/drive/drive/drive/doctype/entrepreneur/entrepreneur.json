@@ -1,0 +1,143 @@
+{
+  "actions": [],
+  "autoname": "field:entrepreneur_name",
+  "creation": "2026-08-25 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "entrepreneur_name", "phone", "business_name", "col_break_1",
+    "sector", "entity_type", "location", "company",
+    "section_status", "stage", "last_contact", "assigned_to",
+    "section_consent", "consent_given",
+    "section_notes", "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "entrepreneur_name",
+      "fieldtype": "Data",
+      "label": "Full Name",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "search_index": 1
+    },
+    {
+      "fieldname": "phone",
+      "fieldtype": "Data",
+      "label": "Mobile Number",
+      "reqd": 1,
+      "in_list_view": 1,
+      "options": "Phone"
+    },
+    {
+      "fieldname": "business_name",
+      "fieldtype": "Data",
+      "label": "Business Name",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "col_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "sector",
+      "fieldtype": "Select",
+      "label": "Sector",
+      "options": "\nFood Processing\nHandicrafts\nAgriculture\nTextile & Garments\nBeauty & Wellness\nCarpentry & Furniture\nPrinting & Design\nEnergy & Solar\nServices\nOther",
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "entity_type",
+      "fieldtype": "Select",
+      "label": "Entity Type",
+      "options": "\nIndividual\nSHG / Cooperative\nPartnership\nCompany"
+    },
+    {
+      "fieldname": "location",
+      "fieldtype": "Data",
+      "label": "Village / Location",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Organisation",
+      "options": "Company",
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "section_status",
+      "fieldtype": "Section Break",
+      "label": "Status"
+    },
+    {
+      "fieldname": "stage",
+      "fieldtype": "Select",
+      "label": "Case Stage",
+      "options": "\nlead\nassessing\nactive\ngraduated\ndormant",
+      "default": "lead",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "last_contact",
+      "fieldtype": "Datetime",
+      "label": "Last Contact"
+    },
+    {
+      "fieldname": "assigned_to",
+      "fieldtype": "Link",
+      "label": "Field Agent",
+      "options": "User",
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "section_consent",
+      "fieldtype": "Section Break",
+      "label": "Consent"
+    },
+    {
+      "fieldname": "consent_given",
+      "fieldtype": "Check",
+      "label": "Verbal consent obtained and documented"
+    },
+    {
+      "fieldname": "section_notes",
+      "fieldtype": "Section Break",
+      "label": "Notes"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Long Text",
+      "label": "Notes"
+    }
+  ],
+  "modified": "2026-08-25 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Drive",
+  "name": "Entrepreneur",
+  "naming_rule": "By fieldname",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1, "delete": 0, "email": 1, "export": 1,
+      "permlevel": 0, "print": 1, "read": 1, "report": 1,
+      "role": "DRIVE Agent", "share": 0, "write": 1
+    },
+    {
+      "create": 1, "delete": 1, "email": 1, "export": 1,
+      "permlevel": 0, "print": 1, "read": 1, "report": 1,
+      "role": "DRIVE Programme Officer", "share": 1, "write": 1
+    },
+    {
+      "create": 0, "delete": 0, "email": 0, "export": 0,
+      "permlevel": 0, "print": 0, "read": 1, "report": 0,
+      "role": "DRIVE Provider", "share": 0, "write": 0
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "track_changes": 1
+}

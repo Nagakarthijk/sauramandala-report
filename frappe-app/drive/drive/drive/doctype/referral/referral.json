@@ -1,0 +1,123 @@
+{
+  "actions": [],
+  "autoname": "DRIVE-REF-.YYYY.-.#####",
+  "creation": "2026-08-25 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "entrepreneur", "provider", "service", "col_break_1",
+    "status", "commission", "deadline", "escalated",
+    "section_notes", "notes", "intake_notes",
+    "section_commission", "commission_status", "commission_paid_on"
+  ],
+  "fields": [
+    {
+      "fieldname": "entrepreneur",
+      "fieldtype": "Link",
+      "label": "Entrepreneur",
+      "options": "Entrepreneur",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "provider",
+      "fieldtype": "Link",
+      "label": "Provider",
+      "options": "Provider",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "service",
+      "fieldtype": "Data",
+      "label": "Service",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "col_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "PENDING\nIN_PROGRESS\nRTC\nBLOCKED\nCOMPLETED\nCANCELLED",
+      "default": "PENDING",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "commission",
+      "fieldtype": "Currency",
+      "label": "Commission (₹)"
+    },
+    {
+      "fieldname": "deadline",
+      "fieldtype": "Date",
+      "label": "Deadline"
+    },
+    {
+      "fieldname": "escalated",
+      "fieldtype": "Check",
+      "label": "Escalated"
+    },
+    {
+      "fieldname": "section_notes",
+      "fieldtype": "Section Break",
+      "label": "Notes"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Long Text",
+      "label": "Notes / Progress"
+    },
+    {
+      "fieldname": "intake_notes",
+      "fieldtype": "Long Text",
+      "label": "Intake Details"
+    },
+    {
+      "fieldname": "section_commission",
+      "fieldtype": "Section Break",
+      "label": "Commission Payment"
+    },
+    {
+      "fieldname": "commission_status",
+      "fieldtype": "Select",
+      "label": "Commission Status",
+      "options": "\npending\nconfirmed\nsettled",
+      "default": "pending"
+    },
+    {
+      "fieldname": "commission_paid_on",
+      "fieldtype": "Date",
+      "label": "Commission Paid On",
+      "depends_on": "eval:doc.commission_status=='settled'"
+    }
+  ],
+  "modified": "2026-08-25 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Drive",
+  "name": "Referral",
+  "naming_rule": "Autoname",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1, "delete": 0, "permlevel": 0, "print": 1,
+      "read": 1, "report": 1, "role": "DRIVE Agent", "write": 1
+    },
+    {
+      "create": 1, "delete": 1, "permlevel": 0, "print": 1,
+      "read": 1, "report": 1, "role": "DRIVE Programme Officer", "write": 1
+    },
+    {
+      "create": 0, "delete": 0, "permlevel": 0, "print": 1,
+      "read": 1, "report": 1, "role": "DRIVE Provider", "write": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "track_changes": 1
+}
