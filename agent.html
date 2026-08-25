@@ -35,6 +35,12 @@
 
 <div id="user-bar"></div>
 
+<!-- Offline / sync indicator -->
+<div id="sync-bar" class="hidden items-center justify-between px-4 py-2 text-xs font-medium">
+  <span id="sync-msg"></span>
+  <button id="sync-btn" onclick="manualSync()" class="underline font-semibold hidden">Sync now</button>
+</div>
+
 <!-- Overlay -->
 <div id="overlay" class="overlay fixed inset-0 bg-black/50 z-40" onclick="closeSheets()"></div>
 
@@ -674,10 +680,41 @@ function computeNeedStage(s) {
 }
 
 // ─── AUTH GUARD ─────────────────────────────────────────────────────────────
+// ─── Offline / sync indicator ────────────────────────────────────────────────
+function updateSyncBar() {
+  const bar  = document.getElementById('sync-bar');
+  const msg  = document.getElementById('sync-msg');
+  const btn  = document.getElementById('sync-btn');
+  if (!bar || !msg) return;
+  const online  = navigator.onLine;
+  const pending = OESN.queueLength ? OESN.queueLength() : 0;
+  if (!online) {
+    bar.className = 'flex items-center justify-between px-4 py-2 text-xs font-medium bg-amber-50 border-b border-amber-200 text-amber-800';
+    msg.textContent = '📶 You\'re offline — entries are saved locally and will sync when connected.';
+    btn.classList.add('hidden');
+  } else if (pending > 0) {
+    bar.className = 'flex items-center justify-between px-4 py-2 text-xs font-medium bg-blue-50 border-b border-blue-200 text-blue-800';
+    msg.textContent = `⏳ ${pending} item${pending > 1 ? 's' : ''} waiting to sync…`;
+    btn.classList.remove('hidden');
+  } else {
+    bar.className = 'hidden';
+  }
+}
+
+async function manualSync() {
+  await OESN.processQueue();
+  updateSyncBar();
+}
+
+window.addEventListener('online',  updateSyncBar);
+window.addEventListener('offline', updateSyncBar);
+document.addEventListener('drive:sync-pending', updateSyncBar);
+
 OESNAuth.guard('agent').then(async ctx => {
   if (!ctx) return;
   OESNAuth.renderUserBar(ctx, 'user-bar');
   await OESN.init();
+  updateSyncBar();
 
   // Set greeting
   const h = new Date().getHours();

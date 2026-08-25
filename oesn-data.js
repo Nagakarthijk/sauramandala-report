@@ -76,6 +76,124 @@ const OESN = (() => {
   // Await this inside every Supabase function to ensure init completed
   async function _ready() { if (_initPromise) await _initPromise; }
 
+  // ─── Offline layer: read cache + write queue ──────────────────────────────
+  // Cache: localStorage keys prefixed 'drive_cache_', value = {data, at: timestamp}
+  // Queue: localStorage key 'drive_sync_queue', value = [{table,method,data,...}]
+  // Both survive page reloads; cache has 24-hour TTL.
+
+  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+  const Q_KEY     = 'drive_sync_queue';
+
+  function _setCache(name, data) {
+    try { localStorage.setItem('drive_cache_' + name, JSON.stringify({ data, at: Date.now() })); } catch {}
+  }
+  function _getCache(name) {
+    try {
+      const raw = localStorage.getItem('drive_cache_' + name);
+      if (!raw) return null;
+      const { data, at } = JSON.parse(raw);
+      return (Date.now() - at < CACHE_TTL) ? data : null;
+    } catch { return null; }
+  }
+
+  function _enqueue(op) {
+    try {
+      const q = JSON.parse(localStorage.getItem(Q_KEY) || '[]');
+      q.push({ ...op, _queued_at: Date.now() });
+      localStorage.setItem(Q_KEY, JSON.stringify(q));
+      _notifyPending();
+    } catch {}
+  }
+
+  function _queueLength() {
+    try { return JSON.parse(localStorage.getItem(Q_KEY) || '[]').length; } catch { return 0; }
+  }
+
+  function _notifyPending() {
+    const n = _queueLength();
+    document.dispatchEvent(new CustomEvent('drive:sync-pending', { detail: { count: n } }));
+  }
+
+  async function _processQueue() {
+    if (!_sb || !navigator.onLine) return;
+    await _ready();
+    const q = JSON.parse(localStorage.getItem(Q_KEY) || '[]');
+    if (!q.length) return;
+
+    const remaining = [];
+    for (const op of q) {
+      try {
+        if (op.method === 'insert') {
+          await _sb.from(op.table).insert(op.data);
+        } else if (op.method === 'update') {
+          await _sb.from(op.table).update(op.data).eq('id', op.id);
+        } else if (op.method === 'upsert') {
+          await _sb.from(op.table).upsert(op.data, { onConflict: op.conflict });
+        }
+      } catch (e) {
+        console.warn('[DRIVE sync] replay failed:', op.table, e.message);
+        remaining.push(op);
+      }
+    }
+    localStorage.setItem(Q_KEY, JSON.stringify(remaining));
+    _notifyPending();
+    // Invalidate caches so fresh data loads on next fetch
+    if (remaining.length < q.length) {
+      ['entrepreneurs','referrals','notes','need_journeys'].forEach(k =>
+        localStorage.removeItem('drive_cache_' + k));
+    }
+  }
+
+  // Helper: try Supabase fetch, fall back to cache
+  async function _sbFetch(fn, cacheKey) {
+    if (navigator.onLine) {
+      try {
+        const result = await fn();
+        if (cacheKey && result) _setCache(cacheKey, result);
+        return result ?? [];
+      } catch {}
+    }
+    const cached = _getCache(cacheKey);
+    if (cached !== null) return cached;
+    throw new Error('Offline and no cached data for ' + cacheKey);
+  }
+
+  // Helper: write to Supabase or queue if offline
+  // Returns { data } (real or optimistic local entry)
+  async function _sbWrite(table, method, data, localEntry, cacheKey, conflict) {
+    if (navigator.onLine) {
+      try {
+        let q = _sb.from(table);
+        let res;
+        if (method === 'insert')  res = await q.insert(data).select().single();
+        if (method === 'update')  res = await q.update(data).eq('id', data.id || localEntry?.id).select().single();
+        if (method === 'upsert')  res = await q.upsert(data, { onConflict: conflict }).select().single();
+        if (res?.data) {
+          _patchCache(cacheKey, res.data, localEntry?.id);
+          return res.data;
+        }
+      } catch {}
+    }
+    // Offline path: queue + optimistic local cache
+    _enqueue({ table, method, data, id: localEntry?.id, conflict });
+    if (cacheKey && localEntry) _prependCache(cacheKey, { ...localEntry, _pending: true });
+    return localEntry;
+  }
+
+  function _patchCache(key, record, oldId) {
+    if (!key) return;
+    const cached = _getCache(key);
+    if (!cached) return;
+    const idx = cached.findIndex(x => x.id === (oldId || record.id));
+    if (idx >= 0) cached[idx] = record; else cached.unshift(record);
+    _setCache(key, cached);
+  }
+  function _prependCache(key, record) {
+    const cached = _getCache(key) || [];
+    cached.unshift(record);
+    _setCache(key, cached);
+  }
+
   function save(key, data) {
     localStorage.setItem(key, JSON.stringify(data));
   }
@@ -899,11 +1017,13 @@ const OESN = (() => {
   // init() — call on every page. Returns a Promise (safe to await).
   function init() {
     if (window.DRIVE_SB) {
-      _initPromise = _initSB();
+      _initPromise = _initSB().then(() => _processQueue());
     } else {
       seed();
       _initPromise = Promise.resolve();
     }
+    // Replay queue whenever connection is restored
+    window.addEventListener('online', () => _processQueue());
     return _initPromise;
   }
 
@@ -912,8 +1032,10 @@ const OESN = (() => {
   async function getEntrepreneurs() {
     if (_sb) {
       await _ready();
-      const { data } = await _sb.from('entrepreneurs').select('*').order('created_at', { ascending: false });
-      return data || [];
+      return _sbFetch(
+        async () => { const { data } = await _sb.from('entrepreneurs').select('*').order('created_at', { ascending: false }); return data || []; },
+        'entrepreneurs'
+      ).catch(() => _getCache('entrepreneurs') || []);
     }
     return load(KEY.entrepreneurs);
   }
@@ -921,8 +1043,14 @@ const OESN = (() => {
   async function getEntrepreneur(id) {
     if (_sb) {
       await _ready();
-      const { data } = await _sb.from('entrepreneurs').select('*').eq('id', id).single();
-      return data || null;
+      if (navigator.onLine) {
+        try {
+          const { data } = await _sb.from('entrepreneurs').select('*').eq('id', id).single();
+          return data || null;
+        } catch {}
+      }
+      const cached = _getCache('entrepreneurs') || [];
+      return cached.find(e => e.id === id) || null;
     }
     return load(KEY.entrepreneurs).find(e => e.id === id) || null;
   }
@@ -930,9 +1058,10 @@ const OESN = (() => {
   async function addEntrepreneur(obj) {
     if (_sb) {
       await _ready();
-      const { data } = await _sb.from('entrepreneurs')
-        .insert({ ...obj, org_id: _orgId, created_by: _agentId }).select().single();
-      return data || null;
+      const localEntry = { ...obj, id: 'ent_' + uid(), created_at: now(), updated_at: now() };
+      return _sbWrite('entrepreneurs', 'insert',
+        { ...obj, org_id: _orgId, created_by: _agentId },
+        localEntry, 'entrepreneurs');
     }
     const list  = load(KEY.entrepreneurs);
     const entry = { ...obj, id: 'ent_' + uid(), created_at: now(), updated_at: now() };
@@ -944,14 +1073,21 @@ const OESN = (() => {
   async function getReferrals(filter) {
     if (_sb) {
       await _ready();
-      let q = _sb.from('referrals')
-        .select('*, entrepreneurs(name,location,sector)')
-        .order('created_at', { ascending: false });
-      if (filter?.entrepreneur_id) q = q.eq('entrepreneur_id', filter.entrepreneur_id);
-      if (filter?.status)          q = q.eq('status', filter.status);
-      if (filter?.created_by)      q = q.eq('created_by', filter.created_by);
-      if (filter?.provider_id)     q = q.eq('provider_id', filter.provider_id);
-      const { data } = await q; return data || [];
+      const fetched = await _sbFetch(async () => {
+        let q = _sb.from('referrals')
+          .select('*, entrepreneurs(name,location,sector)')
+          .order('created_at', { ascending: false });
+        if (filter?.entrepreneur_id) q = q.eq('entrepreneur_id', filter.entrepreneur_id);
+        if (filter?.status)          q = q.eq('status', filter.status);
+        if (filter?.created_by)      q = q.eq('created_by', filter.created_by);
+        if (filter?.provider_id)     q = q.eq('provider_id', filter.provider_id);
+        const { data } = await q; return data || [];
+      }, filter ? null : 'referrals').catch(() => _getCache('referrals') || []);
+      if (!filter) return fetched;
+      return fetched.filter(r =>
+        (!filter.entrepreneur_id || r.entrepreneur_id === filter.entrepreneur_id) &&
+        (!filter.status          || r.status === filter.status)
+      );
     }
     let list = load(KEY.referrals);
     if (!filter) return list;
@@ -987,9 +1123,10 @@ const OESN = (() => {
   async function addReferral(obj) {
     if (_sb) {
       await _ready();
-      const { data } = await _sb.from('referrals')
-        .insert({ ...obj, org_id: _orgId, created_by: _agentId }).select().single();
-      return data || null;
+      const localEntry = { ...obj, id: 'ref_' + uid(), created_at: now(), updated_at: now() };
+      return _sbWrite('referrals', 'insert',
+        { ...obj, org_id: _orgId, created_by: _agentId },
+        localEntry, 'referrals');
     }
     const list  = load(KEY.referrals);
     const entry = { ...obj, id: 'ref_' + uid(), created_at: now(), updated_at: now() };
@@ -1080,9 +1217,10 @@ const OESN = (() => {
   async function addConversationNote(note) {
     if (_sb) {
       await _ready();
-      const { data } = await _sb.from('conversation_notes')
-        .insert({ ...note, org_id: _orgId, created_by: _agentId }).select().single();
-      return data || null;
+      const localEntry = { ...note, id: 'note_' + uid(), created_at: now() };
+      return _sbWrite('conversation_notes', 'insert',
+        { ...note, org_id: _orgId, created_by: _agentId },
+        localEntry, 'notes');
     }
     const list  = load(KEY.notes);
     const entry = { ...note, id: 'note_' + uid(), created_at: now() };
@@ -1124,37 +1262,35 @@ const OESN = (() => {
   async function upsertNeedJourney(entrepreneur_id, need, updates) {
     if (_sb) {
       await _ready();
-      const { data } = await _sb.from('need_journeys')
-        .upsert({ ...updates, entrepreneur_id, need, org_id: _orgId, updated_at: new Date().toISOString() },
-                 { onConflict: 'entrepreneur_id,need' })
-        .select().single();
-      return data || null;
+      const payload = { ...updates, entrepreneur_id, need, org_id: _orgId, updated_at: now() };
+      const localEntry = { ...payload, id: 'nj_' + uid(), created_at: now() };
+      return _sbWrite('need_journeys', 'upsert', payload, localEntry, null, 'entrepreneur_id,need');
     }
     const list = load(KEY.need_journeys);
     const idx  = list.findIndex(n => n.entrepreneur_id === entrepreneur_id && n.need === need);
     if (idx === -1) {
       const entry = { entrepreneur_id, need, stage: 'observed', aspiration: null, confidence: null,
         payment: null, observations: [], referral_id: null, deferred_reason: null,
-        ...updates, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+        ...updates, created_at: now(), updated_at: now() };
       list.push(entry); save(KEY.need_journeys, list); return entry;
     }
-    list[idx] = { ...list[idx], ...updates, updated_at: new Date().toISOString() };
+    list[idx] = { ...list[idx], ...updates, updated_at: now() };
     save(KEY.need_journeys, list); return list[idx];
   }
 
   async function addNeedObservation(entrepreneur_id, need, text) {
     if (_sb) {
       await _ready();
-      const { data } = await _sb.from('need_observations')
-        .insert({ entrepreneur_id, need, text, org_id: _orgId, created_by: _agentId })
-        .select().single();
-      return data || null;
+      const localEntry = { entrepreneur_id, need, text, id: 'nobs_' + uid(), created_at: now() };
+      return _sbWrite('need_observations', 'insert',
+        { entrepreneur_id, need, text, org_id: _orgId, created_by: _agentId },
+        localEntry, null);
     }
     const list = load(KEY.need_journeys);
     const idx  = list.findIndex(n => n.entrepreneur_id === entrepreneur_id && n.need === need);
     if (idx === -1) return null;
-    const obs = { text, created_at: new Date().toISOString() };
-    list[idx] = { ...list[idx], observations: [...(list[idx].observations || []), obs], updated_at: new Date().toISOString() };
+    const obs = { text, created_at: now() };
+    list[idx] = { ...list[idx], observations: [...(list[idx].observations || []), obs], updated_at: now() };
     save(KEY.need_journeys, list); return list[idx];
   }
 
@@ -1341,6 +1477,9 @@ const OESN = (() => {
     verifyOutcome,
     escalateToNFO,
     isSupabaseMode,
+    // Offline sync
+    processQueue : _processQueue,
+    queueLength  : _queueLength,
   };
 
 })();
