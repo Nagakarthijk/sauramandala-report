@@ -72,17 +72,18 @@ const DriveAI = (() => {
         body: JSON.stringify({ transcript, mode }),
       });
       const data = await resp.json();
+      // Always log so devtools shows exactly what came back
+      console.log('[DriveAI] Response:', data);
       if (data.error) throw new Error(data.error);
       if (!data.fields) throw new Error('No fields returned from AI');
-      return data.fields;
+      return { fields: data.fields, raw: data._raw || '', provider: data._provider || '' };
     } catch (err) {
       console.warn('[DriveAI] API call failed:', err.message);
-      // Only use mock if this is clearly a demo/local environment with no API configured
       const isDemoMode = !navigator.onLine ||
         window.location.hostname === 'localhost' ||
         window.location.hostname === '127.0.0.1';
-      if (isDemoMode) return _mockExtract(transcript, mode);
-      throw err; // re-throw so _runExtract can show the error
+      if (isDemoMode) return { fields: _mockExtract(transcript, mode), raw: '', provider: 'demo' };
+      throw err;
     }
   }
 
@@ -216,31 +217,40 @@ const DriveAI = (() => {
     if (preview)    preview.style.display = 'none';
     if (confirmBtn) confirmBtn.style.display = 'none';
 
-    let fields;
+    let result;
     try {
-      fields = await extract(text, mode);
+      result = await extract(text, mode);
     } catch (err) {
       if (status) status.textContent = `⚠ AI error: ${err.message}`;
       if (extractBtn) { extractBtn.disabled = false; extractBtn.textContent = '✨ Extract & Fill Fields'; }
       return;
     }
 
-    if (!fields) {
+    if (!result) {
       if (status) status.textContent = 'Nothing extracted — try adding more detail.';
       if (extractBtn) { extractBtn.disabled = false; extractBtn.textContent = '✨ Extract & Fill Fields'; }
       return;
     }
 
+    const fields = result.fields || result; // handle both shapes
+    console.log('[DriveAI] Fields to fill:', fields);
+
     // Restore extract button
     if (extractBtn) { extractBtn.disabled = false; extractBtn.textContent = '✨ Extract & Fill Fields'; }
 
-    // Show preview
+    // Show preview — also show raw if no parsed fields (debug aid)
     if (preview) {
-      const lines = Object.entries(fields)
-        .filter(([, v]) => v && (typeof v === 'string' ? v.trim() : true))
-        .map(([k, v]) => `<b>${k.replace(/_/g, ' ')}:</b> ${Array.isArray(v) ? v.join(', ') : v}`)
-        .join('<br>');
-      preview.innerHTML = lines || 'Nothing extracted — try adding more detail to your note.';
+      const entries = Object.entries(fields).filter(([, v]) => v && (typeof v === 'string' ? v.trim() : Array.isArray(v) ? v.length : true));
+      let html;
+      if (entries.length) {
+        html = entries.map(([k, v]) => `<b>${k.replace(/_/g, ' ')}:</b> ${Array.isArray(v) ? v.join(', ') : v}`).join('<br>');
+      } else {
+        const raw = result.raw || '';
+        html = raw
+          ? `<span style="color:#92400e">⚠ AI responded but no fields were parsed. Raw: <i>${raw.slice(0, 200)}</i></span>`
+          : 'No fields extracted — try adding more detail (name, phone, location, business type).';
+      }
+      preview.innerHTML = html;
       preview.style.display = 'block';
     }
 

@@ -140,13 +140,19 @@ export default async (request) => {
     const raw = await callAI(systemPrompt, transcript, provider, apiKey, model);
 
     let fields;
-    try { fields = JSON.parse(raw); }
-    catch {
-      const match = raw.match(/\{[\s\S]*\}/);
-      fields = match ? JSON.parse(match[0]) : { summary: raw };
+    try {
+      // Strip markdown fences if model wrapped the JSON
+      const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+      fields = JSON.parse(cleaned);
+    } catch {
+      // Try to pull any {...} block out of prose wrapping
+      const match = raw.match(/\{[\s\S]*?\}/);
+      try { fields = match ? JSON.parse(match[0]) : {}; }
+      catch { fields = {}; }
     }
 
-    return new Response(JSON.stringify({ fields }), {
+    // Return raw alongside fields so client can debug if fields are empty
+    return new Response(JSON.stringify({ fields, _raw: raw, _provider: provider, _model: model }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
