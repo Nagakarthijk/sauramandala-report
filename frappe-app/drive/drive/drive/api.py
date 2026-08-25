@@ -236,21 +236,99 @@ def add_conversation_note(entrepreneur, note_type="visit", content=""):
 
 
 # ── AI Extraction ─────────────────────────────────────────────────────────────
+#
+# Configurable via site_config.json — change provider without touching code:
+#
+#   bench --site <site> set-config ai_provider openrouter   # or: anthropic | google | groq | ollama
+#   bench --site <site> set-config ai_api_key  <your-key>
+#   bench --site <site> set-config ai_model    "google/gemini-flash-1.5-8b:free"  # optional
+#
+# Free options:
+#   openrouter  — https://openrouter.ai          many free models, unified API
+#   google      — https://aistudio.google.com    Gemini Flash free tier (1M tokens/day)
+#   groq        — https://console.groq.com       Llama 3.3 free tier, very fast
+#   ollama      — self-hosted on this server      completely free, no key needed
+#   anthropic   — https://console.anthropic.com  Claude Haiku (~₹0.08/note), best quality
+
+_AI_DEFAULT_MODELS = {
+    "openrouter": "google/gemini-flash-1.5-8b:free",
+    "anthropic":  "claude-haiku-4-5-20251001",
+    "google":     "gemini-1.5-flash-8b",
+    "groq":       "llama-3.3-70b-versatile",
+    "ollama":     "llama3.2",
+}
+
+_AI_ENDPOINTS = {
+    "openrouter": "https://openrouter.ai/api/v1/chat/completions",
+    "google":     "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    "groq":       "https://api.groq.com/openai/v1/chat/completions",
+}
+
+
+def _ai_call(system_prompt, user_content):
+    """Route an AI call to whichever provider is configured in site_config."""
+    provider = frappe.conf.get("ai_provider", "openrouter")
+    # support legacy anthropic_api_key for backwards compat
+    api_key = frappe.conf.get("ai_api_key") or frappe.conf.get("anthropic_api_key", "")
+    model = frappe.conf.get("ai_model") or _AI_DEFAULT_MODELS.get(provider, "google/gemini-flash-1.5-8b:free")
+
+    if not api_key and provider != "ollama":
+        frappe.throw(_(
+            "AI not configured. Set ai_provider and ai_api_key in site config:\n"
+            "  bench --site {site} set-config ai_provider openrouter\n"
+            "  bench --site {site} set-config ai_api_key sk-or-...\n"
+            "Free options: openrouter (many free models), google (Gemini), groq (Llama)."
+        ))
+
+    if provider == "anthropic":
+        resp = _requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": model,
+                "max_tokens": 400,
+                "system": system_prompt,
+                "messages": [{"role": "user", "content": user_content}],
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        return (resp.json().get("content") or [{}])[0].get("text", "")
+
+    # OpenAI-compatible: openrouter, google, groq, ollama
+    if provider == "ollama":
+        base = frappe.conf.get("ollama_url", "http://localhost:11434")
+        endpoint = base.rstrip("/") + "/v1/chat/completions"
+    else:
+        endpoint = _AI_ENDPOINTS.get(provider, _AI_ENDPOINTS["openrouter"])
+
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    if provider == "openrouter":
+        headers["HTTP-Referer"] = "https://sauramandala.org"
+        headers["X-Title"] = "DRIVE Field App"
+
+    resp = _requests.post(endpoint, headers=headers, json={
+        "model": model,
+        "max_tokens": 400,
+        "temperature": 0.1,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user",   "content": user_content},
+        ],
+    }, timeout=30)
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"]
+
 
 @frappe.whitelist()
 def ai_extract(transcript, mode="general"):
-    """
-    Call Claude Haiku to extract structured fields from a voice/text note.
-    Requires 'anthropic_api_key' set in site_config.json:
-        bench --site yoursite.com set-config anthropic_api_key sk-ant-...
-    """
-    api_key = frappe.conf.get("anthropic_api_key", "")
-    if not api_key:
-        frappe.throw(
-            _("AI not configured. Ask your admin to run: "
-              "bench --site yoursite set-config anthropic_api_key sk-ant-...")
-        )
-
+    """Extract structured fields from a voice/text note using the configured AI provider."""
     system_prompts = {
         "entrepreneur": (
             "You extract structured data from a field agent's spoken notes about "
@@ -283,24 +361,7 @@ def ai_extract(transcript, mode="general"):
         ),
     }
 
-    resp = _requests.post(
-        "https://api.anthropic.com/v1/messages",
-        headers={
-            "x-api-key": api_key,
-            "anthropic-version": "2023-06-01",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": "claude-haiku-4-5-20251001",
-            "max_tokens": 400,
-            "system": system_prompts.get(mode, system_prompts["general"]),
-            "messages": [{"role": "user", "content": transcript}],
-        },
-        timeout=30,
-    )
-
-    data = resp.json()
-    raw = (data.get("content") or [{}])[0].get("text", "")
+    raw = _ai_call(system_prompts.get(mode, system_prompts["general"]), transcript)
 
     try:
         fields = json.loads(raw)
