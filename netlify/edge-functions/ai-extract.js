@@ -11,7 +11,7 @@
 const DEFAULT_MODELS = {
   openrouter: 'meta-llama/llama-3.1-8b-instruct',
   anthropic:  'claude-haiku-4-5-20251001',
-  google:     'gemini-1.5-flash',
+  google:     'gemini-2.0-flash',
   groq:       'llama-3.1-8b-instant',
 };
 
@@ -62,8 +62,8 @@ async function callAI(systemPrompt, userContent, provider, apiKey, model) {
   }
 
   if (provider === 'google') {
-    // Use Google's native generateContent API — more reliable than their OpenAI wrapper
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    // Use Google's native generateContent API
+    const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
