@@ -9,6 +9,11 @@ run it against your own project with either method below.
 1. Create a project at https://supabase.com/dashboard (or run Supabase
    self-hosted via Docker — see https://supabase.com/docs/guides/self-hosting).
 2. Open **SQL Editor** → paste the contents of `migrations/0001_init.sql` → **Run**.
+   If you already ran an older copy of this file (before the RLS fix below
+   was folded in) and are seeing `infinite recursion detected in policy for
+   relation "project_members"`, you don't need to redo anything from
+   scratch — just also run `migrations/0002_fix_membership_recursion.sql`
+   once against the same project; it only replaces the affected policies.
 3. In **Project Settings → API**, copy the Project URL and `anon` key into
    the app's `.env.local` (see `.env.example` at the repo root) as
    `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Copy the

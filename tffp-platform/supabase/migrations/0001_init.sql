@@ -300,6 +300,54 @@ create trigger transcript_segments_protect_reviewed
 -- ROW LEVEL SECURITY
 -- ═══════════════════════════════════════════════════════════════
 
+-- Membership checks below go through these SECURITY DEFINER functions
+-- rather than an inline "select ... from project_members" subquery.
+-- A policy on project_members (or on any table whose policy reads
+-- project_members) that queries project_members inline recurses: that
+-- inner read is itself subject to the same policy, forever, and
+-- Postgres errors with "infinite recursion detected in policy for
+-- relation project_members". A security definer function runs as its
+-- owner (who owns the table) instead of the calling user, so its
+-- internal query bypasses RLS on project_members entirely.
+
+create or replace function is_project_member(target_project_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from project_members
+    where project_id = target_project_id and user_id = auth.uid()
+  );
+$$;
+
+create or replace function is_project_lead(target_project_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from project_members
+    where project_id = target_project_id and user_id = auth.uid() and role = 'lead'
+  );
+$$;
+
+create or replace function project_has_no_members(target_project_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select not exists (
+    select 1 from project_members where project_id = target_project_id
+  );
+$$;
+
 alter table projects            enable row level security;
 alter table project_members     enable row level security;
 alter table field_visits        enable row level security;
@@ -322,22 +370,16 @@ alter table activity_log        enable row level security;
 -- in the same step). Only members may see/update it; only leads delete it.
 
 create policy "members can read their projects" on projects
-  for select using (
-    id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for select using (is_project_member(id));
 
 create policy "authenticated users can create projects" on projects
   for insert with check (auth.uid() is not null);
 
 create policy "leads can update their projects" on projects
-  for update using (
-    id in (select project_id from project_members where user_id = auth.uid() and role = 'lead')
-  );
+  for update using (is_project_lead(id));
 
 create policy "leads can delete their projects" on projects
-  for delete using (
-    id in (select project_id from project_members where user_id = auth.uid() and role = 'lead')
-  );
+  for delete using (is_project_lead(id));
 
 -- ── project_members ──
 -- Members can see the roster of their own projects. A user may insert
@@ -345,110 +387,66 @@ create policy "leads can delete their projects" on projects
 -- (this is how project creation bootstraps), or a lead may add others.
 
 create policy "members can read project roster" on project_members
-  for select using (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for select using (is_project_member(project_id));
 
 create policy "bootstrap lead or existing lead can add members" on project_members
   for insert with check (
-    (
-      user_id = auth.uid()
-      and not exists (
-        select 1 from project_members pm2 where pm2.project_id = project_members.project_id
-      )
-    )
-    or exists (
-      select 1 from project_members pm2
-      where pm2.project_id = project_members.project_id
-        and pm2.user_id = auth.uid()
-        and pm2.role = 'lead'
-    )
+    (user_id = auth.uid() and project_has_no_members(project_id))
+    or is_project_lead(project_id)
   );
 
 create policy "leads can update member roles" on project_members
-  for update using (
-    project_id in (select project_id from project_members where user_id = auth.uid() and role = 'lead')
-  );
+  for update using (is_project_lead(project_id));
 
 create policy "leads can remove members" on project_members
-  for delete using (
-    project_id in (select project_id from project_members where user_id = auth.uid() and role = 'lead')
-  );
+  for delete using (is_project_lead(project_id));
 
 -- ── generic "members only" policy, applied to every remaining
 --    project-scoped table (all of them carry a project_id column) ──
 
 create policy "members only" on field_visits
-  for all using (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for all using (is_project_member(project_id));
 
 create policy "members only" on recordings
-  for all using (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for all using (is_project_member(project_id));
 
 create policy "members only" on transcript_segments
-  for all using (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for all using (is_project_member(project_id));
 
 create policy "members only" on story_seeds
-  for all using (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for all using (is_project_member(project_id));
 
 create policy "members only" on books
-  for all using (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for all using (is_project_member(project_id));
 
 create policy "members only" on manuscripts
-  for all using (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for all using (is_project_member(project_id));
 
 create policy "members only" on editorial_rounds
-  for all using (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for all using (is_project_member(project_id));
 
 create policy "members only" on illustration_jobs
-  for all using (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for all using (is_project_member(project_id));
 
 create policy "members only" on illustration_pages
-  for all using (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for all using (is_project_member(project_id));
 
 create policy "members only" on translations
-  for all using (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for all using (is_project_member(project_id));
 
 create policy "members only" on readalongs
-  for all using (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for all using (is_project_member(project_id));
 
 create policy "members only" on comments
-  for all using (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for all using (is_project_member(project_id));
 
 -- activity_log is append-only: members can read and insert, never edit/delete
 
 create policy "members can read activity" on activity_log
-  for select using (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for select using (is_project_member(project_id));
 
 create policy "members can log activity" on activity_log
-  for insert with check (
-    project_id in (select project_id from project_members where user_id = auth.uid())
-  );
+  for insert with check (is_project_member(project_id));
 
 -- ═══════════════════════════════════════════════════════════════
 -- STORAGE
