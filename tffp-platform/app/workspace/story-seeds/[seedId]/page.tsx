@@ -15,7 +15,8 @@ import { ChecklistEditor } from '@/components/workspace/ChecklistEditor';
 import { Select, Field, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Comments } from '@/components/comments/Comments';
-import type { StorySeed } from '@/lib/types';
+import { ParallelCorpusPreview } from '@/components/workspace/ParallelCorpusPreview';
+import type { StorySeed, Recording, TranscriptSegment } from '@/lib/types';
 
 export default async function StorySeedDetailPage({ params }: { params: { seedId: string } }) {
   const { supabase, project, role } = await requireProject();
@@ -32,11 +33,20 @@ export default async function StorySeedDetailPage({ params }: { params: { seedId
   const writable = canWrite(role, 'story_seeds');
   const wordCount = (seed.condensed_text ?? '').trim().split(/\s+/).filter(Boolean).length;
 
-  const { data: existingBook } = await supabase
-    .from('books')
-    .select('id')
-    .eq('story_seed_id', seed.id)
-    .maybeSingle();
+  const [{ data: existingBook }, { data: recording }, { data: segmentsData }] = await Promise.all([
+    supabase.from('books').select('id').eq('story_seed_id', seed.id).maybeSingle(),
+    seed.recording_id
+      ? supabase.from('recordings').select('*').eq('id', seed.recording_id).maybeSingle<Recording>()
+      : Promise.resolve({ data: null }),
+    seed.recording_id
+      ? supabase
+          .from('transcript_segments')
+          .select('*')
+          .eq('recording_id', seed.recording_id)
+          .order('segment_order', { ascending: true })
+          .returns<TranscriptSegment[]>()
+      : Promise.resolve({ data: null }),
+  ]);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -44,6 +54,29 @@ export default async function StorySeedDetailPage({ params }: { params: { seedId
         ← Story seeds
       </Link>
       <h1 className="font-heading text-2xl">{seed.working_title || 'Untitled seed'}</h1>
+
+      <Card>
+        <CardHeader
+          title="Source"
+          subtitle={
+            recording
+              ? `${recording.speaker_name || 'Unnamed speaker'} · ${recording.language_code || 'language unset'}`
+              : 'No recording linked to this seed'
+          }
+          action={
+            recording ? (
+              <Link href={`/workspace/transcripts/${recording.id}`} className="text-sm text-forest hover:underline">
+                Open full transcript editor →
+              </Link>
+            ) : undefined
+          }
+        />
+        {recording && (
+          <CardBody>
+            <ParallelCorpusPreview segments={segmentsData ?? []} />
+          </CardBody>
+        )}
+      </Card>
 
       <Card>
         <CardHeader title="Condensation" subtitle={`${wordCount} words · target 400–700`} />
