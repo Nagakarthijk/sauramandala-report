@@ -136,6 +136,7 @@ export default async function FieldVisitDetailPage({ params }: { params: { id: s
           <MediaGallery
             media={media}
             writable={writable}
+            projectId={project.id}
             addAction={addFieldVisitMedia.bind(null, visit.id)}
             deleteAction={(mediaId) => deleteFieldVisitMedia(mediaId, visit.id)}
           />

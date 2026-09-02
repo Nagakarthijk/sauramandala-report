@@ -64,6 +64,33 @@ Security — see the policy comments in the migration.
 3. Log a field visit → add a recording → open its transcript and start
    typing. That's the core loop.
 
+## File uploads
+
+Every "file reference" field in the app (field visit media, illustration
+asset artwork, illustration pages) accepts either a pasted link *or* an
+actual file upload — both feed the same text field, so they're
+interchangeable.
+
+- **Photos, documents, illustration artwork** upload straight into the
+  `tffp-assets` Supabase Storage bucket (already created by
+  `0001_init.sql`) — no extra setup, works as soon as your Supabase
+  project is connected. See `components/workspace/FileUploadButton.tsx`.
+- **Audio and video** (field recordings, readalong narration) don't have
+  an in-app upload path yet — paste a link (Drive, wherever) as before.
+  Supabase's free-tier storage is too small for hours of field audio, so
+  the plan is to route these to Google Drive instead once it's wired up:
+  1. Create a project at https://console.cloud.google.com, enable the
+     **Google Drive API**.
+  2. Configure the OAuth consent screen (internal or external, your
+     call) and create an **OAuth 2.0 Client ID** (type: Web application),
+     with an authorized redirect URI you'll point at this app once the
+     integration exists (e.g. `<app-url>/api/drive/callback`).
+  3. Add the client ID and secret as env vars
+     (`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`) in Netlify.
+  4. Share those two values here and the OAuth connect flow + Drive
+     upload button get built against them — nothing else is needed on
+     your end after that.
+
 ## Deploying
 
 ### Netlify
@@ -123,8 +150,10 @@ listed above.
   one works out of the box for low volume). Without it, add a
   `project_members` row manually via the Supabase dashboard.
 - **Illustration annotation** is a lightweight click-and-drag bounding
-  box on top of an image URL — no image upload/hosting is built in
-  in.  Point `file_reference` at wherever the art actually lives.
+  box on top of an image URL — works with either an uploaded or pasted
+  `file_reference`.
+- **Video/audio upload** isn't built yet — see "File uploads" above for
+  the Google Drive setup needed before that can happen.
 - No automated test suite yet — this was verified with `npm run build`,
   `npm run lint`, `tsc --noEmit`, and a smoke test of every public route.
   Test the transcript editor with a real recording before wider rollout,

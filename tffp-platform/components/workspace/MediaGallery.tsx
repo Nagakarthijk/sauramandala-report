@@ -5,6 +5,7 @@ import type { FieldVisitMedia, MediaType } from '@/lib/types';
 import { Badge } from '@/components/ui/Badge';
 import { Field, Input, Select, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { FileRefsField } from '@/components/workspace/FileRefsField';
 import { looksLikeImageUrl } from '@/lib/utils';
 
 const TYPE_COLOR: Record<MediaType, 'forest' | 'turmeric' | 'rust' | 'indigo' | 'neutral'> = {
@@ -49,11 +50,13 @@ function MediaThumb({ item }: { item: FieldVisitMedia }) {
 export function MediaGallery({
   media,
   writable,
+  projectId,
   addAction,
   deleteAction,
 }: {
   media: FieldVisitMedia[];
   writable: boolean;
+  projectId?: string;
   addAction?: (formData: FormData) => void | Promise<void>;
   deleteAction?: (mediaId: string) => void | Promise<void>;
 }) {
@@ -145,15 +148,30 @@ export function MediaGallery({
                 hint={
                   mediaType === 'folder'
                     ? 'One Drive/Dropbox/etc folder link representing the whole batch'
-                    : 'One per line — paste as many as you have, they’ll all be tagged together'
+                    : mediaType === 'video' || mediaType === 'audio'
+                      ? 'One per line — paste Drive links or any URL (in-app upload for video/audio is coming)'
+                      : 'One per line, or upload below — mix and match freely'
                 }
               >
-                <Textarea
-                  id="file_reference"
-                  name="file_reference"
-                  rows={mediaType === 'folder' ? 1 : 4}
-                  placeholder={mediaType === 'folder' ? 'https://drive.google.com/drive/folders/…' : 'https://…\nhttps://…\nhttps://…'}
-                />
+                {projectId && (mediaType === 'photo' || mediaType === 'document' || mediaType === 'other') ? (
+                  <FileRefsField
+                    key={mediaType}
+                    id="file_reference"
+                    name="file_reference"
+                    projectId={projectId}
+                    pathPrefix="field-media"
+                    accept={mediaType === 'photo' ? 'image/*' : undefined}
+                    rows={4}
+                    placeholder="https://…&#10;https://…"
+                  />
+                ) : (
+                  <Textarea
+                    id="file_reference"
+                    name="file_reference"
+                    rows={mediaType === 'folder' ? 1 : 4}
+                    placeholder={mediaType === 'folder' ? 'https://drive.google.com/drive/folders/…' : 'https://…\nhttps://…\nhttps://…'}
+                  />
+                )}
               </Field>
               <Field label="Caption" htmlFor="caption" hint="applies to all, if set">
                 <Input id="caption" name="caption" />

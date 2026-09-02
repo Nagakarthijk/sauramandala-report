@@ -6,6 +6,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Field, Input, Select, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { FileRefsField } from '@/components/workspace/FileRefsField';
 import type { AssetCategory, IllustrationAsset } from '@/lib/types';
 
 const CATEGORIES: { value: AssetCategory; label: string }[] = [
@@ -61,7 +62,13 @@ export default async function AssetsPage() {
                 </h2>
                 <div className="space-y-2">
                   {items.map((asset) => (
-                    <AssetCard key={asset.id} asset={asset} writable={writable} usedInCount={usedCounts.get(asset.id) ?? 0} />
+                    <AssetCard
+                      key={asset.id}
+                      asset={asset}
+                      writable={writable}
+                      usedInCount={usedCounts.get(asset.id) ?? 0}
+                      projectId={project.id}
+                    />
                   ))}
                 </div>
               </div>
@@ -93,8 +100,16 @@ export default async function AssetsPage() {
               <Field label="Reference notes" htmlFor="reference_notes" hint="what makes this authentic — attire, materials, setting details">
                 <Textarea id="reference_notes" name="reference_notes" rows={2} />
               </Field>
-              <Field label="Artwork file references" htmlFor="artwork_file_references" hint="one link per line — sketches, angles, final art, once they exist">
-                <Textarea id="artwork_file_references" name="artwork_file_references" rows={3} placeholder="https://…&#10;https://…" />
+              <Field label="Artwork file references" htmlFor="artwork_file_references" hint="one link per line, or upload below — sketches, angles, final art, once they exist">
+                <FileRefsField
+                  id="artwork_file_references"
+                  name="artwork_file_references"
+                  projectId={project.id}
+                  pathPrefix="asset-artwork"
+                  accept="image/*"
+                  rows={3}
+                  placeholder="https://…&#10;https://…"
+                />
               </Field>
               <Field label="Tags" htmlFor="tags" hint="comma-separated">
                 <Input id="tags" name="tags" />

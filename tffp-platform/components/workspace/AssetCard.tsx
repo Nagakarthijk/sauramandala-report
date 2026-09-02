@@ -6,6 +6,7 @@ import { updateAsset, deleteAsset } from '@/app/workspace/assets/actions';
 import { Field, Input, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { FileRefsField } from '@/components/workspace/FileRefsField';
 import { looksLikeImageUrl } from '@/lib/utils';
 
 function ArtworkThumb({ url }: { url: string }) {
@@ -25,7 +26,17 @@ function ArtworkThumb({ url }: { url: string }) {
   return <div className="flex h-16 w-16 items-center justify-center rounded bg-ink/5 text-xl">🎨</div>;
 }
 
-export function AssetCard({ asset, writable, usedInCount }: { asset: IllustrationAsset; writable: boolean; usedInCount: number }) {
+export function AssetCard({
+  asset,
+  writable,
+  usedInCount,
+  projectId,
+}: {
+  asset: IllustrationAsset;
+  writable: boolean;
+  usedInCount: number;
+  projectId: string;
+}) {
   const [editing, setEditing] = useState(false);
 
   if (editing) {
@@ -46,12 +57,15 @@ export function AssetCard({ asset, writable, usedInCount }: { asset: Illustratio
         <Field label="Reference notes" htmlFor={`notes-${asset.id}`}>
           <Textarea id={`notes-${asset.id}`} name="reference_notes" rows={2} defaultValue={asset.reference_notes ?? ''} />
         </Field>
-        <Field label="Artwork file references" htmlFor={`art-${asset.id}`} hint="one link per line — sketches, angles, final art, all of it">
-          <Textarea
+        <Field label="Artwork file references" htmlFor={`art-${asset.id}`} hint="one link per line, or upload below — sketches, angles, final art, all of it">
+          <FileRefsField
             id={`art-${asset.id}`}
             name="artwork_file_references"
+            projectId={projectId}
+            pathPrefix="asset-artwork"
+            accept="image/*"
             rows={4}
-            defaultValue={asset.artwork_file_references.join('\n')}
+            initialValue={asset.artwork_file_references.join('\n')}
             placeholder="https://…&#10;https://…"
           />
         </Field>

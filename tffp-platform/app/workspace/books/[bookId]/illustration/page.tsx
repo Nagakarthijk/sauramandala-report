@@ -21,6 +21,7 @@ import { ParallelCorpusPreview } from '@/components/workspace/ParallelCorpusPrev
 import { MediaGallery } from '@/components/workspace/MediaGallery';
 import { ReferenceResourceEditor } from '@/components/workspace/ReferenceResourceEditor';
 import { AssetLinker } from '@/components/workspace/AssetLinker';
+import { FileRefsField } from '@/components/workspace/FileRefsField';
 import type {
   Book,
   IllustrationJob,
@@ -229,9 +230,17 @@ export default async function IllustrationPage({ params }: { params: { bookId: s
                   <Field
                     label="Artwork links"
                     htmlFor="file_reference"
-                    hint={`One per line, in page order — added starting at page ${pages.length + 1}`}
+                    hint={`One per line, or upload below, in page order — added starting at page ${pages.length + 1}`}
                   >
-                    <Textarea id="file_reference" name="file_reference" rows={3} placeholder="https://…&#10;https://…" />
+                    <FileRefsField
+                      id="file_reference"
+                      name="file_reference"
+                      projectId={project.id}
+                      pathPrefix="illustration-pages"
+                      accept="image/*"
+                      rows={3}
+                      placeholder="https://…&#10;https://…"
+                    />
                   </Field>
                   <Field label="Notes" htmlFor="notes" hint="applies to all pages added, if set">
                     <Input id="notes" name="notes" />
