@@ -7,6 +7,7 @@ const NAV: Array<{ href: string; label: string; screen: Parameters<typeof access
   { href: '/workspace/field-visits', label: 'Field visits', screen: 'field_visits' },
   { href: '/workspace/story-seeds', label: 'Story seeds', screen: 'story_seeds' },
   { href: '/workspace/books', label: 'Books', screen: 'books' },
+  { href: '/workspace/assets', label: 'Asset library', screen: 'assets' },
   { href: '/workspace/corpus', label: 'Corpus export', screen: 'corpus_export' },
   { href: '/workspace/settings', label: 'Settings', screen: 'settings' },
 ];

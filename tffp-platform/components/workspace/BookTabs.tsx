@@ -8,6 +8,7 @@ const TABS = [
   { segment: 'illustration', label: 'Illustration' },
   { segment: 'translations', label: 'Translations' },
   { segment: 'readalong', label: 'Readalong' },
+  { segment: 'publish', label: 'Publish' },
 ];
 
 export function BookTabs({ bookId, current }: { bookId: string; current: string }) {

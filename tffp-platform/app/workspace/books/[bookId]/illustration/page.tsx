@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireProject } from '@/lib/workspace';
 import { canWrite } from '@/lib/permissions';
@@ -5,9 +6,9 @@ import {
   createIllustrationJob,
   updateJobMeta,
   addIllustrationPage,
+  updateAuthenticityChecklist,
 } from '@/app/workspace/books/[bookId]/illustration/actions';
 import { AUTHENTICITY_CHECKLIST } from '@/lib/checklists';
-import { updateAuthenticityChecklist } from '@/app/workspace/books/[bookId]/illustration/actions';
 import { BookTabs } from '@/components/workspace/BookTabs';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Field, Input, Textarea } from '@/components/ui/Input';
@@ -16,7 +17,20 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ChecklistEditor } from '@/components/workspace/ChecklistEditor';
 import { MilestoneTracker } from '@/components/illustration-annotator/MilestoneTracker';
 import { ImageAnnotator } from '@/components/illustration-annotator/ImageAnnotator';
-import type { Book, IllustrationJob, IllustrationPage } from '@/lib/types';
+import { ParallelCorpusPreview } from '@/components/workspace/ParallelCorpusPreview';
+import { MediaGallery } from '@/components/workspace/MediaGallery';
+import { ReferenceResourceEditor } from '@/components/workspace/ReferenceResourceEditor';
+import { AssetLinker } from '@/components/workspace/AssetLinker';
+import type {
+  Book,
+  IllustrationJob,
+  IllustrationPage,
+  StorySeed,
+  Recording,
+  TranscriptSegment,
+  FieldVisitMedia,
+  IllustrationAsset,
+} from '@/lib/types';
 
 export default async function IllustrationPage({ params }: { params: { bookId: string } }) {
   const { supabase, project, role } = await requireProject();
@@ -29,6 +43,8 @@ export default async function IllustrationPage({ params }: { params: { bookId: s
     .single<Book>();
   if (!book) notFound();
 
+  const writable = canWrite(role, 'illustrations');
+
   const { data: job } = await supabase
     .from('illustration_jobs')
     .select('*')
@@ -36,8 +52,6 @@ export default async function IllustrationPage({ params }: { params: { bookId: s
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle<IllustrationJob>();
-
-  const writable = canWrite(role, 'illustrations');
 
   const { data: pagesData } = job
     ? await supabase
@@ -49,10 +63,104 @@ export default async function IllustrationPage({ params }: { params: { bookId: s
     : { data: [] as IllustrationPage[] };
   const pages = pagesData ?? [];
 
+  // Trace book -> story_seed -> recording -> field_visit, so the
+  // illustrator has the same source material the author worked from —
+  // the parallel corpus, field photos/video, and research resources —
+  // without having to go dig for it.
+  const { data: seed } = book.story_seed_id
+    ? await supabase.from('story_seeds').select('*').eq('id', book.story_seed_id).maybeSingle<StorySeed>()
+    : { data: null };
+
+  const { data: recording } = seed?.recording_id
+    ? await supabase.from('recordings').select('*').eq('id', seed.recording_id).maybeSingle<Recording>()
+    : { data: null };
+
+  const [{ data: segments }, { data: fieldMedia }] = await Promise.all([
+    recording
+      ? supabase
+          .from('transcript_segments')
+          .select('*')
+          .eq('recording_id', recording.id)
+          .order('segment_order', { ascending: true })
+          .returns<TranscriptSegment[]>()
+      : Promise.resolve({ data: null }),
+    recording?.field_visit_id
+      ? supabase
+          .from('field_visit_media')
+          .select('*')
+          .eq('field_visit_id', recording.field_visit_id)
+          .order('created_at', { ascending: false })
+          .returns<FieldVisitMedia[]>()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const [{ data: allAssets }, { data: bookAssetLinks }] = await Promise.all([
+    supabase.from('illustration_assets').select('*').eq('project_id', project.id).order('name').returns<IllustrationAsset[]>(),
+    supabase.from('book_assets').select('id, asset_id').eq('book_id', book.id),
+  ]);
+
+  const assetsById = new Map((allAssets ?? []).map((a) => [a.id, a]));
+  const linkedAssets = (bookAssetLinks ?? [])
+    .map((link) => {
+      const asset = assetsById.get(link.asset_id);
+      return asset ? { bookAssetId: link.id, asset } : null;
+    })
+    .filter((x): x is { bookAssetId: string; asset: IllustrationAsset } => x !== null);
+  const linkedAssetIds = new Set(linkedAssets.map((l) => l.asset.id));
+  const availableAssets = (allAssets ?? []).filter((a) => !linkedAssetIds.has(a.id));
+
+  const hasArtefacts = !!seed || !!recording || (fieldMedia && fieldMedia.length > 0);
+
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <h1 className="font-heading text-2xl">{book.working_title}</h1>
       <BookTabs bookId={book.id} current="illustration" />
+
+      {hasArtefacts && (
+        <Card>
+          <CardHeader
+            title="Source artefacts"
+            subtitle="Everything the author worked from — for authenticity, not just the illustration prompts."
+            action={
+              seed ? (
+                <Link href={`/workspace/story-seeds/${seed.id}`} className="text-sm text-forest hover:underline">
+                  Open story seed →
+                </Link>
+              ) : undefined
+            }
+          />
+          <CardBody className="space-y-4">
+            {recording && <ParallelCorpusPreview segments={segments ?? []} />}
+            {fieldMedia && fieldMedia.length > 0 && (
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-ink/80">Field assets</h3>
+                <MediaGallery media={fieldMedia} writable={false} />
+              </div>
+            )}
+            {seed && seed.reference_resources.length > 0 && (
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-ink/80">Research resources</h3>
+                <ReferenceResourceEditor initialResources={seed.reference_resources} writable={false} />
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader
+          title="Linked assets"
+          subtitle="Characters, scenes, and objects reused from the project library."
+          action={
+            <Link href="/workspace/assets" className="text-sm text-forest hover:underline">
+              Manage library →
+            </Link>
+          }
+        />
+        <CardBody>
+          <AssetLinker bookId={book.id} linked={linkedAssets} available={availableAssets} writable={writable} />
+        </CardBody>
+      </Card>
 
       {!job ? (
         <EmptyState

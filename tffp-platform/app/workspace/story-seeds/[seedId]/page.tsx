@@ -6,17 +6,20 @@ import {
   updateCondensedText,
   updateFilterChecklist,
   updateFilterOutcome,
+  updateReferenceResources,
   promoteToBook,
 } from '@/app/workspace/story-seeds/actions';
 import { STORY_SEED_REQUIRED_CHECKLIST, STORY_SEED_DISQUALIFYING_CHECKLIST } from '@/lib/checklists';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { AutoSaveTextarea } from '@/components/workspace/AutoSaveTextarea';
 import { ChecklistEditor } from '@/components/workspace/ChecklistEditor';
+import { ReferenceResourceEditor } from '@/components/workspace/ReferenceResourceEditor';
+import { MediaGallery } from '@/components/workspace/MediaGallery';
 import { Select, Field, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Comments } from '@/components/comments/Comments';
 import { ParallelCorpusPreview } from '@/components/workspace/ParallelCorpusPreview';
-import type { StorySeed, Recording, TranscriptSegment } from '@/lib/types';
+import type { StorySeed, Recording, TranscriptSegment, FieldVisitMedia } from '@/lib/types';
 
 export default async function StorySeedDetailPage({ params }: { params: { seedId: string } }) {
   const { supabase, project, role } = await requireProject();
@@ -48,6 +51,15 @@ export default async function StorySeedDetailPage({ params }: { params: { seedId
       : Promise.resolve({ data: null }),
   ]);
 
+  const { data: fieldMedia } = recording?.field_visit_id
+    ? await supabase
+        .from('field_visit_media')
+        .select('*')
+        .eq('field_visit_id', recording.field_visit_id)
+        .order('created_at', { ascending: false })
+        .returns<FieldVisitMedia[]>()
+    : { data: null };
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <Link href="/workspace/story-seeds" className="text-sm text-ink/50 hover:underline">
@@ -72,10 +84,27 @@ export default async function StorySeedDetailPage({ params }: { params: { seedId
           }
         />
         {recording && (
-          <CardBody>
+          <CardBody className="space-y-4">
             <ParallelCorpusPreview segments={segmentsData ?? []} />
+            {fieldMedia && fieldMedia.length > 0 && (
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-ink/80">Field assets from this visit</h3>
+                <MediaGallery media={fieldMedia} writable={false} />
+              </div>
+            )}
           </CardBody>
         )}
+      </Card>
+
+      <Card>
+        <CardHeader title="Research resources" subtitle="Reference material gathered while working this seed — visuals, facts, articles." />
+        <CardBody>
+          <ReferenceResourceEditor
+            initialResources={seed.reference_resources ?? []}
+            writable={writable}
+            action={updateReferenceResources.bind(null, seed.id)}
+          />
+        </CardBody>
       </Card>
 
       <Card>

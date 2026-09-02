@@ -95,6 +95,20 @@ export interface Recording {
   notes: string | null;
 }
 
+export type MediaType = 'photo' | 'video' | 'document' | 'audio' | 'other';
+
+export interface FieldVisitMedia {
+  id: string;
+  field_visit_id: string;
+  project_id: string;
+  created_at: string;
+  created_by: string | null;
+  media_type: MediaType;
+  file_reference: string | null;
+  caption: string | null;
+  tags: string[];
+}
+
 export interface CulturalTerm {
   term: string;
   language: string;
@@ -131,6 +145,15 @@ export interface TranscriptSegment {
 
 export type FilterChecklist = Record<string, boolean>;
 
+export type ResourceCategory = 'visual' | 'fact' | 'article' | 'other';
+
+export interface ReferenceResource {
+  title: string;
+  url: string;
+  category: ResourceCategory;
+  notes: string;
+}
+
 export interface StorySeed {
   id: string;
   project_id: string;
@@ -142,6 +165,7 @@ export interface StorySeed {
   filter_outcome: FilterOutcome | null;
   filter_notes: string | null;
   filter_checklist: FilterChecklist;
+  reference_resources: ReferenceResource[];
 }
 
 export interface ConceptNote {
@@ -151,6 +175,17 @@ export interface ConceptNote {
   style_preference?: string;
   community_region?: string;
   source_description?: string;
+}
+
+export interface Credit {
+  role: string;
+  name: string;
+}
+
+export interface PublicationMeta {
+  isbn?: string;
+  credits?: Credit[];
+  print_notes?: string;
 }
 
 export interface Book {
@@ -164,6 +199,31 @@ export interface Book {
   status: BookStatus;
   published_url: string | null;
   concept_note: ConceptNote;
+  publication_meta: PublicationMeta;
+}
+
+export type AssetCategory = 'character' | 'scene' | 'object' | 'other';
+
+export interface IllustrationAsset {
+  id: string;
+  project_id: string;
+  created_at: string;
+  created_by: string | null;
+  category: AssetCategory;
+  name: string;
+  description: string | null;
+  reference_notes: string | null;
+  artwork_file_reference: string | null;
+  tags: string[];
+}
+
+export interface BookAsset {
+  id: string;
+  book_id: string;
+  asset_id: string;
+  project_id: string;
+  created_at: string;
+  notes: string | null;
 }
 
 export interface ManuscriptPage {

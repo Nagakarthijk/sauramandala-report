@@ -16,6 +16,9 @@ import type {
   IllustrationPage,
   Readalong,
   Comment,
+  FieldVisitMedia,
+  IllustrationAsset,
+  BookAsset,
 } from '@/lib/types';
 
 export default async function CorpusPage() {
@@ -43,6 +46,9 @@ export default async function CorpusPage() {
     { data: illustrationPages },
     { data: readalongs },
     { data: comments },
+    { data: fieldVisitMedia },
+    { data: illustrationAssets },
+    { data: bookAssets },
   ] = await Promise.all([
     supabase.from('transcript_segments').select('*').eq('project_id', project.id).returns<TranscriptSegment[]>(),
     supabase.from('recordings').select('*').eq('project_id', project.id).returns<Recording[]>(),
@@ -56,6 +62,9 @@ export default async function CorpusPage() {
     supabase.from('illustration_pages').select('*').eq('project_id', project.id).returns<IllustrationPage[]>(),
     supabase.from('readalongs').select('*').eq('project_id', project.id).returns<Readalong[]>(),
     supabase.from('comments').select('*').eq('project_id', project.id).returns<Comment[]>(),
+    supabase.from('field_visit_media').select('*').eq('project_id', project.id).returns<FieldVisitMedia[]>(),
+    supabase.from('illustration_assets').select('*').eq('project_id', project.id).returns<IllustrationAsset[]>(),
+    supabase.from('book_assets').select('*').eq('project_id', project.id).returns<BookAsset[]>(),
   ]);
 
   const recordingsById = new Map<string, RecordingRef>(
@@ -98,6 +107,9 @@ export default async function CorpusPage() {
           translations: translations ?? [],
           readalongs: readalongs ?? [],
           comments: comments ?? [],
+          field_visit_media: fieldVisitMedia ?? [],
+          illustration_assets: illustrationAssets ?? [],
+          book_assets: bookAssets ?? [],
         }}
       />
     </div>

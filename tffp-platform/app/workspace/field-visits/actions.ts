@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { requireProject } from '@/lib/workspace';
 import { logActivity } from '@/lib/activity';
-import type { FieldVisitOutcome } from '@/lib/types';
+import type { FieldVisitOutcome, MediaType } from '@/lib/types';
 
 export async function createFieldVisit(formData: FormData) {
   const { supabase, project, user } = await requireProject();
@@ -59,5 +59,32 @@ export async function updateFieldVisitNotes(visitId: string, visit_notes: string
     .update({ visit_notes })
     .eq('id', visitId)
     .eq('project_id', project.id);
+  revalidatePath(`/workspace/field-visits/${visitId}`);
+}
+
+export async function addFieldVisitMedia(visitId: string, formData: FormData) {
+  const { supabase, project, user } = await requireProject();
+
+  const tagsRaw = String(formData.get('tags') || '').trim();
+  const tags = tagsRaw ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean) : [];
+
+  const { error } = await supabase.from('field_visit_media').insert({
+    field_visit_id: visitId,
+    project_id: project.id,
+    created_by: user.id,
+    media_type: String(formData.get('media_type') || 'photo') as MediaType,
+    file_reference: String(formData.get('file_reference') || '') || null,
+    caption: String(formData.get('caption') || '') || null,
+    tags,
+  });
+
+  if (error) console.error('add field visit media failed', error.message);
+
+  revalidatePath(`/workspace/field-visits/${visitId}`);
+}
+
+export async function deleteFieldVisitMedia(mediaId: string, visitId: string) {
+  const { supabase, project } = await requireProject();
+  await supabase.from('field_visit_media').delete().eq('id', mediaId).eq('project_id', project.id);
   revalidatePath(`/workspace/field-visits/${visitId}`);
 }

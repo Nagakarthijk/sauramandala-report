@@ -2,16 +2,22 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireProject } from '@/lib/workspace';
 import { canWrite } from '@/lib/permissions';
-import { updateFieldVisitChecklist, updateFieldVisitNotes } from '@/app/workspace/field-visits/actions';
+import {
+  updateFieldVisitChecklist,
+  updateFieldVisitNotes,
+  addFieldVisitMedia,
+  deleteFieldVisitMedia,
+} from '@/app/workspace/field-visits/actions';
 import { FIELD_VISIT_CHECKLIST } from '@/lib/checklists';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ChecklistEditor } from '@/components/workspace/ChecklistEditor';
 import { AutoSaveTextarea } from '@/components/workspace/AutoSaveTextarea';
+import { MediaGallery } from '@/components/workspace/MediaGallery';
 import { Comments } from '@/components/comments/Comments';
 import { formatDate } from '@/lib/utils';
-import type { FieldVisit, Recording } from '@/lib/types';
+import type { FieldVisit, Recording, FieldVisitMedia } from '@/lib/types';
 
 export default async function FieldVisitDetailPage({ params }: { params: { id: string } }) {
   const { supabase, project, role } = await requireProject();
@@ -25,12 +31,17 @@ export default async function FieldVisitDetailPage({ params }: { params: { id: s
 
   if (!visit) notFound();
 
-  const { data: recordingsData } = await supabase
-    .from('recordings')
-    .select('*')
-    .eq('field_visit_id', visit.id)
-    .returns<Recording[]>();
+  const [{ data: recordingsData }, { data: mediaData }] = await Promise.all([
+    supabase.from('recordings').select('*').eq('field_visit_id', visit.id).returns<Recording[]>(),
+    supabase
+      .from('field_visit_media')
+      .select('*')
+      .eq('field_visit_id', visit.id)
+      .order('created_at', { ascending: false })
+      .returns<FieldVisitMedia[]>(),
+  ]);
   const recordings = recordingsData ?? [];
+  const media = mediaData ?? [];
 
   const writable = canWrite(role, 'field_visits');
 
@@ -116,6 +127,18 @@ export default async function FieldVisitDetailPage({ params }: { params: { id: s
               ))}
             </ul>
           )}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader title="Media" subtitle="Photos, video, and other assets from this visit — beyond the audio recordings above." />
+        <CardBody>
+          <MediaGallery
+            media={media}
+            writable={writable}
+            addAction={addFieldVisitMedia.bind(null, visit.id)}
+            deleteAction={(mediaId) => deleteFieldVisitMedia(mediaId, visit.id)}
+          />
         </CardBody>
       </Card>
 

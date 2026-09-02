@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { requireProject } from '@/lib/workspace';
 import { logActivity } from '@/lib/activity';
 import { requestAiSuggestion } from '@/lib/integrations/ai';
-import type { FilterOutcome } from '@/lib/types';
+import type { FilterOutcome, ReferenceResource } from '@/lib/types';
 
 export async function createStorySeed(formData: FormData) {
   const { supabase, project, user } = await requireProject();
@@ -55,6 +55,16 @@ export async function updateFilterOutcome(seedId: string, formData: FormData) {
       filter_outcome: (String(formData.get('filter_outcome') || '') || null) as FilterOutcome | null,
       filter_notes: String(formData.get('filter_notes') || '') || null,
     })
+    .eq('id', seedId)
+    .eq('project_id', project.id);
+  revalidatePath(`/workspace/story-seeds/${seedId}`);
+}
+
+export async function updateReferenceResources(seedId: string, reference_resources: ReferenceResource[]) {
+  const { supabase, project } = await requireProject();
+  await supabase
+    .from('story_seeds')
+    .update({ reference_resources })
     .eq('id', seedId)
     .eq('project_id', project.id);
   revalidatePath(`/workspace/story-seeds/${seedId}`);

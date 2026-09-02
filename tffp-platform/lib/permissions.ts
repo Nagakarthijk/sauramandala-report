@@ -12,6 +12,7 @@ export type Screen =
   | 'editorial'
   | 'illustrations'
   | 'translations'
+  | 'assets'
   | 'corpus_export'
   | 'settings';
 
@@ -31,6 +32,7 @@ const MATRIX: Record<Screen, Record<Role, Access>> = {
   editorial: { lead: 'full', editor: 'full', writer: 'read', illustrator: 'read', ra: 'read', fellow: 'read', translator: 'read' },
   illustrations: { lead: 'full', editor: 'read', writer: 'read', illustrator: 'full', ra: 'read', fellow: 'read', translator: 'read' },
   translations: { lead: 'full', editor: 'full', writer: 'read', illustrator: 'read', ra: 'read', fellow: 'read', translator: 'own' },
+  assets: { lead: 'full', editor: 'full', writer: 'read', illustrator: 'full', ra: 'read', fellow: 'read', translator: 'none' },
   corpus_export: { lead: 'full', editor: 'none', writer: 'none', illustrator: 'none', ra: 'none', fellow: 'none', translator: 'none' },
   settings: { lead: 'full', editor: 'none', writer: 'none', illustrator: 'none', ra: 'none', fellow: 'none', translator: 'none' },
 };

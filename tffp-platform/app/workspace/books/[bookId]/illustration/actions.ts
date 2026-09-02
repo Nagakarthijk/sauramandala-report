@@ -86,6 +86,25 @@ export async function addIllustrationPage(jobId: string, bookId: string, formDat
   revalidatePath(`/workspace/books/${bookId}/illustration`);
 }
 
+export async function linkAsset(bookId: string, formData: FormData) {
+  const { supabase, project } = await requireProject();
+  const assetId = String(formData.get('asset_id') || '');
+  if (!assetId) return;
+
+  const { error } = await supabase
+    .from('book_assets')
+    .insert({ book_id: bookId, asset_id: assetId, project_id: project.id });
+
+  if (error) console.error('link asset failed', error.message);
+  revalidatePath(`/workspace/books/${bookId}/illustration`);
+}
+
+export async function unlinkAsset(bookAssetId: string, bookId: string) {
+  const { supabase, project } = await requireProject();
+  await supabase.from('book_assets').delete().eq('id', bookAssetId).eq('project_id', project.id);
+  revalidatePath(`/workspace/books/${bookId}/illustration`);
+}
+
 export async function updatePageAnnotations(
   pageId: string,
   bookId: string,
