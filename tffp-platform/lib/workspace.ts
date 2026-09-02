@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { debugLog } from '@/lib/debugLog';
 import type { Project, ProjectMember, Role } from '@/lib/types';
 
 export const CURRENT_PROJECT_COOKIE = 'tffp_project_id';
@@ -21,18 +22,24 @@ export interface Membership extends ProjectMember {
 // "server-side exception" screen. Treat it the same as "not signed in"
 // rather than crashing — worst case, the user has to sign in again.
 export async function getWorkspaceContext() {
+  await debugLog('getWorkspaceContext', 'start');
   const supabase = createClient();
 
   let user;
   try {
     const result = await supabase.auth.getUser();
     user = result.data.user;
+    await debugLog('getWorkspaceContext', 'getUser resolved', { hasUser: !!user, error: result.error?.message ?? null });
   } catch (err) {
+    await debugLog('getWorkspaceContext', 'getUser THREW', { error: String(err) });
     console.error('getUser() threw in getWorkspaceContext', err);
     redirect('/auth/login');
   }
 
-  if (!user) redirect('/auth/login');
+  if (!user) {
+    await debugLog('getWorkspaceContext', 'no user, redirecting to login');
+    redirect('/auth/login');
+  }
 
   let list: Membership[] = [];
   try {
@@ -42,16 +49,21 @@ export async function getWorkspaceContext() {
       .eq('user_id', user.id)
       .returns<Membership[]>();
     if (error) {
+      await debugLog('getWorkspaceContext', 'project_members query FAILED', { error: error.message, code: error.code });
       console.error('project_members query failed in getWorkspaceContext', error.message);
     } else {
       list = memberships ?? [];
+      await debugLog('getWorkspaceContext', 'project_members query ok', { count: list.length });
     }
   } catch (err) {
+    await debugLog('getWorkspaceContext', 'project_members query THREW', { error: String(err) });
     console.error('project_members query threw in getWorkspaceContext', err);
   }
 
   const requestedId = cookies().get(CURRENT_PROJECT_COOKIE)?.value;
   const membership = list.find((m) => m.project_id === requestedId) ?? list[0] ?? null;
+
+  await debugLog('getWorkspaceContext', 'returning', { hasMembership: !!membership, projectId: membership?.project_id ?? null });
 
   return {
     supabase,

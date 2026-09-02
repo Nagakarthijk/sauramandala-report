@@ -3,9 +3,12 @@ import { WaitingScreen } from '@/components/workspace/WaitingScreen';
 import { Sidebar } from '@/components/workspace/Sidebar';
 import { ProjectSwitcher } from '@/components/workspace/ProjectSwitcher';
 import { signOut } from '@/app/workspace/actions';
+import { debugLog } from '@/lib/debugLog';
 
 export default async function WorkspaceLayout({ children }: { children: React.ReactNode }) {
+  await debugLog('WorkspaceLayout', 'start');
   const { memberships, membership, role } = await getWorkspaceContext();
+  await debugLog('WorkspaceLayout', 'got context', { hasMembership: !!membership });
 
   if (!membership) {
     return <WaitingScreen />;
