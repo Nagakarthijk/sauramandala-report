@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { ChecklistEditor } from '@/components/workspace/ChecklistEditor';
 import { AutoSaveTextarea } from '@/components/workspace/AutoSaveTextarea';
 import { MediaGallery } from '@/components/workspace/MediaGallery';
+import { ErrorPanel } from '@/components/workspace/ErrorPanel';
 import { Comments } from '@/components/comments/Comments';
 import { formatDate } from '@/lib/utils';
 import type { FieldVisit, Recording, FieldVisitMedia } from '@/lib/types';
@@ -22,16 +23,19 @@ import type { FieldVisit, Recording, FieldVisitMedia } from '@/lib/types';
 export default async function FieldVisitDetailPage({ params }: { params: { id: string } }) {
   const { supabase, project, role } = await requireProject();
 
-  const { data: visit } = await supabase
+  const { data: visit, error: visitError } = await supabase
     .from('field_visits')
     .select('*')
     .eq('id', params.id)
     .eq('project_id', project.id)
     .single<FieldVisit>();
 
+  if (visitError && visitError.code !== 'PGRST116') {
+    return <ErrorPanel label="loading the field visit" error={visitError} />;
+  }
   if (!visit) notFound();
 
-  const [{ data: recordingsData }, { data: mediaData }] = await Promise.all([
+  const [recordingsResult, mediaResult] = await Promise.all([
     supabase.from('recordings').select('*').eq('field_visit_id', visit.id).returns<Recording[]>(),
     supabase
       .from('field_visit_media')
@@ -40,8 +44,16 @@ export default async function FieldVisitDetailPage({ params }: { params: { id: s
       .order('created_at', { ascending: false })
       .returns<FieldVisitMedia[]>(),
   ]);
-  const recordings = recordingsData ?? [];
-  const media = mediaData ?? [];
+
+  if (recordingsResult.error) {
+    return <ErrorPanel label="loading recordings" error={recordingsResult.error} />;
+  }
+  if (mediaResult.error) {
+    return <ErrorPanel label="loading field visit media" error={mediaResult.error} />;
+  }
+
+  const recordings = recordingsResult.data ?? [];
+  const media = mediaResult.data ?? [];
 
   const writable = canWrite(role, 'field_visits');
 

@@ -16,13 +16,21 @@ export async function Comments({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('comments')
     .select('*')
     .eq('target_table', targetTable)
     .eq('target_id', targetId)
     .order('created_at', { ascending: true })
     .returns<Comment[]>();
+
+  if (error) {
+    return (
+      <div className="rounded-md border border-rust/30 bg-rust/5 p-3 text-sm text-rust">
+        Error loading comments: {error.message}
+      </div>
+    );
+  }
 
   const comments = data ?? [];
   const topLevel = comments.filter((c) => !c.parent_id);
