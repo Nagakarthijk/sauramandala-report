@@ -39,7 +39,11 @@ export async function createProject(
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  const debugInfo = `[debug: app-user-id=${user.id} token(${debugDecodeJwt(session?.access_token)})]`;
+  const { data: whoami, error: whoamiError } = await supabase.rpc('whoami');
+  const dbSees = whoamiError
+    ? `whoami() rpc failed: ${whoamiError.message}`
+    : `db-sees uid=${whoami?.[0]?.uid ?? 'null'} role=${whoami?.[0]?.role ?? 'null'}`;
+  const debugInfo = `[debug: app-user-id=${user.id} token(${debugDecodeJwt(session?.access_token)}) ${dbSees}]`;
 
   const name = String(formData.get('name') ?? '').trim();
   const organisation = String(formData.get('organisation') ?? '').trim();
