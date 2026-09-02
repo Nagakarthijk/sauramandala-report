@@ -10,6 +10,22 @@ export interface CreateProjectState {
   error?: string;
 }
 
+// TEMPORARY debug helper — decodes a JWT's payload without verifying it,
+// purely so we can show what role/sub the database is actually seeing
+// for a failing request. Remove once the RLS issue is confirmed fixed.
+function debugDecodeJwt(token: string | undefined | null): string {
+  if (!token) return 'no access_token on session';
+  try {
+    const payloadSegment = token.split('.')[1];
+    const normalized = payloadSegment.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
+    const payload = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8'));
+    return `role=${payload.role ?? 'none'} sub=${payload.sub ?? 'none'} aud=${payload.aud ?? 'none'} exp=${payload.exp ?? 'none'}`;
+  } catch (e) {
+    return `decode failed: ${e instanceof Error ? e.message : String(e)}`;
+  }
+}
+
 export async function createProject(
   _prevState: CreateProjectState,
   formData: FormData
@@ -19,6 +35,11 @@ export async function createProject(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const debugInfo = `[debug: app-user-id=${user.id} token(${debugDecodeJwt(session?.access_token)})]`;
 
   const name = String(formData.get('name') ?? '').trim();
   const organisation = String(formData.get('organisation') ?? '').trim();
@@ -40,7 +61,7 @@ export async function createProject(
 
   if (error || !project) {
     console.error('create project failed', error?.message);
-    return { error: error?.message || 'Could not create the project. Check server logs.' };
+    return { error: `${error?.message || 'Could not create the project.'} ${debugInfo}` };
   }
 
   // Bootstraps under the "first member of a project with none yet" RLS
@@ -51,7 +72,7 @@ export async function createProject(
 
   if (memberError) {
     console.error('create lead membership failed', memberError.message);
-    return { error: memberError.message };
+    return { error: `${memberError.message} ${debugInfo}` };
   }
 
   await logActivity(supabase, {
