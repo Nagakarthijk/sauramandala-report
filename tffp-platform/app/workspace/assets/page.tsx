@@ -93,8 +93,8 @@ export default async function AssetsPage() {
               <Field label="Reference notes" htmlFor="reference_notes" hint="what makes this authentic — attire, materials, setting details">
                 <Textarea id="reference_notes" name="reference_notes" rows={2} />
               </Field>
-              <Field label="Artwork file reference" htmlFor="artwork_file_reference" hint="URL or path to the reference art, once it exists">
-                <Input id="artwork_file_reference" name="artwork_file_reference" placeholder="https://…" />
+              <Field label="Artwork file references" htmlFor="artwork_file_references" hint="one link per line — sketches, angles, final art, once they exist">
+                <Textarea id="artwork_file_references" name="artwork_file_references" rows={3} placeholder="https://…&#10;https://…" />
               </Field>
               <Field label="Tags" htmlFor="tags" hint="comma-separated">
                 <Input id="tags" name="tags" />

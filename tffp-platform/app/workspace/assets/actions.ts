@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireProject } from '@/lib/workspace';
 import { logActivity } from '@/lib/activity';
+import { parseLines } from '@/lib/utils';
 import type { AssetCategory } from '@/lib/types';
 
 export async function createAsset(formData: FormData) {
@@ -13,6 +14,7 @@ export async function createAsset(formData: FormData) {
 
   const tagsRaw = String(formData.get('tags') || '').trim();
   const tags = tagsRaw ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean) : [];
+  const artworkRaw = String(formData.get('artwork_file_references') || '');
 
   const { data, error } = await supabase
     .from('illustration_assets')
@@ -23,7 +25,7 @@ export async function createAsset(formData: FormData) {
       name,
       description: String(formData.get('description') || '') || null,
       reference_notes: String(formData.get('reference_notes') || '') || null,
-      artwork_file_reference: String(formData.get('artwork_file_reference') || '') || null,
+      artwork_file_references: parseLines(artworkRaw),
       tags,
     })
     .select()
@@ -51,6 +53,7 @@ export async function updateAsset(assetId: string, formData: FormData) {
 
   const tagsRaw = String(formData.get('tags') || '').trim();
   const tags = tagsRaw ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean) : [];
+  const artworkRaw = String(formData.get('artwork_file_references') || '');
 
   await supabase
     .from('illustration_assets')
@@ -58,7 +61,7 @@ export async function updateAsset(assetId: string, formData: FormData) {
       name: String(formData.get('name') || '').trim(),
       description: String(formData.get('description') || '') || null,
       reference_notes: String(formData.get('reference_notes') || '') || null,
-      artwork_file_reference: String(formData.get('artwork_file_reference') || '') || null,
+      artwork_file_references: parseLines(artworkRaw),
       tags,
     })
     .eq('id', assetId)

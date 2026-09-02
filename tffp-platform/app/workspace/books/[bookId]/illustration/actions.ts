@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireProject } from '@/lib/workspace';
 import { logActivity } from '@/lib/activity';
+import { parseLines } from '@/lib/utils';
 import type { IllustrationMilestone, PageAnnotation, AnnotationStatus } from '@/lib/types';
 
 export async function createIllustrationJob(bookId: string) {
@@ -70,18 +71,27 @@ export async function updateAuthenticityChecklist(jobId: string, checklist: Reco
 export async function addIllustrationPage(jobId: string, bookId: string, formData: FormData) {
   const { supabase, project } = await requireProject();
 
+  const references = parseLines(String(formData.get('file_reference') || ''));
+  if (references.length === 0) return;
+
   const { count } = await supabase
     .from('illustration_pages')
     .select('id', { count: 'exact', head: true })
     .eq('illustration_job_id', jobId);
 
-  await supabase.from('illustration_pages').insert({
+  const startingNumber = (count ?? 0) + 1;
+  const notes = String(formData.get('notes') || '') || null;
+
+  const rows = references.map((file_reference, i) => ({
     illustration_job_id: jobId,
     project_id: project.id,
-    page_number: (count ?? 0) + 1,
-    file_reference: String(formData.get('file_reference') || '') || null,
-    notes: String(formData.get('notes') || '') || null,
-  });
+    page_number: startingNumber + i,
+    file_reference,
+    notes,
+  }));
+
+  const { error } = await supabase.from('illustration_pages').insert(rows);
+  if (error) console.error('add illustration pages failed', error.message);
 
   revalidatePath(`/workspace/books/${bookId}/illustration`);
 }

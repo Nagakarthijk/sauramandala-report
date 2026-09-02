@@ -95,7 +95,7 @@ export interface Recording {
   notes: string | null;
 }
 
-export type MediaType = 'photo' | 'video' | 'document' | 'audio' | 'other';
+export type MediaType = 'photo' | 'video' | 'document' | 'audio' | 'folder' | 'other';
 
 export interface FieldVisitMedia {
   id: string;
@@ -213,7 +213,7 @@ export interface IllustrationAsset {
   name: string;
   description: string | null;
   reference_notes: string | null;
-  artwork_file_reference: string | null;
+  artwork_file_references: string[];
   tags: string[];
 }
 

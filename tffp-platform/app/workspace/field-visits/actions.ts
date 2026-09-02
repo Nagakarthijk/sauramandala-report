@@ -67,16 +67,37 @@ export async function addFieldVisitMedia(visitId: string, formData: FormData) {
 
   const tagsRaw = String(formData.get('tags') || '').trim();
   const tags = tagsRaw ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean) : [];
+  const mediaType = String(formData.get('media_type') || 'photo') as MediaType;
+  const caption = String(formData.get('caption') || '') || null;
+  const raw = String(formData.get('file_reference') || '').trim();
 
-  const { error } = await supabase.from('field_visit_media').insert({
+  // A folder link stands in for a whole batch — one row. Otherwise
+  // every non-empty line is treated as a separate file, so pasting a
+  // dozen links in one go tags them all at once with the same
+  // type/caption/tags rather than one submission per file.
+  const references =
+    mediaType === 'folder'
+      ? raw
+        ? [raw]
+        : []
+      : raw
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean);
+
+  if (references.length === 0) return;
+
+  const rows = references.map((file_reference) => ({
     field_visit_id: visitId,
     project_id: project.id,
     created_by: user.id,
-    media_type: String(formData.get('media_type') || 'photo') as MediaType,
-    file_reference: String(formData.get('file_reference') || '') || null,
-    caption: String(formData.get('caption') || '') || null,
+    media_type: mediaType,
+    file_reference,
+    caption,
     tags,
-  });
+  }));
+
+  const { error } = await supabase.from('field_visit_media').insert(rows);
 
   if (error) console.error('add field visit media failed', error.message);
 

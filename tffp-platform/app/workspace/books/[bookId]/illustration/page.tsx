@@ -225,18 +225,18 @@ export default async function IllustrationPage({ params }: { params: { bookId: s
               ))}
 
               {writable && (
-                <form action={addIllustrationPage.bind(null, job.id, book.id)} className="flex items-end gap-3 border-t border-ink/10 pt-4">
-                  <div className="flex-1">
-                    <Field label="Image URL" htmlFor="file_reference">
-                      <Input id="file_reference" name="file_reference" placeholder="https://…" />
-                    </Field>
-                  </div>
-                  <div className="flex-1">
-                    <Field label="Notes" htmlFor="notes" hint="optional">
-                      <Input id="notes" name="notes" />
-                    </Field>
-                  </div>
-                  <Button type="submit">+ Add page</Button>
+                <form action={addIllustrationPage.bind(null, job.id, book.id)} className="space-y-2 border-t border-ink/10 pt-4">
+                  <Field
+                    label="Artwork links"
+                    htmlFor="file_reference"
+                    hint={`One per line, in page order — added starting at page ${pages.length + 1}`}
+                  >
+                    <Textarea id="file_reference" name="file_reference" rows={3} placeholder="https://…&#10;https://…" />
+                  </Field>
+                  <Field label="Notes" htmlFor="notes" hint="applies to all pages added, if set">
+                    <Input id="notes" name="notes" />
+                  </Field>
+                  <Button type="submit">+ Add page(s)</Button>
                 </form>
               )}
             </CardBody>

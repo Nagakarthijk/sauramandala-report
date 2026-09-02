@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import type { ReferenceResource, ResourceCategory } from '@/lib/types';
 import { Badge } from '@/components/ui/Badge';
-import { Input, Select } from '@/components/ui/Input';
+import { Input, Select, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { parseLines } from '@/lib/utils';
 
 const CATEGORY_COLOR: Record<ResourceCategory, 'forest' | 'turmeric' | 'indigo' | 'neutral'> = {
   visual: 'indigo',
@@ -12,6 +13,16 @@ const CATEGORY_COLOR: Record<ResourceCategory, 'forest' | 'turmeric' | 'indigo' 
   article: 'turmeric',
   other: 'neutral',
 };
+
+function titleFromUrl(url: string): string {
+  try {
+    const { hostname, pathname } = new URL(url);
+    const last = pathname.split('/').filter(Boolean).pop();
+    return last ? decodeURIComponent(last).replace(/[-_]/g, ' ') : hostname;
+  } catch {
+    return url;
+  }
+}
 
 export function ReferenceResourceEditor({
   initialResources,
@@ -24,6 +35,9 @@ export function ReferenceResourceEditor({
 }) {
   const [resources, setResources] = useState<ReferenceResource[]>(initialResources);
   const [draft, setDraft] = useState<ReferenceResource>({ title: '', url: '', category: 'visual', notes: '' });
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkText, setBulkText] = useState('');
+  const [bulkCategory, setBulkCategory] = useState<ResourceCategory>('visual');
 
   function add() {
     if (!draft.title.trim()) return;
@@ -31,6 +45,16 @@ export function ReferenceResourceEditor({
     setResources(next);
     action?.(next);
     setDraft({ title: '', url: '', category: 'visual', notes: '' });
+  }
+
+  function addBulk() {
+    const urls = parseLines(bulkText);
+    if (urls.length === 0) return;
+    const added = urls.map((url) => ({ title: titleFromUrl(url), url, category: bulkCategory, notes: '' }));
+    const next = [...resources, ...added];
+    setResources(next);
+    action?.(next);
+    setBulkText('');
   }
 
   function remove(index: number) {
@@ -70,27 +94,71 @@ export function ReferenceResourceEditor({
       )}
 
       {writable && (
-        <div className="flex flex-wrap items-end gap-2 border-t border-ink/10 pt-3">
-          <div className="w-28">
-            <Select value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value as ResourceCategory }))}>
-              <option value="visual">Visual</option>
-              <option value="fact">Fact</option>
-              <option value="article">Article</option>
-              <option value="other">Other</option>
-            </Select>
+        <div className="border-t border-ink/10 pt-3">
+          <div className="mb-2 flex gap-3 text-xs">
+            <button
+              type="button"
+              className={!bulkMode ? 'font-medium text-forest' : 'text-ink/50 hover:underline'}
+              onClick={() => setBulkMode(false)}
+            >
+              One at a time
+            </button>
+            <button
+              type="button"
+              className={bulkMode ? 'font-medium text-forest' : 'text-ink/50 hover:underline'}
+              onClick={() => setBulkMode(true)}
+            >
+              Paste multiple links
+            </button>
           </div>
-          <div className="flex-1">
-            <Input placeholder="Title" value={draft.title} onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))} />
-          </div>
-          <div className="flex-1">
-            <Input placeholder="URL" value={draft.url} onChange={(e) => setDraft((d) => ({ ...d, url: e.target.value }))} />
-          </div>
-          <div className="flex-1">
-            <Input placeholder="Notes" value={draft.notes} onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))} />
-          </div>
-          <Button type="button" size="sm" onClick={add}>
-            + Add
-          </Button>
+
+          {!bulkMode ? (
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="w-28">
+                <Select value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value as ResourceCategory }))}>
+                  <option value="visual">Visual</option>
+                  <option value="fact">Fact</option>
+                  <option value="article">Article</option>
+                  <option value="other">Other</option>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <Input placeholder="Title" value={draft.title} onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))} />
+              </div>
+              <div className="flex-1">
+                <Input placeholder="URL" value={draft.url} onChange={(e) => setDraft((d) => ({ ...d, url: e.target.value }))} />
+              </div>
+              <div className="flex-1">
+                <Input placeholder="Notes" value={draft.notes} onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))} />
+              </div>
+              <Button type="button" size="sm" onClick={add}>
+                + Add
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-end gap-2">
+                <div className="w-28">
+                  <Select value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value as ResourceCategory)}>
+                    <option value="visual">Visual</option>
+                    <option value="fact">Fact</option>
+                    <option value="article">Article</option>
+                    <option value="other">Other</option>
+                  </Select>
+                </div>
+                <div className="flex-1 text-xs text-ink/50">applies to every link below — titles are guessed from the URL, editable after</div>
+              </div>
+              <Textarea
+                rows={4}
+                placeholder="https://…&#10;https://…&#10;https://…"
+                value={bulkText}
+                onChange={(e) => setBulkText(e.target.value)}
+              />
+              <Button type="button" size="sm" onClick={addBulk}>
+                + Add all
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -33,9 +33,9 @@ export function AssetLinker({
               <div>
                 <Badge color="indigo" className="mr-2">{asset.category}</Badge>
                 <span className="text-sm font-medium">{asset.name}</span>
-                {asset.artwork_file_reference && (
-                  <a href={asset.artwork_file_reference} target="_blank" rel="noreferrer" className="ml-2 text-xs text-forest hover:underline">
-                    view art ↗
+                {asset.artwork_file_references.length > 0 && (
+                  <a href={asset.artwork_file_references[0]} target="_blank" rel="noreferrer" className="ml-2 text-xs text-forest hover:underline">
+                    view art{asset.artwork_file_references.length > 1 ? ` (${asset.artwork_file_references.length})` : ''} ↗
                   </a>
                 )}
               </div>
