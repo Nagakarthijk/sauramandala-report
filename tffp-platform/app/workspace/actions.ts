@@ -6,7 +6,14 @@ import { createClient } from '@/lib/supabase/server';
 import { logActivity } from '@/lib/activity';
 import { CURRENT_PROJECT_COOKIE } from '@/lib/workspace';
 
-export async function createProject(formData: FormData) {
+export interface CreateProjectState {
+  error?: string;
+}
+
+export async function createProject(
+  _prevState: CreateProjectState,
+  formData: FormData
+): Promise<CreateProjectState> {
   const supabase = createClient();
   const {
     data: { user },
@@ -21,7 +28,9 @@ export async function createProject(formData: FormData) {
     ? languagesRaw.split(',').map((l) => l.trim()).filter(Boolean)
     : [];
 
-  if (!name || !organisation) return;
+  if (!name || !organisation) {
+    return { error: 'Project name and organisation are both required.' };
+  }
 
   const { data: project, error } = await supabase
     .from('projects')
@@ -31,7 +40,7 @@ export async function createProject(formData: FormData) {
 
   if (error || !project) {
     console.error('create project failed', error?.message);
-    return;
+    return { error: error?.message || 'Could not create the project. Check server logs.' };
   }
 
   // Bootstraps under the "first member of a project with none yet" RLS
@@ -42,7 +51,7 @@ export async function createProject(formData: FormData) {
 
   if (memberError) {
     console.error('create lead membership failed', memberError.message);
-    return;
+    return { error: memberError.message };
   }
 
   await logActivity(supabase, {
