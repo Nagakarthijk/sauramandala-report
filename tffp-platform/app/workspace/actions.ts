@@ -10,22 +10,6 @@ export interface CreateProjectState {
   error?: string;
 }
 
-// TEMPORARY debug helper — decodes a JWT's payload without verifying it,
-// purely so we can show what role/sub the database is actually seeing
-// for a failing request. Remove once the RLS issue is confirmed fixed.
-function debugDecodeJwt(token: string | undefined | null): string {
-  if (!token) return 'no access_token on session';
-  try {
-    const payloadSegment = token.split('.')[1];
-    const normalized = payloadSegment.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
-    const payload = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8'));
-    return `role=${payload.role ?? 'none'} sub=${payload.sub ?? 'none'} aud=${payload.aud ?? 'none'} exp=${payload.exp ?? 'none'}`;
-  } catch (e) {
-    return `decode failed: ${e instanceof Error ? e.message : String(e)}`;
-  }
-}
-
 export async function createProject(
   _prevState: CreateProjectState,
   formData: FormData
@@ -35,15 +19,6 @@ export async function createProject(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const { data: whoami, error: whoamiError } = await supabase.rpc('whoami');
-  const dbSees = whoamiError
-    ? `whoami() rpc failed: ${whoamiError.message}`
-    : `db-sees uid=${whoami?.[0]?.uid ?? 'null'} role=${whoami?.[0]?.role ?? 'null'}`;
-  const debugInfo = `[debug: app-user-id=${user.id} token(${debugDecodeJwt(session?.access_token)}) ${dbSees}]`;
 
   const name = String(formData.get('name') ?? '').trim();
   const organisation = String(formData.get('organisation') ?? '').trim();
@@ -57,37 +32,43 @@ export async function createProject(
     return { error: 'Project name and organisation are both required.' };
   }
 
-  const { data: project, error } = await supabase
-    .from('projects')
-    .insert({ name, organisation, region: region || null, languages })
-    .select()
-    .single();
+  // Generated here rather than read back via `.select()` after insert:
+  // Postgres requires a freshly-inserted row to also satisfy the
+  // table's SELECT policy for INSERT...RETURNING to succeed, and this
+  // user isn't a project_members row yet at the moment this row is
+  // created — that only happens in the next statement. Knowing the id
+  // upfront means we never need RETURNING for this insert at all.
+  const projectId = crypto.randomUUID();
 
-  if (error || !project) {
-    console.error('create project failed', error?.message);
-    return { error: `${error?.message || 'Could not create the project.'} ${debugInfo}` };
+  const { error: projectError } = await supabase
+    .from('projects')
+    .insert({ id: projectId, name, organisation, region: region || null, languages });
+
+  if (projectError) {
+    console.error('create project failed', projectError.message);
+    return { error: projectError.message };
   }
 
   // Bootstraps under the "first member of a project with none yet" RLS
   // policy — see supabase/migrations/0001_init.sql.
   const { error: memberError } = await supabase
     .from('project_members')
-    .insert({ project_id: project.id, user_id: user.id, role: 'lead' });
+    .insert({ project_id: projectId, user_id: user.id, role: 'lead' });
 
   if (memberError) {
     console.error('create lead membership failed', memberError.message);
-    return { error: `${memberError.message} ${debugInfo}` };
+    return { error: memberError.message };
   }
 
   await logActivity(supabase, {
-    projectId: project.id,
+    projectId,
     userId: user.id,
     action: 'project.created',
     targetTable: 'projects',
-    targetId: project.id,
+    targetId: projectId,
   });
 
-  cookies().set(CURRENT_PROJECT_COOKIE, project.id, { path: '/', maxAge: 60 * 60 * 24 * 365 });
+  cookies().set(CURRENT_PROJECT_COOKIE, projectId, { path: '/', maxAge: 60 * 60 * 24 * 365 });
   redirect('/workspace');
 }
 
