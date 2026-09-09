@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Forgotten Folklore Project — Digital Playbook</title>
+<meta name="description" content="A digital, scrollable edition of The Forgotten Folklore Project playbook: how a small team documented and published 65 children's picture books from Meghalaya and the Northeast.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23F0B429'/%3E%3Ccircle cx='22' cy='27' r='6' fill='%231A1208'/%3E%3Ccircle cx='42' cy='27' r='6' fill='%231A1208'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lemonada:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="pages-data.js"></script>
+
+<style>
+  :root {
+    --maroon: #6B0F2A;
+    --maroon-mid: #8B1535;
+    --mustard: #F0B429;
+    --paper: #FFFDF8;
+    --ink: #1A1208;
+    --forest: #2D5C3F;
+    --navy: #050A30;
+    --stage: #0A0E27;
+    --stage-2: #0d1230;
+    --nav-h: 52px;
+    --progress-h: 3px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+
+  body {
+    margin: 0;
+    background: var(--stage);
+    background-image: radial-gradient(ellipse 80% 60% at 50% 0%, var(--stage-2), var(--stage) 70%);
+    color: var(--paper);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  a { color: inherit; }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* ---------- Nav ---------- */
+
+  #nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--nav-h);
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    background: rgba(10, 14, 39, 0.86);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(240, 180, 41, 0.15);
+  }
+
+  #nav-logo {
+    font-family: 'Lemonada', cursive;
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: 0.02em;
+    color: var(--mustard);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 4px;
+    flex-shrink: 0;
+  }
+
+  #nav-chapters {
+    display: none;
+    gap: 4px;
+    list-style: none;
+    margin: 0; padding: 0 8px;
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+    mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 20px), transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 20px), transparent);
+  }
+  @media (min-width: 1100px) {
+    #nav-chapters {
+      justify-content: center;
+      mask-image: none;
+      -webkit-mask-image: none;
+    }
+  }
+  #nav-chapters::-webkit-scrollbar { display: none; }
+
+  @media (min-width: 640px) {
+    #nav-chapters { display: flex; }
+  }
+
+  #nav-chapters a {
+    display: block;
+    white-space: nowrap;
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: rgba(255, 253, 248, 0.6);
+    padding: 6px 10px;
+    border-radius: 999px;
+    transition: color 0.2s, background 0.2s;
+  }
+  #nav-chapters a:hover { color: var(--paper); }
+  #nav-chapters a.active {
+    color: var(--stage);
+    background: var(--mustard);
+    font-weight: 600;
+  }
+
+  #nav-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  #nav-page-indicator {
+    font-size: 0.72rem;
+    color: rgba(255, 253, 248, 0.55);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  #nav-toc-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--stage);
+    background: var(--mustard);
+    border: none;
+    border-radius: 999px;
+    padding: 7px 14px;
+    cursor: pointer;
+  }
+  #nav-toc-btn:hover { filter: brightness(1.08); }
+
+  /* ---------- Progress bar ---------- */
+
+  #progress-track {
+    position: fixed;
+    top: var(--nav-h);
+    left: 0; right: 0;
+    height: var(--progress-h);
+    background: rgba(255, 255, 255, 0.06);
+    z-index: 59;
+  }
+  #progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--maroon-mid), var(--mustard));
+    transform-origin: left;
+  }
+
+  /* ---------- TOC overlay ---------- */
+
+  #toc-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: #050614;
+    backdrop-filter: blur(6px);
+    overflow-y: auto;
+    padding: calc(var(--nav-h) + 24px) 20px 40px;
+  }
+  #toc-overlay[hidden] { display: none; }
+
+  #toc-inner {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  #toc-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  #toc-title {
+    font-family: 'Lemonada', cursive;
+    font-weight: 700;
+    font-size: 1.7rem;
+    color: var(--mustard);
+    margin: 0;
+  }
+
+  #toc-close {
+    background: none;
+    border: 1px solid rgba(255, 253, 248, 0.3);
+    color: var(--paper);
+    border-radius: 999px;
+    width: 36px; height: 36px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    line-height: 1;
+  }
+  #toc-close:hover { border-color: var(--mustard); color: var(--mustard); }
+
+  #toc-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  @media (min-width: 700px) {
+    #toc-grid { grid-template-columns: 1fr 1fr; gap: 2px 24px; }
+  }
+
+  .toc-row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 12px 8px;
+    text-decoration: none;
+    border-radius: 8px;
+    border-bottom: 1px solid rgba(255, 253, 248, 0.08);
+    transition: background 0.15s;
+  }
+  .toc-row:hover { background: rgba(240, 180, 41, 0.1); }
+
+  .toc-num {
+    font-family: 'Lemonada', cursive;
+    font-weight: 600;
+    color: var(--mustard);
+    min-width: 2.6em;
+    font-size: 0.95rem;
+  }
+  .toc-name {
+    flex: 1;
+    font-size: 0.95rem;
+    color: var(--paper);
+  }
+  .toc-page {
+    font-size: 0.78rem;
+    color: rgba(255, 253, 248, 0.45);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Cover ---------- */
+
+  #cover {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    min-height: 480px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--navy);
+  }
+
+  #cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    will-change: transform;
+  }
+
+  #scroll-cue {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: rgba(255, 253, 248, 0.6);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    animation: bob 2.2s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #scroll-cue { animation: none; }
+  }
+  @keyframes bob {
+    0%, 100% { transform: translate(-50%, 0); }
+    50% { transform: translate(-50%, 8px); }
+  }
+  #scroll-cue svg { width: 18px; height: 18px; }
+
+  /* ---------- Reader body ---------- */
+
+  #reader {
+    padding-top: calc(var(--nav-h) + var(--progress-h));
+  }
+
+  .page-block {
+    display: flex;
+    justify-content: center;
+    padding: 28px 16px;
+    opacity: 0;
+    transform: translateY(22px);
+    transition: opacity 0.55s ease, transform 0.55s ease;
+  }
+  .page-block.in-view {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .page-block { transition: none; opacity: 1; transform: none; }
+  }
+
+  .page-frame {
+    position: relative;
+    width: 100%;
+    max-width: 1100px;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+    background: var(--paper);
+  }
+
+  .page-frame img {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--paper);
+  }
+
+  /* spread = normal two-page-wide content image */
+  .page-block.type-spread .page-frame {
+    max-width: 1100px;
+  }
+
+  /* single = square inside-cover / closing pages: narrower, card-like */
+  .page-block.type-single .page-frame {
+    max-width: 460px;
+  }
+  .page-block.type-single {
+    padding: 40px 16px;
+  }
+
+  /* divider = chapter title page: larger emphasis, its own entrance style */
+  .page-block.type-divider {
+    padding: 56px 16px;
+    opacity: 0;
+    transform: scale(0.97);
+    transition: opacity 0.65s ease, transform 0.65s ease;
+  }
+  .page-block.type-divider.in-view {
+    opacity: 1;
+    transform: scale(1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .page-block.type-divider { transition: none; transform: none; }
+  }
+  .page-block.type-divider .page-frame {
+    max-width: 1150px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(240, 180, 41, 0.12);
+  }
+  .page-block.type-divider .page-frame img {
+    will-change: transform;
+  }
+
+  @media (min-width: 1024px) {
+    .page-frame { border-radius: 6px; }
+  }
+
+  @media (max-width: 639px) {
+    .page-block { padding: 18px 10px; }
+    .page-block.type-divider { padding: 32px 10px; }
+    .page-block.type-single .page-frame { max-width: 320px; }
+
+    #cover {
+      height: auto;
+      min-height: 0;
+      flex-direction: column;
+      padding: calc(var(--nav-h) + 28px) 0 36px;
+    }
+    #cover img { width: 100%; height: auto; object-fit: contain; }
+    #scroll-cue { position: static; margin-top: 20px; transform: none; }
+    @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
+  }
+
+  /* spine gap hint for wide screens on spreads (subtle, cosmetic only) */
+  @media (min-width: 1024px) {
+    .page-block.type-spread .page-frame::after {
+      content: "";
+      position: absolute;
+      top: 0; bottom: 0; left: 50%;
+      width: 1px;
+      background: rgba(0, 0, 0, 0.06);
+      pointer-events: none;
+    }
+  }
+
+  .chapter-tag {
+    text-align: center;
+    font-family: 'Lemonada', cursive;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(240, 180, 41, 0.55);
+    margin: 0 0 10px;
+  }
+
+  /* ---------- Page counter ---------- */
+
+  #page-counter {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    z-index: 50;
+    background: rgba(10, 14, 39, 0.82);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(240, 180, 41, 0.2);
+    color: var(--paper);
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    padding: 6px 12px;
+    border-radius: 999px;
+  }
+
+  #end-note {
+    text-align: center;
+    padding: 60px 20px 90px;
+    color: rgba(255, 253, 248, 0.5);
+    font-size: 0.85rem;
+  }
+  #end-note a { color: var(--mustard); text-decoration: none; }
+  #end-note a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<a class="visually-hidden" href="#reader">Skip to reading area</a>
+
+<nav id="nav" aria-label="Playbook navigation">
+  <button id="nav-logo" type="button" aria-haspopup="dialog" aria-controls="toc-overlay">TFFP</button>
+  <ul id="nav-chapters"></ul>
+  <div id="nav-right">
+    <span id="nav-page-indicator" aria-hidden="true">p. 1 / 110</span>
+    <button id="nav-toc-btn" type="button" aria-haspopup="dialog" aria-controls="toc-overlay">Contents</button>
+  </div>
+</nav>
+
+<div id="progress-track">
+  <div id="progress-fill" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+</div>
+
+<div id="toc-overlay" role="dialog" aria-modal="true" aria-label="Table of contents" hidden>
+  <div id="toc-inner">
+    <div id="toc-header">
+      <h2 id="toc-title">Table of Contents</h2>
+      <button id="toc-close" type="button" aria-label="Close table of contents">✕</button>
+    </div>
+    <div id="toc-grid"></div>
+  </div>
+</div>
+
+<header id="cover">
+  <img id="cover-img" src="pages/001.jpg" alt="" width="2000" height="1000">
+  <div id="scroll-cue" aria-hidden="true">
+    <span>Scroll to read</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+  </div>
+</header>
+
+<main id="reader">
+  <!-- page blocks injected here by script -->
+</main>
+
+<p id="end-note">
+  The Forgotten Folklore Project · Sauramandala Foundation, Meghalaya<br>
+  Artwork and writing throughout by Lanuangla Tsudir and the TFFP team.
+</p>
+
+<div id="page-counter" aria-hidden="true">1 / 110</div>
+
+<script>
+(function () {
+  var DATA = window.PLAYBOOK_DATA;
+  var TOTAL = DATA.total;
+  var reader = document.getElementById('reader');
+  var navChaptersEl = document.getElementById('nav-chapters');
+  var tocGrid = document.getElementById('toc-grid');
+  var pageIndicator = document.getElementById('nav-page-indicator');
+  var pageCounter = document.getElementById('page-counter');
+  var tocOverlay = document.getElementById('toc-overlay');
+
+  function pad3(n) { return String(n).padStart(3, '0'); }
+  function chapterAnchor(num) { return 'chapter-' + num.replace(/\./g, ''); }
+
+  // ---- Build nav chapter links (curated subset) ----
+  DATA.navChapters.forEach(function (ch) {
+    var li = document.createElement('li');
+    var a = document.createElement('a');
+    a.href = '#' + chapterAnchor(ch.num);
+    a.textContent = ch.title;
+    a.dataset.chapterNum = ch.num;
+    li.appendChild(a);
+    navChaptersEl.appendChild(li);
+  });
+
+  // ---- Build full TOC overlay (all 21 chapters) ----
+  DATA.chapters.forEach(function (ch) {
+    var a = document.createElement('a');
+    a.className = 'toc-row';
+    a.href = '#' + chapterAnchor(ch.num);
+    a.innerHTML =
+      '<span class="toc-num">' + ch.num + '</span>' +
+      '<span class="toc-name">' + ch.title + '</span>' +
+      '<span class="toc-page">p. ' + ch.page + '</span>';
+    a.addEventListener('click', function () { closeToc(); });
+    tocGrid.appendChild(a);
+  });
+
+  // ---- Build page blocks ----
+  var dividerAnchors = []; // {num, el}
+  var pageBlocks = []; // {n, type, el, img}
+
+  DATA.pages.forEach(function (p) {
+    if (p.n === 1) return; // cover handled separately
+
+    var section = document.createElement('section');
+    section.className = 'page-block type-' + p.type;
+    section.id = 'page-' + p.n;
+    section.dataset.page = p.n;
+
+    var chapterObj = null;
+    if (p.type === 'divider') {
+      chapterObj = DATA.chapters.find(function (c) { return c.page === p.n; });
+      if (chapterObj) section.id = chapterAnchor(chapterObj.num);
+    }
+
+    var frame = document.createElement('div');
+    frame.className = 'page-frame';
+
+    if (p.type === 'divider' && chapterObj) {
+      var tag = document.createElement('p');
+      tag.className = 'chapter-tag';
+      tag.textContent = 'Chapter ' + chapterObj.num;
+      section.appendChild(tag);
+    }
+
+    var img = document.createElement('img');
+    img.alt = p.alt || '';
+    img.width = 2000;
+    img.height = (p.type === 'single') ? 1800 : 1000;
+
+    // Eager-load the cover and the first few pages; lazy-load the rest.
+    if (p.n <= 6) {
+      img.src = 'pages/' + pad3(p.n) + '.jpg';
+      if (p.n > 2) img.loading = 'eager';
+    } else {
+      img.dataset.src = 'pages/' + pad3(p.n) + '.jpg';
+      img.loading = 'lazy';
+    }
+
+    frame.appendChild(img);
+    section.appendChild(frame);
+    reader.appendChild(section);
+
+    pageBlocks.push({ n: p.n, type: p.type, el: section, img: img });
+    if (p.type === 'divider') dividerAnchors.push({ num: chapterObj.num, page: p.n, el: section });
+  });
+
+  // ---- Lazy loading ----
+  var lazyObserver = new IntersectionObserver(function (entries, obs) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        var img = entry.target;
+        if (img.dataset.src) {
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+        }
+        obs.unobserve(img);
+      }
+    });
+  }, { rootMargin: '600px 0px', threshold: 0.01 });
+
+  pageBlocks.forEach(function (pb) {
+    if (pb.img.dataset.src) lazyObserver.observe(pb.img);
+  });
+
+  // ---- Entrance animation ----
+  var revealObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+      }
+    });
+  }, { threshold: 0.12 });
+
+  pageBlocks.forEach(function (pb) { revealObserver.observe(pb.el); });
+
+  // ---- Current-page tracking (page counter + nav active state + progress) ----
+  var currentPage = 1;
+  var visibility = {}; // page n -> intersection ratio
+
+  var currentPageObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      var n = parseInt(entry.target.dataset.page, 10);
+      visibility[n] = entry.isIntersecting ? entry.intersectionRatio : 0;
+    });
+    var best = 1, bestRatio = 0;
+    Object.keys(visibility).forEach(function (n) {
+      if (visibility[n] > bestRatio) { bestRatio = visibility[n]; best = parseInt(n, 10); }
+    });
+    if (bestRatio > 0) updateCurrentPage(best);
+  }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+
+  pageBlocks.forEach(function (pb) { currentPageObserver.observe(pb.el); });
+
+  function chapterForPage(n) {
+    var current = null;
+    for (var i = 0; i < DATA.chapters.length; i++) {
+      if (n >= DATA.chapters[i].page) current = DATA.chapters[i];
+      else break;
+    }
+    return current;
+  }
+
+  function updateCurrentPage(n) {
+    currentPage = n;
+    pageIndicator.textContent = 'p. ' + n + ' / ' + TOTAL;
+    pageCounter.textContent = n + ' / ' + TOTAL;
+
+    var ch = chapterForPage(n);
+    var links = navChaptersEl.querySelectorAll('a');
+    links.forEach(function (a) {
+      a.classList.toggle('active', !!ch && a.dataset.chapterNum === ch.num);
+    });
+  }
+
+  // ---- Scroll progress + parallax (single rAF-throttled handler) ----
+  var progressFill = document.getElementById('progress-fill');
+  var coverImg = document.getElementById('cover-img');
+  var ticking = false;
+
+  var parallaxTargets = [{ el: coverImg, speed: 0.4 }];
+  dividerAnchors.forEach(function (d) {
+    var img = d.el.querySelector('img');
+    parallaxTargets.push({ el: img, speed: 0.15 });
+  });
+
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function () {
+      var doc = document.documentElement;
+      var scrollTop = window.scrollY || doc.scrollTop;
+      var scrollHeight = doc.scrollHeight - doc.clientHeight;
+      var pct = scrollHeight > 0 ? Math.min(100, Math.max(0, (scrollTop / scrollHeight) * 100)) : 0;
+      progressFill.style.width = pct + '%';
+      progressFill.setAttribute('aria-valuenow', Math.round(pct));
+
+      if (!reduceMotion) {
+        parallaxTargets.forEach(function (t) {
+          var rect = t.el.getBoundingClientRect();
+          var offset = rect.top;
+          // Cap so the image never drifts far enough to reveal empty space.
+          var shift = Math.max(-60, Math.min(60, offset * t.speed * 0.15));
+          t.el.style.transform = 'translateY(' + shift + 'px)';
+        });
+      }
+      ticking = false;
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // ---- TOC open/close ----
+  var lastFocused = null;
+  function openToc() {
+    lastFocused = document.activeElement;
+    tocOverlay.hidden = false;
+    document.getElementById('toc-close').focus();
+    document.body.style.overflow = 'hidden';
+  }
+  function closeToc() {
+    tocOverlay.hidden = true;
+    document.body.style.overflow = '';
+    if (lastFocused && lastFocused.focus) lastFocused.focus();
+  }
+  document.getElementById('nav-logo').addEventListener('click', openToc);
+  document.getElementById('nav-toc-btn').addEventListener('click', openToc);
+  document.getElementById('toc-close').addEventListener('click', closeToc);
+  tocOverlay.addEventListener('click', function (e) {
+    if (e.target === tocOverlay) closeToc();
+  });
+
+  // ---- Keyboard nav ----
+  document.addEventListener('keydown', function (e) {
+    var tocOpen = !tocOverlay.hidden;
+
+    if (e.key === 'Escape' && tocOpen) {
+      closeToc();
+      return;
+    }
+    if (e.key === 't' || e.key === 'T') {
+      if (tocOpen) closeToc(); else openToc();
+      return;
+    }
+    if (tocOpen) return; // don't navigate the reader while TOC is open
+
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+      var next = dividerAnchors.find(function (d) { return d.page > currentPage; });
+      if (next) { e.preventDefault(); next.el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      var prevList = dividerAnchors.filter(function (d) { return d.page < currentPage; });
+      var prev = prevList[prevList.length - 1];
+      if (prev) { e.preventDefault(); prev.el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      else document.getElementById('cover').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+})();
+</script>
+</body>
+</html>
