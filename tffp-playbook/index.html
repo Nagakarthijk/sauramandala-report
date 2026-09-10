@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Lemonada:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <script src="pages-data.js"></script>
+<script src="links-data.js"></script>
 
 <style>
   :root {
@@ -373,6 +374,121 @@
 
   #card-current { z-index: 1; }
 
+  /* ---------- Link overlays (QR codes / printed URLs made clickable) ---------- */
+
+  .link-overlay {
+    position: absolute;
+    z-index: 11;
+    cursor: pointer;
+    border-radius: 4px;
+    outline-offset: 2px;
+  }
+  .link-overlay:hover, .link-overlay:focus-visible {
+    background: rgba(240, 180, 41, 0.22);
+    box-shadow: 0 0 0 2px rgba(240, 180, 41, 0.6);
+  }
+
+  #links-btn {
+    position: absolute;
+    z-index: 12;
+    left: 10px;
+    bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(10, 14, 39, 0.85);
+    color: var(--paper);
+    border: 1px solid rgba(240, 180, 41, 0.35);
+    border-radius: 999px;
+    padding: 6px 12px 6px 8px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+  }
+  #links-btn:hover { border-color: var(--mustard); }
+  #links-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+  #links-btn[hidden] { display: none; }
+
+  #links-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    background: #050614;
+    overflow-y: auto;
+    padding: calc(var(--nav-h) + 24px) 20px 40px;
+  }
+  #links-panel[hidden] { display: none; }
+  #links-panel-inner { max-width: 640px; margin: 0 auto; }
+  #links-panel-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  #links-panel-title {
+    font-family: 'Lemonada', cursive;
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: var(--mustard);
+    margin: 0;
+  }
+  #links-panel-close {
+    background: none;
+    border: 1px solid rgba(255, 253, 248, 0.3);
+    color: var(--paper);
+    border-radius: 999px;
+    width: 36px; height: 36px;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+  #links-panel-close:hover { border-color: var(--mustard); color: var(--mustard); }
+  #links-panel-note {
+    font-size: 0.8rem;
+    color: rgba(255, 253, 248, 0.5);
+    margin: 0 0 28px;
+  }
+  .link-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: rgba(255, 253, 248, 0.04);
+    border: 1px solid rgba(255, 253, 248, 0.1);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 22px;
+  }
+  .link-card img {
+    width: 88px;
+    height: 88px;
+    background: var(--paper);
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .link-card-body { min-width: 0; flex: 1; }
+  .link-card-label {
+    font-size: 0.95rem;
+    color: var(--paper);
+    margin: 0 0 8px;
+  }
+  .link-card-url {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.78rem;
+    color: var(--mustard);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(240, 180, 41, 0.4);
+  }
+  .link-card-url:hover { border-color: var(--mustard); }
+
+  @media (max-width: 480px) {
+    .link-card { flex-direction: column; align-items: flex-start; }
+    .link-card img { width: 120px; height: 120px; }
+  }
+
   /* the flipping leaf: a full duplicate card with two faces */
   #flip-leaf {
     position: absolute;
@@ -563,11 +679,26 @@
       <span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
     </button>
     <div id="open-cover-hint">Click, swipe, or press → to turn the page</div>
+    <button id="links-btn" type="button" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      <span id="links-btn-label">Links on this page</span>
+    </button>
   </div>
 </main>
 
 <p id="caption" aria-live="polite"></p>
 <div id="page-counter" aria-hidden="true">1 / 110</div>
+
+<div id="links-panel" role="dialog" aria-modal="true" aria-label="Links on this page" hidden>
+  <div id="links-panel-inner">
+    <div id="links-panel-header">
+      <h2 id="links-panel-title">Links on this page</h2>
+      <button id="links-panel-close" type="button" aria-label="Close">✕</button>
+    </div>
+    <p id="links-panel-note">Tap a code's original spot on the page to open it directly, or scan/tap one of these.</p>
+    <div id="links-panel-list"></div>
+  </div>
+</div>
 
 <script>
 (function () {
@@ -803,6 +934,59 @@
     fillWithEntry(el, entry);
   }
 
+  // ---- Clickable link overlays (QR codes / printed URLs) ----
+  var linksBtn = document.getElementById('links-btn');
+  var linksBtnLabel = document.getElementById('links-btn-label');
+  var linksPanel = document.getElementById('links-panel');
+  var linksPanelList = document.getElementById('links-panel-list');
+  var currentPageLinks = [];
+
+  function renderLinkOverlays(entry) {
+    cardCurrent.querySelectorAll('.link-overlay').forEach(function (el) { el.remove(); });
+    var data = (window.PAGE_LINKS && window.PAGE_LINKS[entry.n]) || [];
+    currentPageLinks = data;
+
+    data.forEach(function (link) {
+      var a = document.createElement('a');
+      a.className = 'link-overlay';
+      a.href = link.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.setAttribute('aria-label', link.label);
+      a.title = link.label;
+      a.style.left = (link.box[0] * 100) + '%';
+      a.style.top = (link.box[1] * 100) + '%';
+      a.style.width = (link.box[2] * 100) + '%';
+      a.style.height = (link.box[3] * 100) + '%';
+      cardCurrent.appendChild(a);
+    });
+
+    linksBtn.hidden = data.length === 0;
+    if (data.length > 0) {
+      linksBtnLabel.textContent = data.length === 1 ? '1 link' : data.length + ' links';
+    }
+  }
+
+  function openLinksPanel() {
+    linksPanelList.innerHTML = '';
+    currentPageLinks.forEach(function (link) {
+      var card = document.createElement('div');
+      card.className = 'link-card';
+      card.innerHTML =
+        '<img src="' + link.qr + '" alt="QR code for this link" width="88" height="88">' +
+        '<div class="link-card-body">' +
+          '<p class="link-card-label">' + link.label + '</p>' +
+          '<a class="link-card-url" href="' + link.url + '" target="_blank" rel="noopener noreferrer">' + link.url + '</a>' +
+        '</div>';
+      linksPanelList.appendChild(card);
+    });
+    linksPanel.hidden = false;
+  }
+  function closeLinksPanel() { linksPanel.hidden = true; }
+  linksBtn.addEventListener('click', openLinksPanel);
+  document.getElementById('links-panel-close').addEventListener('click', closeLinksPanel);
+  linksPanel.addEventListener('click', function (e) { if (e.target === linksPanel) closeLinksPanel(); });
+
   function updateChrome() {
     var p = pageAt(cur);
     var shown = cur + 1;
@@ -812,8 +996,8 @@
     progressFill.setAttribute('aria-valuenow', Math.round(cur / (TOTAL - 1) * 100));
 
     var ch = chapterForPage(p.n);
-    var links = navChaptersEl.querySelectorAll('a');
-    links.forEach(function (a) {
+    var navLinks = navChaptersEl.querySelectorAll('a');
+    navLinks.forEach(function (a) {
       a.classList.toggle('active', !!ch && a.dataset.chapterNum === ch.num);
     });
 
@@ -830,6 +1014,8 @@
     zonePrev.disabled = cur === 0;
     zoneNext.disabled = cur === TOTAL - 1;
     openHint.style.display = cur === 0 ? 'flex' : 'none';
+
+    renderLinkOverlays(p);
   }
 
   function jumpTo(index, opts) {
@@ -917,9 +1103,11 @@
   // ---- Keyboard ----
   document.addEventListener('keydown', function (e) {
     var tocOpen = !tocOverlay.hidden;
+    var linksOpen = !linksPanel.hidden;
+    if (e.key === 'Escape' && linksOpen) { closeLinksPanel(); return; }
     if (e.key === 'Escape' && tocOpen) { closeToc(); return; }
     if (e.key === 't' || e.key === 'T') { if (tocOpen) closeToc(); else openToc(); return; }
-    if (tocOpen) return;
+    if (tocOpen || linksOpen) return;
 
     if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); next(); }
     else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }

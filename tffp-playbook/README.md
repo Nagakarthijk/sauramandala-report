@@ -35,8 +35,23 @@ install.
   at runtime in `index.html`, not here — this file still describes the
   110 original pages.
 - `assets/mascot-icon.png` — the project's mascot character, cropped
-  from `pages/002.jpg` and knocked out to a transparent background. Used
-  as both the nav logo and the browser tab favicon.
+  from `pages/002.jpg`, on a solid paper-colored circular badge (not a
+  transparent cutout — an earlier fully-transparent version made the
+  character's white eyes read as holes showing the dark nav bar through
+  them). Used as both the nav logo and the browser tab favicon.
+- `links-data.js` + `assets/qr/*.png` — every working link found in the
+  book. Every page image was scanned with `zbarimg` for QR codes and run
+  through `tesseract` OCR for printed URLs; each hit gets a precisely
+  positioned invisible clickable overlay in `index.html` (tap the code or
+  text right where it appears), plus a freshly generated, generously
+  spaced QR code shown in that page's "N links" panel — the print
+  layout crowds multiple codes together tightly enough that neither a
+  phone camera nor `zbarimg` can always isolate one to scan reliably.
+  Two QR codes (a second one on page 83, a fourth on page 87) are
+  physically cut off by the page's right edge in the source artwork and
+  couldn't be decoded from the image at all; if you have those two Drive
+  links handy, add them to `links-data.js` following the existing
+  pattern.
 
 ## Regenerating `pages-data.js`
 
