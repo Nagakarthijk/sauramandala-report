@@ -271,12 +271,31 @@
 
   #toc-credit {
     margin: 32px 0 0;
-    padding-top: 20px;
+    padding-top: 24px;
     border-top: 1px solid rgba(255, 253, 248, 0.1);
     font-size: 0.8rem;
     color: rgba(255, 253, 248, 0.45);
     text-align: center;
   }
+  .toc-credit-logos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 22px;
+    margin-bottom: 16px;
+  }
+  .toc-credit-logos img { display: block; }
+  .credit-logo-tffp { height: 54px; width: auto; }
+  .credit-logo-smf { height: 20px; width: auto; }
+  #toc-credit p { margin: 0 0 6px; }
+  #toc-credit p:last-child { margin-bottom: 0; }
+  .toc-credit-contact a {
+    color: var(--mustard);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(240, 180, 41, 0.4);
+  }
+  .toc-credit-contact a:hover { border-color: var(--mustard); }
 
   .toc-row {
     display: flex;
@@ -324,7 +343,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    perspective: 2600px;
     touch-action: pan-y;
   }
 
@@ -366,9 +384,8 @@
 
   /* merge cards: the cover's two halves paired with the title/blank pages
      into proper full-width spreads, so there's never a lone narrow "single"
-     card mid-flip (that mismatch between a full-width flipping leaf and a
-     half-width static card was the animation glitch). */
-  .card.merge, .leaf-face.merge { display: flex; }
+     card mid-transition. */
+  .card.merge { display: flex; }
   .pane {
     flex: 1 1 50%;
     height: 100%;
@@ -381,7 +398,7 @@
   .pane.pane-crop-right { background-size: 200% 100%; background-position: right top; }
   .pane + .pane { box-shadow: -1px 0 0 rgba(0, 0, 0, 0.08); }
 
-  #card-current { z-index: 1; }
+  #card-current { z-index: 1; will-change: opacity, transform; }
 
   /* ---------- Link overlays (QR codes / printed URLs made clickable) ---------- */
 
@@ -405,17 +422,24 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background: rgba(10, 14, 39, 0.85);
-    color: var(--paper);
-    border: 1px solid rgba(240, 180, 41, 0.35);
+    background: var(--mustard);
+    color: var(--stage);
+    border: none;
     border-radius: 999px;
-    padding: 6px 12px 6px 8px;
-    font-size: 0.72rem;
-    font-weight: 600;
+    padding: 7px 14px 7px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
     cursor: pointer;
-    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(240, 180, 41, 0.5);
   }
-  #links-btn:hover { border-color: var(--mustard); }
+  #links-btn:hover { filter: brightness(1.08); }
+  #links-btn.pop { animation: links-btn-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes links-btn-pop {
+    0% { transform: scale(0.8); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(240, 180, 41, 0.6); }
+    45% { transform: scale(1.12); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 0 9px rgba(240, 180, 41, 0); }
+    70% { transform: scale(0.97); }
+    100% { transform: scale(1); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(240, 180, 41, 0); }
+  }
   #links-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
   #links-btn[hidden] { display: none; }
 
@@ -496,57 +520,6 @@
   @media (max-width: 480px) {
     .link-card { flex-direction: column; align-items: flex-start; }
     .link-card img { width: 120px; height: 120px; }
-  }
-
-  /* the flipping leaf: a full duplicate card with two faces */
-  #flip-leaf {
-    position: absolute;
-    inset: 0;
-    z-index: 5;
-    display: none;
-    transform-style: preserve-3d;
-    pointer-events: none;
-  }
-  #flip-leaf.flipping { display: block; }
-
-  .leaf-face {
-    position: absolute;
-    inset: 0;
-    border-radius: 5px;
-    overflow: hidden;
-    backface-visibility: hidden;
-    background: var(--paper);
-    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
-  }
-  .leaf-face img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background: var(--paper);
-  }
-  .leaf-face.face-back { transform: rotateY(180deg); }
-
-  .leaf-face::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, rgba(0,0,0,0.22), transparent 30%, transparent 70%, rgba(0,0,0,0.12));
-    opacity: 0;
-    transition: opacity 0.1s;
-  }
-  #flip-leaf.flipping .leaf-face::after { opacity: 1; }
-
-  /* Pivoting at the card's own center (the CSS default origin) rather than
-     an outer edge keeps the perspective foreshortening gentle — our source
-     images are whole pre-composited spreads (not independent recto/verso
-     page scans), so there's no real "spine" to hinge on; a wide off-center
-     pivot made the leaf collapse to an odd sliver well before 90 degrees. */
-  #flip-leaf.dir-forward.animate { transition: transform 0.85s cubic-bezier(0.45, 0.05, 0.35, 1); transform: rotateY(-180deg); }
-  #flip-leaf.dir-back.animate { transition: transform 0.85s cubic-bezier(0.45, 0.05, 0.35, 1); transform: rotateY(180deg); }
-
-  @media (prefers-reduced-motion: reduce) {
-    #flip-leaf.animate { transition: opacity 0.2s linear !important; transform: none !important; }
   }
 
   /* click / tap zones */
@@ -653,7 +626,7 @@
   </button>
   <ul id="nav-chapters"></ul>
   <div id="nav-right">
-    <button id="sound-toggle" type="button" aria-pressed="true" aria-label="Mute page-turn sound">🔊</button>
+    <button id="sound-toggle" type="button" aria-pressed="false" aria-label="Unmute page-turn sound">🔇</button>
     <span id="nav-page-indicator" aria-hidden="true">p. 1 / 110</span>
     <button id="nav-toc-btn" type="button" aria-haspopup="dialog" aria-controls="toc-overlay">Contents</button>
   </div>
@@ -670,7 +643,14 @@
       <button id="toc-close" type="button" aria-label="Close table of contents">✕</button>
     </div>
     <div id="toc-grid"></div>
-    <p id="toc-credit">The Forgotten Folklore Project is an initiative of the Sauramandala Foundation, Meghalaya.</p>
+    <div id="toc-credit">
+      <div class="toc-credit-logos">
+        <img class="credit-logo-tffp" src="assets/tffp-logo.png" alt="The Forgotten Folklore Project logo">
+        <img class="credit-logo-smf" src="assets/smf-logo.png" alt="Sauramandala Foundation — Centre for Accelerated Development logo">
+      </div>
+      <p>The Forgotten Folklore Project is an initiative of the Sauramandala Foundation, Meghalaya.</p>
+      <p class="toc-credit-contact">Questions, collaborations, or want to know more? Write to <a href="mailto:info@sauramandala.org">info@sauramandala.org</a></p>
+    </div>
   </div>
 </div>
 
@@ -678,10 +658,6 @@
   <div id="book-shadow" aria-hidden="true"></div>
   <div id="book">
     <div id="card-current" class="card"></div>
-    <div id="flip-leaf">
-      <div class="leaf-face face-front"></div>
-      <div class="leaf-face face-back"></div>
-    </div>
     <button class="nav-zone zone-prev" id="zone-prev" aria-label="Previous page">
       <span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></span>
     </button>
@@ -721,9 +697,6 @@
   var progressFill = document.getElementById('progress-fill');
   var caption = document.getElementById('caption');
   var cardCurrent = document.getElementById('card-current');
-  var flipLeaf = document.getElementById('flip-leaf');
-  var faceFront = flipLeaf.querySelector('.face-front');
-  var faceBack = flipLeaf.querySelector('.face-back');
   var openHint = document.getElementById('open-cover-hint');
   var zonePrev = document.getElementById('zone-prev');
   var zoneNext = document.getElementById('zone-next');
@@ -867,9 +840,9 @@
     schedule();
   }
 
-  // ---- Sound (tiny synthesized page-turn whoosh, user-triggered only) ----
-  var soundOn = true;
-  try { soundOn = localStorage.getItem('tffp-sound') !== 'off'; } catch (e) {}
+  // ---- Sound (tiny synthesized page-turn whoosh, off by default) ----
+  var soundOn = false;
+  try { soundOn = localStorage.getItem('tffp-sound') === 'on'; } catch (e) {}
   var audioCtx = null;
   function updateSoundBtn() {
     soundToggle.textContent = soundOn ? '🔊' : '🔇';
@@ -978,6 +951,15 @@
     linksBtn.hidden = uniqueCount === 0;
     if (uniqueCount > 0) {
       linksBtnLabel.textContent = uniqueCount === 1 ? '1 link' : uniqueCount + ' links';
+      // Give the button a brief, attention-catching pop each time it appears
+      // on a (newly shown) page, so it doesn't get missed sitting quietly in
+      // the corner. Re-triggered via remove+reflow+add since it's the same
+      // element/class every time.
+      if (!reduceMotion) {
+        linksBtn.classList.remove('pop');
+        void linksBtn.offsetWidth;
+        linksBtn.classList.add('pop');
+      }
     }
   }
 
@@ -1035,21 +1017,89 @@
     renderLinkOverlays(p);
   }
 
+  // ---- Page transition ----
+  // A single element (#card-current) fades + gently slides itself out, swaps
+  // its content while invisible, then slides + fades back in. Only one
+  // transition ever runs at a time; a request that arrives mid-transition is
+  // collapsed into `pending` (a single slot, not a queue) so mashing
+  // next/prev never launches overlapping animations or corrupts state —
+  // the moment the current transition settles, it immediately continues on
+  // to wherever the latest request wanted to go.
+  var OUT_MS = 140;
+  var IN_MS = 200;
+  var pending = null; // { index, slide: -1|0|1 }
+  var inFlightTarget = null; // index the current transition is headed to, while animating
+
+  function settle(index) {
+    cur = index;
+    inFlightTarget = null;
+    updateChrome();
+    preloadAround(cur + 1);
+    cardCurrent.style.transition = '';
+    cardCurrent.style.opacity = '';
+    cardCurrent.style.transform = '';
+    animating = false;
+    if (pending) {
+      var next = pending;
+      pending = null;
+      runTransition(next.index, next.slide);
+    }
+  }
+
+  function runTransition(targetIndex, slide) {
+    targetIndex = Math.max(0, Math.min(TOTAL - 1, targetIndex));
+    if (targetIndex === cur) { animating = false; return; }
+    if (slide !== 0) playFlipSound();
+    inFlightTarget = targetIndex;
+
+    if (reduceMotion) {
+      animating = true;
+      renderCard(cardCurrent, pageAt(targetIndex));
+      settle(targetIndex);
+      return;
+    }
+
+    animating = true;
+    var outX = slide > 0 ? '-14px' : slide < 0 ? '14px' : '0px';
+    var inX = slide > 0 ? '14px' : slide < 0 ? '-14px' : '0px';
+
+    cardCurrent.style.transition = 'opacity ' + OUT_MS + 'ms ease, transform ' + OUT_MS + 'ms ease';
+    cardCurrent.style.opacity = '0';
+    cardCurrent.style.transform = 'translateX(' + outX + ')';
+
+    setTimeout(function () {
+      renderCard(cardCurrent, pageAt(targetIndex));
+      cardCurrent.style.transition = 'none';
+      cardCurrent.style.transform = 'translateX(' + inX + ')';
+      void cardCurrent.offsetWidth; // force reflow so the next transition actually animates
+      cardCurrent.style.transition = 'opacity ' + IN_MS + 'ms ease, transform ' + IN_MS + 'ms ease';
+      cardCurrent.style.opacity = '1';
+      cardCurrent.style.transform = 'translateX(0)';
+      setTimeout(function () { settle(targetIndex); }, IN_MS);
+    }, OUT_MS);
+  }
+
+  function requestGoTo(index, slide) {
+    index = Math.max(0, Math.min(TOTAL - 1, index));
+    if (animating) {
+      pending = { index: index, slide: slide };
+      return;
+    }
+    if (index === cur) return;
+    runTransition(index, slide);
+  }
+
   function jumpTo(index, opts) {
     opts = opts || {};
     index = Math.max(0, Math.min(TOTAL - 1, index));
-    cur = index;
-    renderCard(cardCurrent, pageAt(cur));
-    updateChrome();
-    preloadAround(cur + 1);
-    if (!opts.silent) {
-      cardCurrent.style.opacity = '0.001';
-      requestAnimationFrame(function () {
-        cardCurrent.style.transition = 'opacity 0.25s ease';
-        cardCurrent.style.opacity = '1';
-        setTimeout(function () { cardCurrent.style.transition = ''; }, 300);
-      });
+    if (opts.silent) {
+      cur = index;
+      renderCard(cardCurrent, pageAt(cur));
+      updateChrome();
+      preloadAround(cur + 1);
+      return;
     }
+    requestGoTo(index, 0);
   }
 
   function goToPageNumber(n) {
@@ -1060,55 +1110,8 @@
   function goHome() { jumpTo(0); }
 
   function flip(direction) {
-    if (animating) return;
-    var targetIndex = cur + direction;
-    if (targetIndex < 0 || targetIndex >= TOTAL) return;
-    animating = true;
-
-    var fromPage = pageAt(cur);
-    var toPage = pageAt(targetIndex);
-
-    faceFront.className = 'leaf-face face-front' + (fromPage.kind === 'merge' ? ' merge' : '');
-    faceBack.className = 'leaf-face face-back' + (toPage.kind === 'merge' ? ' merge' : '');
-    fillWithEntry(faceFront, fromPage);
-    fillWithEntry(faceBack, toPage);
-
-    // Underneath, pre-set the current card to the target so it's ready the instant the leaf clears.
-    renderCard(cardCurrent, toPage);
-
-    flipLeaf.className = 'flipping ' + (direction > 0 ? 'dir-forward' : 'dir-back');
-    // Force reflow so the transition class change below actually animates.
-    void flipLeaf.offsetWidth;
-
-    playFlipSound();
-
-    requestAnimationFrame(function () {
-      flipLeaf.classList.add('animate');
-    });
-
-    var done = function () {
-      flipLeaf.removeEventListener('transitionend', onTransitionEnd);
-      flipLeaf.className = '';
-      flipLeaf.style.transform = '';
-      cur = targetIndex;
-      updateChrome();
-      preloadAround(cur + direction * 2);
-      animating = false;
-    };
-    // transitionend bubbles from child elements too (e.g. the leaf-face
-    // shading overlay's own short opacity transition) — only react to the
-    // #flip-leaf transform transition finishing, not a bubbled child event.
-    function onTransitionEnd(e) {
-      if (e.target === flipLeaf && e.propertyName === 'transform') done();
-    }
-
-    if (reduceMotion) {
-      setTimeout(done, 220);
-    } else {
-      flipLeaf.addEventListener('transitionend', onTransitionEnd);
-      // Safety net in case transitionend doesn't fire (e.g. tab backgrounded).
-      setTimeout(function () { if (animating) done(); }, 1100);
-    }
+    var base = pending ? pending.index : (inFlightTarget !== null ? inFlightTarget : cur);
+    requestGoTo(base + direction, direction);
   }
 
   function next() { flip(1); }

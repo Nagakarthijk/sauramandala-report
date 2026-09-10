@@ -7,13 +7,17 @@ install.
 
 ## What's here
 
-- `index.html` — the reader: a real animated page-flip (3D CSS
-  transform, not a scroll), driven by click, swipe, or arrow keys, plus
-  nav, a full table of contents, a progress bar, and a togglable
-  page-turn sound (mute state persists in `localStorage`). Falls back to
-  a quick crossfade instead of the 3D flip when the OS-level "reduce
-  motion" preference is on. Clicking the mascot logo (top left) jumps
-  back to the cover from anywhere in the book.
+- `index.html` — the reader: pages turn with a soft fade + slide
+  transition (not a scroll), driven by click, swipe, or arrow keys, plus
+  nav, a full table of contents, a progress bar, and a page-turn sound
+  that's off by default (togglable; mute state persists in
+  `localStorage`). Only one transition ever runs at a time — mashing
+  next/prev rapidly collapses into a single pending destination rather
+  than launching overlapping animations, so fast navigation can't corrupt
+  the page count or flicker backwards. Skips the slide/fade entirely (an
+  instant swap) when the OS-level "reduce motion" preference is on.
+  Clicking the mascot logo (top left) jumps back to the cover from
+  anywhere in the book.
 - `pages/001.jpg` … `pages/110.jpg` — the actual print artwork, exported
   from the source Canva design ("TFFP_playbook print edition 12x6", 110
   pages). Each file is already a complete spread as designed — most are
@@ -56,7 +60,17 @@ install.
   wrongly assumed two QR codes (page 83's second, page 87's fourth) were
   cut off by the page edge and unrecoverable — they weren't; both were
   fully on the page and just hadn't been isolated and decoded yet. All of
-  these are now fixed and included.
+  these are now fixed and included. The "N links" button also gives itself
+  a brief pop animation the moment it appears on a page, so it's not easy
+  to miss in the corner (skipped under "reduce motion").
+- `assets/tffp-logo.png` + `assets/smf-logo.png` — the official TFFP
+  circular logo and the Sauramandala Foundation / Centre for Accelerated
+  Development wordmark, both supplied directly by the foundation and
+  trimmed to their content bounds. Shown together, small and subtle, in
+  the Table of Contents panel's footer alongside a credit line and a
+  `mailto:info@sauramandala.org` contact line — the print cover artwork
+  itself already carries both logos, so nothing is overlaid on the actual
+  book pages.
 
 ## Regenerating `pages-data.js`
 
