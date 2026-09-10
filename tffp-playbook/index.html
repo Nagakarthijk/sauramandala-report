@@ -81,10 +81,32 @@
     transition: background 0.15s;
   }
   #nav-logo:hover { background: rgba(240, 180, 41, 0.12); }
-  #nav-logo img {
-    width: 36px;
-    height: 36px;
+  #nav-logo .logo-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  #nav-logo .logo-badge img {
+    width: 92%;
+    height: 92%;
+    object-fit: contain;
     display: block;
+  }
+  #nav-logo .wordmark {
+    font-family: 'Lemonada', cursive;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    color: var(--mustard);
+  }
+  @media (max-width: 400px) {
+    #nav-logo .wordmark { display: none; }
   }
 
   #nav-chapters {
@@ -501,7 +523,8 @@
 
 <nav id="nav" aria-label="Playbook navigation">
   <button id="nav-logo" type="button" aria-label="Back to the start">
-    <img src="assets/mascot-icon.png" alt="" width="36" height="36">
+    <span class="logo-badge"><img src="assets/mascot-icon.png" alt="" width="34" height="34"></span>
+    <span class="wordmark">TFFP</span>
   </button>
   <ul id="nav-chapters"></ul>
   <div id="nav-right">
@@ -597,8 +620,8 @@
     var seq = [];
     seq.push({
       kind: 'merge', n: 1, type: 'cover',
-      left: { src: srcFor(2), crop: null, alt: byN[2].alt },
-      right: { src: srcFor(1), crop: 'right', alt: byN[1].alt }
+      left: { src: srcFor(1), crop: 'right', alt: byN[1].alt },
+      right: { src: srcFor(2), crop: null, alt: byN[2].alt }
     });
     DATA.pages.forEach(function (p) {
       if (p.n === 1 || p.n === 2 || p.n === 110) return;
@@ -606,12 +629,12 @@
     });
     seq.push({
       kind: 'merge', n: 110, type: 'cover',
-      left: { src: srcFor(110), crop: null, alt: byN[110].alt },
-      right: {
+      left: {
         src: srcFor(1), crop: 'left',
         alt: "Back cover: introductory blurb about the book's intent, "
            + "with the Sauramandala Foundation logo and the 'Nyapt' mascot signature."
-      }
+      },
+      right: { src: srcFor(110), crop: null, alt: byN[110].alt }
     });
     return seq;
   })();
