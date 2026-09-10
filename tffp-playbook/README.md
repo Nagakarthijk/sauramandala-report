@@ -40,18 +40,23 @@ install.
   character's white eyes read as holes showing the dark nav bar through
   them). Used as both the nav logo and the browser tab favicon.
 - `links-data.js` + `assets/qr/*.png` — every working link found in the
-  book. Every page image was scanned with `zbarimg` for QR codes and run
-  through `tesseract` OCR for printed URLs; each hit gets a precisely
-  positioned invisible clickable overlay in `index.html` (tap the code or
-  text right where it appears), plus a freshly generated, generously
-  spaced QR code shown in that page's "N links" panel — the print
-  layout crowds multiple codes together tightly enough that neither a
-  phone camera nor `zbarimg` can always isolate one to scan reliably.
-  Two QR codes (a second one on page 83, a fourth on page 87) are
-  physically cut off by the page's right edge in the source artwork and
-  couldn't be decoded from the image at all; if you have those two Drive
-  links handy, add them to `links-data.js` following the existing
-  pattern.
+  book: QR codes (scanned with `zbarimg`, cropping and re-scanning
+  individually wherever the print layout packed several codes too close
+  together to isolate at once), plain printed URLs, and text citations
+  that are hyperlinked in the source design but show no visible URL or
+  underline (recovered from the Canva design's own text layer via the
+  Canva API — OCR and "look for underlined text" both miss these, since
+  the print layout doesn't always style them differently from ordinary
+  text). Each hit gets a precisely positioned invisible clickable overlay
+  in `index.html` (tap the code or text right where it appears — a link
+  whose text wraps across two lines gets two overlays), plus a freshly
+  generated, generously spaced QR code shown in that page's "N links"
+  panel. An earlier pass of this scan missed several links entirely
+  (two text citations on page 46, an illustrator credit on page 25) and
+  wrongly assumed two QR codes (page 83's second, page 87's fourth) were
+  cut off by the page edge and unrecoverable — they weren't; both were
+  fully on the page and just hadn't been isolated and decoded yet. All of
+  these are now fixed and included.
 
 ## Regenerating `pages-data.js`
 

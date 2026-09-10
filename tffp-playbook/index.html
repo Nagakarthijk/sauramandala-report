@@ -971,15 +971,22 @@
       cardCurrent.appendChild(a);
     });
 
-    linksBtn.hidden = data.length === 0;
-    if (data.length > 0) {
-      linksBtnLabel.textContent = data.length === 1 ? '1 link' : data.length + ' links';
+    var uniqueUrls = {};
+    data.forEach(function (link) { uniqueUrls[link.url] = true; });
+    var uniqueCount = Object.keys(uniqueUrls).length;
+
+    linksBtn.hidden = uniqueCount === 0;
+    if (uniqueCount > 0) {
+      linksBtnLabel.textContent = uniqueCount === 1 ? '1 link' : uniqueCount + ' links';
     }
   }
 
   function openLinksPanel() {
     linksPanelList.innerHTML = '';
+    var seenUrls = {};
     currentPageLinks.forEach(function (link) {
+      if (seenUrls[link.url]) return;
+      seenUrls[link.url] = true;
       var card = document.createElement('div');
       card.className = 'link-card';
       card.innerHTML =
