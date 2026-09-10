@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Forgotten Folklore Project — Digital Playbook</title>
 <meta name="description" content="An interactive, page-turning digital edition of The Forgotten Folklore Project playbook: how a small team documented and published 65 children's picture books from Meghalaya and the Northeast.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23F0B429'/%3E%3Ccircle cx='22' cy='27' r='6' fill='%231A1208'/%3E%3Ccircle cx='42' cy='27' r='6' fill='%231A1208'/%3E%3C/svg%3E">
+<link rel="icon" href="assets/mascot-icon.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,16 +69,22 @@
   }
 
   #nav-logo {
-    font-family: 'Lemonada', cursive;
-    font-weight: 700;
-    font-size: 1.15rem;
-    letter-spacing: 0.02em;
-    color: var(--mustard);
+    display: flex;
+    align-items: center;
+    gap: 8px;
     background: none;
     border: none;
     cursor: pointer;
-    padding: 6px 4px;
+    padding: 4px 6px 4px 4px;
+    border-radius: 999px;
     flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  #nav-logo:hover { background: rgba(240, 180, 41, 0.12); }
+  #nav-logo img {
+    width: 36px;
+    height: 36px;
+    display: block;
   }
 
   #nav-chapters {
@@ -324,8 +330,24 @@
     background: var(--paper);
   }
 
-  .card.type-single { width: 46%; left: 27%; }
   .card.type-divider { box-shadow: 0 26px 70px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(240, 180, 41, 0.14); }
+
+  /* merge cards: the cover's two halves paired with the title/blank pages
+     into proper full-width spreads, so there's never a lone narrow "single"
+     card mid-flip (that mismatch between a full-width flipping leaf and a
+     half-width static card was the animation glitch). */
+  .card.merge, .leaf-face.merge { display: flex; }
+  .pane {
+    flex: 1 1 50%;
+    height: 100%;
+    min-width: 0;
+    background-repeat: no-repeat;
+    background-color: var(--paper);
+  }
+  .pane.pane-whole { background-size: contain; background-position: center; }
+  .pane.pane-crop-left { background-size: 200% 100%; background-position: left top; }
+  .pane.pane-crop-right { background-size: 200% 100%; background-position: right top; }
+  .pane + .pane { box-shadow: -1px 0 0 rgba(0, 0, 0, 0.08); }
 
   #card-current { z-index: 1; }
 
@@ -478,7 +500,9 @@
 <body>
 
 <nav id="nav" aria-label="Playbook navigation">
-  <button id="nav-logo" type="button" aria-haspopup="dialog" aria-controls="toc-overlay">TFFP</button>
+  <button id="nav-logo" type="button" aria-label="Back to the start">
+    <img src="assets/mascot-icon.png" alt="" width="36" height="36">
+  </button>
   <ul id="nav-chapters"></ul>
   <div id="nav-right">
     <button id="sound-toggle" type="button" aria-pressed="true" aria-label="Mute page-turn sound">🔊</button>
@@ -525,7 +549,6 @@
 <script>
 (function () {
   var DATA = window.PLAYBOOK_DATA;
-  var TOTAL = DATA.total;
   var navChaptersEl = document.getElementById('nav-chapters');
   var tocGrid = document.getElementById('toc-grid');
   var pageIndicator = document.getElementById('nav-page-indicator');
@@ -556,6 +579,48 @@
     return current;
   }
 
+  // ---- Build the reading sequence ----
+  // Page 001.jpg is the flattened PRINT cover: back-cover art on its left
+  // half, front-cover art on its right half (that's how wraparound covers
+  // are laid out for print — back, spine, front, left to right). Showing
+  // that whole flattened spread as the first thing a reader sees puts the
+  // back cover before the front cover, which only makes sense on paper.
+  // So instead: the front-cover half is cropped out and paired with the
+  // title/copyright page (formerly a lone "single" card, which is what
+  // caused the flip animation to glitch) to form one proper opening
+  // spread; the back-cover half is cropped out and paired with the blank
+  // closing page to form one proper closing spread. Every card in the
+  // sequence is now a full two-up spread — no more narrow lone singles.
+  var SEQUENCE = (function () {
+    var byN = {};
+    DATA.pages.forEach(function (p) { byN[p.n] = p; });
+    var seq = [];
+    seq.push({
+      kind: 'merge', n: 1, type: 'cover',
+      left: { src: srcFor(2), crop: null, alt: byN[2].alt },
+      right: { src: srcFor(1), crop: 'right', alt: byN[1].alt }
+    });
+    DATA.pages.forEach(function (p) {
+      if (p.n === 1 || p.n === 2 || p.n === 110) return;
+      seq.push({ kind: 'single', n: p.n, type: p.type, src: srcFor(p.n), alt: p.alt });
+    });
+    seq.push({
+      kind: 'merge', n: 110, type: 'cover',
+      left: { src: srcFor(110), crop: null, alt: byN[110].alt },
+      right: {
+        src: srcFor(1), crop: 'left',
+        alt: "Back cover: introductory blurb about the book's intent, "
+           + "with the Sauramandala Foundation logo and the 'Nyapt' mascot signature."
+      }
+    });
+    return seq;
+  })();
+  var TOTAL = SEQUENCE.length;
+  function pageAt(i) { return SEQUENCE[i]; }
+  function imagesFor(entry) {
+    return entry.kind === 'merge' ? [entry.left.src, entry.right.src] : [entry.src];
+  }
+
   // ---- Build nav chapter links (curated subset) ----
   DATA.navChapters.forEach(function (ch) {
     var li = document.createElement('li');
@@ -569,6 +634,14 @@
   });
 
   // ---- Build full TOC overlay (all 21 chapters + cover) ----
+  // Page numbers shown here are positions in the reading sequence (matching
+  // what the nav indicator will show after the jump), not the original
+  // per-file numbers — those diverge now that the cover/title/blank pages
+  // were merged into two spreads instead of three separate cards.
+  function seqPageNumber(n) {
+    var idx = SEQUENCE.findIndex(function (p) { return p.n === n; });
+    return idx >= 0 ? idx + 1 : n;
+  }
   (function () {
     var coverBtn = document.createElement('button');
     coverBtn.type = 'button';
@@ -584,32 +657,44 @@
     btn.innerHTML =
       '<span class="toc-num">' + ch.num + '</span>' +
       '<span class="toc-name">' + ch.title + '</span>' +
-      '<span class="toc-page">p. ' + ch.page + '</span>';
+      '<span class="toc-page">p. ' + seqPageNumber(ch.page) + '</span>';
     btn.addEventListener('click', function () { goToPageNumber(ch.page); closeToc(); });
     tocGrid.appendChild(btn);
   });
+  (function () {
+    var backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'toc-row';
+    backBtn.innerHTML = '<span class="toc-num">—</span><span class="toc-name">Back cover</span><span class="toc-page">p. ' + TOTAL + '</span>';
+    backBtn.addEventListener('click', function () { goToPageNumber(110); closeToc(); });
+    tocGrid.appendChild(backBtn);
+  })();
 
   // ---- Preload queue (current window eager, rest trickled in idly) ----
   var loaded = {};
-  function preload(n) {
-    if (n < 1 || n > TOTAL || loaded[n]) return;
-    loaded[n] = true;
+  function preloadOne(src) {
+    if (loaded[src]) return;
+    loaded[src] = true;
     var im = new Image();
-    im.src = srcFor(n);
+    im.src = src;
   }
-  function preloadAround(n) {
-    for (var d = -2; d <= 3; d++) preload(n + d);
+  function preloadIndex(i) {
+    if (i < 0 || i >= TOTAL) return;
+    imagesFor(pageAt(i)).forEach(preloadOne);
+  }
+  function preloadAround(i) {
+    for (var d = -2; d <= 3; d++) preloadIndex(i + d);
   }
   function idlePreloadRest() {
-    var i = 1;
+    var i = 0;
     function step(deadline) {
       var budget = deadline && deadline.timeRemaining ? deadline.timeRemaining() : 8;
-      while (i <= TOTAL && budget > 2) {
-        preload(i);
+      while (i < TOTAL && budget > 2) {
+        preloadIndex(i);
         i++;
         budget -= 2;
       }
-      if (i <= TOTAL) schedule();
+      if (i < TOTAL) schedule();
     }
     function schedule() {
       if ('requestIdleCallback' in window) requestIdleCallback(step, { timeout: 1000 });
@@ -661,28 +746,45 @@
   }
 
   // ---- State ----
-  var cur = 0; // 0-indexed into DATA.pages
+  var cur = 0; // 0-indexed into SEQUENCE
   var animating = false;
 
-  function pageAt(i) { return DATA.pages[i]; }
-
-  function styleCard(el, p) {
-    el.className = 'card type-' + p.type;
+  function buildPane(paneData) {
+    var div = document.createElement('div');
+    div.setAttribute('role', 'img');
+    div.setAttribute('aria-label', paneData.alt || '');
+    div.className = 'pane ' + (paneData.crop === 'left' ? 'pane-crop-left' : paneData.crop === 'right' ? 'pane-crop-right' : 'pane-whole');
+    div.style.backgroundImage = 'url(' + paneData.src + ')';
+    return div;
   }
 
-  function renderCard(el, p) {
-    styleCard(el, p);
+  function fillWithEntry(el, entry) {
     el.innerHTML = '';
-    var img = document.createElement('img');
-    img.src = srcFor(p.n);
-    img.alt = p.alt || '';
-    el.appendChild(img);
+    if (entry.kind === 'merge') {
+      el.appendChild(buildPane(entry.left));
+      el.appendChild(buildPane(entry.right));
+    } else {
+      var img = document.createElement('img');
+      img.src = entry.src;
+      img.alt = entry.alt || '';
+      el.appendChild(img);
+    }
+  }
+
+  function styleCard(el, entry) {
+    el.className = 'card type-' + entry.type + (entry.kind === 'merge' ? ' merge' : '');
+  }
+
+  function renderCard(el, entry) {
+    styleCard(el, entry);
+    fillWithEntry(el, entry);
   }
 
   function updateChrome() {
     var p = pageAt(cur);
-    pageIndicator.textContent = 'p. ' + p.n + ' / ' + TOTAL;
-    pageCounter.textContent = p.n + ' / ' + TOTAL;
+    var shown = cur + 1;
+    pageIndicator.textContent = 'p. ' + shown + ' / ' + TOTAL;
+    pageCounter.textContent = shown + ' / ' + TOTAL;
     progressFill.style.width = (cur / (TOTAL - 1) * 100) + '%';
     progressFill.setAttribute('aria-valuenow', Math.round(cur / (TOTAL - 1) * 100));
 
@@ -692,7 +794,9 @@
       a.classList.toggle('active', !!ch && a.dataset.chapterNum === ch.num);
     });
 
-    if (p.type === 'divider' && ch) {
+    if (p.kind === 'merge') {
+      caption.textContent = cur === 0 ? 'Cover' : 'Back cover';
+    } else if (p.type === 'divider' && ch) {
       caption.innerHTML = '<span class="chapter-tag">Chapter ' + ch.num + '</span>' + ch.title;
     } else if (ch) {
       caption.innerHTML = ch.num + '. ' + ch.title;
@@ -723,9 +827,11 @@
   }
 
   function goToPageNumber(n) {
-    var idx = DATA.pages.findIndex(function (p) { return p.n === n; });
+    var idx = SEQUENCE.findIndex(function (p) { return p.n === n; });
     if (idx >= 0) jumpTo(idx);
   }
+
+  function goHome() { jumpTo(0); }
 
   function flip(direction) {
     if (animating) return;
@@ -736,21 +842,10 @@
     var fromPage = pageAt(cur);
     var toPage = pageAt(targetIndex);
 
-    styleCard(flipLeaf, direction > 0 ? fromPage : fromPage);
-    faceFront.className = 'leaf-face face-front';
-    faceBack.className = 'leaf-face face-back';
-    faceFront.innerHTML = '';
-    faceBack.innerHTML = '';
-
-    var frontImg = document.createElement('img');
-    frontImg.src = srcFor(fromPage.n);
-    frontImg.alt = '';
-    faceFront.appendChild(frontImg);
-
-    var backImg = document.createElement('img');
-    backImg.src = srcFor(toPage.n);
-    backImg.alt = '';
-    faceBack.appendChild(backImg);
+    faceFront.className = 'leaf-face face-front' + (fromPage.kind === 'merge' ? ' merge' : '');
+    faceBack.className = 'leaf-face face-back' + (toPage.kind === 'merge' ? ' merge' : '');
+    fillWithEntry(faceFront, fromPage);
+    fillWithEntry(faceBack, toPage);
 
     // Underneath, pre-set the current card to the target so it's ready the instant the leaf clears.
     renderCard(cardCurrent, toPage);
@@ -838,7 +933,7 @@
     tocOverlay.hidden = true;
     if (lastFocused && lastFocused.focus) lastFocused.focus();
   }
-  document.getElementById('nav-logo').addEventListener('click', openToc);
+  document.getElementById('nav-logo').addEventListener('click', goHome);
   document.getElementById('nav-toc-btn').addEventListener('click', openToc);
   document.getElementById('toc-close').addEventListener('click', closeToc);
   tocOverlay.addEventListener('click', function (e) {
