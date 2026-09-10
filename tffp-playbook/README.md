@@ -1,13 +1,18 @@
 # TFFP Digital Playbook
 
-A scrollable, responsive web edition of *The Forgotten Folklore Project*
-playbook by Lanuangla Tsudir (Sauramandala Foundation, Meghalaya). Plain
-HTML/CSS/JS — no build step, no framework, no npm install.
+An interactive, page-turning web edition of *The Forgotten Folklore
+Project* playbook by Lanuangla Tsudir (Sauramandala Foundation,
+Meghalaya). Plain HTML/CSS/JS — no build step, no framework, no npm
+install.
 
 ## What's here
 
-- `index.html` — the reader (nav, table of contents, progress bar, cover
-  parallax, lazy-loaded pages, keyboard navigation).
+- `index.html` — the reader: a real animated page-flip (3D CSS
+  transform, not a scroll), driven by click, swipe, or arrow keys, plus
+  nav, a full table of contents, a progress bar, and a togglable
+  page-turn sound (mute state persists in `localStorage`). Falls back to
+  a quick crossfade instead of the 3D flip when the OS-level "reduce
+  motion" preference is on.
 - `pages/001.jpg` … `pages/110.jpg` — the actual print artwork, exported
   from the source Canva design ("TFFP_playbook print edition 12x6", 110
   pages). Each file is already a complete spread as designed — most are
