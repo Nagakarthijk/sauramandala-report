@@ -42,7 +42,8 @@ install.
   from `pages/002.jpg`, on a solid paper-colored circular badge (not a
   transparent cutout — an earlier fully-transparent version made the
   character's white eyes read as holes showing the dark nav bar through
-  them). Used as both the nav logo and the browser tab favicon.
+  them). Used as the browser tab favicon (legible at that tiny size,
+  which the more detailed official logo below isn't).
 - `links-data.js` + `assets/qr/*.png` — every working link found in the
   book: QR codes (scanned with `zbarimg`, cropping and re-scanning
   individually wherever the print layout packed several codes too close
@@ -66,11 +67,14 @@ install.
 - `assets/tffp-logo.png` + `assets/smf-logo.png` — the official TFFP
   circular logo and the Sauramandala Foundation / Centre for Accelerated
   Development wordmark, both supplied directly by the foundation and
-  trimmed to their content bounds. Shown together, small and subtle, in
-  the Table of Contents panel's footer alongside a credit line and a
-  `mailto:info@sauramandala.org` contact line — the print cover artwork
-  itself already carries both logos, so nothing is overlaid on the actual
-  book pages.
+  trimmed to their content bounds. `tffp-logo.png` is also the nav bar's
+  logo badge (top left, next to the "TFFP Playbook" wordmark — clicking
+  it jumps home). Both logos appear together, small and subtle, in two
+  places: a persistent pill in the bottom-left corner on every page
+  (with a `mailto:info@sauramandala.org` link), and again alongside a
+  fuller credit line and the same contact link in the Table of Contents
+  panel's footer. The print cover artwork itself already carries both
+  logos too, so nothing is overlaid on the actual book pages.
 
 ## Regenerating `pages-data.js`
 

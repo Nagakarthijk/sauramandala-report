@@ -610,6 +610,36 @@
     border-radius: 999px;
   }
 
+  #site-footer {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(10, 14, 39, 0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(240, 180, 41, 0.15);
+    padding: 5px 12px;
+    border-radius: 999px;
+    opacity: 0.75;
+    transition: opacity 0.2s;
+  }
+  #site-footer:hover { opacity: 1; }
+  #site-footer img { height: 17px; width: auto; display: block; }
+  #site-footer a {
+    font-size: 0.68rem;
+    color: rgba(255, 253, 248, 0.55);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  #site-footer a:hover { color: var(--mustard); }
+
+  @media (max-width: 700px) {
+    #site-footer a { display: none; }
+  }
+
   @media (max-width: 639px) {
     #book { width: 94vw; max-height: 68vh; }
     #caption { padding: 0 16px; bottom: 54px; }
@@ -621,8 +651,8 @@
 
 <nav id="nav" aria-label="Playbook navigation">
   <button id="nav-logo" type="button" aria-label="Back to the start">
-    <span class="logo-badge"><img src="assets/mascot-icon.png" alt="" width="34" height="34"></span>
-    <span class="wordmark">TFFP</span>
+    <span class="logo-badge"><img src="assets/tffp-logo.png" alt="" width="34" height="34"></span>
+    <span class="wordmark">TFFP Playbook</span>
   </button>
   <ul id="nav-chapters"></ul>
   <div id="nav-right">
@@ -674,6 +704,12 @@
 
 <p id="caption" aria-live="polite"></p>
 <div id="page-counter" aria-hidden="true">1 / 110</div>
+
+<div id="site-footer">
+  <img src="assets/tffp-logo.png" alt="" aria-hidden="true">
+  <img src="assets/smf-logo.png" alt="" aria-hidden="true">
+  <a href="mailto:info@sauramandala.org">info@sauramandala.org</a>
+</div>
 
 <div id="links-panel" role="dialog" aria-modal="true" aria-label="Links on this page" hidden>
   <div id="links-panel-inner">
