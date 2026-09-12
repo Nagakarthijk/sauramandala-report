@@ -163,7 +163,20 @@ const JN = (() => {
   }
 
   // ── Profiles ─────────────────────────────────────────────────────────
-  const getProfiles      = () => _list('profiles', { discoverable: true }, 'last_active_at');
+  // The public directory only shows discoverable AND community-approved
+  // profiles. A profile's own link (getProfileBySlug) works regardless of
+  // review status — the point is the worker can share their link on day
+  // one; only appearing in Explore waits for a volunteer.
+  async function getProfiles() {
+    if (DEMO) return _list('profiles', { discoverable: true }, 'last_active_at');
+    const { data: statuses } = await _sb.from('profile_review_status').select('profile_id').eq('status', 'approved');
+    const approvedIds = (statuses || []).map(s => s.profile_id);
+    if (!approvedIds.length) return [];
+    const { data, error } = await _sb.from('profiles').select('*')
+      .eq('discoverable', true).in('id', approvedIds).order('last_active_at', { ascending: false });
+    if (error) { console.error('getProfiles', error); return []; }
+    return data;
+  }
   async function getProfileBySlug(slug) {
     if (DEMO) return D.profiles.find(p => p.slug === slug) || null;
     const { data } = await _sb.from('profiles').select('*').eq('slug', slug).maybeSingle();
@@ -234,6 +247,67 @@ const JN = (() => {
   // Deliberately no read access via the API for anyone, including the
   // reported worker — see the comment on the reports table in schema.sql.
   const fileReport = (r) => _insert('reports', r);
+  async function getAllReportsForAdmin() {
+    if (DEMO) return [];
+    return _list('reports', {});
+  }
+
+  // ── Moderation: admins, volunteers, profile review ───────────────────
+  async function isPlatformAdmin() {
+    if (DEMO) return false;
+    const user = await getUser();
+    if (!user) return false;
+    const { data } = await _sb.from('platform_admins').select('user_id').eq('user_id', user.id).maybeSingle();
+    return !!data;
+  }
+  // Returns null (not a volunteer), or { agreement_accepted } if appointed.
+  async function getVolunteerStatus() {
+    if (DEMO) return null;
+    const user = await getUser();
+    if (!user) return null;
+    const { data } = await _sb.from('volunteers').select('*').eq('user_id', user.id).maybeSingle();
+    return data || null;
+  }
+  async function acceptVolunteerAgreement() {
+    const user = await requireAuth();
+    if (!user) return null;
+    const { data, error } = await _sb.from('volunteers').update({ agreement_accepted: true }).eq('user_id', user.id).select().single();
+    if (error) throw new Error(error.message);
+    return data;
+  }
+  // Admin-only — see admin_appoint_volunteer() in schema.sql, which
+  // re-checks admin status server-side regardless of what the client sends.
+  async function appointVolunteerByEmail(email) {
+    if (DEMO) demoWriteError();
+    const { error } = await _sb.rpc('admin_appoint_volunteer', { target_email: email });
+    if (error) throw new Error(error.message);
+  }
+  // Admin-only via RLS — the "admins manage volunteers" policy grants
+  // admins unrestricted select, unlike the self-check policy everyone else gets.
+  async function getAllVolunteers() {
+    if (DEMO) return [];
+    const { data } = await _sb.from('volunteers').select('*').order('created_at', { ascending: false });
+    return data || [];
+  }
+  async function getMyReviewStatus(profileId) {
+    if (DEMO) return 'approved';
+    const { data } = await _sb.from('profile_review_status').select('status').eq('profile_id', profileId).maybeSingle();
+    return data?.status || 'pending';
+  }
+  // Profiles with no review decision yet, oldest first (first-come, first-reviewed)
+  async function getPendingProfilesForReview() {
+    if (DEMO) return [];
+    const { data: statuses } = await _sb.from('profile_review_status').select('profile_id, status');
+    const pendingIds = (statuses || []).filter(s => s.status === 'pending').map(s => s.profile_id);
+    if (!pendingIds.length) return [];
+    const { data } = await _sb.from('profiles').select('*').in('id', pendingIds).order('created_at', { ascending: true });
+    return data || [];
+  }
+  async function submitProfileReview(profileId, decision, note) {
+    const user = await requireAuth();
+    if (!user) return null;
+    return _insert('profile_reviews', { profile_id: profileId, reviewer_user_id: user.id, decision, note: note || null });
+  }
 
   // ── Community votes ──────────────────────────────────────────────────
   // Requires a signed-in account. Individual votes are private (RLS); only
@@ -509,7 +583,9 @@ const JN = (() => {
     getOrgs, getOrgBySlug, getMyOrgs, addOrg,
     getOrgMembers, getMembershipsFor, requestMembership, setMembershipStatus, removeMembership,
     getUpdatesFor, addUpdate, deleteUpdate, getExpensesFor, addExpense, deleteExpense,
-    getDonationsFor, declareDonation, resolveDonation, fileReport,
+    getDonationsFor, declareDonation, resolveDonation, fileReport, getAllReportsForAdmin,
+    isPlatformAdmin, getVolunteerStatus, acceptVolunteerAgreement, appointVolunteerByEmail, getAllVolunteers,
+    getMyReviewStatus, getPendingProfilesForReview, submitProfileReview,
     getVoteCounts, getVoteReasonCounts, getMyVote, castVote, removeVote, UPVOTE_REASONS, DOWNVOTE_REASONS,
     computeScore, scoreBand,
     slugify, formatINR, formatINRFull, relativeTime, initials, esc, orgTypeLabel,

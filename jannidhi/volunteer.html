@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Volunteer review — JanNidhi</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @media (min-width: 900px)  { html { font-size: 17px; } }
+  @media (min-width: 1280px) { html { font-size: 18px; } }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</head>
+<body class="bg-stone-50 text-stone-800 min-h-screen">
+<div id="nav"></div>
+
+<main class="max-w-2xl mx-auto px-4 py-8" id="page">
+  <p class="text-sm text-stone-400">Loading…</p>
+</main>
+
+<script>
+(async () => {
+  JN.init();
+  const user = await JN.getUser();
+  document.getElementById('nav').innerHTML = JN.navHTML('', user);
+  const $ = id => document.getElementById(id);
+
+  if (!user) {
+    $('page').innerHTML = `<p class="text-sm text-stone-500">
+      <a href="auth.html?next=volunteer.html" class="text-orange-600 underline font-semibold">Sign in</a> first.</p>`;
+    return;
+  }
+
+  const [volunteer, admin] = await Promise.all([JN.getVolunteerStatus(), JN.isPlatformAdmin()]);
+  if (!volunteer && !admin) {
+    $('page').innerHTML = `<p class="text-sm text-stone-500">You haven't been appointed as a volunteer reviewer. Ask a platform admin if you'd like to help review new profiles.</p>`;
+    return;
+  }
+
+  // Admins can review too, without needing the separate agreement gate —
+  // being an admin already carries the same accountability.
+  if (volunteer && !volunteer.agreement_accepted) {
+    $('page').innerHTML = `
+      <h1 class="text-2xl font-black text-stone-900 mb-4">Volunteer reviewer agreement</h1>
+      <div class="bg-white border border-stone-100 rounded-2xl p-5 text-sm text-stone-600 leading-relaxed space-y-3">
+        <p>Before you can review profiles, please read and accept:</p>
+        <ul class="list-disc pl-5 space-y-2">
+          <li>I am a <strong>volunteer</strong>, not an employee or agent of JanNidhi.</li>
+          <li>My review decisions (approve / flag) reflect my own good-faith judgment — not a legal or professional verification of anyone's identity, claims, or documents.</li>
+          <li>I will review honestly and in good faith, without personal bias or conflict of interest, and recuse myself from reviewing anyone I have a personal or political stake in.</li>
+          <li>JanNidhi will indemnify and hold me harmless for good-faith decisions made in line with its published review guidelines. I remain personally responsible for any decision made in bad faith, with malicious intent, or clearly outside those guidelines.</li>
+          <li>My identity as the reviewer, and any notes I add, are never shown publicly — only the resulting approved/flagged status is.</li>
+        </ul>
+        <p class="text-[11px] text-stone-400 pt-2 border-t border-stone-200">See <a href="terms.html" class="underline">terms.html</a> for the full volunteer clause.</p>
+      </div>
+      <button id="agree-btn" class="w-full mt-4 bg-stone-900 hover:bg-stone-800 text-white font-semibold py-3 rounded-xl text-sm transition-all">I agree — start reviewing</button>
+      <p id="agree-msg" class="text-xs text-center min-h-[1rem] mt-2"></p>
+    `;
+    $('agree-btn').onclick = async () => {
+      try { await JN.acceptVolunteerAgreement(); location.reload(); }
+      catch (err) { $('agree-msg').textContent = err.message; $('agree-msg').className = 'text-xs text-center min-h-[1rem] mt-2 text-red-500'; }
+    };
+    return;
+  }
+
+  $('page').innerHTML = `
+    <h1 class="text-2xl font-black text-stone-900 mb-1">Review queue</h1>
+    <p class="text-sm text-stone-500 mb-6">New profiles waiting for a first community review. Their own page already works — this only decides whether they show up in Explore.</p>
+    <div id="queue" class="space-y-3"></div>
+  `;
+
+  async function loadQueue() {
+    const pending = await JN.getPendingProfilesForReview();
+    $('queue').innerHTML = pending.length ? pending.map(p => `
+      <div class="bg-white border border-stone-100 rounded-2xl p-4" data-profile="${p.id}">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <a href="profile.html?u=${encodeURIComponent(p.slug)}" target="_blank" rel="noopener" class="font-bold text-stone-900 hover:underline">${JN.esc(p.name)}</a>
+            <div class="text-xs text-stone-400">${JN.esc(p.location || '')}</div>
+          </div>
+          <span class="text-[10px] text-stone-400 shrink-0">${JN.relativeTime(p.created_at)}</span>
+        </div>
+        <p class="mt-2 text-xs text-stone-600 leading-relaxed">${JN.esc(p.bio || '')}</p>
+        <textarea data-note placeholder="Optional note (kept private, admin/reviewer eyes only)" rows="2" class="w-full mt-2 border border-stone-200 rounded-lg px-2.5 py-2 text-xs"></textarea>
+        <div class="flex gap-2 mt-2">
+          <button data-approve class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2 rounded-lg">Approve for directory</button>
+          <button data-flag class="flex-1 border border-stone-300 hover:bg-red-50 hover:text-red-600 text-xs font-semibold py-2 rounded-lg">Flag</button>
+        </div>
+      </div>`).join('') : '<p class="text-sm text-stone-400">Nothing pending — queue is clear.</p>';
+  }
+
+  $('queue').addEventListener('click', async (e) => {
+    const card = e.target.closest('[data-profile]');
+    if (!card) return;
+    const profileId = card.dataset.profile;
+    const note = card.querySelector('[data-note]').value.trim();
+    if (e.target.matches('[data-approve]')) {
+      await JN.submitProfileReview(profileId, 'approved', note);
+      loadQueue();
+    } else if (e.target.matches('[data-flag]')) {
+      await JN.submitProfileReview(profileId, 'flagged', note);
+      loadQueue();
+    }
+  });
+
+  loadQueue();
+})();
+</script>
+</body>
+</html>

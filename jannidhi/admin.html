@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Admin — JanNidhi</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @media (min-width: 900px)  { html { font-size: 17px; } }
+  @media (min-width: 1280px) { html { font-size: 18px; } }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</head>
+<body class="bg-stone-50 text-stone-800 min-h-screen">
+<div id="nav"></div>
+
+<main class="max-w-2xl mx-auto px-4 py-8" id="page">
+  <p class="text-sm text-stone-400">Loading…</p>
+</main>
+
+<script>
+(async () => {
+  JN.init();
+  const user = await JN.getUser();
+  document.getElementById('nav').innerHTML = JN.navHTML('', user);
+  const $ = id => document.getElementById(id);
+
+  if (!user) {
+    $('page').innerHTML = `<p class="text-sm text-stone-500">
+      <a href="auth.html?next=admin.html" class="text-orange-600 underline font-semibold">Sign in</a> first.</p>`;
+    return;
+  }
+  const admin = await JN.isPlatformAdmin();
+  if (!admin) {
+    $('page').innerHTML = `<p class="text-sm text-stone-500">This page is restricted to platform admins.</p>`;
+    return;
+  }
+
+  $('page').innerHTML = `
+    <h1 class="text-2xl font-black text-stone-900 mb-1">Admin</h1>
+    <p class="text-sm text-stone-500 mb-6">Reports and volunteer management. Not shown or linked anywhere public.</p>
+
+    <section class="bg-white border border-stone-100 rounded-2xl p-5 mb-5">
+      <h2 class="font-bold text-stone-900 text-sm mb-3">Reports</h2>
+      <div id="reports-list" class="space-y-2"><p class="text-xs text-stone-400">Loading…</p></div>
+    </section>
+
+    <section class="bg-white border border-stone-100 rounded-2xl p-5">
+      <h2 class="font-bold text-stone-900 text-sm mb-3">Volunteer reviewers</h2>
+      <div class="flex gap-2 mb-3">
+        <input id="v-email" type="email" placeholder="volunteer@example.com" class="flex-1 border border-stone-200 rounded-xl px-3 py-2.5 text-sm">
+        <button id="v-appoint" class="bg-stone-900 hover:bg-stone-800 text-white text-sm font-semibold px-4 rounded-xl shrink-0">Appoint</button>
+      </div>
+      <p id="v-msg" class="text-xs min-h-[1rem] mb-2"></p>
+      <div id="volunteers-list" class="space-y-2"><p class="text-xs text-stone-400">Loading…</p></div>
+    </section>
+  `;
+
+  async function loadReports() {
+    const reports = await JN.getAllReportsForAdmin();
+    $('reports-list').innerHTML = reports.length
+      ? reports.map(r => `
+          <div class="bg-stone-50 rounded-xl px-3 py-2 text-xs">
+            <div class="font-semibold text-stone-700">${JN.esc(r.reason)}</div>
+            <div class="text-stone-400 mt-0.5">
+              profile: ${r.profile_id ? JN.esc(r.profile_id) : '—'} · org: ${r.org_id ? JN.esc(r.org_id) : '—'}
+              · ${JN.relativeTime(r.created_at)}${r.contact ? ' · contact: ' + JN.esc(r.contact) : ''}
+            </div>
+          </div>`).join('')
+      : '<p class="text-xs text-stone-400">No reports.</p>';
+  }
+
+  async function loadVolunteers() {
+    const volunteers = await JN.getAllVolunteers();
+    $('volunteers-list').innerHTML = volunteers.length
+      ? volunteers.map(v => `
+          <div class="flex items-center justify-between bg-stone-50 rounded-xl px-3 py-2 text-xs">
+            <span class="font-mono text-stone-600">${JN.esc(v.user_id)}</span>
+            <span class="font-semibold ${v.agreement_accepted ? 'text-emerald-600' : 'text-amber-600'}">${v.agreement_accepted ? 'active' : 'awaiting agreement'}</span>
+          </div>`).join('')
+      : '<p class="text-xs text-stone-400">No volunteers appointed yet.</p>';
+  }
+
+  $('v-appoint').onclick = async () => {
+    const email = $('v-email').value.trim();
+    const vmsg = (t, ok) => { $('v-msg').textContent = t; $('v-msg').className = 'text-xs min-h-[1rem] mb-2 ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
+    if (!email) return vmsg('Enter an email.');
+    try {
+      await JN.appointVolunteerByEmail(email);
+      vmsg('Appointed. They still need to accept the review agreement before reviewing anything.', true);
+      $('v-email').value = '';
+      loadVolunteers();
+    } catch (err) { vmsg(err.message); }
+  };
+
+  loadReports();
+  loadVolunteers();
+})();
+</script>
+</body>
+</html>

@@ -223,10 +223,11 @@ create policy "worker resolves donation" on donations for update
 
 -- Reports: anyone can file. Nobody reads via the API — NOT the reported
 -- worker (telling the accused defeats an impersonation/abuse report and
--- risks retaliation against whoever filed it), not the public. Admin-only
--- review via the Supabase dashboard (service role bypasses RLS). There is
--- currently no dedicated admin UI — this is a known gap, not a feature.
+-- risks retaliation against whoever filed it), not the public. Platform
+-- admins can now read reports via admin.html (previously dashboard-only).
 create policy "anyone files report" on reports for insert with check (true);
+create policy "admins read all reports" on reports for select
+  using (exists (select 1 from platform_admins pa where pa.user_id = auth.uid()));
 
 -- Votes: any signed-in user may cast/change/remove their own vote.
 -- Nobody — not even the profile owner — can read another person's
@@ -253,6 +254,108 @@ create view vote_reason_counts as
   where reason is not null
   group by profile_id, value, reason;
 grant select on vote_reason_counts to anon, authenticated;
+
+-- ============================================================
+-- Moderation: platform admins, volunteer reviewers, profile reviews
+--
+-- Model: a new profile's OWN LINK works immediately (the whole point of
+-- the platform is "share your link today") — it is just excluded from
+-- the public Explore directory until a volunteer reviews it. Volunteers
+-- never get direct write access to profiles themselves (that would let
+-- a reviewer edit someone else's bio/payment info); they only ever
+-- insert into profile_reviews, an append-only audit trail. Directory
+-- visibility is computed from the latest review decision.
+-- ============================================================
+
+-- Root trust anchor. No insert/update/delete policy is defined for this
+-- table at all — the only way to grant platform-admin status is via the
+-- Supabase dashboard (service role), by design, so there is no way to
+-- self-escalate through the public API.
+create table platform_admins (
+  user_id     uuid primary key references auth.users(id) on delete cascade,
+  created_at  timestamptz default now()
+);
+alter table platform_admins enable row level security;
+create policy "self checks own admin status" on platform_admins for select
+  using (auth.uid() = user_id);
+
+-- Volunteer reviewers. Only an admin can appoint one (via admin.html,
+-- which calls the admin_appoint_volunteer() function below). A volunteer
+-- must explicitly accept the review-guidelines agreement themselves
+-- before they can review anything — see agreement_accepted.
+create table volunteers (
+  user_id             uuid primary key references auth.users(id) on delete cascade,
+  appointed_by        uuid references auth.users(id),
+  agreement_accepted  boolean not null default false,
+  created_at          timestamptz default now()
+);
+alter table volunteers enable row level security;
+create policy "self checks own volunteer status" on volunteers for select
+  using (auth.uid() = user_id);
+create policy "volunteer accepts agreement" on volunteers for update
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "admins manage volunteers" on volunteers for all
+  using (exists (select 1 from platform_admins pa where pa.user_id = auth.uid()))
+  with check (exists (select 1 from platform_admins pa where pa.user_id = auth.uid()));
+
+-- Admin-only: look up a user by email and appoint them as a volunteer.
+-- SECURITY DEFINER so it can read auth.users (normally locked down),
+-- but the first line re-checks the CALLER is an admin — without that
+-- check this would be a privilege-escalation hole, not a convenience.
+create or replace function admin_appoint_volunteer(target_email text)
+returns void as $$
+declare target_id uuid;
+begin
+  if not exists (select 1 from platform_admins where user_id = auth.uid()) then
+    raise exception 'Only a platform admin can appoint volunteers';
+  end if;
+  select id into target_id from auth.users where email = target_email;
+  if target_id is null then
+    raise exception 'No account found for that email';
+  end if;
+  insert into volunteers (user_id, appointed_by) values (target_id, auth.uid())
+    on conflict (user_id) do nothing;
+end;
+$$ language plpgsql security definer;
+
+-- Append-only review decisions. Reviewer identity and any note are NOT
+-- public (a volunteer's negative note is itself an unverified judgment
+-- call — same reasoning as reports not being public). Only the
+-- aggregate current status (profile_review_status view) is public.
+create table profile_reviews (
+  id                uuid primary key default gen_random_uuid(),
+  profile_id        uuid not null references profiles(id) on delete cascade,
+  reviewer_user_id  uuid not null references auth.users(id),
+  decision          text not null check (decision in ('approved', 'flagged')),
+  note              text,
+  created_at        timestamptz default now()
+);
+alter table profile_reviews enable row level security;
+create policy "reviewers read reviews" on profile_reviews for select
+  using (
+    exists (select 1 from volunteers v where v.user_id = auth.uid())
+    or exists (select 1 from platform_admins pa where pa.user_id = auth.uid())
+  );
+create policy "reviewers submit reviews" on profile_reviews for insert
+  with check (
+    auth.uid() = reviewer_user_id and (
+      exists (select 1 from volunteers v where v.user_id = auth.uid() and v.agreement_accepted = true)
+      or exists (select 1 from platform_admins pa where pa.user_id = auth.uid())
+    )
+  );
+
+-- Public: current status only (approved / flagged / pending), never who
+-- decided or why. Views run as their owner by default, bypassing the
+-- RLS above — exactly what lets this aggregate while the underlying
+-- table stays locked down.
+create view profile_review_status as
+  select p.id as profile_id,
+    coalesce(
+      (select pr.decision from profile_reviews pr where pr.profile_id = p.id order by pr.created_at desc limit 1),
+      'pending'
+    ) as status
+  from profiles p;
+grant select on profile_review_status to anon, authenticated;
 
 -- ============================================================
 -- Storage buckets

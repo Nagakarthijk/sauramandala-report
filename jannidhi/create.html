@@ -116,6 +116,7 @@
   <div id="mypage-link" class="hidden mt-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-sm">
     <strong>Your public page:</strong>
     <a id="mypage-a" class="text-emerald-700 underline break-all" href="#"></a>
+    <p id="mypage-review-status" class="text-xs mt-2"></p>
     <div class="flex gap-2 mt-3">
       <button id="mypage-share" type="button" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2.5 rounded-lg transition-colors">Share page</button>
       <button id="mypage-copy" type="button" class="flex-1 border border-emerald-300 text-emerald-700 hover:bg-emerald-100 text-xs font-semibold py-2.5 rounded-lg transition-colors">Copy link</button>
@@ -195,7 +196,7 @@
     document.querySelector(`[data-i="${links.length - 1}"][data-f="label"]`)?.focus();
   };
 
-  function showPostSave() {
+  async function showPostSave() {
     $('heading').textContent = 'Edit your page';
     $('save').textContent = 'Save changes';
     $('org-section').classList.remove('hidden');
@@ -206,6 +207,18 @@
     $('mypage-share').onclick = () => JN.shareProfile(profile);
     $('mypage-copy').onclick = () => JN.copyLink(profile);
     if (profile.id_attested) $('id-status').classList.remove('hidden');
+    const status = await JN.getMyReviewStatus(profile.id);
+    const statusEl = $('mypage-review-status');
+    if (status === 'approved') {
+      statusEl.className = 'text-xs mt-2 text-emerald-700';
+      statusEl.textContent = '✓ Reviewed and listed in Explore.';
+    } else if (status === 'flagged') {
+      statusEl.className = 'text-xs mt-2 text-red-600';
+      statusEl.textContent = 'A community reviewer flagged this page — it works at your link, but isn\'t listed in Explore. Contact us if you think this is a mistake.';
+    } else {
+      statusEl.className = 'text-xs mt-2 text-amber-700';
+      statusEl.textContent = 'Your link works right now and you can share it — it\'s just waiting on a first community review before it appears in the public Explore directory.';
+    }
     loadOrgs();
   }
 

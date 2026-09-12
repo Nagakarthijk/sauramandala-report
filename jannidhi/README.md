@@ -114,6 +114,36 @@ are future work, not implemented.
   above for why). Turn confirm-email back on once custom SMTP is set up to make this
   signal meaningfully stronger.
 
+## Moderation: platform admins and volunteer reviewers
+
+A new worker's own page link works immediately — the whole premise of JanNidhi is "share
+your link today." It just doesn't appear in the public Explore directory until a volunteer
+reviews it. This closes the "creating a profile is fully unmoderated" gap without
+reintroducing the friction the platform is designed to avoid.
+
+- **`admin.html`** and **`volunteer.html`** are deliberately unlinked from the public nav —
+  reachable only if you know the URL. `admin.html` is gated by the `platform_admins` table,
+  which has **no insert/update/delete policy at all** — the only way to grant admin status
+  is via the Supabase dashboard directly (service role), so there's no path to
+  self-escalate through the public API.
+- Admins appoint volunteers by email from `admin.html`, via the `admin_appoint_volunteer()`
+  Postgres function (`SECURITY DEFINER`, but it re-checks the caller is actually an admin
+  as its first line — without that check this would be a privilege-escalation hole).
+- A volunteer must explicitly accept a review-guidelines agreement (`volunteer.html`)
+  before they can review anything — `agreement_accepted` is enforced in the
+  `profile_reviews` insert policy, not just the UI.
+- Volunteers never get direct write access to `profiles` — that would let a reviewer edit
+  someone else's bio or payment details. They only ever insert into `profile_reviews`, an
+  append-only decision log; directory visibility is derived from the latest decision via
+  the `profile_review_status` view.
+- Reviewer identity and any private note are **not public** — same reasoning as reports:
+  an unverified negative note is itself a judgment call that shouldn't be broadcast. Only
+  the resulting status (approved/flagged/pending) is public.
+- See `terms.html` §9 for the indemnification language: volunteers are not employees or
+  agents, JanNidhi indemnifies good-faith decisions made per its guidelines, and a
+  volunteer remains personally responsible only for bad-faith or clearly out-of-guideline
+  decisions.
+
 ## Stack & setup
 
 Static HTML + Tailwind CDN + [Supabase](https://supabase.com) (free tier). No build step.
@@ -132,11 +162,14 @@ page can be previewed by just opening `index.html`.
 | File | Purpose |
 |---|---|
 | `index.html` | Landing + discovery (search workers & orgs) |
-| `auth.html` | Email OTP / password sign-in |
+| `auth.html` | Password sign-in / sign-up (`?context=org` for org registration) |
+| `reset-password.html` | Set a new password from a reset-link session |
 | `create.html` | Create/edit worker page, ID attestation, org join requests |
 | `profile.html?u=slug` | Public worker page + donor declaration + owner console |
 | `org.html?o=slug` | Public org page hosting vouched workers |
 | `org-admin.html` | Register org, vouch/revoke workers |
+| `admin.html` | Platform admin: reports, appoint volunteers (unlinked, URL-only) |
+| `volunteer.html` | Volunteer review queue + agreement gate (unlinked, URL-only) |
 | `terms.html` | Terms & disclaimers (draft) |
 | `app.js` | Data layer, transparency score, shared chrome |
 | `config.js` | Supabase credentials (placeholders = demo mode) |
