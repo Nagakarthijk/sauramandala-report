@@ -143,6 +143,18 @@ reintroducing the friction the platform is designed to avoid.
   agents, JanNidhi indemnifies good-faith decisions made per its guidelines, and a
   volunteer remains personally responsible only for bad-faith or clearly out-of-guideline
   decisions.
+- **Organisations get the same treatment, deliberately not workers.** An org can vouch for
+  many people at once — higher leverage than one worker's own profile — so registering an
+  org creates it in a `pending` state (`org_reviews`/`org_review_status`, mirroring the
+  profile tables exactly). An unreviewed org's own page still works and it can still
+  receive join requests, but it **cannot vouch for anyone** until approved (enforced in the
+  `org_members` update policy, not just the UI) and it's excluded from the public directory
+  until then. Individual worker signups stay fully frictionless — this gate is org-only.
+- **A decision isn't final.** `volunteer.html` has a lookup tool (by slug) that lets a
+  volunteer/admin re-review anything already decided — e.g. flag a profile or org that was
+  previously approved, once a report comes in later. `submitProfileReview`/
+  `submitOrgReview` can be called at any time; the status views always reflect the most
+  recent decision.
 
 ## Stack & setup
 

@@ -198,6 +198,17 @@ const JN = (() => {
 
   // ── Orgs & vouching ──────────────────────────────────────────────────
   const getOrgs = () => _list('orgs');
+  // Public directory only — orgs not yet reviewed still work at their own
+  // link (getOrgBySlug), they're just not listed here. Mirrors getProfiles().
+  async function getApprovedOrgs() {
+    if (DEMO) return _list('orgs');
+    const { data: statuses } = await _sb.from('org_review_status').select('org_id').eq('status', 'approved');
+    const approvedIds = (statuses || []).map(s => s.org_id);
+    if (!approvedIds.length) return [];
+    const { data, error } = await _sb.from('orgs').select('*').in('id', approvedIds).order('created_at', { ascending: false });
+    if (error) { console.error('getApprovedOrgs', error); return []; }
+    return data;
+  }
   async function getOrgBySlug(slug) {
     if (DEMO) return D.orgs.find(o => o.slug === slug) || null;
     const { data } = await _sb.from('orgs').select('*').eq('slug', slug).maybeSingle();
@@ -307,6 +318,46 @@ const JN = (() => {
     const user = await requireAuth();
     if (!user) return null;
     return _insert('profile_reviews', { profile_id: profileId, reviewer_user_id: user.id, decision, note: note || null });
+  }
+
+  // ── Org review (mirrors profile review) ───────────────────────────────
+  async function getMyOrgReviewStatus(orgId) {
+    if (DEMO) return 'approved';
+    const { data } = await _sb.from('org_review_status').select('status').eq('org_id', orgId).maybeSingle();
+    return data?.status || 'pending';
+  }
+  async function getPendingOrgsForReview() {
+    if (DEMO) return [];
+    const { data: statuses } = await _sb.from('org_review_status').select('org_id, status');
+    const pendingIds = (statuses || []).filter(s => s.status === 'pending').map(s => s.org_id);
+    if (!pendingIds.length) return [];
+    const { data } = await _sb.from('orgs').select('*').in('id', pendingIds).order('created_at', { ascending: true });
+    return data || [];
+  }
+  async function submitOrgReview(orgId, decision, note) {
+    const user = await requireAuth();
+    if (!user) return null;
+    return _insert('org_reviews', { org_id: orgId, reviewer_user_id: user.id, decision, note: note || null });
+  }
+
+  // A decision can be submitted at any time, not just once — this is how a
+  // volunteer/admin re-reviews something already approved (e.g. a report
+  // comes in later about a profile that passed initial review). These two
+  // helpers let admin.html look up any profile/org by slug on demand,
+  // rather than only ever seeing the once-only pending queue.
+  async function findProfileForReview(slug) {
+    if (DEMO) return null;
+    const profile = await getProfileBySlug(slug);
+    if (!profile) return null;
+    const status = await getMyReviewStatus(profile.id);
+    return { ...profile, _reviewStatus: status };
+  }
+  async function findOrgForReview(slug) {
+    if (DEMO) return null;
+    const org = await getOrgBySlug(slug);
+    if (!org) return null;
+    const status = await getMyOrgReviewStatus(org.id);
+    return { ...org, _reviewStatus: status };
   }
 
   // ── Community votes ──────────────────────────────────────────────────
@@ -580,12 +631,13 @@ const JN = (() => {
     signInWithPassword, signUpWithPassword, sendPasswordReset, updatePassword, signOut, isOwner,
     uploadPublicImage, uploadPrivateDoc,
     getProfiles, getProfileBySlug, getMyProfile, addProfile, updateProfile,
-    getOrgs, getOrgBySlug, getMyOrgs, addOrg,
+    getOrgs, getApprovedOrgs, getOrgBySlug, getMyOrgs, addOrg,
     getOrgMembers, getMembershipsFor, requestMembership, setMembershipStatus, removeMembership,
     getUpdatesFor, addUpdate, deleteUpdate, getExpensesFor, addExpense, deleteExpense,
     getDonationsFor, declareDonation, resolveDonation, fileReport, getAllReportsForAdmin,
     isPlatformAdmin, getVolunteerStatus, acceptVolunteerAgreement, appointVolunteerByEmail, getAllVolunteers,
     getMyReviewStatus, getPendingProfilesForReview, submitProfileReview,
+    getMyOrgReviewStatus, getPendingOrgsForReview, submitOrgReview, findProfileForReview, findOrgForReview,
     getVoteCounts, getVoteReasonCounts, getMyVote, castVote, removeVote, UPVOTE_REASONS, DOWNVOTE_REASONS,
     computeScore, scoreBand,
     slugify, formatINR, formatINRFull, relativeTime, initials, esc, orgTypeLabel,

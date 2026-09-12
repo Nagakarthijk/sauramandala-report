@@ -357,6 +357,57 @@ create view profile_review_status as
   from profiles p;
 grant select on profile_review_status to anon, authenticated;
 
+-- ── Org review (mirrors profile review) ─────────────────────
+-- Unlike workers, an org's own page still works and can accept join
+-- requests immediately — but it CANNOT vouch for anyone (see the
+-- org_members policy below) until approved, and it's excluded from the
+-- public directory until then. An org vouching for many workers is
+-- higher-leverage than one worker's own profile, hence the extra gate.
+create table org_reviews (
+  id                uuid primary key default gen_random_uuid(),
+  org_id            uuid not null references orgs(id) on delete cascade,
+  reviewer_user_id  uuid not null references auth.users(id),
+  decision          text not null check (decision in ('approved', 'flagged')),
+  note              text,
+  created_at        timestamptz default now()
+);
+alter table org_reviews enable row level security;
+create policy "reviewers read org reviews" on org_reviews for select
+  using (
+    exists (select 1 from volunteers v where v.user_id = auth.uid())
+    or exists (select 1 from platform_admins pa where pa.user_id = auth.uid())
+  );
+create policy "reviewers submit org reviews" on org_reviews for insert
+  with check (
+    auth.uid() = reviewer_user_id and (
+      exists (select 1 from volunteers v where v.user_id = auth.uid() and v.agreement_accepted = true)
+      or exists (select 1 from platform_admins pa where pa.user_id = auth.uid())
+    )
+  );
+
+create view org_review_status as
+  select o.id as org_id,
+    coalesce(
+      (select orv.decision from org_reviews orv where orv.org_id = o.id order by orv.created_at desc limit 1),
+      'pending'
+    ) as status
+  from orgs o;
+grant select on org_review_status to anon, authenticated;
+
+-- Org admin can always change membership status EXCEPT to 'vouched' —
+-- that specifically requires the org itself to have been approved first.
+-- Requesting to join and being marked pending/revoked are unaffected.
+drop policy if exists "org admin updates membership" on org_members;
+create policy "org admin updates membership" on org_members for update
+  using (exists (select 1 from orgs o where o.id = org_id and o.admin_user_id = auth.uid()))
+  with check (
+    exists (select 1 from orgs o where o.id = org_id and o.admin_user_id = auth.uid())
+    and (
+      status <> 'vouched'
+      or exists (select 1 from org_review_status ors where ors.org_id = org_members.org_id and ors.status = 'approved')
+    )
+  );
+
 -- ============================================================
 -- Storage buckets
 --   jn-public  : QR images, photos, work media, bills, transfer proofs

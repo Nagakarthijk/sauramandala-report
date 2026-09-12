@@ -90,7 +90,7 @@
     const profById = Object.fromEntries(profiles.map(p => [p.id, p]));
 
     const blocks = await Promise.all(orgs.map(async org => {
-      const members = await JN.getOrgMembers(org.id);
+      const [members, reviewStatus] = await Promise.all([JN.getOrgMembers(org.id), JN.getMyOrgReviewStatus(org.id)]);
       const row = m => {
         const p = profById[m.profile_id];
         return `
@@ -103,13 +103,21 @@
           </div>`;
       };
       const url = new URL('org.html?o=' + encodeURIComponent(org.slug), location.href).href;
+      const statusBadge = reviewStatus === 'approved'
+        ? '<span class="inline-block mt-1 text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-50 text-emerald-700">Reviewed — can vouch &amp; listed in Explore</span>'
+        : reviewStatus === 'flagged'
+        ? '<span class="inline-block mt-1 text-[10px] font-bold px-2 py-1 rounded-full bg-red-50 text-red-700">Flagged by a reviewer — contact us if this seems wrong</span>'
+        : '<span class="inline-block mt-1 text-[10px] font-bold px-2 py-1 rounded-full bg-amber-50 text-amber-700">Awaiting first review — can\'t vouch or appear in Explore yet</span>';
       return `
         <section class="bg-white border border-stone-100 rounded-2xl p-5" data-org="${org.id}">
           <div class="flex items-baseline justify-between gap-2">
             <h2 class="font-black text-stone-900">${JN.esc(org.name)}</h2>
             <span class="text-[10px] text-stone-400">${JN.orgTypeLabel(org.org_type)}</span>
           </div>
-          ${org.admin_email_domain_match ? '<span class="inline-block mt-1 text-[10px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-700">Admin email matches organisation domain</span>' : ''}
+          <div class="flex flex-wrap gap-1.5 mt-1">
+            ${statusBadge}
+            ${org.admin_email_domain_match ? '<span class="inline-block text-[10px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-700">Admin email matches organisation domain</span>' : ''}
+          </div>
           <a href="${url}" class="text-xs text-orange-600 underline break-all block mt-1">${url}</a>
           <p class="text-[11px] text-stone-400 mt-1">Share this link — it hosts all your vouched workers. Vouch only for people you actually know; the vouch carries your organisation's name.</p>
           <div class="mt-3 space-y-2">${members.length ? members.map(row).join('') : '<p class="text-xs text-stone-400">No membership requests yet. Workers request to join from their own page editor.</p>'}</div>
@@ -125,7 +133,13 @@
     try {
       await JN.setMembershipStatus(id, vouch ? 'vouched' : revoke ? 'revoked' : 'revoked');
       render();
-    } catch (err) { alert(err.message); }
+    } catch (err) {
+      if (vouch && /row-level security|policy/i.test(err.message)) {
+        alert("This organisation hasn't been reviewed yet, so it can't vouch for anyone. Once a volunteer or admin approves it, vouching will work.");
+      } else {
+        alert(err.message);
+      }
+    }
   });
 
   render();

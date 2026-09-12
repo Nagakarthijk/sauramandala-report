@@ -67,8 +67,27 @@
 
   $('page').innerHTML = `
     <h1 class="text-2xl font-black text-stone-900 mb-1">Review queue</h1>
-    <p class="text-sm text-stone-500 mb-6">New profiles waiting for a first community review. Their own page already works — this only decides whether they show up in Explore.</p>
-    <div id="queue" class="space-y-3"></div>
+    <p class="text-sm text-stone-500 mb-6">New profiles and organisations waiting for a first community review. A profile's own page already works regardless — this only decides whether it shows up in Explore. An org can't vouch for anyone until it's approved here.</p>
+
+    <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mb-2">Organisations</h2>
+    <div id="org-queue" class="space-y-3 mb-8"></div>
+
+    <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mb-2">Profiles</h2>
+    <div id="queue" class="space-y-3 mb-8"></div>
+
+    <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mb-2">Re-review something already decided</h2>
+    <p class="text-xs text-stone-400 mb-2">A decision isn't final — look up any profile or org by its URL slug to change it (e.g. after a new report comes in).</p>
+    <div class="bg-white border border-stone-100 rounded-2xl p-4 space-y-2">
+      <div class="flex gap-2">
+        <select id="lookup-type" class="border border-stone-200 rounded-lg px-2 py-2 text-xs">
+          <option value="profile">Profile</option>
+          <option value="org">Org</option>
+        </select>
+        <input id="lookup-slug" placeholder="slug from the URL, e.g. asha-devi-cpd9" class="flex-1 border border-stone-200 rounded-lg px-2.5 py-2 text-xs">
+        <button id="lookup-btn" class="bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold px-3 rounded-lg">Find</button>
+      </div>
+      <div id="lookup-result"></div>
+    </div>
   `;
 
   async function loadQueue() {
@@ -91,6 +110,27 @@
       </div>`).join('') : '<p class="text-sm text-stone-400">Nothing pending — queue is clear.</p>';
   }
 
+  async function loadOrgQueue() {
+    const pending = await JN.getPendingOrgsForReview();
+    $('org-queue').innerHTML = pending.length ? pending.map(o => `
+      <div class="bg-white border border-stone-100 rounded-2xl p-4" data-org="${o.id}">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <a href="org.html?o=${encodeURIComponent(o.slug)}" target="_blank" rel="noopener" class="font-bold text-stone-900 hover:underline">${JN.esc(o.name)}</a>
+            <div class="text-xs text-stone-400">${JN.orgTypeLabel(o.org_type)}${o.website ? ' · ' + JN.esc(JN.hostname(o.website)) : ''}</div>
+          </div>
+          <span class="text-[10px] text-stone-400 shrink-0">${JN.relativeTime(o.created_at)}</span>
+        </div>
+        <p class="mt-2 text-xs text-stone-600 leading-relaxed">${JN.esc(o.description || '')}</p>
+        ${o.admin_email_domain_match ? '<span class="inline-block mt-1 text-[10px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-700">Admin email matches org domain</span>' : ''}
+        <textarea data-note placeholder="Optional note (kept private, admin/reviewer eyes only)" rows="2" class="w-full mt-2 border border-stone-200 rounded-lg px-2.5 py-2 text-xs"></textarea>
+        <div class="flex gap-2 mt-2">
+          <button data-approve class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2 rounded-lg">Approve — can vouch &amp; list</button>
+          <button data-flag class="flex-1 border border-stone-300 hover:bg-red-50 hover:text-red-600 text-xs font-semibold py-2 rounded-lg">Flag</button>
+        </div>
+      </div>`).join('') : '<p class="text-sm text-stone-400">Nothing pending.</p>';
+  }
+
   $('queue').addEventListener('click', async (e) => {
     const card = e.target.closest('[data-profile]');
     if (!card) return;
@@ -105,7 +145,55 @@
     }
   });
 
+  $('org-queue').addEventListener('click', async (e) => {
+    const card = e.target.closest('[data-org]');
+    if (!card) return;
+    const orgId = card.dataset.org;
+    const note = card.querySelector('[data-note]').value.trim();
+    if (e.target.matches('[data-approve]')) {
+      await JN.submitOrgReview(orgId, 'approved', note);
+      loadOrgQueue();
+    } else if (e.target.matches('[data-flag]')) {
+      await JN.submitOrgReview(orgId, 'flagged', note);
+      loadOrgQueue();
+    }
+  });
+
+  $('lookup-btn').onclick = async () => {
+    const type = $('lookup-type').value;
+    const slug = $('lookup-slug').value.trim();
+    const box = $('lookup-result');
+    if (!slug) return;
+    box.innerHTML = '<p class="text-xs text-stone-400 mt-2">Looking up…</p>';
+    const item = type === 'profile' ? await JN.findProfileForReview(slug) : await JN.findOrgForReview(slug);
+    if (!item) { box.innerHTML = '<p class="text-xs text-red-500 mt-2">Not found.</p>'; return; }
+    const band = { approved: 'bg-emerald-50 text-emerald-700', flagged: 'bg-red-50 text-red-700', pending: 'bg-amber-50 text-amber-700' }[item._reviewStatus];
+    box.innerHTML = `
+      <div class="mt-3 border-t border-stone-100 pt-3">
+        <div class="flex items-center justify-between gap-2">
+          <a href="${type === 'profile' ? 'profile.html?u=' : 'org.html?o='}${encodeURIComponent(slug)}" target="_blank" rel="noopener" class="font-bold text-stone-900 hover:underline">${JN.esc(item.name)}</a>
+          <span class="text-[10px] font-bold px-2 py-1 rounded-full ${band}">${item._reviewStatus}</span>
+        </div>
+        <textarea id="lookup-note" placeholder="Optional note" rows="2" class="w-full mt-2 border border-stone-200 rounded-lg px-2.5 py-2 text-xs"></textarea>
+        <div class="flex gap-2 mt-2">
+          <button id="lookup-approve" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2 rounded-lg">Approve</button>
+          <button id="lookup-flag" class="flex-1 border border-stone-300 hover:bg-red-50 hover:text-red-600 text-xs font-semibold py-2 rounded-lg">Flag</button>
+        </div>
+      </div>`;
+    const submit = (decision) => async () => {
+      const note = $('lookup-note').value.trim();
+      if (type === 'profile') await JN.submitProfileReview(item.id, decision, note);
+      else await JN.submitOrgReview(item.id, decision, note);
+      JN.toast(decision === 'approved' ? 'Approved' : 'Flagged');
+      $('lookup-btn').click();
+      loadQueue(); loadOrgQueue();
+    };
+    $('lookup-approve').onclick = submit('approved');
+    $('lookup-flag').onclick = submit('flagged');
+  };
+
   loadQueue();
+  loadOrgQueue();
 })();
 </script>
 </body>

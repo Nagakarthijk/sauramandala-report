@@ -62,7 +62,7 @@
   document.getElementById('nav').innerHTML = JN.navHTML('explore', user);
   document.getElementById('disclaimer').innerHTML = JN.disclaimerHTML();
 
-  const [profiles, orgs] = await Promise.all([JN.getProfiles(), JN.getOrgs()]);
+  const [profiles, orgs] = await Promise.all([JN.getProfiles(), JN.getApprovedOrgs()]);
   // Load each worker's score inputs in parallel (fine at MVP scale)
   const scored = await Promise.all(profiles.map(async p => {
     const [don, exp, upd] = await Promise.all([JN.getDonationsFor(p.id), JN.getExpensesFor(p.id), JN.getUpdatesFor(p.id)]);
