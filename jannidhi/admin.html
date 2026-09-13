@@ -24,7 +24,7 @@
 (async () => {
   JN.init();
   const user = await JN.getUser();
-  document.getElementById('nav').innerHTML = JN.navHTML('', user);
+  document.getElementById('nav').innerHTML = JN.navHTML('admin', user);
   const $ = id => document.getElementById(id);
 
   if (!user) {

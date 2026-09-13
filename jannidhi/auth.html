@@ -51,7 +51,9 @@
   const params = new URLSearchParams(location.search);
   const next = params.get('next') || 'create.html';
   const isOrgContext = params.get('context') === 'org';
-  if (user) { location.href = next; return; }
+  // The admin account always lands on admin.html, regardless of ?next= —
+  // this is deliberate, not a bug, so admin never has to think about it.
+  if (user) { location.href = (await JN.isPlatformAdmin()) ? 'admin.html' : next; return; }
 
   const $ = id => document.getElementById(id);
   const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'text-xs text-center min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
@@ -104,11 +106,11 @@
       if (mode === 'in') {
         const { error } = await JN.signInWithPassword(email, password, turnstileToken);
         if (error) throw error;
-        location.href = next;
+        location.href = (await JN.isPlatformAdmin()) ? 'admin.html' : next;
       } else {
         const { data, error } = await JN.signUpWithPassword(email, password, turnstileToken);
         if (error) throw error;
-        if (data.session) location.href = next;
+        if (data.session) location.href = (await JN.isPlatformAdmin()) ? 'admin.html' : next;
         else msg('Account created — check your email to confirm, then sign in.', true);
       }
     } catch (err) {

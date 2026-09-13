@@ -659,7 +659,7 @@ const JN = (() => {
            class="text-sm font-medium text-stone-500 hover:text-stone-800 transition-colors shrink-0 px-1">Sign in</a>`;
     const link = (href, key, label) =>
       `<a href="${href}" class="text-sm font-medium px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors ${active === key ? 'text-stone-900 bg-stone-100' : 'text-stone-500 hover:text-stone-800'}">${label}</a>`;
-    return `
+    const html = `
       <nav class="bg-white/95 backdrop-blur border-b border-stone-100 sticky top-0 z-40">
         <div class="max-w-3xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-1">
           <a href="index.html" class="flex items-center gap-1.5 shrink-0">
@@ -669,6 +669,7 @@ const JN = (() => {
           <div class="flex items-center gap-0.5 sm:gap-1 ml-auto">
             ${link('index.html', 'explore', 'Explore')}
             ${link('org-admin.html', 'orgs', 'Orgs')}
+            <span id="jn-admin-slot"></span>
             ${authEl}
             <a href="create.html" class="bg-stone-900 hover:bg-stone-800 active:scale-95 text-white text-sm font-semibold px-3.5 sm:px-4 py-2 rounded-xl shrink-0 transition-all">My page</a>
           </div>
@@ -676,6 +677,17 @@ const JN = (() => {
       </nav>
       ${DEMO ? `<div class="bg-amber-50 border-b border-amber-200 text-amber-800 text-xs text-center py-1.5 px-4">
         Demo mode — showing sample data. Connect Supabase in <code>config.js</code> to go live.</div>` : ''}`;
+    // Self-contained: no page that calls navHTML needs to know or check
+    // admin status itself. Only ever materializes for the one admin account.
+    if (user) {
+      isPlatformAdmin().then(isAdmin => {
+        if (!isAdmin) return;
+        const slot = document.getElementById('jn-admin-slot');
+        if (!slot) return;
+        slot.outerHTML = `<a href="admin.html" class="text-sm font-bold px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors ${active === 'admin' ? 'text-stone-900 bg-stone-100' : 'text-orange-700 hover:text-orange-800'}">Admin</a>`;
+      });
+    }
+    return html;
   }
 
   // The standing no-liability disclaimer, shown on every public page.
