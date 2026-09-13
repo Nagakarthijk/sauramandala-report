@@ -169,8 +169,12 @@ const JN = (() => {
   // one; only appearing in Explore waits for a volunteer.
   async function getProfiles() {
     if (DEMO) return _list('profiles', { discoverable: true }, 'last_active_at');
-    const { data: statuses } = await _sb.from('profile_review_status').select('profile_id').eq('status', 'approved');
-    const approvedIds = (statuses || []).map(s => s.profile_id);
+    const [{ data: statuses }, { data: blocks }] = await Promise.all([
+      _sb.from('profile_review_status').select('profile_id').eq('status', 'approved'),
+      _sb.from('profile_block_status').select('profile_id')
+    ]);
+    const blockedIds = new Set((blocks || []).map(b => b.profile_id));
+    const approvedIds = (statuses || []).map(s => s.profile_id).filter(id => !blockedIds.has(id));
     if (!approvedIds.length) return [];
     const { data, error } = await _sb.from('profiles').select('*')
       .eq('discoverable', true).in('id', approvedIds).order('last_active_at', { ascending: false });
@@ -202,8 +206,12 @@ const JN = (() => {
   // link (getOrgBySlug), they're just not listed here. Mirrors getProfiles().
   async function getApprovedOrgs() {
     if (DEMO) return _list('orgs');
-    const { data: statuses } = await _sb.from('org_review_status').select('org_id').eq('status', 'approved');
-    const approvedIds = (statuses || []).map(s => s.org_id);
+    const [{ data: statuses }, { data: blocks }] = await Promise.all([
+      _sb.from('org_review_status').select('org_id').eq('status', 'approved'),
+      _sb.from('org_block_status').select('org_id')
+    ]);
+    const blockedIds = new Set((blocks || []).map(b => b.org_id));
+    const approvedIds = (statuses || []).map(s => s.org_id).filter(id => !blockedIds.has(id));
     if (!approvedIds.length) return [];
     const { data, error } = await _sb.from('orgs').select('*').in('id', approvedIds).order('created_at', { ascending: false });
     if (error) { console.error('getApprovedOrgs', error); return []; }
@@ -358,6 +366,68 @@ const JN = (() => {
     if (!org) return null;
     const status = await getMyOrgReviewStatus(org.id);
     return { ...org, _reviewStatus: status };
+  }
+
+  // ── Admin: full control, not just the pending queue ───────────────────
+  // Everything created before profile/org review existed defaulted to
+  // 'pending' the moment that system shipped — nothing is lost, but it
+  // did drop out of the pending-only queue view. These list EVERYTHING,
+  // regardless of status, so nothing old is stuck invisible.
+  async function getAllProfilesForAdmin() {
+    if (DEMO) return [];
+    const [{ data: profiles }, { data: statuses }, { data: blocks }] = await Promise.all([
+      _sb.from('profiles').select('*').order('created_at', { ascending: false }),
+      _sb.from('profile_review_status').select('*'),
+      _sb.from('profile_block_status').select('profile_id')
+    ]);
+    const statusById = Object.fromEntries((statuses || []).map(s => [s.profile_id, s.status]));
+    const blockedIds = new Set((blocks || []).map(b => b.profile_id));
+    return (profiles || []).map(p => ({ ...p, _reviewStatus: statusById[p.id] || 'pending', _blocked: blockedIds.has(p.id) }));
+  }
+  async function getAllOrgsForAdmin() {
+    if (DEMO) return [];
+    const [{ data: orgs }, { data: statuses }, { data: blocks }] = await Promise.all([
+      _sb.from('orgs').select('*').order('created_at', { ascending: false }),
+      _sb.from('org_review_status').select('*'),
+      _sb.from('org_block_status').select('org_id')
+    ]);
+    const statusById = Object.fromEntries((statuses || []).map(s => [s.org_id, s.status]));
+    const blockedIds = new Set((blocks || []).map(b => b.org_id));
+    return (orgs || []).map(o => ({ ...o, _reviewStatus: statusById[o.id] || 'pending', _blocked: blockedIds.has(o.id) }));
+  }
+
+  // Hard takedown — stronger than flagging. Flagging only hides from the
+  // directory; a blocked page shows a takedown notice instead of its
+  // content entirely. Admin-only (RLS), and reversible.
+  async function blockProfile(profileId, reason) {
+    const user = await requireAuth();
+    if (!user) return null;
+    const { error } = await _sb.from('profile_blocks').upsert({ profile_id: profileId, blocked_by: user.id, reason: reason || null });
+    if (error) throw new Error(error.message);
+  }
+  async function unblockProfile(profileId) {
+    const { error } = await _sb.from('profile_blocks').delete().eq('profile_id', profileId);
+    if (error) throw new Error(error.message);
+  }
+  async function blockOrg(orgId, reason) {
+    const user = await requireAuth();
+    if (!user) return null;
+    const { error } = await _sb.from('org_blocks').upsert({ org_id: orgId, blocked_by: user.id, reason: reason || null });
+    if (error) throw new Error(error.message);
+  }
+  async function unblockOrg(orgId) {
+    const { error } = await _sb.from('org_blocks').delete().eq('org_id', orgId);
+    if (error) throw new Error(error.message);
+  }
+  async function isProfileBlocked(profileId) {
+    if (DEMO) return false;
+    const { data } = await _sb.from('profile_block_status').select('profile_id').eq('profile_id', profileId).maybeSingle();
+    return !!data;
+  }
+  async function isOrgBlocked(orgId) {
+    if (DEMO) return false;
+    const { data } = await _sb.from('org_block_status').select('org_id').eq('org_id', orgId).maybeSingle();
+    return !!data;
   }
 
   // ── Community votes ──────────────────────────────────────────────────
@@ -638,6 +708,8 @@ const JN = (() => {
     isPlatformAdmin, getVolunteerStatus, acceptVolunteerAgreement, appointVolunteerByEmail, getAllVolunteers,
     getMyReviewStatus, getPendingProfilesForReview, submitProfileReview,
     getMyOrgReviewStatus, getPendingOrgsForReview, submitOrgReview, findProfileForReview, findOrgForReview,
+    getAllProfilesForAdmin, getAllOrgsForAdmin,
+    blockProfile, unblockProfile, blockOrg, unblockOrg, isProfileBlocked, isOrgBlocked,
     getVoteCounts, getVoteReasonCounts, getMyVote, castVote, removeVote, UPVOTE_REASONS, DOWNVOTE_REASONS,
     computeScore, scoreBand,
     slugify, formatINR, formatINRFull, relativeTime, initials, esc, orgTypeLabel,

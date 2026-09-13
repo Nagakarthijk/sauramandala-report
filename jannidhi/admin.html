@@ -40,7 +40,23 @@
 
   $('page').innerHTML = `
     <h1 class="text-2xl font-black text-stone-900 mb-1">Admin</h1>
-    <p class="text-sm text-stone-500 mb-6">Reports and volunteer management. Not shown or linked anywhere public.</p>
+    <p class="text-sm text-stone-500 mb-6">Full control over every profile and org, reports, and volunteer management. Not shown or linked anywhere public.</p>
+
+    <section class="bg-white border border-stone-100 rounded-2xl p-5 mb-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-bold text-stone-900 text-sm">All profiles</h2>
+        <input id="p-filter" placeholder="Filter by name…" class="border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs w-40">
+      </div>
+      <div id="profiles-list" class="space-y-2"><p class="text-xs text-stone-400">Loading…</p></div>
+    </section>
+
+    <section class="bg-white border border-stone-100 rounded-2xl p-5 mb-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-bold text-stone-900 text-sm">All organisations</h2>
+        <input id="o-filter" placeholder="Filter by name…" class="border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs w-40">
+      </div>
+      <div id="orgs-list" class="space-y-2"><p class="text-xs text-stone-400">Loading…</p></div>
+    </section>
 
     <section class="bg-white border border-stone-100 rounded-2xl p-5 mb-5">
       <h2 class="font-bold text-stone-900 text-sm mb-3">Reports</h2>
@@ -57,6 +73,75 @@
       <div id="volunteers-list" class="space-y-2"><p class="text-xs text-stone-400">Loading…</p></div>
     </section>
   `;
+
+  const statusBadge = (status) => {
+    const cls = { approved: 'bg-emerald-50 text-emerald-700', flagged: 'bg-red-50 text-red-700', pending: 'bg-amber-50 text-amber-700' }[status];
+    return `<span class="text-[10px] font-bold px-2 py-1 rounded-full ${cls}">${status}</span>`;
+  };
+
+  let allProfiles = [], allOrgs = [];
+
+  function renderProfiles(filter) {
+    filter = (filter || '').toLowerCase();
+    const rows = allProfiles.filter(p => !filter || p.name.toLowerCase().includes(filter) || p.slug.includes(filter));
+    $('profiles-list').innerHTML = rows.length ? rows.map(p => `
+      <div class="flex items-center gap-2 px-3 py-2 text-xs bg-stone-50 rounded-xl flex-wrap" data-profile="${p.id}">
+        <a href="profile.html?u=${encodeURIComponent(p.slug)}" target="_blank" rel="noopener" class="flex-1 min-w-0 truncate font-semibold text-stone-700 hover:underline">${JN.esc(p.name)}</a>
+        ${statusBadge(p._reviewStatus)}
+        ${p._blocked ? '<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-stone-800 text-white">BLOCKED</span>' : ''}
+        ${p._reviewStatus !== 'approved' ? `<button data-approve class="text-[10px] bg-emerald-600 text-white font-semibold px-2 py-1 rounded-lg">Approve</button>` : ''}
+        ${p._reviewStatus !== 'flagged' ? `<button data-flag class="text-[10px] border border-stone-300 font-semibold px-2 py-1 rounded-lg">Flag</button>` : ''}
+        ${p._blocked
+          ? `<button data-unblock class="text-[10px] border border-stone-300 font-semibold px-2 py-1 rounded-lg">Unblock</button>`
+          : `<button data-block class="text-[10px] border border-red-300 text-red-600 font-semibold px-2 py-1 rounded-lg">Block</button>`}
+      </div>`).join('') : '<p class="text-xs text-stone-400">No profiles.</p>';
+  }
+
+  function renderOrgs(filter) {
+    filter = (filter || '').toLowerCase();
+    const rows = allOrgs.filter(o => !filter || o.name.toLowerCase().includes(filter) || o.slug.includes(filter));
+    $('orgs-list').innerHTML = rows.length ? rows.map(o => `
+      <div class="flex items-center gap-2 px-3 py-2 text-xs bg-stone-50 rounded-xl flex-wrap" data-org="${o.id}">
+        <a href="org.html?o=${encodeURIComponent(o.slug)}" target="_blank" rel="noopener" class="flex-1 min-w-0 truncate font-semibold text-stone-700 hover:underline">${JN.esc(o.name)}</a>
+        ${statusBadge(o._reviewStatus)}
+        ${o._blocked ? '<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-stone-800 text-white">BLOCKED</span>' : ''}
+        ${o._reviewStatus !== 'approved' ? `<button data-approve class="text-[10px] bg-emerald-600 text-white font-semibold px-2 py-1 rounded-lg">Approve</button>` : ''}
+        ${o._reviewStatus !== 'flagged' ? `<button data-flag class="text-[10px] border border-stone-300 font-semibold px-2 py-1 rounded-lg">Flag</button>` : ''}
+        ${o._blocked
+          ? `<button data-unblock class="text-[10px] border border-stone-300 font-semibold px-2 py-1 rounded-lg">Unblock</button>`
+          : `<button data-block class="text-[10px] border border-red-300 text-red-600 font-semibold px-2 py-1 rounded-lg">Block</button>`}
+      </div>`).join('') : '<p class="text-xs text-stone-400">No organisations.</p>';
+  }
+
+  async function loadProfiles() { allProfiles = await JN.getAllProfilesForAdmin(); renderProfiles($('p-filter').value); }
+  async function loadOrgsList() { allOrgs = await JN.getAllOrgsForAdmin(); renderOrgs($('o-filter').value); }
+
+  $('p-filter').addEventListener('input', () => renderProfiles($('p-filter').value));
+  $('o-filter').addEventListener('input', () => renderOrgs($('o-filter').value));
+
+  $('profiles-list').addEventListener('click', async (e) => {
+    const row = e.target.closest('[data-profile]');
+    if (!row) return;
+    const id = row.dataset.profile;
+    if (e.target.matches('[data-approve]')) await JN.submitProfileReview(id, 'approved');
+    else if (e.target.matches('[data-flag]')) await JN.submitProfileReview(id, 'flagged');
+    else if (e.target.matches('[data-block]')) { if (confirm('Take this page down entirely?')) await JN.blockProfile(id, prompt('Reason (optional, private):') || null); }
+    else if (e.target.matches('[data-unblock]')) await JN.unblockProfile(id);
+    else return;
+    loadProfiles();
+  });
+
+  $('orgs-list').addEventListener('click', async (e) => {
+    const row = e.target.closest('[data-org]');
+    if (!row) return;
+    const id = row.dataset.org;
+    if (e.target.matches('[data-approve]')) await JN.submitOrgReview(id, 'approved');
+    else if (e.target.matches('[data-flag]')) await JN.submitOrgReview(id, 'flagged');
+    else if (e.target.matches('[data-block]')) { if (confirm('Take this org page down entirely?')) await JN.blockOrg(id, prompt('Reason (optional, private):') || null); }
+    else if (e.target.matches('[data-unblock]')) await JN.unblockOrg(id);
+    else return;
+    loadOrgsList();
+  });
 
   async function loadReports() {
     const reports = await JN.getAllReportsForAdmin();
@@ -95,6 +180,8 @@
     } catch (err) { vmsg(err.message); }
   };
 
+  loadProfiles();
+  loadOrgsList();
   loadReports();
   loadVolunteers();
 })();

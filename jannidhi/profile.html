@@ -106,6 +106,15 @@
   if (!profile) { $('page').innerHTML = '<p class="text-sm text-stone-400 px-4 py-8">Page not found.</p>'; return; }
   document.title = profile.name + ' — JanNidhi';
 
+  if (await JN.isProfileBlocked(profile.id)) {
+    $('page').innerHTML = `
+      <div class="bg-white border border-stone-100 rounded-2xl p-6 text-center">
+        <h1 class="font-black text-stone-900 text-lg">This page has been taken down</h1>
+        <p class="text-sm text-stone-500 mt-2">A platform admin removed this page. If you believe this is a mistake, contact the platform.</p>
+      </div>`;
+    return;
+  }
+
   const [donations, expenses, updates, memberships, orgs, voteCounts, myVote, voteReasons] = await Promise.all([
     JN.getDonationsFor(profile.id), JN.getExpensesFor(profile.id),
     JN.getUpdatesFor(profile.id), JN.getMembershipsFor(profile.id), JN.getOrgs(),

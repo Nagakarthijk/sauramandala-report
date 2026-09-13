@@ -155,6 +155,14 @@ reintroducing the friction the platform is designed to avoid.
   previously approved, once a report comes in later. `submitProfileReview`/
   `submitOrgReview` can be called at any time; the status views always reflect the most
   recent decision.
+- **`admin.html` shows every profile and org, not just a pending queue** — with inline
+  Approve/Flag, and a stronger **Block** action for clear bad actors: a blocked page shows
+  a takedown notice instead of its content, publicly and immediately. Blocking is a
+  separate table (`profile_blocks`/`org_blocks`), not a column on `profiles`/`orgs` — a
+  column the owner can write to (like their bio) would let a blocked worker just un-block
+  themselves; a table only admins can write to closes that off. Note: anything created
+  before the review system existed defaults to 'pending' (no review row exists yet) —
+  nothing is lost, it just needs a first look from `admin.html`.
 
 ## Stack & setup
 

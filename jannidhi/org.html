@@ -31,6 +31,15 @@
   if (!org) { document.getElementById('page').innerHTML = '<p class="text-sm text-stone-400">Organisation not found.</p>'; return; }
   document.title = org.name + ' — JanNidhi';
 
+  if (await JN.isOrgBlocked(org.id)) {
+    document.getElementById('page').innerHTML = `
+      <div class="bg-white border border-stone-100 rounded-2xl p-6 text-center">
+        <h1 class="font-black text-stone-900 text-lg">This organisation's page has been taken down</h1>
+        <p class="text-sm text-stone-500 mt-2">A platform admin removed this page. If you believe this is a mistake, contact the platform.</p>
+      </div>`;
+    return;
+  }
+
   const members = (await JN.getOrgMembers(org.id)).filter(m => m.status === 'vouched');
   const profiles = await JN.getProfiles();
   const profById = Object.fromEntries(profiles.map(p => [p.id, p]));

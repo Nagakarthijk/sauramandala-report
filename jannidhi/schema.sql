@@ -425,3 +425,40 @@ create policy "owner reads own id docs" on storage.objects for select
   using (bucket_id = 'jn-private' and owner = auth.uid());
 create policy "authed uploads jn-private" on storage.objects for insert
   with check (bucket_id = 'jn-private' and auth.role() = 'authenticated');
+
+-- ============================================================
+-- Hard takedown — a stronger lever than flagging. Flagging only hides
+-- something from the directory; the page still fully works. Blocking
+-- makes the page itself show a takedown notice instead of its content.
+-- Admin-only, and deliberately a SEPARATE table rather than a column on
+-- profiles/orgs — a column the owner can update (like bio or photo_url)
+-- would let a blocked worker just un-block themselves; a table only
+-- admins can write to closes that off entirely.
+-- ============================================================
+create table profile_blocks (
+  profile_id  uuid primary key references profiles(id) on delete cascade,
+  blocked_by  uuid not null references auth.users(id),
+  reason      text,
+  created_at  timestamptz default now()
+);
+alter table profile_blocks enable row level security;
+create policy "admins manage profile blocks" on profile_blocks for all
+  using (exists (select 1 from platform_admins pa where pa.user_id = auth.uid()))
+  with check (exists (select 1 from platform_admins pa where pa.user_id = auth.uid()));
+-- Public: existence only (profile.html needs to know whether to show a
+-- takedown notice) — never the reason or who blocked it.
+create view profile_block_status as select profile_id from profile_blocks;
+grant select on profile_block_status to anon, authenticated;
+
+create table org_blocks (
+  org_id      uuid primary key references orgs(id) on delete cascade,
+  blocked_by  uuid not null references auth.users(id),
+  reason      text,
+  created_at  timestamptz default now()
+);
+alter table org_blocks enable row level security;
+create policy "admins manage org blocks" on org_blocks for all
+  using (exists (select 1 from platform_admins pa where pa.user_id = auth.uid()))
+  with check (exists (select 1 from platform_admins pa where pa.user_id = auth.uid()));
+create view org_block_status as select org_id from org_blocks;
+grant select on org_block_status to anon, authenticated;
