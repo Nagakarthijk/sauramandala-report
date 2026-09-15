@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Walk Shillong</title>
+<meta name="theme-color" content="#FAF8F5">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg style="display:none">
+  <symbol id="ic-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></symbol>
+  <symbol id="ic-record" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="ic-route" viewBox="0 0 24 24"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M5 8v3a4 4 0 0 0 4 4h2a4 4 0 0 1 4 4v0"/></symbol>
+  <symbol id="ic-star" viewBox="0 0 24 24"><path d="M12 3l2.6 5.8 6.2.6-4.7 4.2 1.4 6.2L12 16.9l-5.5 2.9 1.4-6.2-4.7-4.2 6.2-.6z"/></symbol>
+  <symbol id="ic-folder" viewBox="0 0 24 24"><path d="M4 6a1 1 0 0 1 1-1h4l2 2h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="ic-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="ic-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="ic-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></symbol>
+  <symbol id="ic-nav" viewBox="0 0 24 24"><path d="M3 11l17-8-8 17-2-7z"/></symbol>
+  <symbol id="ic-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-4 4V5z"/></symbol>
+  <symbol id="ic-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.4"/></symbol>
+  <symbol id="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></symbol>
+  <symbol id="ic-rain" viewBox="0 0 24 24"><path d="M6 16a4 4 0 0 1 .5-8 5.5 5.5 0 0 1 10.6 1.6A3.5 3.5 0 0 1 17 16z"/><path d="M8 19l-1 2M12 19l-1 2M16 19l-1 2"/></symbol>
+  <symbol id="ic-wind" viewBox="0 0 24 24"><path d="M3 8h10a2.5 2.5 0 1 0-2-4"/><path d="M3 16h13a2.5 2.5 0 1 1-2 4"/></symbol>
+  <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+</svg>
+
+<div id="app">
+
+  <div class="map-scope"><div id="map"></div></div>
+
+  <div class="topbar">
+    <div class="pill brand-pill">
+      <span class="brand-dot"></span>
+      <span>Walk Shillong</span>
+    </div>
+    <button class="round-btn pill" id="btn-loadfile" title="Open a GPX/KML file" aria-label="Open a route file">
+      <svg class="icon" viewBox="0 0 24 24"><use href="#ic-folder"/></svg>
+    </button>
+  </div>
+
+  <div class="pill weather-pill" id="weather-badge" style="display:none;"></div>
+
+  <div class="tab-rail" id="tab-rail">
+    <button class="tab-btn active" data-tab="explore" aria-label="Explore" title="Explore"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-compass"/></svg></button>
+    <button class="tab-btn" data-tab="record" aria-label="Record" title="Record"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-record"/></svg></button>
+    <button class="tab-btn" data-tab="plans" aria-label="Plan" title="Plan"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-route"/></svg></button>
+    <button class="tab-btn" data-tab="mine" aria-label="Mine" title="Mine"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-star"/></svg></button>
+  </div>
+
+  <div class="rec-banner" id="recording-banner" style="display:none;">
+    <div class="rec-card">
+      <div class="rec-dot"></div>
+      <div class="rec-stats">
+        <div><b id="rec-dist">0.0 km</b><small>distance</small></div>
+        <div><b id="rec-time">00:00</b><small>time</small></div>
+        <div><b id="rec-gain">0 m</b><small>gain</small></div>
+      </div>
+      <button class="btn-stop" id="btn-stop-rec">Stop</button>
+    </div>
+  </div>
+
+  <div id="sheet">
+    <div class="sheet-handle"></div>
+
+    <div class="sheet-panel" id="panel-explore">
+      <h2 class="sheet-title">Trails nearby</h2>
+      <div id="explore-list"></div>
+    </div>
+
+    <div class="sheet-panel record-panel" id="panel-record" style="display:none;">
+      <button class="record-circle" id="btn-record-toggle" style="background:var(--accent-strong);">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ic-record"/></svg>
+      </button>
+      <div class="record-label" id="record-label">Tap to start recording</div>
+      <input type="text" class="record-name-input" id="record-name" placeholder="Name this trail&hellip;">
+      <p class="record-hint">Keep the app open and screen on while recording — the phone can't log GPS reliably in the background.</p>
+    </div>
+
+    <div class="sheet-panel" id="panel-plans" style="display:none;">
+      <h2 class="sheet-title">Planned walks</h2>
+      <div id="plans-list"></div>
+      <button class="btn-block" id="btn-new-plan">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ic-plus"/></svg>Propose a walk
+      </button>
+    </div>
+
+    <div class="sheet-panel" id="panel-mine" style="display:none;">
+      <h2 class="sheet-title">Your trails</h2>
+      <div id="mine-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<div id="detail-overlay"></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="file-input" accept=".gpx,.kml,.kmz,application/gpx+xml,application/vnd.google-earth.kml+xml" style="display:none;">
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
+<script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="ws-config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

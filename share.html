@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Walk Shillong — opening shared file&hellip;</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body style="display:flex;align-items:center;justify-content:center;height:100%;">
+  <p style="color:var(--bone);font-family:'IBM Plex Sans',sans-serif;">Opening your route&hellip;</p>
+<script>
+  // Ask the service worker for the file that was just POSTed here from
+  // the OS share sheet, then hand it to the main app via sessionStorage
+  // (File objects can't survive a full navigation, so we stash the text).
+  navigator.serviceWorker.ready.then((reg) => {
+    navigator.serviceWorker.addEventListener('message', async (event) => {
+      if (event.data?.type === 'shared-file' && event.data.file) {
+        const text = await event.data.file.text();
+        sessionStorage.setItem('ws_pending_shared_file', JSON.stringify({
+          name: event.data.file.name, text
+        }));
+        location.href = './index.html?shared=1';
+      }
+    });
+    reg.active?.postMessage('get-shared-file');
+    // If nothing arrives shortly, just go home rather than stall on a blank screen.
+    setTimeout(() => { if (!sessionStorage.getItem('ws_pending_shared_file')) location.href = './index.html'; }, 2000);
+  });
+</script>
+</body>
+</html>
