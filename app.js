@@ -177,9 +177,16 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_M
 let trailLayers = {};
 let activeRouteLayer = null;
 
+// The Esri street basemap runs tan/beige/green/light-blue — a muted rust
+// line (the old color here) sat right on top of its tan/orange roads and
+// disappeared. Magenta doesn't occur anywhere in that basemap's palette,
+// so it stays legible over roads, parks and water alike.
+const TRAIL_COLOR = '#E6007E';
+const WAYPOINT_COLOR = '#C96A3A'; // kept distinct from TRAIL_COLOR so points-of-interest read as a different layer from the route line
+
 function drawTrailOnMap(trail, opts = {}) {
   const latlngs = trail.coords.map(([lng, lat]) => [lat, lng]);
-  return L.polyline(latlngs, { color: opts.color || '#C96A3A', weight: opts.weight || 4, opacity: opts.opacity ?? 0.9 });
+  return L.polyline(latlngs, { color: opts.color || TRAIL_COLOR, weight: opts.weight || 4, opacity: opts.opacity ?? 0.9 });
 }
 async function renderTrailLayers() {
   Object.values(trailLayers).forEach(l => map.removeLayer(l));
@@ -464,16 +471,18 @@ function clearWaypointMarkers() {
   waypointLayers.forEach(l => map.removeLayer(l));
   waypointLayers = [];
 }
-// Comments/photos dropped while tracing a route (via "Add a note") carry
-// lat/lng — this draws those as small pins along the line, tap to view.
-function drawWaypointMarkers(trail) {
+// Comments/photos dropped along a route (via "Add a note", whether while
+// recording a new trail or navigating a saved one) carry lat/lng — this
+// draws those as small pins, tap to view. Shared by both flows so a note
+// you drop mid-recording shows up immediately, not just after saving.
+function drawWaypointPins(comments, photos) {
   clearWaypointMarkers();
   const notes = [
-    ...(trail.comments || []).filter(c => c.lat != null).map(c => ({ ...c, kind: 'comment' })),
-    ...(trail.photos || []).filter(p => typeof p === 'object' && p.lat != null).map(p => ({ ...p, kind: 'photo' }))
+    ...(comments || []).filter(c => c.lat != null).map(c => ({ ...c, kind: 'comment' })),
+    ...(photos || []).filter(p => typeof p === 'object' && p.lat != null).map(p => ({ ...p, kind: 'photo' }))
   ];
   notes.forEach(n => {
-    const marker = L.circleMarker([n.lat, n.lng], { radius: 7, color: '#fff', weight: 2, fillColor: '#C96A3A', fillOpacity: 1 }).addTo(map);
+    const marker = L.circleMarker([n.lat, n.lng], { radius: 7, color: '#fff', weight: 2, fillColor: WAYPOINT_COLOR, fillOpacity: 1 }).addTo(map);
     const body = n.kind === 'photo'
       ? `<img src="${n.url}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;display:block;margin-bottom:4px;">${n.text ? escapeHTML(n.text) : ''}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`
       : `${escapeHTML(n.text)}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`;
@@ -481,10 +490,11 @@ function drawWaypointMarkers(trail) {
     waypointLayers.push(marker);
   });
 }
+function drawWaypointMarkers(trail) { drawWaypointPins(trail.comments, trail.photos); }
 
 function navigateTrail(trail) {
   if (activeRouteLayer) map.removeLayer(activeRouteLayer);
-  activeRouteLayer = drawTrailOnMap(trail, { color: '#C96A3A', weight: 5 }).addTo(map);
+  activeRouteLayer = drawTrailOnMap(trail, { color: TRAIL_COLOR, weight: 5 }).addTo(map);
   map.fitBounds(activeRouteLayer.getBounds(), { padding: [30, 30] });
   navRouteLine = turf.lineString(trail.coords.map(c => [c[0], c[1]]));
   navTrail = trail;
@@ -539,12 +549,12 @@ document.getElementById('btn-stop-rec').addEventListener('click', stopRecording)
 async function startRecording() {
   const name = recNameInput.value.trim() || `Trail ${new Date().toLocaleDateString()}`;
   if (!('geolocation' in navigator)) { showToast('GPS not available on this device/browser.'); return; }
-  recState = { name, points: [], photos: [], startTime: Date.now(), wakeLock: null };
+  recState = { name, points: [], photos: [], comments: [], startTime: Date.now(), wakeLock: null };
   await requestWakeLock();
   requestRecordingNotice();
 
   if (activeRouteLayer) map.removeLayer(activeRouteLayer);
-  activeRouteLayer = L.polyline([], { color: '#C96A3A', weight: 5 }).addTo(map);
+  activeRouteLayer = L.polyline([], { color: TRAIL_COLOR, weight: 5 }).addTo(map);
   startLocationWatch();
 
   recState.timerInt = setInterval(updateRecordingStats, 1000);
@@ -620,12 +630,13 @@ async function stopRecording() {
   recNameInput.style.display = 'block';
   recLabel.textContent = 'Tap to start recording';
 
+  clearWaypointMarkers();
+
   const coords = recState.points.map(p => [p[0], p[1], p[2]]);
-  const photos = (recState.photos || []).map(url => ({ url, author: myName(), ts: Date.now() }));
   if (coords.length < 2) { showToast('Recording too short to save.'); recState = null; return; }
   const distanceKm = turf.length(turf.lineString(coords.map(c => [c[0], c[1]])), { units: 'kilometers' });
   const elevGain = estimateGainFromCoords(coords);
-  await saveOrLogWalk({ name: recState.name, coords, distanceKm, elevGain, photos });
+  await saveOrLogWalk({ name: recState.name, coords, distanceKm, elevGain, photos: recState.photos, comments: recState.comments });
   recNameInput.value = '';
   recState = null;
 }
@@ -651,7 +662,7 @@ function findMatchingTrail(trails, coords, distanceKm) {
   return best;
 }
 
-async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos }) {
+async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos, comments }) {
   const existing = await Store.getTrails();
   const match = findMatchingTrail(existing, coords, distanceKm);
   if (match && confirm(`This looks like an existing trail — "${match.name}" (${match.distanceKm.toFixed(1)} km). Log your walk under it instead of saving a new trail?`)) {
@@ -659,6 +670,7 @@ async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos }) {
     match.walkers = match.walkers || [];
     match.walkers.unshift({ author: myName(), ts: Date.now() });
     match.photos = [...(match.photos || []), ...photos];
+    match.comments = [...(match.comments || []), ...comments];
     await Store.saveTrail(match);
     renderTrailLayers(); renderExplore(); renderMine();
     showToast(`Logged as walk #${match.walkCount} of "${match.name}".`);
@@ -666,7 +678,7 @@ async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos }) {
   }
   const trail = {
     id: uid(), name, author: myName(), createdAt: Date.now(), coords, distanceKm, elevGain,
-    votes: { easier: 0, expected: 0, harder: 0 }, comments: [], photos,
+    votes: { easier: 0, expected: 0, harder: 0 }, comments, photos,
     walkCount: 1, walkers: [{ author: myName(), ts: Date.now() }]
   };
   await Store.saveTrail(trail);
@@ -675,17 +687,31 @@ async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos }) {
   return trail;
 }
 
-document.getElementById('btn-rec-photo').addEventListener('click', () => {
+// Add a note while recording — same geotagged text+photo pattern as
+// btn-nav-note below, so a mural you stop to photograph and write about
+// mid-walk shows up as a pin right away (drawWaypointPins), not just once
+// you're done and viewing the saved trail.
+document.getElementById('btn-rec-photo').addEventListener('click', async () => {
   if (!recState) return;
-  document.getElementById('rec-photo-input').click();
-});
-document.getElementById('rec-photo-input').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  e.target.value = '';
-  if (!file || !recState) return;
-  const compressed = await compressImage(file, 900);
-  recState.photos.push(compressed);
-  showToast(`Photo added — ${recState.photos.length} so far.`);
+  if (!lastFix) { showToast('Still waiting for a GPS fix — try again in a moment.'); return; }
+  const text = (prompt('Note for this spot (leave blank to skip):', '') || '').trim();
+  let photoUrl = null;
+  if (confirm('Attach a photo too?')) {
+    photoUrl = await new Promise((resolve) => {
+      const input = document.getElementById('rec-photo-input');
+      input.onchange = async () => {
+        const file = input.files[0]; input.value = '';
+        resolve(file ? await compressImage(file, 900) : null);
+      };
+      input.click();
+    });
+  }
+  if (!text && !photoUrl) { showToast('Nothing to add.'); return; }
+  const point = { lat: lastFix.lat, lng: lastFix.lng, author: myName(), ts: Date.now() };
+  if (text) recState.comments.push({ ...point, text });
+  if (photoUrl) recState.photos.push({ ...point, url: photoUrl });
+  drawWaypointPins(recState.comments, recState.photos);
+  showToast('Added to the trail.');
 });
 
 /* ---------------- Trail detail (full screen) ---------------- */

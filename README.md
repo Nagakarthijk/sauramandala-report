@@ -46,16 +46,22 @@ Once live, open the URL on your phone → browser menu → "Add to Home Screen".
   drops a blue dot + accuracy circle on your position; Navigate and Record
   both reuse this same dot rather than showing their own
 - **Record** (dot icon) — tap the circle to start GPS logging + a screen wake
-  lock request; tap the camera icon on the floating card to attach a photo
-  without stopping; tap again (or Stop on the card) to save
+  lock request; tap the camera icon on the floating card to drop a geotagged
+  note (text and/or a photo) at your current spot without stopping — say you
+  pass a mural, stop, snap it and write a line about it; it shows up as a pin
+  on the map immediately and stays attached to that exact point once saved;
+  tap the record button again (or Stop on the card) to finish and save
 - **Folder icon** (top right) — load any GPX/KML from your phone
 - Tap a trail on the map or in the list to open its full-screen detail: vote
   on difficulty (with tallies, and you can change your vote), add a photo,
   leave a comment, download as GPX
-- **While navigating** a saved trail, tap the + on the floating card to drop
-  a geotagged note (text and/or a photo) at your current spot — it shows up
-  as a pin on the route while navigating and a 📍-marked comment in the
-  trail's detail view afterwards
+- **While navigating** a saved trail (tap Navigate from its detail view),
+  tap the + on the floating card to drop the same kind of geotagged note —
+  this is how someone *other* than the original recorder adds their own
+  photo/comment at a point along an already-saved trail. Every pin (from
+  recording or from navigating) is tap-to-view and lands in the trail's
+  normal Comments/Photos list too, marked with 📍, so it's visible to
+  anyone even when they're just browsing, not actively tracing the route
 - Recording a route that starts, ends and measures close to an existing
   trail offers to log it as another walk of that trail instead of creating
   a near-duplicate — Explore then shows "walked N× by M people" instead of
