@@ -19,14 +19,16 @@ function _trailToRow(t) {
   return {
     id: t.id, name: t.name, author: t.author, created_at: new Date(t.createdAt).toISOString(),
     coords: t.coords, distance_km: t.distanceKm, elev_gain: t.elevGain,
-    votes: t.votes, comments: t.comments, photos: t.photos
+    votes: t.votes, comments: t.comments, photos: t.photos,
+    walk_count: t.walkCount || 1, walkers: t.walkers || []
   };
 }
 function _rowToTrail(r) {
   return {
     id: r.id, name: r.name, author: r.author, createdAt: new Date(r.created_at).getTime(),
     coords: r.coords, distanceKm: Number(r.distance_km), elevGain: Number(r.elev_gain),
-    votes: r.votes || { easier: 0, expected: 0, harder: 0 }, comments: r.comments || [], photos: r.photos || []
+    votes: r.votes || { easier: 0, expected: 0, harder: 0 }, comments: r.comments || [], photos: r.photos || [],
+    walkCount: r.walk_count || 1, walkers: r.walkers || []
   };
 }
 function _planToRow(p) {
@@ -153,11 +155,15 @@ function sparklinePath(trail) {
 
 function enrichTrail(t) {
   const { bucket, community } = communityAdjustedLabel(t);
+  const walkers = t.walkers || [];
   return {
     id: t.id, name: t.name,
     distanceLabel: `${t.distanceKm.toFixed(1)} km`, elevLabel: `${t.elevGain} m`,
     bucket, community, dotColor: dotColorFor(bucket), textColor: textColorFor(bucket),
-    sparkPath: sparklinePath(t), photos: t.photos || [], comments: t.comments || []
+    sparkPath: sparklinePath(t), photos: t.photos || [], comments: t.comments || [],
+    votes: t.votes || { easier: 0, expected: 0, harder: 0 },
+    walkCount: t.walkCount || 1,
+    walkerCount: new Set(walkers.map(w => w.author)).size || 1
   };
 }
 
@@ -197,6 +203,7 @@ const LOCATE_BLUE = '#2F80ED';
 let myLocationMarker = null, myAccuracyCircle = null, locationWatchId = null;
 let navRouteLine = null;       // set while Navigate is active; nearest-point check runs against it
 let _centerOnNextFix = false;  // set by the locate button so the next fix pans the map once
+let lastFix = null;            // last known {lat,lng} — used to geotag a note dropped while navigating
 
 function startLocationWatch() {
   if (!('geolocation' in navigator)) { showToast('GPS not available on this device/browser.'); return; }
@@ -206,6 +213,7 @@ function startLocationWatch() {
 }
 function onLocationFix(pos) {
   const { latitude, longitude, accuracy, altitude } = pos.coords;
+  lastFix = { lat: latitude, lng: longitude };
   if (!myLocationMarker) {
     myAccuracyCircle = L.circle([latitude, longitude], { radius: accuracy || 20, color: LOCATE_BLUE, weight: 1, fillColor: LOCATE_BLUE, fillOpacity: 0.12 }).addTo(map);
     myLocationMarker = L.circleMarker([latitude, longitude], { radius: 8, color: '#fff', weight: 3, fillColor: LOCATE_BLUE, fillOpacity: 1 }).addTo(map);
@@ -370,6 +378,7 @@ function trailRowHTML(t) {
           <span class="num dim">${e.elevLabel}</span>
           <span class="diff" style="color:${e.textColor};">${e.bucket}</span>
           ${e.community ? `<span class="community">${e.community}</span>` : ''}
+          ${e.walkCount > 1 ? `<span class="walk-count">walked ${e.walkCount}&times;${e.walkerCount > 1 ? ` by ${e.walkerCount}` : ''}</span>` : ''}
         </div>
       </div>
     </div>`;
@@ -448,14 +457,75 @@ function estimateGainFromCoords(coords) {
 }
 
 /* ---------------- Navigation (snap-to-route) ---------------- */
+let navTrail = null;          // the saved trail object currently being traced, if any
+let waypointLayers = [];      // map pins for geotagged comments/photos on navTrail
+
+function clearWaypointMarkers() {
+  waypointLayers.forEach(l => map.removeLayer(l));
+  waypointLayers = [];
+}
+// Comments/photos dropped while tracing a route (via "Add a note") carry
+// lat/lng — this draws those as small pins along the line, tap to view.
+function drawWaypointMarkers(trail) {
+  clearWaypointMarkers();
+  const notes = [
+    ...(trail.comments || []).filter(c => c.lat != null).map(c => ({ ...c, kind: 'comment' })),
+    ...(trail.photos || []).filter(p => typeof p === 'object' && p.lat != null).map(p => ({ ...p, kind: 'photo' }))
+  ];
+  notes.forEach(n => {
+    const marker = L.circleMarker([n.lat, n.lng], { radius: 7, color: '#fff', weight: 2, fillColor: '#C96A3A', fillOpacity: 1 }).addTo(map);
+    const body = n.kind === 'photo'
+      ? `<img src="${n.url}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;display:block;margin-bottom:4px;">${n.text ? escapeHTML(n.text) : ''}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`
+      : `${escapeHTML(n.text)}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`;
+    marker.bindPopup(body);
+    waypointLayers.push(marker);
+  });
+}
+
 function navigateTrail(trail) {
   if (activeRouteLayer) map.removeLayer(activeRouteLayer);
   activeRouteLayer = drawTrailOnMap(trail, { color: '#C96A3A', weight: 5 }).addTo(map);
   map.fitBounds(activeRouteLayer.getBounds(), { padding: [30, 30] });
   navRouteLine = turf.lineString(trail.coords.map(c => [c[0], c[1]]));
+  navTrail = trail;
+  drawWaypointMarkers(trail);
   startLocationWatch();
+  document.getElementById('nav-trail-name').textContent = `Navigating — ${trail.name}`;
+  document.getElementById('nav-banner').style.display = 'block';
   showToast('Navigating — your position will track live on the map.');
 }
+function stopNavigating() {
+  navTrail = null;
+  navRouteLine = null;
+  clearWaypointMarkers();
+  if (activeRouteLayer) { map.removeLayer(activeRouteLayer); activeRouteLayer = null; }
+  document.getElementById('nav-banner').style.display = 'none';
+}
+document.getElementById('btn-stop-nav').addEventListener('click', stopNavigating);
+
+document.getElementById('btn-nav-note').addEventListener('click', async () => {
+  if (!navTrail) return;
+  if (!lastFix) { showToast('Still waiting for a GPS fix — try again in a moment.'); return; }
+  const text = (prompt('Note for this spot on the trail (leave blank to skip):', '') || '').trim();
+  let photoUrl = null;
+  if (confirm('Attach a photo too?')) {
+    photoUrl = await new Promise((resolve) => {
+      const input = document.getElementById('nav-photo-input');
+      input.onchange = async () => {
+        const file = input.files[0]; input.value = '';
+        resolve(file ? await compressImage(file, 900) : null);
+      };
+      input.click();
+    });
+  }
+  if (!text && !photoUrl) { showToast('Nothing to add.'); return; }
+  const point = { lat: lastFix.lat, lng: lastFix.lng, author: myName(), ts: Date.now() };
+  if (text) navTrail.comments.push({ ...point, text });
+  if (photoUrl) navTrail.photos.push({ ...point, url: photoUrl });
+  await Store.saveTrail(navTrail);
+  drawWaypointMarkers(navTrail);
+  showToast('Added to the trail.');
+});
 
 /* ---------------- Recording ---------------- */
 let recState = null;
@@ -551,16 +621,58 @@ async function stopRecording() {
   recLabel.textContent = 'Tap to start recording';
 
   const coords = recState.points.map(p => [p[0], p[1], p[2]]);
-  const photos = recState.photos || [];
+  const photos = (recState.photos || []).map(url => ({ url, author: myName(), ts: Date.now() }));
   if (coords.length < 2) { showToast('Recording too short to save.'); recState = null; return; }
   const distanceKm = turf.length(turf.lineString(coords.map(c => [c[0], c[1]])), { units: 'kilometers' });
   const elevGain = estimateGainFromCoords(coords);
-  const trail = { id: uid(), name: recState.name, author: myName(), createdAt: Date.now(), coords, distanceKm, elevGain, votes: { easier: 0, expected: 0, harder: 0 }, comments: [], photos };
+  await saveOrLogWalk({ name: recState.name, coords, distanceKm, elevGain, photos });
+  recNameInput.value = '';
+  recState = null;
+}
+
+// If this new recording's start, end and length are all close to an
+// existing trail's, treat it as another walk of that trail instead of
+// cluttering Explore with a near-duplicate — asks first, since two
+// genuinely different trails can still share a trailhead.
+function findMatchingTrail(trails, coords, distanceKm) {
+  const start = coords[0], end = coords[coords.length - 1];
+  let best = null, bestScore = Infinity;
+  for (const t of trails) {
+    if (!t.coords || t.coords.length < 2) continue;
+    const tStart = t.coords[0], tEnd = t.coords[t.coords.length - 1];
+    const startD = turf.distance([start[0], start[1]], [tStart[0], tStart[1]], { units: 'kilometers' });
+    const endD = turf.distance([end[0], end[1]], [tEnd[0], tEnd[1]], { units: 'kilometers' });
+    const lenRatio = Math.abs(distanceKm - t.distanceKm) / Math.max(t.distanceKm, 0.1);
+    if (startD < 0.15 && endD < 0.15 && lenRatio < 0.25) {
+      const score = startD + endD + lenRatio;
+      if (score < bestScore) { bestScore = score; best = t; }
+    }
+  }
+  return best;
+}
+
+async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos }) {
+  const existing = await Store.getTrails();
+  const match = findMatchingTrail(existing, coords, distanceKm);
+  if (match && confirm(`This looks like an existing trail — "${match.name}" (${match.distanceKm.toFixed(1)} km). Log your walk under it instead of saving a new trail?`)) {
+    match.walkCount = (match.walkCount || 1) + 1;
+    match.walkers = match.walkers || [];
+    match.walkers.unshift({ author: myName(), ts: Date.now() });
+    match.photos = [...(match.photos || []), ...photos];
+    await Store.saveTrail(match);
+    renderTrailLayers(); renderExplore(); renderMine();
+    showToast(`Logged as walk #${match.walkCount} of "${match.name}".`);
+    return match;
+  }
+  const trail = {
+    id: uid(), name, author: myName(), createdAt: Date.now(), coords, distanceKm, elevGain,
+    votes: { easier: 0, expected: 0, harder: 0 }, comments: [], photos,
+    walkCount: 1, walkers: [{ author: myName(), ts: Date.now() }]
+  };
   await Store.saveTrail(trail);
   renderTrailLayers(); renderExplore(); renderMine();
   showToast(`Saved "${trail.name}" — ${distanceKm.toFixed(1)} km, ${elevGain} m gain.`);
-  recNameInput.value = '';
-  recState = null;
+  return trail;
 }
 
 document.getElementById('btn-rec-photo').addEventListener('click', () => {
@@ -584,6 +696,10 @@ async function openDetail(id) {
   const e = enrichTrail(trail);
   const overlay = document.getElementById('detail-overlay');
 
+  const myVote = localStorage.getItem(`ws_vote_${trail.id}`);
+  const voteTotal = e.votes.easier + e.votes.expected + e.votes.harder;
+  const voteLabel = { easier: 'Easier', expected: 'As expected', harder: 'Harder' };
+
   overlay.innerHTML = `
     <div class="detail-hero">
       <button class="round-btn" id="btn-close-detail" aria-label="Close"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-back"/></svg></button>
@@ -596,6 +712,7 @@ async function openDetail(id) {
           <span>${e.bucket}</span>
           ${e.community ? `<span>&middot; ${e.community}</span>` : ''}
         </div>
+        ${e.walkCount > 1 ? `<div class="walk-badge">Walked ${e.walkCount}&times;${e.walkerCount > 1 ? ` by ${e.walkerCount} people` : ''}</div>` : ''}
       </div>
     </div>
     <div class="detail-body">
@@ -605,14 +722,15 @@ async function openDetail(id) {
         <button class="btn-half primary" id="btn-nav-trail"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-nav"/></svg>Navigate</button>
       </div>
 
-      <div class="section-label">How did it feel?</div>
+      <div class="section-label">How did it feel?${voteTotal ? `<span class="vote-total">${voteTotal} vote${voteTotal === 1 ? '' : 's'}</span>` : ''}</div>
       <div class="vote-row">
-        <button class="vote-btn" data-vote="easier">Easier</button>
-        <button class="vote-btn" data-vote="expected">As expected</button>
-        <button class="vote-btn" data-vote="harder">Harder</button>
+        ${['easier', 'expected', 'harder'].map(k => `
+          <button class="vote-btn${myVote === k ? ' chosen' : ''}" data-vote="${k}">${voteLabel[k]}<span class="vote-count">${e.votes[k] || 0}</span></button>
+        `).join('')}
       </div>
+      ${e.community ? `<div class="consensus-badge">Community consensus: ${e.community}</div>` : ''}
 
-      ${e.photos.length ? `<div class="detail-photos">${e.photos.map(p => `<img src="${p}" loading="lazy">`).join('')}</div>` : ''}
+      ${e.photos.length ? `<div class="detail-photos">${e.photos.map(p => `<img src="${typeof p === 'string' ? p : p.url}" loading="lazy">`).join('')}</div>` : ''}
       <div class="photo-drop">
         <svg class="icon" viewBox="0 0 24 24"><use href="#ic-camera"/></svg>Add a photo
         <input type="file" accept="image/*" capture="environment" id="detail-photo-input">
@@ -620,7 +738,7 @@ async function openDetail(id) {
 
       <div class="section-label" style="margin-bottom:8px;">Comments</div>
       <div id="detail-comments">
-        ${e.comments.length ? e.comments.map(c => `<div class="comment-row"><b>${escapeHTML(c.author)}</b>${escapeHTML(c.text)}</div>`).join('') : `<div class="comment-empty">No comments yet — be the first to leave a note on conditions.</div>`}
+        ${e.comments.length ? e.comments.map(c => `<div class="comment-row">${c.lat != null ? '<span class="comment-pin" title="Added on the trail">&#128205;</span>' : ''}<b>${escapeHTML(c.author)}</b>${escapeHTML(c.text)}</div>`).join('') : `<div class="comment-empty">No comments yet — be the first to leave a note on conditions.</div>`}
       </div>
       <input type="text" class="comment-input" id="detail-comment-input" placeholder="Trail condition, tip, or note&hellip;">
       <button class="btn-block" id="btn-post-comment" style="margin-top:0;">Post comment</button>
@@ -653,9 +771,16 @@ async function openDetail(id) {
 
   overlay.querySelectorAll('[data-vote]').forEach(btn => {
     btn.onclick = async () => {
-      trail.votes[btn.dataset.vote] = (trail.votes[btn.dataset.vote] || 0) + 1;
+      const choice = btn.dataset.vote;
+      const voteKey = `ws_vote_${trail.id}`;
+      const prevChoice = localStorage.getItem(voteKey);
+      if (prevChoice === choice) { showToast('You already voted that.'); return; }
+      trail.votes = trail.votes || { easier: 0, expected: 0, harder: 0 };
+      if (prevChoice && trail.votes[prevChoice]) trail.votes[prevChoice] -= 1;
+      trail.votes[choice] = (trail.votes[choice] || 0) + 1;
+      localStorage.setItem(voteKey, choice);
       await Store.saveTrail(trail);
-      showToast('Thanks — that helps calibrate the difficulty rating.');
+      showToast(prevChoice ? 'Vote updated.' : 'Thanks — that helps calibrate the difficulty rating.');
       openDetail(id);
     };
   });
@@ -672,7 +797,7 @@ async function openDetail(id) {
     const file = ev.target.files[0];
     if (!file) return;
     const compressed = await compressImage(file, 900);
-    trail.photos.push(compressed);
+    trail.photos.push({ url: compressed, author: myName(), ts: Date.now() });
     await Store.saveTrail(trail);
     openDetail(id);
   };

@@ -50,7 +50,16 @@ Once live, open the URL on your phone → browser menu → "Add to Home Screen".
   without stopping; tap again (or Stop on the card) to save
 - **Folder icon** (top right) — load any GPX/KML from your phone
 - Tap a trail on the map or in the list to open its full-screen detail: vote
-  on difficulty, add a photo, leave a comment, download as GPX
+  on difficulty (with tallies, and you can change your vote), add a photo,
+  leave a comment, download as GPX
+- **While navigating** a saved trail, tap the + on the floating card to drop
+  a geotagged note (text and/or a photo) at your current spot — it shows up
+  as a pin on the route while navigating and a 📍-marked comment in the
+  trail's detail view afterwards
+- Recording a route that starts, ends and measures close to an existing
+  trail offers to log it as another walk of that trail instead of creating
+  a near-duplicate — Explore then shows "walked N× by M people" instead of
+  a pile of near-identical entries for the same popular trail
 
 ## Backend: Supabase
 Everything reads/writes through the `Store` object at the top of `app.js` —
@@ -63,9 +72,12 @@ Because Supabase's free tier caps you at 2 projects, this is built to
 **reuse an existing project** (e.g. the one behind Workledger/Trust Ledger
 or OESN in this repo) rather than spin up a third one:
 
-1. Run `ws-schema.sql` once in that project's SQL Editor — it only creates
+1. Run `ws-schema.sql` in that project's SQL Editor — it only creates
    `ws_trails` / `ws_plans`, both prefixed `ws_` so they can't collide with
-   that project's other tables
+   that project's other tables. The file is safe to re-run any time it
+   changes (new columns/policies land via `ADD COLUMN IF NOT EXISTS` and
+   `DROP POLICY IF EXISTS` + recreate) — if you already ran an older
+   version, just run the current one again
 2. Paste the same Project URL + anon key you already use elsewhere into
    `ws-config.js`
 3. Reload — trails/votes/comments/photos are now shared across every device
@@ -98,3 +110,10 @@ votes/comments into their own tables if that becomes a real problem.
   tier if you outgrow it
 - Share-target (WhatsApp → app) needs a real deployed HTTPS URL — share
   targets don't work from `localhost` or `file://` previews
+- The "is this the same trail?" match (`findMatchingTrail` in `app.js`) is a
+  straight-line start/end proximity + length-ratio heuristic, not real route
+  matching — it can false-positive on two different short trails that share
+  a trailhead, and false-negative on a loop walked in the opposite
+  direction or a trail with a very different start/end each time. It always
+  asks before merging, never merges silently, so the worst case is an extra
+  tap, not silently misattributed data
