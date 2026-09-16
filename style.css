@@ -53,65 +53,78 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
   background: rgba(255,255,255,0.92); backdrop-filter: blur(10px);
   border-radius: 999px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
-.topbar { position: absolute; top: 14px; left: 14px; right: 14px; z-index: 30; display: flex; align-items: center; justify-content: space-between; }
-.topbar-actions { display: flex; gap: 8px; }
-.round-btn.locating { color: var(--accent-strong); }
+.topbar { position: absolute; top: 14px; left: 14px; right: 14px; z-index: 30; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; row-gap: 8px; }
+.topbar-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .brand-pill { padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
 .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; }
 .brand-pill span { font-family: 'Space Grotesk', sans-serif; font-weight: 600; letter-spacing: -0.01em; font-size: 1rem; color: var(--ink); }
 
 .round-btn {
-  width: 44px; height: 44px; border-radius: 50%; border: none; display: flex;
+  width: 48px; height: 48px; border-radius: 50%; border: none; display: flex;
   align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
 }
 .round-btn:active { transform: scale(0.94); }
-.round-btn .icon { width: 18px; height: 18px; }
+.round-btn .icon { width: 21px; height: 21px; }
+
+/* Icon + label pills for the top-bar actions (locate/refresh/load) —
+   plain icon buttons here read as too small/unclear on larger phones. */
+.action-pill {
+  height: 46px; padding: 0 15px; border: none; display: inline-flex;
+  align-items: center; gap: 7px; cursor: pointer; color: var(--ink);
+  font-family: 'IBM Plex Sans', sans-serif; font-size: 0.82rem; font-weight: 500;
+}
+.action-pill:active { transform: scale(0.96); }
+.action-pill .icon { width: 21px; height: 21px; flex-shrink: 0; }
+.action-pill.locating { color: var(--accent-strong); }
 
 .weather-pill {
-  position: absolute; top: 66px; left: 14px; z-index: 30;
+  position: absolute; top: 70px; left: 14px; z-index: 30;
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 7px 12px; font-size: 0.76rem; color: var(--ink-dim);
+  padding: 8px 13px; font-size: 0.82rem; color: var(--ink-dim);
   box-shadow: 0 4px 16px rgba(0,0,0,0.06);
 }
-.weather-pill .icon { width: 14px; height: 14px; }
+.weather-pill .icon { width: 17px; height: 17px; }
 .weather-pill .temp { font-family: 'Space Grotesk', sans-serif; font-weight: 600; color: var(--ink); }
 .weather-pill .rain.warn { color: var(--danger); font-weight: 500; }
+.weather-pill .wind { color: var(--ink-dim); }
 
-/* Tab rail: floating circular buttons stand in for a tab bar, since the
-   sheet below no longer reserves space for one */
-.tab-rail { position: absolute; top: 70px; right: 14px; z-index: 30; display: flex; flex-direction: column; gap: 8px; }
+/* Tab rail: floating buttons stand in for a tab bar, since the sheet below
+   no longer reserves space for one. Icon + label, not icon-only — bare
+   icons here were unclear/too small on larger phones. */
+.tab-rail { position: absolute; top: 76px; right: 14px; z-index: 30; display: flex; flex-direction: column; gap: 10px; }
 .tab-btn {
-  width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+  width: 64px; height: 60px; border-radius: 20px; border: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.08); backdrop-filter: blur(10px);
   background: rgba(255,255,255,0.92); color: var(--ink-dim);
 }
-.tab-btn:active { transform: scale(0.92); }
+.tab-btn:active { transform: scale(0.94); }
 .tab-btn.active { background: var(--ink); color: #fff; }
-.tab-btn .icon { width: 19px; height: 19px; }
+.tab-btn .icon { width: 24px; height: 24px; }
+.tab-btn span { font-size: 0.64rem; font-weight: 500; font-family: 'IBM Plex Sans', sans-serif; }
 
 /* ---- Recording banner ---- */
-.rec-banner { position: absolute; z-index: 30; left: 14px; right: 80px; bottom: calc(38vh + 14px); }
+.rec-banner { position: absolute; z-index: 30; left: 14px; right: 96px; bottom: calc(38vh + 14px); }
 .rec-card {
   background: rgba(255,255,255,0.96); backdrop-filter: blur(10px); border-radius: 18px;
-  padding: 14px 16px; display: flex; align-items: center; gap: 16px; box-shadow: 0 10px 28px rgba(0,0,0,0.1);
+  padding: 14px 16px; display: flex; align-items: center; gap: 14px; box-shadow: 0 10px 28px rgba(0,0,0,0.1);
 }
 .rec-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex-shrink: 0; animation: ws-pulse 1.4s infinite; }
-.rec-stats { flex: 1; display: flex; gap: 16px; }
+.rec-stats { flex: 1; display: flex; gap: 14px; }
 .rec-stats b { display: block; font-size: 1.15rem; font-family: 'Space Grotesk', sans-serif; color: var(--ink); }
 .rec-stats small { color: var(--ink-dim); font-size: 0.62rem; }
 .btn-stop {
   background: var(--ink); color: #fff; border: none; border-radius: 10px;
-  padding: 10px 14px; font-weight: 500; font-size: 0.8rem; min-height: 40px; cursor: pointer;
+  padding: 10px 14px; font-weight: 500; font-size: 0.8rem; min-height: 44px; cursor: pointer;
 }
 .btn-stop:active { transform: scale(0.95); }
 .btn-rec-photo {
-  width: 40px; height: 40px; border-radius: 50%; border: none; flex-shrink: 0;
+  width: 44px; height: 44px; border-radius: 50%; border: none; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   background: var(--surface-2); color: var(--ink); cursor: pointer;
 }
 .btn-rec-photo:active { transform: scale(0.94); }
-.btn-rec-photo .icon { width: 17px; height: 17px; }
+.btn-rec-photo .icon { width: 20px; height: 20px; }
 
 /* ---- Bottom sheet ---- */
 #sheet {
@@ -141,12 +154,12 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 /* ---- Record panel ---- */
 .record-panel { display: flex; flex-direction: column; align-items: center; }
 .record-circle {
-  width: 96px; height: 96px; border-radius: 50%; border: none; cursor: pointer;
+  width: 104px; height: 104px; border-radius: 50%; border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center; color: #fff;
   box-shadow: 0 8px 28px rgba(0,0,0,0.15);
 }
 .record-circle:active { transform: scale(0.96); }
-.record-circle .icon { width: 30px; height: 30px; }
+.record-circle .icon { width: 34px; height: 34px; }
 .record-label { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.95rem; color: var(--ink); margin-top: 14px; }
 .record-name-input {
   margin-top: 16px; width: 100%; text-align: center; background: transparent; border: none;
@@ -167,7 +180,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
 }
 .btn-block:active { transform: scale(0.98); }
-.btn-block .icon { width: 15px; height: 15px; }
+.btn-block .icon { width: 18px; height: 18px; }
 
 /* ---- Trail detail (full-screen) ---- */
 #detail-overlay {
@@ -194,7 +207,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
   font-weight: 500; font-size: 0.88rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
 }
 .btn-half:active { transform: scale(0.97); }
-.btn-half .icon { width: 16px; height: 16px; }
+.btn-half .icon { width: 19px; height: 19px; }
 .btn-half.secondary { background: var(--surface-2); color: var(--ink); }
 .btn-half.primary { background: var(--accent-strong); color: #fff; }
 
@@ -213,7 +226,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
   text-align: center; color: var(--ink-dim); font-size: 0.83rem; position: relative;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
-.photo-drop .icon { width: 20px; height: 20px; color: var(--ink-dim); }
+.photo-drop .icon { width: 24px; height: 24px; color: var(--ink-dim); }
 .photo-drop input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 
 .comment-row { border-top: 1px solid var(--line); padding: 10px 0; font-size: 0.85rem; color: var(--ink); }

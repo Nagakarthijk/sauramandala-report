@@ -32,6 +32,7 @@
   <symbol id="ic-wind" viewBox="0 0 24 24"><path d="M3 8h10a2.5 2.5 0 1 0-2-4"/><path d="M3 16h13a2.5 2.5 0 1 1-2 4"/></symbol>
   <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="ic-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3.5M12 18.5V22M2 12h3.5M18.5 12H22"/></symbol>
+  <symbol id="ic-refresh" viewBox="0 0 24 24"><path d="M20 11A8 8 0 0 0 6.3 6.3L4 8.6"/><path d="M4 4v4.6h4.6"/><path d="M4 13a8 8 0 0 0 13.7 4.7L20 15.4"/><path d="M20 20v-4.6h-4.6"/></symbol>
 </svg>
 
 <div id="app">
@@ -44,11 +45,14 @@
       <span>Walk Shillong</span>
     </div>
     <div class="topbar-actions">
-      <button class="round-btn pill" id="btn-locate" title="Show my location" aria-label="Show my location">
-        <svg class="icon" viewBox="0 0 24 24"><use href="#ic-locate"/></svg>
+      <button class="action-pill pill" id="btn-refresh" title="Refresh trails" aria-label="Refresh trails">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ic-refresh"/></svg><span>Refresh</span>
       </button>
-      <button class="round-btn pill" id="btn-loadfile" title="Open a GPX/KML file" aria-label="Open a route file">
-        <svg class="icon" viewBox="0 0 24 24"><use href="#ic-folder"/></svg>
+      <button class="action-pill pill" id="btn-locate" title="Show my location" aria-label="Show my location">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ic-locate"/></svg><span>Locate</span>
+      </button>
+      <button class="action-pill pill" id="btn-loadfile" title="Open a GPX/KML file" aria-label="Open a route file">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ic-folder"/></svg><span>Load</span>
       </button>
     </div>
   </div>
@@ -56,10 +60,10 @@
   <div class="pill weather-pill" id="weather-badge" style="display:none;"></div>
 
   <div class="tab-rail" id="tab-rail">
-    <button class="tab-btn active" data-tab="explore" aria-label="Explore" title="Explore"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-compass"/></svg></button>
-    <button class="tab-btn" data-tab="record" aria-label="Record" title="Record"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-record"/></svg></button>
-    <button class="tab-btn" data-tab="plans" aria-label="Plan" title="Plan"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-route"/></svg></button>
-    <button class="tab-btn" data-tab="mine" aria-label="Mine" title="Mine"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-star"/></svg></button>
+    <button class="tab-btn active" data-tab="explore" aria-label="Explore" title="Explore"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-compass"/></svg><span>Explore</span></button>
+    <button class="tab-btn" data-tab="record" aria-label="Record" title="Record"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-record"/></svg><span>Record</span></button>
+    <button class="tab-btn" data-tab="plans" aria-label="Plan" title="Plan"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-route"/></svg><span>Plan</span></button>
+    <button class="tab-btn" data-tab="mine" aria-label="Mine" title="Mine"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-star"/></svg><span>Mine</span></button>
   </div>
 
   <div class="rec-banner" id="recording-banner" style="display:none;">

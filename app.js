@@ -234,32 +234,115 @@ document.getElementById('btn-locate').addEventListener('click', () => {
   showToast('Finding your location…');
 });
 
-/* ---------------- Weather ---------------- */
+/* ---------------- Weather ----------------
+   Two sources, merged: Open-Meteo (global model — reliable, but generic
+   for a specific Khasi Hills trailhead) for the forecast trend, plus the
+   Meghalaya government's own IMD current-conditions layer for a real
+   nearby station reading where one exists. IMD is a bonus, never a
+   dependency — every code path here falls back to Open-Meteo alone if
+   the IMD layer errors, CORS-blocks, or its schema doesn't match what we
+   guessed (see the comment on fetchIMDWeather). */
 const weatherCache = {};
-async function fetchWeather(lat, lng) {
-  const key = `${lat.toFixed(2)},${lng.toFixed(2)}`;
+async function fetchOpenMeteo(lat, lng) {
+  const key = `om:${lat.toFixed(2)},${lng.toFixed(2)}`;
   const cached = weatherCache[key];
   if (cached && Date.now() - cached.ts < 3 * 60 * 60 * 1000) return cached.data;
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,precipitation,wind_speed_10m&daily=precipitation_probability_max&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
+      `&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,wind_speed_10m,wind_gusts_10m` +
+      `&daily=precipitation_probability_max,temperature_2m_max,temperature_2m_min&timezone=auto`;
     const res = await fetch(url);
     const data = await res.json();
     weatherCache[key] = { ts: Date.now(), data };
     return data;
   } catch (e) { return null; }
 }
+
+// Meghalaya CM Dashboard's public ArcGIS layer of IMD station readings.
+// Its exact field names couldn't be verified from this dev environment
+// (the sandbox's network egress is blocked to this domain — it's not a
+// CORS/production concern, just a limitation of where this was written),
+// so field-matching below is pattern-based rather than hardcoded to exact
+// column names. If temp/rain/etc. show up mislabeled once this is live,
+// that's the thing to fix — the query and nearest-station logic itself
+// only need a working MapServer URL and a point-geometry layer to work.
+const IMD_BASE = 'https://meghalayacmdashboard.in/gisserver/rest/services/MBDA_Test/Current_Weather_IMD/MapServer';
+let _imdLayerId = null, _imdBroken = false;
+
+function _pickField(attrs, patterns) {
+  for (const key of Object.keys(attrs || {})) {
+    const val = attrs[key];
+    if (val == null || val === '') continue;
+    if (patterns.some(p => p.test(key))) return { key, val };
+  }
+  return null;
+}
+function _imdDate(val) {
+  if (val == null) return null;
+  const n = Number(val);
+  if (!isNaN(n) && n > 1e11) return new Date(n); // ArcGIS date fields come back as epoch ms
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? null : d;
+}
+async function _imdLayerId_() {
+  if (_imdLayerId != null) return _imdLayerId;
+  const meta = await fetch(`${IMD_BASE}?f=json`).then(r => r.json());
+  _imdLayerId = (meta.layers && meta.layers.length) ? meta.layers[0].id : 0;
+  return _imdLayerId;
+}
+async function fetchIMDWeather(lat, lng) {
+  if (_imdBroken) return null;
+  try {
+    const id = await _imdLayerId_();
+    const url = `${IMD_BASE}/${id}/query?f=json&where=1%3D1&outFields=*&returnGeometry=true&outSR=4326`;
+    const data = await fetch(url).then(r => r.json());
+    const feats = data.features || [];
+    if (!feats.length) { _imdBroken = true; return null; }
+    let best = null, bestDist = Infinity;
+    for (const f of feats) {
+      const g = f.geometry;
+      if (!g || g.x == null || g.y == null) continue;
+      const d = turf.distance([lng, lat], [g.x, g.y], { units: 'kilometers' });
+      if (d < bestDist) { bestDist = d; best = f; }
+    }
+    if (!best) return null;
+    const a = best.attributes || {};
+    return {
+      distanceKm: bestDist,
+      temp: _pickField(a, [/temp/i])?.val,
+      rain: _pickField(a, [/rain|precip/i])?.val,
+      humidity: _pickField(a, [/humid/i])?.val,
+      wind: _pickField(a, [/wind/i])?.val,
+      station: _pickField(a, [/station|place|name|location/i])?.val,
+      observed: _imdDate(_pickField(a, [/date|time|observed|updated/i])?.val)
+    };
+  } catch (e) {
+    console.warn('[WS] IMD weather unavailable, sticking with Open-Meteo', e.message);
+    _imdBroken = true; // don't retry a broken/blocked endpoint on every render
+    return null;
+  }
+}
+
+async function fetchWeatherContext(lat, lng) {
+  const [om, imd] = await Promise.all([fetchOpenMeteo(lat, lng), fetchIMDWeather(lat, lng)]);
+  return { om, imd };
+}
+
 async function refreshWeatherForCenter() {
   const c = map.getCenter();
-  const w = await fetchWeather(c.lat, c.lng);
+  const { om, imd } = await fetchWeatherContext(c.lat, c.lng);
   const badge = document.getElementById('weather-badge');
-  if (!w || !w.current) { badge.style.display = 'none'; return; }
-  const rainProb = w.daily?.precipitation_probability_max?.[0] ?? 0;
+  if (!om || !om.current) { badge.style.display = 'none'; return; }
+  const rainProb = om.daily?.precipitation_probability_max?.[0] ?? 0;
   const warn = rainProb > 60;
+  const shownTemp = (imd && imd.temp != null && !isNaN(Number(imd.temp))) ? Number(imd.temp) : om.current.temperature_2m;
+  const windy = om.current.wind_speed_10m > 20;
   badge.style.display = 'inline-flex';
   badge.innerHTML = `
     <svg class="icon" viewBox="0 0 24 24"><use href="#${warn ? 'ic-rain' : 'ic-sun'}"/></svg>
-    <span class="temp">${Math.round(w.current.temperature_2m)}&deg;</span>
-    <span class="rain ${warn ? 'warn' : ''}">${rainProb}% rain</span>`;
+    <span class="temp">${Math.round(shownTemp)}&deg;</span>
+    <span class="rain ${warn ? 'warn' : ''}">${rainProb}% rain</span>
+    ${windy ? `<svg class="icon" viewBox="0 0 24 24"><use href="#ic-wind"/></svg><span class="wind">${Math.round(om.current.wind_speed_10m)} km/h</span>` : ''}`;
 }
 map.on('moveend', debounce(refreshWeatherForCenter, 800));
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
@@ -546,12 +629,22 @@ async function openDetail(id) {
 
   overlay.classList.add('active');
 
-  fetchWeather(trail.coords[0][1], trail.coords[0][0]).then(w => {
+  fetchWeatherContext(trail.coords[0][1], trail.coords[0][0]).then(({ om, imd }) => {
     const el = document.getElementById('detail-weather');
     if (!el) return;
-    if (!w || !w.current) { el.textContent = 'Weather unavailable.'; return; }
-    const rainProb = w.daily?.precipitation_probability_max?.[0] ?? 0;
-    el.textContent = `Trailhead now: ${Math.round(w.current.temperature_2m)}\u00b0C, ${rainProb}% chance of rain today.`;
+    if (!om || !om.current) { el.textContent = 'Weather unavailable.'; return; }
+    const rainProb = om.daily?.precipitation_probability_max?.[0] ?? 0;
+    const hi = om.daily?.temperature_2m_max?.[0], lo = om.daily?.temperature_2m_min?.[0];
+    let text = `Forecast: ${Math.round(om.current.temperature_2m)}\u00b0C now (feels ${Math.round(om.current.apparent_temperature)}\u00b0C)`;
+    if (hi != null && lo != null) text += `, ${Math.round(lo)}\u2013${Math.round(hi)}\u00b0C today`;
+    text += `, ${rainProb}% chance of rain, wind ${Math.round(om.current.wind_speed_10m)} km/h.`;
+    if (imd && imd.temp != null) {
+      const minsAgo = imd.observed ? Math.max(0, Math.round((Date.now() - imd.observed.getTime()) / 60000)) : null;
+      text += ` Nearest IMD station${imd.station ? ` (${imd.station})` : ''}, ${imd.distanceKm.toFixed(1)} km away: ${Number(imd.temp).toFixed(1)}\u00b0C` +
+        (imd.humidity != null ? `, ${imd.humidity}% humidity` : '') +
+        (minsAgo != null ? ` (observed ${minsAgo} min ago)` : '') + '.';
+    }
+    el.textContent = text;
   });
 
   document.getElementById('btn-close-detail').onclick = closeDetail;
@@ -612,12 +705,25 @@ function showToast(msg) {
   toastTimeout = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
+/* ---------------- Refresh ----------------
+   The map fills the whole screen with no scrollable area at the top, so
+   the OS/browser pull-to-refresh gesture has nothing to grab — it can't
+   trigger here no matter what. This button is the explicit substitute,
+   and matters more now than it would have on localStorage alone: with a
+   shared Supabase backend, other people's new trails/votes/comments only
+   show up here on a fresh fetch. */
+async function refreshAll() {
+  await Promise.all([renderTrailLayers(), renderExplore(), renderMine(), renderPlans()]);
+  await refreshWeatherForCenter();
+}
+document.getElementById('btn-refresh').addEventListener('click', async () => {
+  showToast('Refreshing…');
+  await refreshAll();
+  showToast('Up to date.');
+});
+
 /* ---------------- Init ---------------- */
-renderTrailLayers();
-renderExplore();
-renderMine();
-renderPlans();
-refreshWeatherForCenter();
+refreshAll();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
