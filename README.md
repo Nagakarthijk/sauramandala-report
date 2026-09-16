@@ -11,8 +11,11 @@ button, top right), recording a new one (GPS + screen wake lock + a photo
 button for shots taken mid-walk), loading or share-targeting in a GPX/KML
 file, live snap-to-route navigation, an auto-computed difficulty rubric
 blended with community votes, free weather via Open-Meteo, photos, comments,
-and a walk-planning stub. Offline tile + shell caching via a service worker,
-installable via "Add to Home Screen" on iOS/Android.
+and a real walk scheduler — propose a walk with a mandatory date/time,
+optional trail link/meeting point/contact, RSVP (going/maybe/can't go),
+comments, and an "Add to calendar" .ics export. Offline tile + shell
+caching via a service worker, installable via "Add to Home Screen" on
+iOS/Android.
 
 Data lives in Supabase (shared across everyone) once `ws-config.js` is
 filled in, and falls back to the browser's `localStorage` (per-device only)
@@ -81,6 +84,14 @@ Once live, open the URL on your phone → browser menu → "Add to Home Screen".
   trail offers to log it as another walk of that trail instead of creating
   a near-duplicate — Explore then shows "walked N× by M people" instead of
   a pile of near-identical entries for the same popular trail
+- **Plan** — "Propose a walk" opens a real form: title, date/time
+  (required — people need to know when to show up), an optional trail
+  link, meeting point, and contact info. Anyone can then open that walk
+  and RSVP (Going / Maybe / Can't go, tallied, changeable, like the
+  difficulty vote), comment, and hit "Add to calendar" to download a
+  `.ics` file any calendar app can import. The list itself sorts
+  soonest-first, so it doubles as a lightweight scheduler rather than a
+  flat unsorted list of proposals
 
 ## HCD additions
 Five things added on top of what was asked for, each solving a specific
@@ -174,3 +185,16 @@ votes/comments into their own tables if that becomes a real problem.
   direction or a trail with a very different start/end each time. It always
   asks before merging, never merges silently, so the worst case is an extra
   tap, not silently misattributed data
+- "Sync with calendars" is a downloadable `.ics` file, not a live two-way
+  sync with Google/Apple/Outlook Calendar — that needs OAuth into each
+  provider (real accounts, consent screens, token storage), which doesn't
+  fit a no-backend-auth, no-build-step app. The `.ics` covers "get it onto
+  my calendar" for any calendar app via one tap/import; it just won't
+  auto-update there if the date later changes on Walk Shillong — re-download
+  and re-import picks up the new time
+- No identity system, so an RSVP or a "going" name is just whatever name
+  someone typed into `myName()` on their device — nothing stops two people
+  entering the same name, or one person RSVPing differently from two
+  different devices. Fine for a small pilot group that mostly knows each
+  other; add Supabase Auth (see "Backend: Supabase" above) if that becomes
+  a real problem

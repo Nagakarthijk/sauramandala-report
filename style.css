@@ -213,10 +213,33 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .record-hint p { margin: 8px 0 0; text-align: left; }
 .rec-accuracy { font-size: 0.68rem; color: var(--ink-dim); flex-shrink: 0; }
 
-/* ---- Plans panel ---- */
-.plan-row { padding: 12px 8px; border-bottom: 1px solid var(--line); }
+/* ---- Plans panel (scheduler) ---- */
+.plan-row { padding: 12px 8px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.plan-row:active { background: var(--surface-2); }
+.plan-row.past { opacity: 0.55; }
+.plan-row-date { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.76rem; color: var(--accent-strong); margin-bottom: 2px; }
 .plan-row h3 { font-family: 'Space Grotesk', sans-serif; font-weight: 600; margin: 0; font-size: 1rem; color: var(--ink); }
-.plan-row-meta { font-size: 0.78rem; color: var(--ink-dim); margin-top: 4px; }
+.plan-row-meta { font-size: 0.78rem; color: var(--ink-dim); margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; }
+.plan-row-meta .plan-going { color: var(--green-text); font-weight: 500; }
+.plan-row-meta .plan-maybe { color: var(--amber-text); }
+
+/* Plan detail / form */
+.plan-trail-link {
+  background: var(--surface-2); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;
+  font-size: 0.85rem; color: var(--ink-dim); cursor: pointer;
+}
+.plan-trail-link b { color: var(--ink); }
+.plan-detail-row { font-size: 0.88rem; color: var(--ink); margin-bottom: 8px; }
+.plan-detail-row b { display: block; font-size: 0.72rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; margin-bottom: 2px; }
+.plan-going-list { margin-top: 10px; font-size: 0.82rem; color: var(--ink-dim); line-height: 1.5; }
+
+.form-label { display: block; font-size: 0.72rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; margin: 18px 0 6px; }
+.form-label:first-child { margin-top: 0; }
+.form-input {
+  width: 100%; background: var(--surface-2); border: none; color: var(--ink); border-radius: 12px;
+  padding: 12px 13px; font-family: 'IBM Plex Sans', sans-serif; font-size: 1rem; min-height: 46px;
+}
+select.form-input { color: var(--ink); }
 
 /* ---- Generic buttons ---- */
 .btn-block {
@@ -237,6 +260,8 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
   height: 230px; background: linear-gradient(155deg, var(--accent) 0%, var(--accent-strong) 100%);
   position: relative; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;
 }
+.detail-hero.compact { height: auto; padding-bottom: 24px; background: var(--ink); justify-content: flex-start; gap: 14px; }
+.detail-hero.compact h2 { margin: 0; }
 .detail-hero .round-btn { background: rgba(255,255,255,0.25); backdrop-filter: blur(6px); color: #fff; }
 .detail-spark { position: absolute; left: 0; bottom: 64px; width: 100%; height: 44px; opacity: 0.5; }
 .detail-spark path { fill: none; stroke: #fff; stroke-width: 1.4; }

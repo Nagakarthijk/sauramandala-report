@@ -34,12 +34,22 @@ ALTER TABLE ws_trails ADD COLUMN IF NOT EXISTS walk_count INTEGER NOT NULL DEFAU
 ALTER TABLE ws_trails ADD COLUMN IF NOT EXISTS walkers JSONB NOT NULL DEFAULT '[]';
 
 CREATE TABLE IF NOT EXISTS ws_plans (
-  id           TEXT PRIMARY KEY,
-  title        TEXT NOT NULL,
-  creator      TEXT NOT NULL DEFAULT 'A walker',
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  comments     JSONB NOT NULL DEFAULT '[]'
+  id             TEXT PRIMARY KEY,
+  title          TEXT NOT NULL,
+  creator        TEXT NOT NULL DEFAULT 'A walker',
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  walk_date      TIMESTAMPTZ,                 -- when the walk actually happens; mandatory from the app's create form, nullable here only for legacy rows from before this column existed
+  trail_id       TEXT REFERENCES ws_trails(id) ON DELETE SET NULL,
+  meeting_point  TEXT,
+  contact        TEXT,                        -- optional — the proposer chooses whether to include it
+  rsvps          JSONB NOT NULL DEFAULT '[]', -- [{author,response:"yes"|"maybe"|"no",ts}, ...] — one entry per person, replaced in place when they change their answer
+  comments       JSONB NOT NULL DEFAULT '[]'
 );
+ALTER TABLE ws_plans ADD COLUMN IF NOT EXISTS walk_date TIMESTAMPTZ;
+ALTER TABLE ws_plans ADD COLUMN IF NOT EXISTS trail_id TEXT REFERENCES ws_trails(id) ON DELETE SET NULL;
+ALTER TABLE ws_plans ADD COLUMN IF NOT EXISTS meeting_point TEXT;
+ALTER TABLE ws_plans ADD COLUMN IF NOT EXISTS contact TEXT;
+ALTER TABLE ws_plans ADD COLUMN IF NOT EXISTS rsvps JSONB NOT NULL DEFAULT '[]';
 
 -- ── Row Level Security ────────────────────────────────────────────────
 ALTER TABLE ws_trails ENABLE ROW LEVEL SECURITY;
@@ -62,3 +72,5 @@ CREATE POLICY "ws_plans_public_update" ON ws_plans FOR UPDATE USING (true) WITH 
 -- Trail-list and detail views only ever query recent-first.
 CREATE INDEX IF NOT EXISTS ws_trails_created_at_idx ON ws_trails (created_at DESC);
 CREATE INDEX IF NOT EXISTS ws_plans_created_at_idx  ON ws_plans (created_at DESC);
+-- The Plan tab is a scheduler, sorted by when the walk happens, not when it was proposed.
+CREATE INDEX IF NOT EXISTS ws_plans_walk_date_idx   ON ws_plans (walk_date ASC);

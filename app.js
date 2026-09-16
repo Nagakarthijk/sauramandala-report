@@ -32,10 +32,20 @@ function _rowToTrail(r) {
   };
 }
 function _planToRow(p) {
-  return { id: p.id, title: p.title, creator: p.creator, created_at: new Date(p.createdAt).toISOString(), comments: p.comments || [] };
+  return {
+    id: p.id, title: p.title, creator: p.creator, created_at: new Date(p.createdAt).toISOString(),
+    walk_date: p.walkDate ? new Date(p.walkDate).toISOString() : null,
+    trail_id: p.trailId || null, meeting_point: p.meetingPoint || null, contact: p.contact || null,
+    rsvps: p.rsvps || [], comments: p.comments || []
+  };
 }
 function _rowToPlan(r) {
-  return { id: r.id, title: r.title, creator: r.creator, createdAt: new Date(r.created_at).getTime(), comments: r.comments || [] };
+  return {
+    id: r.id, title: r.title, creator: r.creator, createdAt: new Date(r.created_at).getTime(),
+    walkDate: r.walk_date ? new Date(r.walk_date).getTime() : null,
+    trailId: r.trail_id || null, meetingPoint: r.meeting_point || null, contact: r.contact || null,
+    rsvps: r.rsvps || [], comments: r.comments || []
+  };
 }
 
 const Store = {
@@ -432,20 +442,207 @@ async function renderMine() {
   list.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', () => openDetail(el.dataset.open)));
 }
 
-/* ---------------- Plans ---------------- */
+/* ---------------- Plans (scheduler: propose a walk, RSVP, discuss) ---------------- */
+function formatPlanDate(ms) {
+  if (!ms) return 'Date TBD';
+  const d = new Date(ms);
+  return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) +
+    ' · ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+function planRSVPCounts(plan) {
+  const counts = { yes: 0, maybe: 0, no: 0 };
+  (plan.rsvps || []).forEach(r => { if (counts[r.response] != null) counts[r.response]++; });
+  return counts;
+}
+function planRowHTML(p) {
+  const counts = planRSVPCounts(p);
+  const past = p.walkDate && p.walkDate < Date.now();
+  return `
+    <div class="plan-row${past ? ' past' : ''}" data-open-plan="${p.id}">
+      <div class="plan-row-date">${escapeHTML(formatPlanDate(p.walkDate))}</div>
+      <h3>${escapeHTML(p.title)}</h3>
+      <div class="plan-row-meta">
+        by ${escapeHTML(p.creator)}
+        <span class="plan-going">${counts.yes} going</span>
+        ${counts.maybe ? `<span class="plan-maybe">${counts.maybe} maybe</span>` : ''}
+        ${(p.comments || []).length ? `<span>${(p.comments || []).length} comment${(p.comments || []).length === 1 ? '' : 's'}</span>` : ''}
+      </div>
+    </div>`;
+}
 async function renderPlans() {
   const list = document.getElementById('plans-list');
   const plans = await Store.getPlans();
-  list.innerHTML = plans.length
-    ? plans.map(p => `<div class="plan-row"><h3>${escapeHTML(p.title)}</h3><div class="plan-row-meta">by ${escapeHTML(p.creator)} &middot; ${(p.comments || []).length} notes</div></div>`).join('')
-    : `<div class="empty-note">No walks proposed yet. Start one with a route and a couple of date options.</div>`;
+  // Scheduler order: soonest-first, undated (legacy) plans pushed to the end.
+  const sorted = [...plans].sort((a, b) => (a.walkDate ?? Infinity) - (b.walkDate ?? Infinity));
+  list.innerHTML = sorted.length
+    ? sorted.map(planRowHTML).join('')
+    : `<div class="empty-note">No walks proposed yet. Start one with a date and a meeting point.</div>`;
+  list.querySelectorAll('[data-open-plan]').forEach(el => el.addEventListener('click', () => openPlanDetail(el.dataset.openPlan)));
 }
-document.getElementById('btn-new-plan').addEventListener('click', async () => {
-  const title = prompt('What are you planning? (e.g. "Sunrise walk, Laitlum")');
-  if (!title) return;
-  await Store.savePlan({ id: uid(), title, creator: myName(), createdAt: Date.now(), comments: [] });
-  renderPlans();
-});
+document.getElementById('btn-new-plan').addEventListener('click', openPlanForm);
+
+async function openPlanForm() {
+  const trails = await Store.getTrails();
+  const overlay = document.getElementById('detail-overlay');
+  const nowLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  overlay.innerHTML = `
+    <div class="detail-hero compact">
+      <button class="round-btn" id="btn-close-plan-form" aria-label="Close"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-back"/></svg></button>
+      <div><h2>Propose a walk</h2></div>
+    </div>
+    <div class="detail-body">
+      <label class="form-label" for="plan-title">Title</label>
+      <input type="text" class="form-input" id="plan-title" placeholder="e.g. Sunrise walk, Laitlum">
+
+      <label class="form-label" for="plan-datetime">When (required)</label>
+      <input type="datetime-local" class="form-input" id="plan-datetime" min="${nowLocal}" required>
+
+      <label class="form-label" for="plan-trail">Trail (optional)</label>
+      <select class="form-input" id="plan-trail">
+        <option value="">No specific trail</option>
+        ${trails.map(t => `<option value="${t.id}">${escapeHTML(t.name)}</option>`).join('')}
+      </select>
+
+      <label class="form-label" for="plan-meeting">Meeting point (optional)</label>
+      <input type="text" class="form-input" id="plan-meeting" placeholder="e.g. Police Bazar taxi stand">
+
+      <label class="form-label" for="plan-contact">Contact (optional)</label>
+      <input type="text" class="form-input" id="plan-contact" placeholder="Phone / WhatsApp — shown to anyone viewing this walk">
+
+      <button class="btn-block" id="btn-submit-plan" style="margin-top:20px;">Propose this walk</button>
+    </div>
+  `;
+  overlay.classList.add('active');
+  document.getElementById('btn-close-plan-form').onclick = closeDetail;
+  document.getElementById('btn-submit-plan').onclick = async () => {
+    const title = document.getElementById('plan-title').value.trim();
+    const dtVal = document.getElementById('plan-datetime').value;
+    if (!title) { showToast('Give the walk a title.'); return; }
+    if (!dtVal) { showToast('Date and time are required — people need to know when to show up.'); return; }
+    const plan = {
+      id: uid(), title, creator: myName(), createdAt: Date.now(),
+      walkDate: new Date(dtVal).getTime(),
+      trailId: document.getElementById('plan-trail').value || null,
+      meetingPoint: document.getElementById('plan-meeting').value.trim() || null,
+      contact: document.getElementById('plan-contact').value.trim() || null,
+      rsvps: [], comments: []
+    };
+    await Store.savePlan(plan);
+    closeDetail();
+    renderPlans();
+    showToast('Walk proposed — share it so people can RSVP.');
+  };
+}
+
+async function openPlanDetail(id) {
+  const plans = await Store.getPlans();
+  const plan = plans.find(p => p.id === id);
+  if (!plan) return;
+  const trails = await Store.getTrails();
+  const trail = plan.trailId ? trails.find(t => t.id === plan.trailId) : null;
+  const counts = planRSVPCounts(plan);
+  const myRSVP = localStorage.getItem(`ws_rsvp_${plan.id}`);
+  const goingNames = (plan.rsvps || []).filter(r => r.response === 'yes').map(r => r.author);
+  const overlay = document.getElementById('detail-overlay');
+
+  overlay.innerHTML = `
+    <div class="detail-hero" style="background:linear-gradient(155deg, var(--gold) 0%, var(--accent-strong) 100%);">
+      <button class="round-btn" id="btn-close-plan" aria-label="Close"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-back"/></svg></button>
+      <div>
+        <h2>${escapeHTML(plan.title)}</h2>
+        <div class="detail-hero-meta">
+          <span class="num">${escapeHTML(formatPlanDate(plan.walkDate))}</span>
+          <span>proposed by ${escapeHTML(plan.creator)}</span>
+        </div>
+      </div>
+    </div>
+    <div class="detail-body">
+      ${trail ? `<div class="plan-trail-link" data-open-trail="${trail.id}">On trail: <b>${escapeHTML(trail.name)}</b> — ${trail.distanceKm.toFixed(1)} km</div>` : ''}
+      ${plan.meetingPoint ? `<div class="plan-detail-row"><b>Meeting point</b>${escapeHTML(plan.meetingPoint)}</div>` : ''}
+      ${plan.contact ? `<div class="plan-detail-row"><b>Contact</b>${escapeHTML(plan.contact)}</div>` : ''}
+
+      <div class="detail-actions">
+        <button class="btn-half secondary" id="btn-plan-ics"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-download"/></svg>Add to calendar</button>
+        <button class="btn-half secondary" id="btn-plan-share"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-share"/></svg>Share</button>
+      </div>
+
+      <div class="section-label">Who's coming?<span class="vote-total">${counts.yes} going &middot; ${counts.maybe} maybe</span></div>
+      <div class="vote-row">
+        <button class="vote-btn${myRSVP === 'yes' ? ' chosen' : ''}" data-rsvp="yes">Going<span class="vote-count">${counts.yes}</span></button>
+        <button class="vote-btn${myRSVP === 'maybe' ? ' chosen' : ''}" data-rsvp="maybe">Maybe<span class="vote-count">${counts.maybe}</span></button>
+        <button class="vote-btn${myRSVP === 'no' ? ' chosen' : ''}" data-rsvp="no">Can't go<span class="vote-count">${counts.no}</span></button>
+      </div>
+      ${goingNames.length ? `<div class="plan-going-list">${goingNames.map(escapeHTML).join(', ')}</div>` : ''}
+
+      <div class="section-label" style="margin-bottom:8px;">Comments</div>
+      <div id="plan-comments">
+        ${plan.comments.length ? plan.comments.map(c => `<div class="comment-row"><b>${escapeHTML(c.author)}</b>${escapeHTML(c.text)}</div>`).join('') : `<div class="comment-empty">No comments yet — ask a question or suggest a change.</div>`}
+      </div>
+      <input type="text" class="comment-input" id="plan-comment-input" placeholder="Ask a question, suggest a change&hellip;">
+      <button class="btn-block" id="btn-post-plan-comment" style="margin-top:0;">Post comment</button>
+    </div>
+  `;
+  overlay.classList.add('active');
+
+  document.getElementById('btn-close-plan').onclick = closeDetail;
+  const trailLinkEl = overlay.querySelector('[data-open-trail]');
+  if (trailLinkEl) trailLinkEl.onclick = () => { closeDetail(); openDetail(trail.id); };
+  document.getElementById('btn-plan-ics').onclick = () => downloadICS(plan);
+  document.getElementById('btn-plan-share').onclick = () => sharePlan(plan);
+
+  overlay.querySelectorAll('[data-rsvp]').forEach(btn => {
+    btn.onclick = async () => {
+      const choice = btn.dataset.rsvp;
+      const key = `ws_rsvp_${plan.id}`;
+      if (localStorage.getItem(key) === choice) { showToast('Already set to that.'); return; }
+      const me = myName();
+      plan.rsvps = (plan.rsvps || []).filter(r => r.author !== me);
+      plan.rsvps.push({ author: me, response: choice, ts: Date.now() });
+      localStorage.setItem(key, choice);
+      await Store.savePlan(plan);
+      showToast('RSVP saved.');
+      openPlanDetail(id);
+    };
+  });
+
+  document.getElementById('btn-post-plan-comment').onclick = async () => {
+    const input = document.getElementById('plan-comment-input');
+    if (!input.value.trim()) return;
+    plan.comments.push({ author: myName(), text: input.value.trim(), ts: Date.now() });
+    await Store.savePlan(plan);
+    openPlanDetail(id);
+  };
+}
+
+// A minimal, standards-based ".ics" file — every calendar app (Google,
+// Apple, Outlook) can import this via double-tap/"Add", so this covers
+// "sync with calendars" without needing OAuth into any one provider.
+function toICS(plan) {
+  const start = new Date(plan.walkDate);
+  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000); // 2h default — walk plans don't specify an end time
+  const stamp = d => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const esc = s => String(s).replace(/[\\;,]/g, m => '\\' + m).replace(/\n/g, '\\n');
+  const descParts = [plan.meetingPoint ? `Meeting point: ${plan.meetingPoint}` : '', plan.contact ? `Contact: ${plan.contact}` : ''].filter(Boolean);
+  const lines = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Walk Shillong//EN', 'BEGIN:VEVENT',
+    `UID:${plan.id}@walkshillong`,
+    `DTSTAMP:${stamp(new Date())}`,
+    `DTSTART:${stamp(start)}`,
+    `DTEND:${stamp(end)}`,
+    `SUMMARY:${esc(plan.title)}`
+  ];
+  if (plan.meetingPoint) lines.push(`LOCATION:${esc(plan.meetingPoint)}`);
+  if (descParts.length) lines.push(`DESCRIPTION:${esc(descParts.join('\n'))}`);
+  lines.push('END:VEVENT', 'END:VCALENDAR');
+  return lines.join('\r\n');
+}
+function downloadICS(plan) {
+  const blob = new Blob([toICS(plan)], { type: 'text/calendar' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${plan.title.replace(/\s+/g, '_')}.ics`;
+  a.click();
+}
 
 /* ---------------- GPX export / import ---------------- */
 function toGPX(name, coords) {
@@ -1092,23 +1289,29 @@ function updateOnlineStatus() {
 window.addEventListener('online', () => { updateOnlineStatus(); showToast('Back online.'); refreshAll(); });
 window.addEventListener('offline', () => { updateOnlineStatus(); showToast("Offline — showing what's already saved on this device."); });
 
-/* ---------------- Share a trail ----------------
+/* ---------------- Share a trail or a proposed walk ----------------
    Native share sheet where available (which on Android/iOS means
    straight into WhatsApp, the obvious path for word-of-mouth here),
-   clipboard as a fallback. The link carries ?trail=<id> so opening it
-   jumps straight to that trail instead of dropping the recipient on
-   the generic map. */
-async function shareTrail(trail, distanceLabel, bucket) {
-  const url = `${location.origin}${location.pathname}?trail=${encodeURIComponent(trail.id)}`;
-  const shareData = { title: `Walk Shillong — ${trail.name}`, text: `${trail.name} — ${distanceLabel}, ${bucket}. Check it out on Walk Shillong:`, url };
+   clipboard as a fallback. Links carry ?trail=<id> or ?plan=<id> so
+   opening them jumps straight to that trail/walk instead of dropping the
+   recipient on the generic map. */
+async function shareLink(shareData) {
   if (navigator.share) {
     try { await navigator.share(shareData); } catch (e) {} // user cancelled the share sheet — not an error
     return;
   }
   if (navigator.clipboard) {
-    try { await navigator.clipboard.writeText(url); showToast('Link copied — paste it anywhere to share.'); return; } catch (e) {}
+    try { await navigator.clipboard.writeText(shareData.url); showToast('Link copied — paste it anywhere to share.'); return; } catch (e) {}
   }
-  prompt('Copy this link to share:', url);
+  prompt('Copy this link to share:', shareData.url);
+}
+function shareTrail(trail, distanceLabel, bucket) {
+  const url = `${location.origin}${location.pathname}?trail=${encodeURIComponent(trail.id)}`;
+  return shareLink({ title: `Walk Shillong — ${trail.name}`, text: `${trail.name} — ${distanceLabel}, ${bucket}. Check it out on Walk Shillong:`, url });
+}
+function sharePlan(plan) {
+  const url = `${location.origin}${location.pathname}?plan=${encodeURIComponent(plan.id)}`;
+  return shareLink({ title: `Walk Shillong — ${plan.title}`, text: `${plan.title} — ${formatPlanDate(plan.walkDate)}. RSVP on Walk Shillong:`, url });
 }
 
 /* ---------------- Init ---------------- */
@@ -1130,7 +1333,10 @@ if ('serviceWorker' in navigator) {
   } catch (e) {}
 })();
 
-(function openSharedTrailLink() {
-  const trailId = new URLSearchParams(location.search).get('trail');
+(function openSharedLink() {
+  const params = new URLSearchParams(location.search);
+  const trailId = params.get('trail');
+  const planId = params.get('plan');
   if (trailId) openDetail(trailId);
+  else if (planId) openPlanDetail(planId);
 })();
