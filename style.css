@@ -55,6 +55,14 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 }
 .topbar { position: absolute; top: 14px; left: 14px; right: 14px; z-index: 30; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; row-gap: 8px; }
 .topbar-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+/* Placed as a topbar child (not a fixed top bar) so it just wraps onto its
+   own row via flex-basis when shown, instead of needing separate
+   absolute-position math to avoid overlapping the topbar. */
+.offline-banner {
+  flex-basis: 100%; display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; font-size: 0.78rem; color: var(--danger); font-weight: 500;
+}
+.offline-banner .icon { width: 16px; height: 16px; flex-shrink: 0; }
 .brand-pill { padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
 .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; }
 .brand-pill span { font-family: 'Space Grotesk', sans-serif; font-weight: 600; letter-spacing: -0.01em; font-size: 1rem; color: var(--ink); }
@@ -166,22 +174,44 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .empty-note { text-align: center; padding: 34px 16px; color: var(--ink-dim); font-size: 0.85rem; line-height: 1.5; }
 .empty-note .icon { width: 26px; height: 26px; margin-bottom: 10px; color: var(--line-strong); }
 
-/* ---- Record panel ---- */
+/* ---- Record panel ----
+   Order matters here: name first (the one thing you decide before you
+   start walking), then GPS readiness (so there's no surprise wait when
+   you tap Start), then the big Start control, with the "why" explanation
+   tucked into a <details> instead of a permanent wall of text. */
 .record-panel { display: flex; flex-direction: column; align-items: center; }
+.record-name-input {
+  width: 100%; text-align: center; background: transparent; border: none;
+  border-bottom: 1.5px solid var(--line); color: var(--ink); padding: 8px 4px;
+  font-family: 'IBM Plex Sans', sans-serif; font-size: 1rem;
+}
+.gps-status {
+  margin-top: 16px; display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 12px; border-radius: 999px; background: var(--surface-2);
+  font-size: 0.78rem; color: var(--ink-dim);
+}
+.gps-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-dim); flex-shrink: 0; }
+.gps-status.gps-searching .gps-status-dot { background: var(--ink-dim); animation: ws-pulse 1.4s infinite; }
+.gps-status.gps-good .gps-status-dot { background: var(--green); }
+.gps-status.gps-ok .gps-status-dot { background: var(--amber); }
+.gps-status.gps-weak .gps-status-dot { background: var(--danger); }
+.gps-status.gps-good, .gps-status.gps-ok, .gps-status.gps-weak { color: var(--ink); }
 .record-circle {
   width: 104px; height: 104px; border-radius: 50%; border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center; color: #fff;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.15); margin-top: 24px;
 }
 .record-circle:active { transform: scale(0.96); }
 .record-circle .icon { width: 34px; height: 34px; }
 .record-label { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.95rem; color: var(--ink); margin-top: 14px; }
-.record-name-input {
-  margin-top: 16px; width: 100%; text-align: center; background: transparent; border: none;
-  border-bottom: 1.5px solid var(--line); color: var(--ink); padding: 8px 4px;
-  font-family: 'IBM Plex Sans', sans-serif; font-size: 1rem;
+.record-hint {
+  font-size: 0.78rem; color: var(--ink-dim); margin: 20px 0 0; line-height: 1.5;
+  text-align: center; max-width: 300px;
 }
-.record-hint { font-size: 0.78rem; color: var(--ink-dim); margin: 16px 0 0; line-height: 1.5; text-align: center; max-width: 280px; }
+.record-hint summary { cursor: pointer; color: var(--accent-strong); font-weight: 500; list-style: none; }
+.record-hint summary::-webkit-details-marker { display: none; }
+.record-hint p { margin: 8px 0 0; text-align: left; }
+.rec-accuracy { font-size: 0.68rem; color: var(--ink-dim); flex-shrink: 0; }
 
 /* ---- Plans panel ---- */
 .plan-row { padding: 12px 8px; border-bottom: 1px solid var(--line); }

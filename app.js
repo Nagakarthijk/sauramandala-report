@@ -211,6 +211,7 @@ let myLocationMarker = null, myAccuracyCircle = null, locationWatchId = null;
 let navRouteLine = null;       // set while Navigate is active; nearest-point check runs against it
 let _centerOnNextFix = false;  // set by the locate button so the next fix pans the map once
 let lastFix = null;            // last known {lat,lng} — used to geotag a note dropped while navigating
+let lastAccuracy = null;       // meters — drives the GPS-quality chip on the Record tab and in the recording card
 
 function startLocationWatch() {
   if (!('geolocation' in navigator)) { showToast('GPS not available on this device/browser.'); return; }
@@ -221,6 +222,8 @@ function startLocationWatch() {
 function onLocationFix(pos) {
   const { latitude, longitude, accuracy, altitude } = pos.coords;
   lastFix = { lat: latitude, lng: longitude };
+  lastAccuracy = accuracy || null;
+  updateGpsStatusUI();
   if (!myLocationMarker) {
     myAccuracyCircle = L.circle([latitude, longitude], { radius: accuracy || 20, color: LOCATE_BLUE, weight: 1, fillColor: LOCATE_BLUE, fillOpacity: 0.12 }).addTo(map);
     myLocationMarker = L.circleMarker([latitude, longitude], { radius: 8, color: '#fff', weight: 3, fillColor: LOCATE_BLUE, fillOpacity: 1 }).addTo(map);
@@ -248,6 +251,23 @@ document.getElementById('btn-locate').addEventListener('click', () => {
   startLocationWatch();
   showToast('Finding your location…');
 });
+
+// Drives both the pre-recording "GPS ready?" chip and the small accuracy
+// readout in the recording card — same thresholds, same wording, so the
+// signal doesn't change meaning between the two screens.
+function gpsQualityLabel(acc) {
+  if (acc == null) return { text: 'Finding GPS…', cls: 'gps-searching' };
+  if (acc <= 15) return { text: `GPS ready (±${Math.round(acc)}m)`, cls: 'gps-good' };
+  if (acc <= 40) return { text: `GPS OK (±${Math.round(acc)}m)`, cls: 'gps-ok' };
+  return { text: `Weak GPS signal (±${Math.round(acc)}m)`, cls: 'gps-weak' };
+}
+function updateGpsStatusUI() {
+  const { text, cls } = gpsQualityLabel(lastAccuracy);
+  const chip = document.getElementById('gps-status');
+  if (chip) { chip.className = `gps-status ${cls}`; document.getElementById('gps-status-text').textContent = text; }
+  const inline = document.getElementById('rec-accuracy');
+  if (inline) inline.textContent = lastAccuracy != null ? `±${Math.round(lastAccuracy)}m` : '';
+}
 
 /* ---------------- Weather ----------------
    Two sources, merged: Open-Meteo (global model — reliable, but generic
@@ -369,6 +389,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     panels.forEach(p => { document.getElementById(`panel-${p}`).style.display = p === btn.dataset.tab ? 'block' : 'none'; });
+    // Start acquiring a GPS fix as soon as Record is opened, not when Start
+    // is tapped — so by the time someone's ready to go, "GPS ready" is
+    // already showing instead of a surprise wait right at the start line.
+    if (btn.dataset.tab === 'record' && !recState) { startLocationWatch(); updateGpsStatusUI(); }
   });
 });
 
@@ -575,6 +599,50 @@ document.getElementById('btn-pause-rec').addEventListener('click', () => {
   if (recState.paused) resumeRecording(); else pauseRecording();
 });
 
+// Crash/close-safe recording: the app can legitimately die mid-walk (tab
+// killed by the OS, accidental close, the background-suspend limits
+// documented elsewhere in here) and previously that meant losing the
+// whole in-progress track with no way back. The draft is written to
+// localStorage periodically and checked for on load (see
+// checkRecordingDraft, called from Init) — reopening the app after a
+// crash offers to pick the walk back up instead of starting over.
+const REC_DRAFT_KEY = 'ws_rec_draft';
+let recDraftInt = null;
+function persistRecDraft() {
+  if (!recState) return;
+  try {
+    localStorage.setItem(REC_DRAFT_KEY, JSON.stringify({
+      name: recState.name, points: recState.points, photos: recState.photos,
+      comments: recState.comments, startTime: recState.startTime,
+      pauseMs: recState.pauseMs, paused: recState.paused
+    }));
+  } catch (e) {}
+}
+function clearRecDraft() { try { localStorage.removeItem(REC_DRAFT_KEY); } catch (e) {} }
+
+// A gentle nudge, not an automatic pause — recording apps that silently
+// auto-pause you tend to produce confusingly-gappy tracks. This just
+// surfaces the option once per stationary spell, via the existing Pause
+// button, and gets out of the way once you're moving again.
+function checkStationary() {
+  if (!recState || recState.paused) return;
+  const cutoff = Date.now() - 3 * 60 * 1000;
+  const recent = recState.points.filter(p => p[3] >= cutoff);
+  if (recent.length < 2) return;
+  const strayed = turf.distance(
+    [recent[0][0], recent[0][1]], [recent[recent.length - 1][0], recent[recent.length - 1][1]],
+    { units: 'kilometers' }
+  ) * 1000;
+  if (strayed < 20) {
+    if (!recState.stationaryNudged) {
+      recState.stationaryNudged = true;
+      showToast("Haven't moved much these last few minutes — tap Pause if you're taking a break.");
+    }
+  } else {
+    recState.stationaryNudged = false;
+  }
+}
+
 async function startRecording() {
   const name = recNameInput.value.trim() || `Trail ${new Date().toLocaleDateString()}`;
   if (!('geolocation' in navigator)) { showToast('GPS not available on this device/browser.'); return; }
@@ -587,6 +655,7 @@ async function startRecording() {
   startLocationWatch();
 
   recState.timerInt = setInterval(updateRecordingStats, 1000);
+  recDraftInt = setInterval(() => { persistRecDraft(); checkStationary(); }, 10000);
   recToggleBtn.style.background = 'var(--ink)';
   recToggleBtn.style.animation = 'ws-pulse 1.4s infinite';
   recToggleBtn.querySelector('use').setAttribute('href', '#ic-close');
@@ -601,6 +670,7 @@ function pauseRecording() {
   recState.paused = true;
   recState.pausedAt = Date.now();
   clearInterval(recState.timerInt);
+  persistRecDraft();
   const btn = document.getElementById('btn-pause-rec');
   btn.querySelector('use').setAttribute('href', '#ic-play');
   btn.title = 'Resume'; btn.setAttribute('aria-label', 'Resume recording');
@@ -620,6 +690,7 @@ function resumeRecording() {
 }
 
 function resetRecordUI() {
+  clearInterval(recDraftInt);
   document.getElementById('recording-banner').style.display = 'none';
   recToggleBtn.style.background = 'var(--accent-strong)';
   recToggleBtn.style.animation = 'none';
@@ -638,10 +709,53 @@ async function cancelRecording() {
   if (recState.wakeLock) { try { await recState.wakeLock.release(); } catch (e) {} }
   clearRecordingNotice();
   clearWaypointMarkers();
+  clearRecDraft();
   if (activeRouteLayer) { map.removeLayer(activeRouteLayer); activeRouteLayer = null; }
   resetRecordUI();
   recState = null;
   showToast('Recording discarded.');
+}
+
+// Checked once on load (see Init) — a leftover draft means the app closed
+// or crashed mid-recording last time. Never resumes automatically.
+async function checkRecordingDraft() {
+  let raw;
+  try { raw = localStorage.getItem(REC_DRAFT_KEY); } catch (e) { return; }
+  if (!raw) return;
+  let draft;
+  try { draft = JSON.parse(raw); } catch (e) { clearRecDraft(); return; }
+  if (!draft || !draft.points || draft.points.length < 2) { clearRecDraft(); return; }
+  const distKm = turf.length(turf.lineString(draft.points.map(p => [p[0], p[1]])), { units: 'kilometers' });
+  const when = new Date(draft.startTime).toLocaleString();
+  if (!confirm(`Found an unfinished recording from ${when} — "${draft.name}", ${distKm.toFixed(1)} km so far. Resume it? (Cancel discards it.)`)) {
+    clearRecDraft();
+    return;
+  }
+  resumeRecordingDraft(draft);
+}
+function resumeRecordingDraft(draft) {
+  recState = { ...draft, paused: false, wakeLock: null }; // always resumes active, even if it was paused when the app died
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.tab-btn[data-tab="record"]').classList.add('active');
+  panels.forEach(p => { document.getElementById(`panel-${p}`).style.display = p === 'record' ? 'block' : 'none'; });
+  recNameInput.value = recState.name;
+  recNameInput.style.display = 'none';
+
+  if (activeRouteLayer) map.removeLayer(activeRouteLayer);
+  activeRouteLayer = L.polyline(recState.points.map(p => [p[1], p[0]]), { color: TRAIL_COLOR, weight: 5 }).addTo(map);
+  drawWaypointPins(recState.comments, recState.photos);
+  requestWakeLock();
+  requestRecordingNotice();
+  startLocationWatch();
+
+  recState.timerInt = setInterval(updateRecordingStats, 1000);
+  recDraftInt = setInterval(() => { persistRecDraft(); checkStationary(); }, 10000);
+  recToggleBtn.style.background = 'var(--ink)';
+  recToggleBtn.style.animation = 'ws-pulse 1.4s infinite';
+  recToggleBtn.querySelector('use').setAttribute('href', '#ic-close');
+  document.getElementById('recording-banner').style.display = 'block';
+  updateRecordingStats();
+  showToast('Recording resumed.');
 }
 
 async function requestWakeLock() {
@@ -704,10 +818,11 @@ async function stopRecording() {
   clearWaypointMarkers();
 
   const coords = recState.points.map(p => [p[0], p[1], p[2]]);
-  if (coords.length < 2) { showToast('Recording too short to save.'); recState = null; return; }
+  if (coords.length < 2) { showToast('Recording too short to save.'); clearRecDraft(); recState = null; return; }
   const distanceKm = turf.length(turf.lineString(coords.map(c => [c[0], c[1]])), { units: 'kilometers' });
   const elevGain = estimateGainFromCoords(coords);
   await saveOrLogWalk({ name: recState.name, coords, distanceKm, elevGain, photos: recState.photos, comments: recState.comments });
+  clearRecDraft();
   recNameInput.value = '';
   recState = null;
 }
@@ -772,6 +887,7 @@ document.getElementById('btn-rec-photo').addEventListener('click', () => {
     if (text) recState.comments.push({ ...point, text });
     if (photoUrl) recState.photos.push({ ...point, url: photoUrl });
     drawWaypointPins(recState.comments, recState.photos);
+    persistRecDraft();
     showToast('Added to the trail.');
   });
 });
@@ -806,6 +922,7 @@ async function openDetail(id) {
     <div class="detail-body">
       <div class="detail-weather" id="detail-weather">Loading weather&hellip;</div>
       <div class="detail-actions">
+        <button class="btn-half secondary" id="btn-share-trail"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-share"/></svg>Share</button>
         <button class="btn-half secondary" id="btn-download-gpx"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-download"/></svg>GPX</button>
         <button class="btn-half primary" id="btn-nav-trail"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-nav"/></svg>Navigate</button>
       </div>
@@ -854,6 +971,7 @@ async function openDetail(id) {
   });
 
   document.getElementById('btn-close-detail').onclick = closeDetail;
+  document.getElementById('btn-share-trail').onclick = () => shareTrail(trail, e.distanceLabel, e.bucket);
   document.getElementById('btn-download-gpx').onclick = () => downloadGPX(trail);
   document.getElementById('btn-nav-trail').onclick = () => { closeDetail(); navigateTrail(trail); };
 
@@ -935,8 +1053,68 @@ document.getElementById('btn-refresh').addEventListener('click', async () => {
   showToast('Up to date.');
 });
 
+// A soft data refresh (above) can't fix a stale app SHELL — an old
+// service-worker cache serving yesterday's app.js/index.html/style.css
+// even though the code on GitHub/Netlify has moved on. This is the
+// escape hatch: unregister every service worker, wipe every cache this
+// origin owns, then hard-reload so everything is re-fetched from
+// scratch. A saved trail is never at risk (it's already in Supabase or
+// localStorage, not the app-shell cache); an in-progress recording is
+// safe too, since it's on the same draft-recovery path as a crash (see
+// checkRecordingDraft) — the confirm below says as much.
+document.getElementById('btn-force-update').addEventListener('click', async () => {
+  const msg = recState
+    ? 'Force-update the app? It will reload — your in-progress recording is saved as a draft and this app will offer to resume it right after.'
+    : 'Force-update the app? This clears cached files and reloads with the latest version.';
+  if (!confirm(msg)) return;
+  if (recState) persistRecDraft();
+  showToast('Updating…');
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch (e) {}
+  location.reload();
+});
+
+/* ---------------- Offline awareness ----------------
+   Trails here are mostly walked with patchy or no signal. Silent failures
+   ("why didn't my comment save?") are worse than an honest banner. */
+function updateOnlineStatus() {
+  const banner = document.getElementById('offline-banner');
+  if (banner) banner.style.display = navigator.onLine ? 'none' : 'flex';
+}
+window.addEventListener('online', () => { updateOnlineStatus(); showToast('Back online.'); refreshAll(); });
+window.addEventListener('offline', () => { updateOnlineStatus(); showToast("Offline — showing what's already saved on this device."); });
+
+/* ---------------- Share a trail ----------------
+   Native share sheet where available (which on Android/iOS means
+   straight into WhatsApp, the obvious path for word-of-mouth here),
+   clipboard as a fallback. The link carries ?trail=<id> so opening it
+   jumps straight to that trail instead of dropping the recipient on
+   the generic map. */
+async function shareTrail(trail, distanceLabel, bucket) {
+  const url = `${location.origin}${location.pathname}?trail=${encodeURIComponent(trail.id)}`;
+  const shareData = { title: `Walk Shillong — ${trail.name}`, text: `${trail.name} — ${distanceLabel}, ${bucket}. Check it out on Walk Shillong:`, url };
+  if (navigator.share) {
+    try { await navigator.share(shareData); } catch (e) {} // user cancelled the share sheet — not an error
+    return;
+  }
+  if (navigator.clipboard) {
+    try { await navigator.clipboard.writeText(url); showToast('Link copied — paste it anywhere to share.'); return; } catch (e) {}
+  }
+  prompt('Copy this link to share:', url);
+}
+
 /* ---------------- Init ---------------- */
 refreshAll();
+updateOnlineStatus();
+checkRecordingDraft();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
@@ -950,4 +1128,9 @@ if ('serviceWorker' in navigator) {
     const { name, text } = JSON.parse(pending);
     loadRouteFile(new File([text], name));
   } catch (e) {}
+})();
+
+(function openSharedTrailLink() {
+  const trailId = new URLSearchParams(location.search).get('trail');
+  if (trailId) openDetail(trailId);
 })();

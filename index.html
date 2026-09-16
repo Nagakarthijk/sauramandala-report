@@ -35,6 +35,9 @@
   <symbol id="ic-refresh" viewBox="0 0 24 24"><path d="M20 11A8 8 0 0 0 6.3 6.3L4 8.6"/><path d="M4 4v4.6h4.6"/><path d="M4 13a8 8 0 0 0 13.7 4.7L20 15.4"/><path d="M20 20v-4.6h-4.6"/></symbol>
   <symbol id="ic-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></symbol>
   <symbol id="ic-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></symbol>
+  <symbol id="ic-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></symbol>
+  <symbol id="ic-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></symbol>
+  <symbol id="ic-offline" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M5.5 8.5a11 11 0 0 1 4.3-2.3M2 12a13 13 0 0 1 3-3.3M8.5 15a5 5 0 0 1 3.3-1.3M18.5 8.5A11 11 0 0 0 15 6.6M22 12a13 13 0 0 0-2.4-3"/><circle cx="12" cy="19" r="1.2" fill="currentColor" stroke="none"/></symbol>
 </svg>
 
 <div id="app">
@@ -56,6 +59,13 @@
       <button class="action-pill pill" id="btn-loadfile" title="Open a GPX/KML file" aria-label="Open a route file">
         <svg class="icon" viewBox="0 0 24 24"><use href="#ic-folder"/></svg><span>Load</span>
       </button>
+      <button class="action-pill pill" id="btn-force-update" title="Force-update the app (clears cache)" aria-label="Force-update the app, clearing cached files">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ic-bolt"/></svg><span>Update</span>
+      </button>
+    </div>
+    <div class="offline-banner pill" id="offline-banner" style="display:none;">
+      <svg class="icon" viewBox="0 0 24 24"><use href="#ic-offline"/></svg>
+      <span>Offline — showing what's already saved on this device</span>
     </div>
   </div>
 
@@ -77,6 +87,7 @@
           <div><b id="rec-time">00:00</b><small>time</small></div>
           <div><b id="rec-gain">0 m</b><small>gain</small></div>
         </div>
+        <span class="rec-accuracy" id="rec-accuracy"></span>
       </div>
       <div class="rec-actions">
         <button class="rec-action-btn" id="btn-pause-rec" title="Pause" aria-label="Pause recording">
@@ -116,12 +127,24 @@
     </div>
 
     <div class="sheet-panel record-panel" id="panel-record" style="display:none;">
+      <h2 class="sheet-title">Record a trail</h2>
+      <input type="text" class="record-name-input" id="record-name" placeholder="Name this trail (e.g. Sunrise walk, Laitlum)&hellip;">
+      <div class="gps-status gps-searching" id="gps-status">
+        <span class="gps-status-dot"></span><span id="gps-status-text">Finding GPS&hellip;</span>
+      </div>
       <button class="record-circle" id="btn-record-toggle" style="background:var(--accent-strong);">
         <svg class="icon" viewBox="0 0 24 24"><use href="#ic-record"/></svg>
       </button>
       <div class="record-label" id="record-label">Tap to start recording</div>
-      <input type="text" class="record-name-input" id="record-name" placeholder="Name this trail&hellip;">
-      <p class="record-hint">Keep the app open and screen on while recording — browsers (especially iOS Safari) suspend GPS the moment this tab goes to the background, even for an installed app. We'll try to keep the screen from sleeping and show a notification while recording, but there's no way to log GPS with the tab fully backgrounded.</p>
+      <details class="record-hint">
+        <summary>Why does recording need the screen on?</summary>
+        <p>Browsers (especially iOS Safari) suspend GPS the moment this tab goes to
+        the background, even for an installed app — a platform limit, not a bug
+        here. We request the Screen Wake Lock and show a notification while
+        recording so a dropped signal is visible instead of silent, but there's
+        no way to log GPS with the tab fully backgrounded. If the app closes or
+        crashes mid-walk, reopening it will offer to resume from where it left off.</p>
+      </details>
     </div>
 
     <div class="sheet-panel" id="panel-plans" style="display:none;">

@@ -18,6 +18,11 @@ Data lives in Supabase (shared across everyone) once `ws-config.js` is
 filled in, and falls back to the browser's `localStorage` (per-device only)
 otherwise — see "Backend: Supabase" below.
 
+Also: a crash-safe recording draft (resumes an in-progress walk after the
+app closes or dies mid-recording), a live GPS-quality readout, a gentle
+stay-still nudge, trail sharing with deep links, an offline-awareness
+banner, and a force-update button — see "Try it" and "HCD additions" below.
+
 ## Push to git
 ```bash
 cd walk-shillong
@@ -45,20 +50,22 @@ Once live, open the URL on your phone → browser menu → "Add to Home Screen".
 - **Locate icon** (top right, crosshair) — asks for location permission and
   drops a blue dot + accuracy circle on your position; Navigate and Record
   both reuse this same dot rather than showing their own
-- **Record** (dot icon) — tap the circle to start GPS logging + a screen wake
-  lock request. The floating card has four controls: **Pause/Resume** (stops
-  logging GPS points without ending the recording — for a tea break, not a
-  photo stop), the **camera icon** to drop a geotagged note (text and/or a
-  photo) at your current spot without stopping — say you pass a mural, stop,
-  snap it and write a line about it, it shows up as a pin on the map
-  immediately and stays attached to that exact point once saved — **✕** to
-  cancel and discard the whole recording (asks to confirm first), and
-  **Save** to finish and keep it. Tapping the camera icon opens the
-  camera/photo picker immediately, with no dialog first — showing a prompt
-  or confirm before triggering a file input is what broke camera access on
-  iOS Safari and inside the installed app in earlier versions of this
-  button; text is asked for after a photo (or an explicit cancel), never
-  before
+- **Record** — opening the tab starts acquiring GPS immediately (not when
+  you tap Start), shown as a small status chip: "Finding GPS…" → "GPS ready
+  (±8m)" in green, or "Weak GPS signal" in red if accuracy is poor. Name
+  the trail, tap the circle to start. The floating card then has four
+  controls: **Pause/Resume** (stops logging GPS points without ending the
+  recording — for a tea break, not a photo stop), the **camera icon** to
+  drop a geotagged note (text and/or a photo) at your current spot without
+  stopping — say you pass a mural, stop, snap it and write a line about it,
+  it shows up as a pin on the map immediately and stays attached to that
+  exact point once saved — **✕** to cancel and discard the whole recording
+  (asks to confirm first), and **Save** to finish and keep it. Tapping the
+  camera icon opens the camera/photo picker immediately, with no dialog
+  first — showing a prompt or confirm before triggering a file input is
+  what broke camera access on iOS Safari and inside the installed app in
+  earlier versions of this button; text is asked for after a photo (or an
+  explicit cancel), never before
 - **Folder icon** (top right) — load any GPX/KML from your phone
 - Tap a trail on the map or in the list to open its full-screen detail: vote
   on difficulty (with tallies, and you can change your vote), add a photo,
@@ -74,6 +81,42 @@ Once live, open the URL on your phone → browser menu → "Add to Home Screen".
   trail offers to log it as another walk of that trail instead of creating
   a near-duplicate — Explore then shows "walked N× by M people" instead of
   a pile of near-identical entries for the same popular trail
+
+## HCD additions
+Five things added on top of what was asked for, each solving a specific
+failure mode this kind of app hits in the field:
+
+- **Crash-safe recording.** The in-progress track (points, photos, notes)
+  is written to `localStorage` every 10s and immediately after anything
+  gets added to it. If the app is killed mid-walk — backgrounded too long,
+  force-closed, an OS memory reclaim — reopening it detects the leftover
+  draft and offers to resume from exactly where it left off, or discard it.
+  Never resumes automatically. This is the actual fix for "the app doesn't
+  keep GPS running in the background": it can't run in the background, so
+  instead losing the walk when that happens is no longer the failure mode.
+- **Live GPS-quality feedback**, described above — turns "why isn't this
+  working" into a visible, specific state (searching / ready ±Nm / weak)
+  instead of a silent guess.
+- **Stay-still nudge.** If you've moved under ~20m in the last 3 minutes
+  while actively recording, one toast suggests using Pause — not an
+  automatic pause, since silently auto-pausing produces confusingly-gappy
+  tracks that are hard to debug later. Fires once per stationary spell.
+- **Share a trail.** A Share button on every trail's detail view opens the
+  native share sheet (WhatsApp on Android/iOS — the obvious path for
+  word-of-mouth here) with a link back to that specific trail
+  (`?trail=<id>`); opening the link jumps straight to that trail's detail
+  instead of dropping the recipient on the bare map. Falls back to
+  clipboard-copy where `navigator.share` isn't available.
+- **Offline awareness.** A banner appears the moment the browser reports
+  no connection, and clears when it's back (with an automatic data
+  refresh). Signal is patchy-to-absent on most of these trails; a silent
+  failed save is worse than an honest "offline" label.
+
+Plus a **Force-update** button (bolt icon, top right) for exactly the
+"I don't see my changes" problem: it unregisters the service worker,
+clears every cache this app owns, and hard-reloads. A saved trail is never
+at risk (Supabase/localStorage, not the app-shell cache); an in-progress
+recording is protected the same way a crash is, via the draft above.
 
 ## Backend: Supabase
 Everything reads/writes through the `Store` object at the top of `app.js` —
