@@ -49,7 +49,14 @@ Once live, open the URL on your phone → browser menu → "Add to Home Screen".
 
 ## Try it
 - **Explore** (compass icon) — three seeded Meghalaya trails so the difficulty
-  rubric and weather pill work immediately
+  rubric and weather pill work immediately. Each trail gets its own color
+  (`trailColor()` in `app.js`, hashed from the trail's id — stable across
+  renders/devices) instead of one identical color for every trail — the
+  route line on the map and the detail page's header both use it, so
+  overlapping trails and different trails' detail pages are visually
+  distinguishable instead of all looking the same
+- Tap any photo — in a trail's detail view or a waypoint pin's popup — to
+  see it full-screen; tap the ✕ or outside the image to close
 - **Locate icon** (top right, crosshair) — asks for location permission and
   drops a blue dot + accuracy circle on your position; Navigate and Record
   both reuse this same dot rather than showing their own

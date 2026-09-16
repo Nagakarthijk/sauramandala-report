@@ -188,15 +188,36 @@ let trailLayers = {};
 let activeRouteLayer = null;
 
 // The Esri street basemap runs tan/beige/green/light-blue — a muted rust
-// line (the old color here) sat right on top of its tan/orange roads and
-// disappeared. Magenta doesn't occur anywhere in that basemap's palette,
-// so it stays legible over roads, parks and water alike.
+// line (the old single color here) sat right on top of its tan/orange
+// roads and disappeared, and every trail looking identical made
+// overlapping trails on the map (and every detail page) indistinguishable
+// from one another. TRAIL_COLOR is now just the default/fallback (used
+// for the live line while actively recording, before a trail has an id to
+// key a color off of); trailColor(id) gives each saved trail its own
+// color from a small palette, picked deterministically from its id so it
+// stays the same across renders/devices. All palette colors avoid blue
+// (reserved for the "my location" dot), green/tan/orange (the basemap's
+// own colors) — same reasoning as TRAIL_COLOR, just per-trail now.
 const TRAIL_COLOR = '#E6007E';
-const WAYPOINT_COLOR = '#C96A3A'; // kept distinct from TRAIL_COLOR so points-of-interest read as a different layer from the route line
+const TRAIL_PALETTE = ['#E6007E', '#7C3AED', '#DC2626', '#C026D3', '#0D9488', '#DB2777'];
+function trailColor(trailId) {
+  let hash = 0;
+  for (let i = 0; i < trailId.length; i++) hash = (hash * 31 + trailId.charCodeAt(i)) >>> 0;
+  return TRAIL_PALETTE[hash % TRAIL_PALETTE.length];
+}
+function darkenHex(hex, factor) {
+  const n = parseInt(hex.slice(1), 16);
+  const clamp = v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+  return `#${clamp(((n >> 16) & 255) * factor)}${clamp(((n >> 8) & 255) * factor)}${clamp((n & 255) * factor)}`;
+}
+// A neutral dark marker (rather than another palette color) so a
+// waypoint pin never happens to match the route line it's sitting on,
+// whichever color that trail was assigned.
+const WAYPOINT_COLOR = '#292524';
 
 function drawTrailOnMap(trail, opts = {}) {
   const latlngs = trail.coords.map(([lng, lat]) => [lat, lng]);
-  return L.polyline(latlngs, { color: opts.color || TRAIL_COLOR, weight: opts.weight || 4, opacity: opts.opacity ?? 0.9 });
+  return L.polyline(latlngs, { color: opts.color || trailColor(trail.id), weight: opts.weight || 4, opacity: opts.opacity ?? 0.9 });
 }
 async function renderTrailLayers() {
   Object.values(trailLayers).forEach(l => map.removeLayer(l));
@@ -705,12 +726,29 @@ function drawWaypointPins(comments, photos) {
   notes.forEach(n => {
     const marker = L.circleMarker([n.lat, n.lng], { radius: 7, color: '#fff', weight: 2, fillColor: WAYPOINT_COLOR, fillOpacity: 1 }).addTo(map);
     const body = n.kind === 'photo'
-      ? `<img src="${n.url}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;display:block;margin-bottom:4px;">${n.text ? escapeHTML(n.text) : ''}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`
+      ? `<img src="${n.url}" onclick="openLightbox(this.src)" style="width:120px;height:90px;object-fit:cover;border-radius:8px;display:block;margin-bottom:4px;cursor:pointer;">${n.text ? escapeHTML(n.text) : ''}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`
       : `${escapeHTML(n.text)}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`;
     marker.bindPopup(body);
     waypointLayers.push(marker);
   });
 }
+
+// Full-screen tap-to-view for any photo in the app — the trail detail's
+// photo row and waypoint-pin popups both use it, since a thumbnail with
+// no way to see it larger isn't much use for e.g. reading text in a
+// mural photo.
+function openLightbox(url) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('photo-lightbox').classList.add('active');
+}
+function closeLightbox() {
+  document.getElementById('photo-lightbox').classList.remove('active');
+  document.getElementById('lightbox-img').src = '';
+}
+document.getElementById('btn-close-lightbox').addEventListener('click', closeLightbox);
+document.getElementById('photo-lightbox').addEventListener('click', (e) => {
+  if (e.target.id === 'photo-lightbox') closeLightbox();
+});
 function drawWaypointMarkers(trail) { drawWaypointPins(trail.comments, trail.photos); }
 
 // Opening the camera/file picker MUST be the very first synchronous thing
@@ -748,7 +786,7 @@ function captureNoteFlow(inputEl, onDone) {
 
 function navigateTrail(trail) {
   if (activeRouteLayer) map.removeLayer(activeRouteLayer);
-  activeRouteLayer = drawTrailOnMap(trail, { color: TRAIL_COLOR, weight: 5 }).addTo(map);
+  activeRouteLayer = drawTrailOnMap(trail, { color: trailColor(trail.id), weight: 5 }).addTo(map);
   map.fitBounds(activeRouteLayer.getBounds(), { padding: [30, 30] });
   navRouteLine = turf.lineString(trail.coords.map(c => [c[0], c[1]]));
   navTrail = trail;
@@ -1100,9 +1138,10 @@ async function openDetail(id) {
   const myVote = localStorage.getItem(`ws_vote_${trail.id}`);
   const voteTotal = e.votes.easier + e.votes.expected + e.votes.harder;
   const voteLabel = { easier: 'Easier', expected: 'As expected', harder: 'Harder' };
+  const heroColor = trailColor(trail.id);
 
   overlay.innerHTML = `
-    <div class="detail-hero">
+    <div class="detail-hero" style="background:linear-gradient(155deg, ${heroColor} 0%, ${darkenHex(heroColor, 0.72)} 100%);">
       <button class="round-btn" id="btn-close-detail" aria-label="Close"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-back"/></svg></button>
       <svg class="detail-spark" viewBox="0 0 64 34" preserveAspectRatio="none"><path d="${e.sparkPath}"/></svg>
       <div>
@@ -1132,7 +1171,7 @@ async function openDetail(id) {
       </div>
       ${e.community ? `<div class="consensus-badge">Community consensus: ${e.community}</div>` : ''}
 
-      ${e.photos.length ? `<div class="detail-photos">${e.photos.map(p => `<img src="${typeof p === 'string' ? p : p.url}" loading="lazy">`).join('')}</div>` : ''}
+      ${e.photos.length ? `<div class="detail-photos">${e.photos.map(p => `<img src="${typeof p === 'string' ? p : p.url}" loading="lazy" class="tappable-photo">`).join('')}</div>` : ''}
       <div class="photo-drop">
         <svg class="icon" viewBox="0 0 24 24"><use href="#ic-camera"/></svg>Add a photo
         <input type="file" accept="image/*" capture="environment" id="detail-photo-input">
@@ -1148,6 +1187,7 @@ async function openDetail(id) {
   `;
 
   overlay.classList.add('active');
+  overlay.querySelectorAll('.tappable-photo').forEach(img => img.addEventListener('click', () => openLightbox(img.src)));
 
   fetchWeatherContext(trail.coords[0][1], trail.coords[0][0]).then(({ om, imd }) => {
     const el = document.getElementById('detail-weather');
