@@ -54,6 +54,8 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
   border-radius: 999px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 .topbar { position: absolute; top: 14px; left: 14px; right: 14px; z-index: 30; display: flex; align-items: center; justify-content: space-between; }
+.topbar-actions { display: flex; gap: 8px; }
+.round-btn.locating { color: var(--accent-strong); }
 .brand-pill { padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
 .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; }
 .brand-pill span { font-family: 'Space Grotesk', sans-serif; font-weight: 600; letter-spacing: -0.01em; font-size: 1rem; color: var(--ink); }
@@ -103,6 +105,13 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
   padding: 10px 14px; font-weight: 500; font-size: 0.8rem; min-height: 40px; cursor: pointer;
 }
 .btn-stop:active { transform: scale(0.95); }
+.btn-rec-photo {
+  width: 40px; height: 40px; border-radius: 50%; border: none; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2); color: var(--ink); cursor: pointer;
+}
+.btn-rec-photo:active { transform: scale(0.94); }
+.btn-rec-photo .icon { width: 17px; height: 17px; }
 
 /* ---- Bottom sheet ---- */
 #sheet {

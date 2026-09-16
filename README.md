@@ -6,12 +6,13 @@ it's a normal static site you can edit, commit, and deploy anywhere.
 
 ## What's here
 Map-first layout (Esri World Street Map tiles, free, no key), floating pill
-navigation, and: browsing trails, recording a new one (GPS + screen wake
-lock), loading or share-targeting in a GPX/KML file, live snap-to-route
-navigation, an auto-computed difficulty rubric blended with community votes,
-free weather via Open-Meteo, photos, comments, and a walk-planning stub.
-Offline tile + shell caching via a service worker, installable via "Add to
-Home Screen" on iOS/Android.
+navigation, and: browsing trails, a live "my location" blue dot (locate
+button, top right), recording a new one (GPS + screen wake lock + a photo
+button for shots taken mid-walk), loading or share-targeting in a GPX/KML
+file, live snap-to-route navigation, an auto-computed difficulty rubric
+blended with community votes, free weather via Open-Meteo, photos, comments,
+and a walk-planning stub. Offline tile + shell caching via a service worker,
+installable via "Add to Home Screen" on iOS/Android.
 
 Data lives in Supabase (shared across everyone) once `ws-config.js` is
 filled in, and falls back to the browser's `localStorage` (per-device only)
@@ -41,8 +42,12 @@ Once live, open the URL on your phone → browser menu → "Add to Home Screen".
 ## Try it
 - **Explore** (compass icon) — three seeded Meghalaya trails so the difficulty
   rubric and weather pill work immediately
+- **Locate icon** (top right, crosshair) — asks for location permission and
+  drops a blue dot + accuracy circle on your position; Navigate and Record
+  both reuse this same dot rather than showing their own
 - **Record** (dot icon) — tap the circle to start GPS logging + a screen wake
-  lock request; tap again (or Stop on the floating card) to save
+  lock request; tap the camera icon on the floating card to attach a photo
+  without stopping; tap again (or Stop on the card) to save
 - **Folder icon** (top right) — load any GPX/KML from your phone
 - Tap a trail on the map or in the list to open its full-screen detail: vote
   on difficulty, add a photo, leave a comment, download as GPX
@@ -74,8 +79,16 @@ the exact same instant can race — acceptable for v1, worth normalizing
 votes/comments into their own tables if that becomes a real problem.
 
 ## Known limitations (by design, for v1)
-- Recording only works reliably with the app open and screen on — iOS Safari
-  suspends background tabs, this is a platform limit, not a bug here
+- Recording only works reliably with the app open and screen on — there is
+  no web permission that keeps GPS running with the tab backgrounded; iOS
+  Safari fully suspends a background tab even when installed to the home
+  screen, and Android throttles it hard too. This is a platform limit, not
+  a bug here. What the app does do: request the Screen Wake Lock (and
+  re-request it if a brief app-switch drops it) and, if you allow
+  notifications, show a persistent "Recording" notification so it's obvious
+  if tracking has stopped — neither of those keeps GPS alive in the
+  background, they just make foreground recording more reliable and make a
+  silent failure visible instead of invisible
 - No SOS/emergency feature yet (parked per earlier discussion)
 - Difficulty thresholds in `computeDifficulty()` are a starting guess — tune
   once you have real Khasi Hills trail data to check them against

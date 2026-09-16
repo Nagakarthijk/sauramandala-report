@@ -67,3 +67,14 @@ self.addEventListener('message', (event) => {
     sharedFileCache = null;
   }
 });
+
+// Tapping the "Recording" notification just brings the app to the front —
+// it has no other job, the recording itself only runs in the open tab.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const clientsList = await self.clients.matchAll({ type: 'window' });
+    if (clientsList.length) return clientsList[0].focus();
+    return self.clients.openWindow('./index.html');
+  })());
+});

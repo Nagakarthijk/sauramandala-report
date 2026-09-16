@@ -170,7 +170,6 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_M
 
 let trailLayers = {};
 let activeRouteLayer = null;
-let liveMarker = null;
 
 function drawTrailOnMap(trail, opts = {}) {
   const latlngs = trail.coords.map(([lng, lat]) => [lat, lng]);
@@ -186,6 +185,54 @@ async function renderTrailLayers() {
     trailLayers[trail.id] = layer;
   });
 }
+
+/* ---------------- My location (blue dot) ----------------
+   One shared geolocation watch, started the first time it's needed (the
+   locate button, Navigate, or Record) rather than on page load — asking
+   for the permission before the visitor has done anything reads as
+   broken/creepy. Navigate and Record both piggyback on this same watch
+   instead of opening their own, so there's only ever one active fix
+   stream and one dot on the map. */
+const LOCATE_BLUE = '#2F80ED';
+let myLocationMarker = null, myAccuracyCircle = null, locationWatchId = null;
+let navRouteLine = null;       // set while Navigate is active; nearest-point check runs against it
+let _centerOnNextFix = false;  // set by the locate button so the next fix pans the map once
+
+function startLocationWatch() {
+  if (!('geolocation' in navigator)) { showToast('GPS not available on this device/browser.'); return; }
+  if (locationWatchId != null) return;
+  document.getElementById('btn-locate').classList.add('locating');
+  locationWatchId = navigator.geolocation.watchPosition(onLocationFix, onLocationError, { enableHighAccuracy: true, maximumAge: 5000 });
+}
+function onLocationFix(pos) {
+  const { latitude, longitude, accuracy, altitude } = pos.coords;
+  if (!myLocationMarker) {
+    myAccuracyCircle = L.circle([latitude, longitude], { radius: accuracy || 20, color: LOCATE_BLUE, weight: 1, fillColor: LOCATE_BLUE, fillOpacity: 0.12 }).addTo(map);
+    myLocationMarker = L.circleMarker([latitude, longitude], { radius: 8, color: '#fff', weight: 3, fillColor: LOCATE_BLUE, fillOpacity: 1 }).addTo(map);
+  } else {
+    myAccuracyCircle.setLatLng([latitude, longitude]).setRadius(accuracy || 20);
+    myLocationMarker.setLatLng([latitude, longitude]);
+  }
+  if (_centerOnNextFix) { map.setView([latitude, longitude], Math.max(map.getZoom(), 15)); _centerOnNextFix = false; }
+  if (navRouteLine) {
+    const nearest = turf.nearestPointOnLine(navRouteLine, turf.point([longitude, latitude]), { units: 'meters' });
+    if (nearest.properties.dist > 40) showToast(`Off route by ~${Math.round(nearest.properties.dist)}m`);
+  }
+  if (recState) {
+    recState.points.push([longitude, latitude, altitude || 0, Date.now()]);
+    if (activeRouteLayer) activeRouteLayer.addLatLng([latitude, longitude]);
+    map.panTo([latitude, longitude], { animate: true });
+    updateRecordingStats();
+  }
+}
+function onLocationError() {
+  showToast('Could not get your location — check location permissions.');
+}
+document.getElementById('btn-locate').addEventListener('click', () => {
+  _centerOnNextFix = true;
+  startLocationWatch();
+  showToast('Finding your location…');
+});
 
 /* ---------------- Weather ---------------- */
 const weatherCache = {};
@@ -318,21 +365,12 @@ function estimateGainFromCoords(coords) {
 }
 
 /* ---------------- Navigation (snap-to-route) ---------------- */
-let navWatchId = null;
 function navigateTrail(trail) {
   if (activeRouteLayer) map.removeLayer(activeRouteLayer);
   activeRouteLayer = drawTrailOnMap(trail, { color: '#C96A3A', weight: 5 }).addTo(map);
   map.fitBounds(activeRouteLayer.getBounds(), { padding: [30, 30] });
-  const routeLine = turf.lineString(trail.coords.map(c => [c[0], c[1]]));
-  if (!('geolocation' in navigator)) { showToast('GPS not available on this device/browser.'); return; }
-  if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
-  navWatchId = navigator.geolocation.watchPosition((pos) => {
-    const { latitude, longitude } = pos.coords;
-    if (!liveMarker) liveMarker = L.circleMarker([latitude, longitude], { radius: 8, color: '#fff', fillColor: '#C96A3A', fillOpacity: 1, weight: 2 }).addTo(map);
-    else liveMarker.setLatLng([latitude, longitude]);
-    const nearest = turf.nearestPointOnLine(routeLine, turf.point([longitude, latitude]), { units: 'meters' });
-    if (nearest.properties.dist > 40) showToast(`Off route by ~${Math.round(nearest.properties.dist)}m`);
-  }, () => showToast('Could not get your location — check location permissions.'), { enableHighAccuracy: true, maximumAge: 5000 });
+  navRouteLine = turf.lineString(trail.coords.map(c => [c[0], c[1]]));
+  startLocationWatch();
   showToast('Navigating — your position will track live on the map.');
 }
 
@@ -348,19 +386,13 @@ document.getElementById('btn-stop-rec').addEventListener('click', stopRecording)
 async function startRecording() {
   const name = recNameInput.value.trim() || `Trail ${new Date().toLocaleDateString()}`;
   if (!('geolocation' in navigator)) { showToast('GPS not available on this device/browser.'); return; }
-  recState = { name, points: [], startTime: Date.now(), wakeLock: null };
-  try { if ('wakeLock' in navigator) recState.wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+  recState = { name, points: [], photos: [], startTime: Date.now(), wakeLock: null };
+  await requestWakeLock();
+  requestRecordingNotice();
 
   if (activeRouteLayer) map.removeLayer(activeRouteLayer);
   activeRouteLayer = L.polyline([], { color: '#C96A3A', weight: 5 }).addTo(map);
-
-  recState.watchId = navigator.geolocation.watchPosition((pos) => {
-    const { latitude, longitude, altitude } = pos.coords;
-    recState.points.push([longitude, latitude, altitude || 0, Date.now()]);
-    activeRouteLayer.addLatLng([latitude, longitude]);
-    map.panTo([latitude, longitude], { animate: true });
-    updateRecordingStats();
-  }, () => showToast('Location permission needed to record a trail.'), { enableHighAccuracy: true, maximumAge: 2000 });
+  startLocationWatch();
 
   recState.timerInt = setInterval(updateRecordingStats, 1000);
   recToggleBtn.style.background = 'var(--ink)';
@@ -370,6 +402,43 @@ async function startRecording() {
   recLabel.textContent = 'Recording — 0.0 km';
   document.getElementById('recording-banner').style.display = 'block';
   showToast('Recording started — keep the app open while you walk.');
+}
+
+async function requestWakeLock() {
+  if (!recState || !('wakeLock' in navigator)) return;
+  try { recState.wakeLock = await navigator.wakeLock.request('screen'); } catch (e) { recState.wakeLock = null; }
+}
+// The Wake Lock API auto-releases whenever the tab is hidden (app-switch, screen
+// lock) and there's no way to hold it through that — re-request it the moment
+// the tab is visible again so a short interruption doesn't end the lock for good.
+document.addEventListener('visibilitychange', () => {
+  if (recState && document.visibilityState === 'visible' && !recState.wakeLock) requestWakeLock();
+});
+
+// There is no real "run GPS in the background" permission on the web — iOS
+// Safari fully suspends a backgrounded tab (installed-to-homescreen or not)
+// and Android throttles it hard, so watchPosition stops firing either way.
+// The closest honest substitute: a persistent notification (if allowed) so
+// it's obvious recording is still live, same idea as a native app's foreground
+// service — it doesn't keep GPS running, it just tells you if it stopped.
+async function requestRecordingNotice() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+  try {
+    if (Notification.permission === 'default') await Notification.requestPermission();
+    if (Notification.permission !== 'granted') return;
+    const reg = await navigator.serviceWorker.ready;
+    reg.showNotification('Walk Shillong', {
+      body: 'Recording — keep this tab open and the screen on for GPS to keep logging.',
+      tag: 'ws-recording', silent: true
+    });
+  } catch (e) {}
+}
+async function clearRecordingNotice() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    (await reg.getNotifications({ tag: 'ws-recording' })).forEach(n => n.close());
+  } catch (e) {}
 }
 
 function updateRecordingStats() {
@@ -388,9 +457,9 @@ function updateRecordingStats() {
 
 async function stopRecording() {
   if (!recState) return;
-  navigator.geolocation.clearWatch(recState.watchId);
   clearInterval(recState.timerInt);
   if (recState.wakeLock) { try { await recState.wakeLock.release(); } catch (e) {} }
+  clearRecordingNotice();
   document.getElementById('recording-banner').style.display = 'none';
   recToggleBtn.style.background = 'var(--accent-strong)';
   recToggleBtn.style.animation = 'none';
@@ -399,16 +468,30 @@ async function stopRecording() {
   recLabel.textContent = 'Tap to start recording';
 
   const coords = recState.points.map(p => [p[0], p[1], p[2]]);
+  const photos = recState.photos || [];
   if (coords.length < 2) { showToast('Recording too short to save.'); recState = null; return; }
   const distanceKm = turf.length(turf.lineString(coords.map(c => [c[0], c[1]])), { units: 'kilometers' });
   const elevGain = estimateGainFromCoords(coords);
-  const trail = { id: uid(), name: recState.name, author: myName(), createdAt: Date.now(), coords, distanceKm, elevGain, votes: { easier: 0, expected: 0, harder: 0 }, comments: [], photos: [] };
+  const trail = { id: uid(), name: recState.name, author: myName(), createdAt: Date.now(), coords, distanceKm, elevGain, votes: { easier: 0, expected: 0, harder: 0 }, comments: [], photos };
   await Store.saveTrail(trail);
   renderTrailLayers(); renderExplore(); renderMine();
   showToast(`Saved "${trail.name}" — ${distanceKm.toFixed(1)} km, ${elevGain} m gain.`);
   recNameInput.value = '';
   recState = null;
 }
+
+document.getElementById('btn-rec-photo').addEventListener('click', () => {
+  if (!recState) return;
+  document.getElementById('rec-photo-input').click();
+});
+document.getElementById('rec-photo-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file || !recState) return;
+  const compressed = await compressImage(file, 900);
+  recState.photos.push(compressed);
+  showToast(`Photo added — ${recState.photos.length} so far.`);
+});
 
 /* ---------------- Trail detail (full screen) ---------------- */
 async function openDetail(id) {
