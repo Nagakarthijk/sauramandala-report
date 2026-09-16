@@ -28,10 +28,12 @@ CREATE TABLE IF NOT EXISTS ws_trails (
   comments     JSONB NOT NULL DEFAULT '[]', -- [{author,text,ts,lat?,lng?}, ...] — lat/lng present when added while tracing a route
   photos       JSONB NOT NULL DEFAULT '[]', -- [{url,author,ts,lat?,lng?}, ...]
   walk_count   INTEGER NOT NULL DEFAULT 1,  -- times this route has been walked/recorded
-  walkers      JSONB NOT NULL DEFAULT '[]'  -- [{author,ts}, ...] — one entry per logged walk
+  walkers      JSONB NOT NULL DEFAULT '[]', -- [{author,ts}, ...] — one entry per logged walk
+  elevation_profile JSONB                   -- [meters, ...], real DEM ground elevation sampled along the route via Open-Meteo's elevation API — null until refineElevation() backfills it, app falls back to GPS altitude or an estimate until then
 );
 ALTER TABLE ws_trails ADD COLUMN IF NOT EXISTS walk_count INTEGER NOT NULL DEFAULT 1;
 ALTER TABLE ws_trails ADD COLUMN IF NOT EXISTS walkers JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE ws_trails ADD COLUMN IF NOT EXISTS elevation_profile JSONB;
 
 CREATE TABLE IF NOT EXISTS ws_plans (
   id             TEXT PRIMARY KEY,

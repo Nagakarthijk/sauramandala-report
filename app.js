@@ -20,7 +20,8 @@ function _trailToRow(t) {
     id: t.id, name: t.name, author: t.author, created_at: new Date(t.createdAt).toISOString(),
     coords: t.coords, distance_km: t.distanceKm, elev_gain: t.elevGain,
     votes: t.votes, comments: t.comments, photos: t.photos,
-    walk_count: t.walkCount || 1, walkers: t.walkers || []
+    walk_count: t.walkCount || 1, walkers: t.walkers || [],
+    elevation_profile: t.elevationProfile || null
   };
 }
 function _rowToTrail(r) {
@@ -28,7 +29,8 @@ function _rowToTrail(r) {
     id: r.id, name: r.name, author: r.author, createdAt: new Date(r.created_at).getTime(),
     coords: r.coords, distanceKm: Number(r.distance_km), elevGain: Number(r.elev_gain),
     votes: r.votes || { easier: 0, expected: 0, harder: 0 }, comments: r.comments || [], photos: r.photos || [],
-    walkCount: r.walk_count || 1, walkers: r.walkers || []
+    walkCount: r.walk_count || 1, walkers: r.walkers || [],
+    elevationProfile: r.elevation_profile || null
   };
 }
 function _planToRow(p) {
@@ -140,10 +142,16 @@ function communityAdjustedLabel(trail) {
 function dotColorFor(bucket) { return { Easy: 'var(--green)', Moderate: 'var(--amber)', Hard: 'var(--accent)', Strenuous: 'var(--danger)' }[bucket] || 'var(--amber)'; }
 function textColorFor(bucket) { return { Easy: 'var(--green-text)', Moderate: 'var(--amber-text)', Hard: 'var(--accent-strong)', Strenuous: 'var(--danger)' }[bucket] || 'var(--amber-text)'; }
 
-/* Elevation sparkline — real per-point elevation when available (recorded
-   trails, GPX with <ele>), otherwise a deterministic plausible profile
-   from name+gain so seed/demo trails still look honest, not flat. */
+/* Elevation profile — preference order:
+   1. elevationProfile: real DEM ground elevation, backfilled after a
+      trail is saved via Open-Meteo's free elevation API (see
+      fetchElevationProfile) — phone GPS altitude is commonly absent or
+      too noisy on Android to trust for a "how hilly was this" number.
+   2. Raw GPS altitude on the recorded points, if that's all there is.
+   3. A deterministic plausible profile from name+gain so seed/demo
+      trails still look honest, not flat, before real data exists. */
 function elevationProfilePoints(trail) {
+  if (trail.elevationProfile && trail.elevationProfile.length > 2) return trail.elevationProfile;
   const real = (trail.coords || []).map(c => c[2]).filter(e => e != null);
   if (real.length > 4 && Math.max(...real) - Math.min(...real) > 3) return real;
   let seed = 0;
@@ -153,14 +161,49 @@ function elevationProfilePoints(trail) {
   for (let i = 1; i < n; i++) pts.push(Math.sin((i / n) * Math.PI) * trail.elevGain + (rand() - 0.5) * trail.elevGain * 0.25);
   return pts;
 }
-function sparklinePath(trail) {
-  const pts = elevationProfilePoints(trail);
-  const w = 64, h = 34, pad = 3;
+function elevationPath(pts, w, h, pad) {
   const min = Math.min(...pts), max = Math.max(...pts) || 1;
   const range = (max - min) || 1;
   const step = (w - pad * 2) / (pts.length - 1);
   const coords = pts.map((v, i) => [pad + i * step, h - pad - ((v - min) / range) * (h - pad * 2)]);
   return coords.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+}
+function sparklinePath(trail) { return elevationPath(elevationProfilePoints(trail), 64, 34, 3); }
+
+// Open-Meteo's free elevation API (same no-key provider already used for
+// weather) — ground elevation from a real DEM at a sampled set of points
+// along the route, fetched in the background once a trail is saved and
+// merged in afterward. Never blocks the save; if it fails or the phone is
+// offline, the trail keeps whatever GPS-altitude-or-synthetic profile it
+// already had.
+async function fetchElevationProfile(coords) {
+  const N = Math.min(40, coords.length);
+  const step = Math.max(1, Math.floor(coords.length / N));
+  const sampled = [];
+  for (let i = 0; i < coords.length; i += step) sampled.push(coords[i]);
+  const last = coords[coords.length - 1];
+  if (sampled[sampled.length - 1] !== last) sampled.push(last);
+  try {
+    const lats = sampled.map(c => c[1].toFixed(5)).join(',');
+    const lngs = sampled.map(c => c[0].toFixed(5)).join(',');
+    const res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`);
+    const data = await res.json();
+    if (!Array.isArray(data.elevation) || data.elevation.length !== sampled.length) return null;
+    return data.elevation;
+  } catch (e) { return null; }
+}
+function elevGainFromProfile(profile) {
+  let gain = 0;
+  for (let i = 1; i < profile.length; i++) { const d = profile[i] - profile[i - 1]; if (d > 0) gain += d; }
+  return Math.round(gain);
+}
+async function refineElevation(trail) {
+  const profile = await fetchElevationProfile(trail.coords);
+  if (!profile) return;
+  trail.elevationProfile = profile;
+  trail.elevGain = elevGainFromProfile(profile);
+  await Store.saveTrail(trail);
+  renderTrailLayers(); renderExplore(); renderMine();
 }
 
 function enrichTrail(t) {
@@ -717,6 +760,18 @@ function clearWaypointMarkers() {
 // recording a new trail or navigating a saved one) carry lat/lng — this
 // draws those as small pins, tap to view. Shared by both flows so a note
 // you drop mid-recording shows up immediately, not just after saving.
+// A photo waypoint gets its own camera-icon pin (a divIcon, not a plain
+// dot) so it reads as "there's a photo here" at a glance on the map —
+// the mural-map style the app was going for. Tap it: straight to the
+// full-screen photo if there's no caption to lose, or a small popup with
+// the photo (still tap-to-enlarge) and the caption if there is one.
+function photoMarkerIcon() {
+  return L.divIcon({
+    className: 'waypoint-photo-icon',
+    html: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg>',
+    iconSize: [28, 28], iconAnchor: [14, 14]
+  });
+}
 function drawWaypointPins(comments, photos) {
   clearWaypointMarkers();
   const notes = [
@@ -724,11 +779,17 @@ function drawWaypointPins(comments, photos) {
     ...(photos || []).filter(p => typeof p === 'object' && p.lat != null).map(p => ({ ...p, kind: 'photo' }))
   ];
   notes.forEach(n => {
-    const marker = L.circleMarker([n.lat, n.lng], { radius: 7, color: '#fff', weight: 2, fillColor: WAYPOINT_COLOR, fillOpacity: 1 }).addTo(map);
-    const body = n.kind === 'photo'
-      ? `<img src="${n.url}" onclick="openLightbox(this.src)" style="width:120px;height:90px;object-fit:cover;border-radius:8px;display:block;margin-bottom:4px;cursor:pointer;">${n.text ? escapeHTML(n.text) : ''}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`
-      : `${escapeHTML(n.text)}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`;
-    marker.bindPopup(body);
+    const marker = n.kind === 'photo'
+      ? L.marker([n.lat, n.lng], { icon: photoMarkerIcon() }).addTo(map)
+      : L.circleMarker([n.lat, n.lng], { radius: 7, color: '#fff', weight: 2, fillColor: WAYPOINT_COLOR, fillOpacity: 1 }).addTo(map);
+    if (n.kind === 'photo' && !n.text) {
+      marker.on('click', () => openLightbox(n.url));
+    } else {
+      const body = n.kind === 'photo'
+        ? `<img src="${n.url}" onclick="openLightbox(this.src)" style="width:120px;height:90px;object-fit:cover;border-radius:8px;display:block;margin-bottom:4px;cursor:pointer;">${escapeHTML(n.text)}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`
+        : `${escapeHTML(n.text)}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`;
+      marker.bindPopup(body);
+    }
     waypointLayers.push(marker);
   });
 }
@@ -1095,6 +1156,7 @@ async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos, comme
     await Store.saveTrail(match);
     renderTrailLayers(); renderExplore(); renderMine();
     showToast(`Logged as walk #${match.walkCount} of "${match.name}".`);
+    if (!match.elevationProfile) refineElevation(match); // backfill for a trail saved before this existed — uses match's own canonical route, not this walk's trace
     return match;
   }
   const trail = {
@@ -1105,6 +1167,7 @@ async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos, comme
   await Store.saveTrail(trail);
   renderTrailLayers(); renderExplore(); renderMine();
   showToast(`Saved "${trail.name}" — ${distanceKm.toFixed(1)} km, ${elevGain} m gain.`);
+  refineElevation(trail); // background — real DEM elevation replaces the GPS-altitude estimate once it lands
   return trail;
 }
 
@@ -1139,6 +1202,11 @@ async function openDetail(id) {
   const voteTotal = e.votes.easier + e.votes.expected + e.votes.harder;
   const voteLabel = { easier: 'Easier', expected: 'As expected', harder: 'Harder' };
   const heroColor = trailColor(trail.id);
+  const elevPts = elevationProfilePoints(trail);
+  const elevChartPath = elevationPath(elevPts, 300, 90, 4);
+  const elevMin = Math.round(Math.min(...elevPts));
+  const elevMax = Math.round(Math.max(...elevPts));
+  const elevIsReal = !!(trail.elevationProfile && trail.elevationProfile.length > 2);
 
   overlay.innerHTML = `
     <div class="detail-hero" style="background:linear-gradient(155deg, ${heroColor} 0%, ${darkenHex(heroColor, 0.72)} 100%);">
@@ -1162,6 +1230,20 @@ async function openDetail(id) {
         <button class="btn-half secondary" id="btn-download-gpx"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-download"/></svg>GPX</button>
         <button class="btn-half primary" id="btn-nav-trail"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-nav"/></svg>Navigate</button>
       </div>
+
+      <div class="section-label">Elevation profile</div>
+      <div class="elev-chart">
+        <svg viewBox="0 0 300 90" preserveAspectRatio="none">
+          <path class="elev-fill" d="${elevChartPath} L300,90 L0,90 Z"></path>
+          <path class="elev-line" d="${elevChartPath}"></path>
+        </svg>
+      </div>
+      <div class="elev-stats">
+        <span><b>${elevMin}m</b>low</span>
+        <span><b>${e.elevLabel}</b>gain</span>
+        <span><b>${elevMax}m</b>high</span>
+      </div>
+      ${!elevIsReal ? `<div class="elev-note">Estimated profile — trails recorded from here on get real elevation data automatically.</div>` : ''}
 
       <div class="section-label">How did it feel?${voteTotal ? `<span class="vote-total">${voteTotal} vote${voteTotal === 1 ? '' : 's'}</span>` : ''}</div>
       <div class="vote-row">

@@ -57,6 +57,19 @@ Once live, open the URL on your phone → browser menu → "Add to Home Screen".
   distinguishable instead of all looking the same
 - Tap any photo — in a trail's detail view or a waypoint pin's popup — to
   see it full-screen; tap the ✕ or outside the image to close
+- A photo dropped along a route (mid-recording or mid-navigate — see
+  below) now gets its own camera-icon pin on the map, not a plain dot, so
+  the map reads like a mural-trail map: distinct photo points you can spot
+  and tap. A photo with no caption goes straight to full-screen in one
+  tap; one with a caption pops up the photo (still tap-to-enlarge) plus
+  the note first, so the text isn't hidden
+- Every trail's detail view has a real elevation profile: a filled chart
+  plus low/gain/high numbers, backed by real ground elevation (Open-Meteo's
+  free elevation API, same provider as weather) sampled along the route —
+  not raw phone GPS altitude, which is commonly absent or too noisy to
+  trust for "how hilly was this." Fetched in the background right after a
+  trail is saved, so the first view might show "Estimated profile" for a
+  few seconds before the real one lands
 - **Locate icon** (top right, crosshair) — asks for location permission and
   drops a blue dot + accuracy circle on your position; Navigate and Record
   both reuse this same dot rather than showing their own
@@ -205,3 +218,11 @@ votes/comments into their own tables if that becomes a real problem.
   different devices. Fine for a small pilot group that mostly knows each
   other; add Supabase Auth (see "Backend: Supabase" above) if that becomes
   a real problem
+- The elevation profile samples up to 40 points along a route via
+  Open-Meteo's elevation API, not every recorded point — plenty for a
+  low/gain/high summary and a smooth chart, but it can miss a short, sharp
+  dip or rise between two sampled points on a very long trail. It's also
+  best-effort and needs connectivity at save time: offline or if the API
+  call fails, the trail just keeps its GPS-altitude-or-estimated profile
+  (see `elevationProfilePoints` in `app.js`) until it's walked/logged
+  again with a connection
