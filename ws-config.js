@@ -16,6 +16,6 @@
 // (single device, nothing shared) — the app works fine either way.
 
 const WS_CONFIG = {
-  supabaseUrl: 'https://YOUR-PROJECT-REF.supabase.co',
-  supabaseKey: 'YOUR_ANON_PUBLIC_KEY_HERE'
+  supabaseUrl: 'https://xbimcjcpbjibagkcjoby.supabase.co',
+  supabaseKey: 'sb_publishable_fXz4UPs97EABTK9K19fMqw_ng0ccrVD'
 };
