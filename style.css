@@ -103,12 +103,21 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .tab-btn .icon { width: 24px; height: 24px; }
 .tab-btn span { font-size: 0.64rem; font-weight: 500; font-family: 'IBM Plex Sans', sans-serif; }
 
-/* ---- Recording banner ---- */
+/* ---- Recording banner ----
+   .rec-card is shared by the recording and navigating banners: a single
+   row by default (dot + info + note button + stop), which is what
+   navigating needs. Recording needs more controls (pause, note, cancel,
+   save) than fit in one row, so #recording-banner overrides it to stack
+   a stats row above an actions row — scoped by ID so navigating's layout
+   is untouched. */
 .rec-banner { position: absolute; z-index: 30; left: 14px; right: 96px; bottom: calc(38vh + 14px); }
 .rec-card {
   background: rgba(255,255,255,0.96); backdrop-filter: blur(10px); border-radius: 18px;
   padding: 14px 16px; display: flex; align-items: center; gap: 14px; box-shadow: 0 10px 28px rgba(0,0,0,0.1);
 }
+#recording-banner .rec-card { flex-direction: column; align-items: stretch; gap: 12px; }
+.rec-top { display: flex; align-items: center; gap: 14px; }
+.rec-actions { display: flex; align-items: center; gap: 8px; }
 .rec-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex-shrink: 0; animation: ws-pulse 1.4s infinite; }
 .rec-stats { flex: 1; display: flex; gap: 14px; }
 .rec-stats b { display: block; font-size: 1.15rem; font-family: 'Space Grotesk', sans-serif; color: var(--ink); }
@@ -121,13 +130,15 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
   padding: 10px 14px; font-weight: 500; font-size: 0.8rem; min-height: 44px; cursor: pointer;
 }
 .btn-stop:active { transform: scale(0.95); }
-.btn-rec-photo {
+#recording-banner .btn-stop { flex: 1; }
+.rec-action-btn {
   width: 44px; height: 44px; border-radius: 50%; border: none; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   background: var(--surface-2); color: var(--ink); cursor: pointer;
 }
-.btn-rec-photo:active { transform: scale(0.94); }
-.btn-rec-photo .icon { width: 20px; height: 20px; }
+.rec-action-btn:active { transform: scale(0.94); }
+.rec-action-btn .icon { width: 20px; height: 20px; }
+.rec-action-btn.danger { background: rgba(196,60,40,0.12); color: var(--danger); }
 
 /* ---- Bottom sheet ---- */
 #sheet {

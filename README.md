@@ -46,11 +46,19 @@ Once live, open the URL on your phone → browser menu → "Add to Home Screen".
   drops a blue dot + accuracy circle on your position; Navigate and Record
   both reuse this same dot rather than showing their own
 - **Record** (dot icon) — tap the circle to start GPS logging + a screen wake
-  lock request; tap the camera icon on the floating card to drop a geotagged
-  note (text and/or a photo) at your current spot without stopping — say you
-  pass a mural, stop, snap it and write a line about it; it shows up as a pin
-  on the map immediately and stays attached to that exact point once saved;
-  tap the record button again (or Stop on the card) to finish and save
+  lock request. The floating card has four controls: **Pause/Resume** (stops
+  logging GPS points without ending the recording — for a tea break, not a
+  photo stop), the **camera icon** to drop a geotagged note (text and/or a
+  photo) at your current spot without stopping — say you pass a mural, stop,
+  snap it and write a line about it, it shows up as a pin on the map
+  immediately and stays attached to that exact point once saved — **✕** to
+  cancel and discard the whole recording (asks to confirm first), and
+  **Save** to finish and keep it. Tapping the camera icon opens the
+  camera/photo picker immediately, with no dialog first — showing a prompt
+  or confirm before triggering a file input is what broke camera access on
+  iOS Safari and inside the installed app in earlier versions of this
+  button; text is asked for after a photo (or an explicit cancel), never
+  before
 - **Folder icon** (top right) — load any GPX/KML from your phone
 - Tap a trail on the map or in the list to open its full-screen detail: vote
   on difficulty (with tallies, and you can change your vote), add a photo,

@@ -233,7 +233,7 @@ function onLocationFix(pos) {
     const nearest = turf.nearestPointOnLine(navRouteLine, turf.point([longitude, latitude]), { units: 'meters' });
     if (nearest.properties.dist > 40) showToast(`Off route by ~${Math.round(nearest.properties.dist)}m`);
   }
-  if (recState) {
+  if (recState && !recState.paused) {
     recState.points.push([longitude, latitude, altitude || 0, Date.now()]);
     if (activeRouteLayer) activeRouteLayer.addLatLng([latitude, longitude]);
     map.panTo([latitude, longitude], { animate: true });
@@ -492,6 +492,39 @@ function drawWaypointPins(comments, photos) {
 }
 function drawWaypointMarkers(trail) { drawWaypointPins(trail.comments, trail.photos); }
 
+// Opening the camera/file picker MUST be the very first synchronous thing
+// that happens in response to the tap — no prompt()/confirm() before it.
+// Showing any blocking dialog first breaks the ability to open the native
+// camera afterward on iOS Safari and inside installed/standalone PWAs (a
+// well-documented WebKit quirk: it silently no-ops instead of opening).
+// That's why this used to fail on-device even though it worked in a
+// regular desktop/Android browser tab. Text is asked for AFTER a photo is
+// picked (or after an explicit cancel) — safe at that point, since prompt()
+// doesn't need fresh user-activation the way a file-picker does.
+function captureNoteFlow(inputEl, onDone) {
+  let settled = false;
+  const finish = async (photoFile) => {
+    if (settled) return;
+    settled = true;
+    inputEl.onchange = null;
+    inputEl.oncancel = null;
+    let photoUrl = null;
+    if (photoFile) photoUrl = await compressImage(photoFile, 900);
+    let text = '';
+    if (photoUrl) {
+      text = (prompt('Caption this photo (optional):', '') || '').trim();
+    } else {
+      if (!confirm('No photo taken — add a text-only note here instead?')) return;
+      text = (prompt('Note for this spot:', '') || '').trim();
+    }
+    onDone({ text, photoUrl });
+  };
+  inputEl.onchange = () => finish(inputEl.files[0] || null);
+  inputEl.oncancel = () => finish(null); // supported in modern Chrome/Android + recent iOS Safari; older browsers just won't offer the text-only fallback on cancel
+  inputEl.value = '';
+  inputEl.click();
+}
+
 function navigateTrail(trail) {
   if (activeRouteLayer) map.removeLayer(activeRouteLayer);
   activeRouteLayer = drawTrailOnMap(trail, { color: TRAIL_COLOR, weight: 5 }).addTo(map);
@@ -513,28 +546,19 @@ function stopNavigating() {
 }
 document.getElementById('btn-stop-nav').addEventListener('click', stopNavigating);
 
-document.getElementById('btn-nav-note').addEventListener('click', async () => {
+document.getElementById('btn-nav-note').addEventListener('click', () => {
   if (!navTrail) return;
   if (!lastFix) { showToast('Still waiting for a GPS fix — try again in a moment.'); return; }
-  const text = (prompt('Note for this spot on the trail (leave blank to skip):', '') || '').trim();
-  let photoUrl = null;
-  if (confirm('Attach a photo too?')) {
-    photoUrl = await new Promise((resolve) => {
-      const input = document.getElementById('nav-photo-input');
-      input.onchange = async () => {
-        const file = input.files[0]; input.value = '';
-        resolve(file ? await compressImage(file, 900) : null);
-      };
-      input.click();
-    });
-  }
-  if (!text && !photoUrl) { showToast('Nothing to add.'); return; }
   const point = { lat: lastFix.lat, lng: lastFix.lng, author: myName(), ts: Date.now() };
-  if (text) navTrail.comments.push({ ...point, text });
-  if (photoUrl) navTrail.photos.push({ ...point, url: photoUrl });
-  await Store.saveTrail(navTrail);
-  drawWaypointMarkers(navTrail);
-  showToast('Added to the trail.');
+  captureNoteFlow(document.getElementById('nav-photo-input'), async ({ text, photoUrl }) => {
+    if (!navTrail) { showToast('No longer navigating that trail — not added.'); return; }
+    if (!text && !photoUrl) { showToast('Nothing to add.'); return; }
+    if (text) navTrail.comments.push({ ...point, text });
+    if (photoUrl) navTrail.photos.push({ ...point, url: photoUrl });
+    await Store.saveTrail(navTrail);
+    drawWaypointMarkers(navTrail);
+    showToast('Added to the trail.');
+  });
 });
 
 /* ---------------- Recording ---------------- */
@@ -545,11 +569,16 @@ const recNameInput = document.getElementById('record-name');
 
 recToggleBtn.addEventListener('click', () => recState ? stopRecording() : startRecording());
 document.getElementById('btn-stop-rec').addEventListener('click', stopRecording);
+document.getElementById('btn-cancel-rec').addEventListener('click', cancelRecording);
+document.getElementById('btn-pause-rec').addEventListener('click', () => {
+  if (!recState) return;
+  if (recState.paused) resumeRecording(); else pauseRecording();
+});
 
 async function startRecording() {
   const name = recNameInput.value.trim() || `Trail ${new Date().toLocaleDateString()}`;
   if (!('geolocation' in navigator)) { showToast('GPS not available on this device/browser.'); return; }
-  recState = { name, points: [], photos: [], comments: [], startTime: Date.now(), wakeLock: null };
+  recState = { name, points: [], photos: [], comments: [], startTime: Date.now(), pauseMs: 0, paused: false, wakeLock: null };
   await requestWakeLock();
   requestRecordingNotice();
 
@@ -565,6 +594,54 @@ async function startRecording() {
   recLabel.textContent = 'Recording — 0.0 km';
   document.getElementById('recording-banner').style.display = 'block';
   showToast('Recording started — keep the app open while you walk.');
+}
+
+function pauseRecording() {
+  if (!recState || recState.paused) return;
+  recState.paused = true;
+  recState.pausedAt = Date.now();
+  clearInterval(recState.timerInt);
+  const btn = document.getElementById('btn-pause-rec');
+  btn.querySelector('use').setAttribute('href', '#ic-play');
+  btn.title = 'Resume'; btn.setAttribute('aria-label', 'Resume recording');
+  recLabel.textContent = 'Paused';
+  showToast('Paused — GPS logging stopped until you resume.');
+}
+function resumeRecording() {
+  if (!recState || !recState.paused) return;
+  recState.paused = false;
+  recState.pauseMs += Date.now() - recState.pausedAt;
+  recState.timerInt = setInterval(updateRecordingStats, 1000);
+  const btn = document.getElementById('btn-pause-rec');
+  btn.querySelector('use').setAttribute('href', '#ic-pause');
+  btn.title = 'Pause'; btn.setAttribute('aria-label', 'Pause recording');
+  updateRecordingStats();
+  showToast('Resumed.');
+}
+
+function resetRecordUI() {
+  document.getElementById('recording-banner').style.display = 'none';
+  recToggleBtn.style.background = 'var(--accent-strong)';
+  recToggleBtn.style.animation = 'none';
+  recToggleBtn.querySelector('use').setAttribute('href', '#ic-record');
+  recNameInput.style.display = 'block';
+  recLabel.textContent = 'Tap to start recording';
+  const pauseBtn = document.getElementById('btn-pause-rec');
+  pauseBtn.querySelector('use').setAttribute('href', '#ic-pause');
+  pauseBtn.title = 'Pause'; pauseBtn.setAttribute('aria-label', 'Pause recording');
+}
+
+async function cancelRecording() {
+  if (!recState) return;
+  if (!confirm('Discard this recording? Nothing — track, photos or notes — will be saved.')) return;
+  clearInterval(recState.timerInt);
+  if (recState.wakeLock) { try { await recState.wakeLock.release(); } catch (e) {} }
+  clearRecordingNotice();
+  clearWaypointMarkers();
+  if (activeRouteLayer) { map.removeLayer(activeRouteLayer); activeRouteLayer = null; }
+  resetRecordUI();
+  recState = null;
+  showToast('Recording discarded.');
 }
 
 async function requestWakeLock() {
@@ -609,7 +686,7 @@ function updateRecordingStats() {
   const pts = recState.points;
   const distKm = pts.length > 1 ? turf.length(turf.lineString(pts.map(p => [p[0], p[1]])), { units: 'kilometers' }) : 0;
   const gain = estimateGainFromCoords(pts.map(p => [p[0], p[1], p[2]]));
-  const elapsed = Math.floor((Date.now() - recState.startTime) / 1000);
+  const elapsed = Math.floor((Date.now() - recState.startTime - recState.pauseMs) / 1000);
   const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
   const ss = String(elapsed % 60).padStart(2, '0');
   document.getElementById('rec-dist').textContent = `${distKm.toFixed(2)} km`;
@@ -623,13 +700,7 @@ async function stopRecording() {
   clearInterval(recState.timerInt);
   if (recState.wakeLock) { try { await recState.wakeLock.release(); } catch (e) {} }
   clearRecordingNotice();
-  document.getElementById('recording-banner').style.display = 'none';
-  recToggleBtn.style.background = 'var(--accent-strong)';
-  recToggleBtn.style.animation = 'none';
-  recToggleBtn.querySelector('use').setAttribute('href', '#ic-record');
-  recNameInput.style.display = 'block';
-  recLabel.textContent = 'Tap to start recording';
-
+  resetRecordUI();
   clearWaypointMarkers();
 
   const coords = recState.points.map(p => [p[0], p[1], p[2]]);
@@ -688,30 +759,21 @@ async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos, comme
 }
 
 // Add a note while recording — same geotagged text+photo pattern as
-// btn-nav-note below, so a mural you stop to photograph and write about
+// btn-nav-note above, so a mural you stop to photograph and write about
 // mid-walk shows up as a pin right away (drawWaypointPins), not just once
 // you're done and viewing the saved trail.
-document.getElementById('btn-rec-photo').addEventListener('click', async () => {
+document.getElementById('btn-rec-photo').addEventListener('click', () => {
   if (!recState) return;
   if (!lastFix) { showToast('Still waiting for a GPS fix — try again in a moment.'); return; }
-  const text = (prompt('Note for this spot (leave blank to skip):', '') || '').trim();
-  let photoUrl = null;
-  if (confirm('Attach a photo too?')) {
-    photoUrl = await new Promise((resolve) => {
-      const input = document.getElementById('rec-photo-input');
-      input.onchange = async () => {
-        const file = input.files[0]; input.value = '';
-        resolve(file ? await compressImage(file, 900) : null);
-      };
-      input.click();
-    });
-  }
-  if (!text && !photoUrl) { showToast('Nothing to add.'); return; }
   const point = { lat: lastFix.lat, lng: lastFix.lng, author: myName(), ts: Date.now() };
-  if (text) recState.comments.push({ ...point, text });
-  if (photoUrl) recState.photos.push({ ...point, url: photoUrl });
-  drawWaypointPins(recState.comments, recState.photos);
-  showToast('Added to the trail.');
+  captureNoteFlow(document.getElementById('rec-photo-input'), ({ text, photoUrl }) => {
+    if (!recState) { showToast('Recording already ended — not added.'); return; }
+    if (!text && !photoUrl) { showToast('Nothing to add.'); return; }
+    if (text) recState.comments.push({ ...point, text });
+    if (photoUrl) recState.photos.push({ ...point, url: photoUrl });
+    drawWaypointPins(recState.comments, recState.photos);
+    showToast('Added to the trail.');
+  });
 });
 
 /* ---------------- Trail detail (full screen) ---------------- */

@@ -33,6 +33,8 @@
   <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="ic-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3.5M12 18.5V22M2 12h3.5M18.5 12H22"/></symbol>
   <symbol id="ic-refresh" viewBox="0 0 24 24"><path d="M20 11A8 8 0 0 0 6.3 6.3L4 8.6"/><path d="M4 4v4.6h4.6"/><path d="M4 13a8 8 0 0 0 13.7 4.7L20 15.4"/><path d="M20 20v-4.6h-4.6"/></symbol>
+  <symbol id="ic-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></symbol>
+  <symbol id="ic-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></symbol>
 </svg>
 
 <div id="app">
@@ -68,16 +70,26 @@
 
   <div class="rec-banner" id="recording-banner" style="display:none;">
     <div class="rec-card">
-      <div class="rec-dot"></div>
-      <div class="rec-stats">
-        <div><b id="rec-dist">0.0 km</b><small>distance</small></div>
-        <div><b id="rec-time">00:00</b><small>time</small></div>
-        <div><b id="rec-gain">0 m</b><small>gain</small></div>
+      <div class="rec-top">
+        <div class="rec-dot"></div>
+        <div class="rec-stats">
+          <div><b id="rec-dist">0.0 km</b><small>distance</small></div>
+          <div><b id="rec-time">00:00</b><small>time</small></div>
+          <div><b id="rec-gain">0 m</b><small>gain</small></div>
+        </div>
       </div>
-      <button class="btn-rec-photo" id="btn-rec-photo" title="Add a note here" aria-label="Add a note here">
-        <svg class="icon" viewBox="0 0 24 24"><use href="#ic-camera"/></svg>
-      </button>
-      <button class="btn-stop" id="btn-stop-rec">Stop</button>
+      <div class="rec-actions">
+        <button class="rec-action-btn" id="btn-pause-rec" title="Pause" aria-label="Pause recording">
+          <svg class="icon" viewBox="0 0 24 24"><use href="#ic-pause"/></svg>
+        </button>
+        <button class="rec-action-btn" id="btn-rec-photo" title="Add a note here" aria-label="Add a note here">
+          <svg class="icon" viewBox="0 0 24 24"><use href="#ic-camera"/></svg>
+        </button>
+        <button class="rec-action-btn danger" id="btn-cancel-rec" title="Cancel — discard, don't save" aria-label="Cancel recording, discard without saving">
+          <svg class="icon" viewBox="0 0 24 24"><use href="#ic-close"/></svg>
+        </button>
+        <button class="btn-stop" id="btn-stop-rec">Save</button>
+      </div>
     </div>
   </div>
 
@@ -88,7 +100,7 @@
         <b id="nav-trail-name">Navigating</b>
         <small>Tap + to add a note at your spot</small>
       </div>
-      <button class="btn-rec-photo" id="btn-nav-note" title="Add a note here" aria-label="Add a note here">
+      <button class="rec-action-btn" id="btn-nav-note" title="Add a note here" aria-label="Add a note here">
         <svg class="icon" viewBox="0 0 24 24"><use href="#ic-plus"/></svg>
       </button>
       <button class="btn-stop" id="btn-stop-nav">Stop</button>
