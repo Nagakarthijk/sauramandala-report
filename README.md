@@ -160,6 +160,35 @@ clears every cache this app owns, and hard-reloads. A saved trail is never
 at risk (Supabase/localStorage, not the app-shell cache); an in-progress
 recording is protected the same way a crash is, via the draft above.
 
+## Map & navigation polish
+A follow-up round focused on the map itself feeling cramped and static:
+
+- **Collapsible bottom sheet.** The trails panel can be dragged down (or
+  tapped on its handle) to tuck itself to a thin strip so the map goes
+  effectively full-screen — useful once you're actually walking and just
+  want to see the route. Picking any tab automatically brings it back up,
+  so it's never accidentally stuck out of the way.
+- **Tap a trail's line for a preview.** Clicking a trail's route on the
+  map used to jump straight into the full detail page. It now opens a
+  small in-place popup first — name, distance/difficulty, up to 4 photo
+  thumbnails, and the comment count — with "View full details" only for
+  when you actually want the whole page. Mirrors the pattern already used
+  for individual photo/comment waypoint pins.
+- **Nearest-first Explore + search.** Once your location is known, the
+  Explore list sorts by straight-line distance from you (closest trail
+  first, with a "230m away" / "1.2km away" badge) instead of just
+  creation order, and re-sorts once as soon as the first GPS fix lands.
+  A search box above the list filters by trail name.
+- **Responsive icon sizing.** The topbar action pills and the tab rail
+  used to be a fixed size that could crowd or overflow on smaller phones.
+  Below ~420px wide they shrink to icon-only (label still available as a
+  tooltip/aria-label) instead of wrapping awkwardly.
+- **Non-intrusive loading indicator.** A thin progress strip along the
+  very top of the screen appears while a `Store` call (an IndexedDB read,
+  a Supabase round-trip) is in flight, and disappears once every in-flight
+  call resolves — a way to tell "still loading" apart from "frozen"
+  without a modal or spinner blocking anything underneath it.
+
 ## Backend: Supabase
 Everything reads/writes through the `Store` object at the top of `app.js` —
 `Store` is dual-mode: it uses Supabase when `ws-config.js` has real

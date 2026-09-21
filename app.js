@@ -150,6 +150,19 @@ async function idbDelete(key) {
 const PENDING_TRAILS_KEY = 'ws_pending_trails'; // ids not yet confirmed synced to Supabase
 const PENDING_PLANS_KEY = 'ws_pending_plans';
 
+// A counter, not a boolean — several Store calls can be in flight at once
+// (e.g. Explore and Mine both loading on startup), and the bar should
+// only disappear once the last one finishes, not the first.
+let _loadingCount = 0;
+function startLoading() {
+  _loadingCount++;
+  document.getElementById('load-bar')?.classList.add('active');
+}
+function stopLoading() {
+  _loadingCount = Math.max(0, _loadingCount - 1);
+  if (_loadingCount === 0) document.getElementById('load-bar')?.classList.remove('active');
+}
+
 const Store = {
   // Reads IndexedDB first; if a key isn't there yet, checks localStorage
   // for anything left over from before this moved off it and migrates it
@@ -186,46 +199,58 @@ const Store = {
   },
 
   async getTrails() {
-    if (!trySupabaseInit()) return this._read('ws_trails', seedTrails());
-    const { data, error } = await _sb.from('ws_trails').select('*').order('created_at', { ascending: false });
-    if (error) { console.warn('[WS] getTrails', error.message); return this._read('ws_trails', seedTrails()); }
-    let trails;
-    if (data.length) {
-      trails = data.map(_rowToTrail);
-    } else {
-      // First run against an empty shared table — seed it so Explore isn't blank.
-      await _sb.from('ws_trails').upsert(seedTrails().map(_trailToRow), { onConflict: 'id', ignoreDuplicates: true });
-      const seeded = await _sb.from('ws_trails').select('*').order('created_at', { ascending: false });
-      trails = (seeded.data || []).map(_rowToTrail);
-    }
-    return this._mergePending('ws_trails', PENDING_TRAILS_KEY, trails);
+    startLoading();
+    try {
+      if (!trySupabaseInit()) return this._read('ws_trails', seedTrails());
+      const { data, error } = await _sb.from('ws_trails').select('*').order('created_at', { ascending: false });
+      if (error) { console.warn('[WS] getTrails', error.message); return this._read('ws_trails', seedTrails()); }
+      let trails;
+      if (data.length) {
+        trails = data.map(_rowToTrail);
+      } else {
+        // First run against an empty shared table — seed it so Explore isn't blank.
+        await _sb.from('ws_trails').upsert(seedTrails().map(_trailToRow), { onConflict: 'id', ignoreDuplicates: true });
+        const seeded = await _sb.from('ws_trails').select('*').order('created_at', { ascending: false });
+        trails = (seeded.data || []).map(_rowToTrail);
+      }
+      return this._mergePending('ws_trails', PENDING_TRAILS_KEY, trails);
+    } finally { stopLoading(); }
   },
   // Returns {synced}: false means it's durable on this device (IndexedDB,
   // queued for retry) but NOT yet confirmed on the shared backend — callers
   // that tell the user "saved" need to know which one actually happened,
   // since those are very different guarantees.
   async saveTrail(trail) {
-    await this._cacheUpsert('ws_trails', seedTrails(), trail);
-    if (!trySupabaseInit()) { await this._pendingAdd(PENDING_TRAILS_KEY, trail.id); return { synced: false }; }
-    const { error } = await _sb.from('ws_trails').upsert(_trailToRow(trail), { onConflict: 'id' });
-    if (error) { console.warn('[WS] saveTrail — queued for retry:', error.message); await this._pendingAdd(PENDING_TRAILS_KEY, trail.id); return { synced: false }; }
-    await this._pendingRemove(PENDING_TRAILS_KEY, trail.id);
-    return { synced: true };
+    startLoading();
+    try {
+      await this._cacheUpsert('ws_trails', seedTrails(), trail);
+      if (!trySupabaseInit()) { await this._pendingAdd(PENDING_TRAILS_KEY, trail.id); return { synced: false }; }
+      const { error } = await _sb.from('ws_trails').upsert(_trailToRow(trail), { onConflict: 'id' });
+      if (error) { console.warn('[WS] saveTrail — queued for retry:', error.message); await this._pendingAdd(PENDING_TRAILS_KEY, trail.id); return { synced: false }; }
+      await this._pendingRemove(PENDING_TRAILS_KEY, trail.id);
+      return { synced: true };
+    } finally { stopLoading(); }
   },
 
   async getPlans() {
-    if (!trySupabaseInit()) return this._read('ws_plans', []);
-    const { data, error } = await _sb.from('ws_plans').select('*').order('created_at', { ascending: false });
-    if (error) { console.warn('[WS] getPlans', error.message); return this._read('ws_plans', []); }
-    return this._mergePending('ws_plans', PENDING_PLANS_KEY, data.map(_rowToPlan));
+    startLoading();
+    try {
+      if (!trySupabaseInit()) return this._read('ws_plans', []);
+      const { data, error } = await _sb.from('ws_plans').select('*').order('created_at', { ascending: false });
+      if (error) { console.warn('[WS] getPlans', error.message); return this._read('ws_plans', []); }
+      return this._mergePending('ws_plans', PENDING_PLANS_KEY, data.map(_rowToPlan));
+    } finally { stopLoading(); }
   },
   async savePlan(plan) {
-    await this._cacheUpsert('ws_plans', [], plan);
-    if (!trySupabaseInit()) { await this._pendingAdd(PENDING_PLANS_KEY, plan.id); return { synced: false }; }
-    const { error } = await _sb.from('ws_plans').upsert(_planToRow(plan), { onConflict: 'id' });
-    if (error) { console.warn('[WS] savePlan — queued for retry:', error.message); await this._pendingAdd(PENDING_PLANS_KEY, plan.id); return { synced: false }; }
-    await this._pendingRemove(PENDING_PLANS_KEY, plan.id);
-    return { synced: true };
+    startLoading();
+    try {
+      await this._cacheUpsert('ws_plans', [], plan);
+      if (!trySupabaseInit()) { await this._pendingAdd(PENDING_PLANS_KEY, plan.id); return { synced: false }; }
+      const { error } = await _sb.from('ws_plans').upsert(_planToRow(plan), { onConflict: 'id' });
+      if (error) { console.warn('[WS] savePlan — queued for retry:', error.message); await this._pendingAdd(PENDING_PLANS_KEY, plan.id); return { synced: false }; }
+      await this._pendingRemove(PENDING_PLANS_KEY, plan.id);
+      return { synced: true };
+    } finally { stopLoading(); }
   },
 
   // A trail/plan saved moments ago on a bad connection might not have
@@ -443,13 +468,34 @@ function drawTrailOnMap(trail, opts = {}) {
   const latlngs = trail.coords.map(([lng, lat]) => [lat, lng]);
   return L.polyline(latlngs, { color: opts.color || trailColor(trail.id), weight: opts.weight || 4, opacity: opts.opacity ?? 0.9 });
 }
+// Tapping a trail's line on the map used to jump straight to the full
+// detail page — a big context switch just to see if a walk has any
+// photos on it. This gives a quick in-place preview (a Leaflet popup,
+// same pattern as the waypoint pins) with a few photos and the comment
+// count, and only "View full details" goes to the full page.
+function trailPreviewHTML(trail) {
+  const e = enrichTrail(trail);
+  const photos = e.photos.slice(0, 4);
+  return `
+    <div class="trail-popup">
+      <div class="trail-popup-title" style="color:${trailColor(trail.id)};">${escapeHTML(trail.name)}</div>
+      <div class="trail-popup-meta">
+        <span class="num">${e.distanceLabel}</span>
+        <span class="num dim">${e.elevLabel}</span>
+        <span class="diff" style="color:${e.textColor};">${e.bucket}</span>
+      </div>
+      ${photos.length ? `<div class="trail-popup-photos">${photos.map(p => `<img src="${typeof p === 'string' ? p : p.url}" onclick="openLightbox(this.src)">`).join('')}</div>` : ''}
+      <div class="trail-popup-comments">${e.comments.length ? `&#128172; ${e.comments.length} comment${e.comments.length === 1 ? '' : 's'}` : 'No comments yet'}</div>
+      <button class="trail-popup-btn" onclick="openDetail('${trail.id}')">View full details</button>
+    </div>`;
+}
 async function renderTrailLayers() {
   Object.values(trailLayers).forEach(l => map.removeLayer(l));
   trailLayers = {};
   const trails = await Store.getTrails();
   trails.forEach(trail => {
     const layer = drawTrailOnMap(trail).addTo(map);
-    layer.on('click', () => openDetail(trail.id));
+    layer.bindPopup(trailPreviewHTML(trail), { maxWidth: 240, className: 'trail-popup-wrap' });
     trailLayers[trail.id] = layer;
   });
 }
@@ -479,6 +525,7 @@ function onLocationFix(pos) {
   lastFix = { lat: latitude, lng: longitude };
   lastAccuracy = accuracy || null;
   updateGpsStatusUI();
+  if (!_exploreSortedByFix) { _exploreSortedByFix = true; renderExplore(); }
   if (!myLocationMarker) {
     myAccuracyCircle = L.circle([latitude, longitude], { radius: accuracy || 20, color: LOCATE_BLUE, weight: 1, fillColor: LOCATE_BLUE, fillOpacity: 0.12 }).addTo(map);
     myLocationMarker = L.circleMarker([latitude, longitude], { radius: 8, color: '#fff', weight: 3, fillColor: LOCATE_BLUE, fillOpacity: 1 }).addTo(map);
@@ -644,6 +691,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     panels.forEach(p => { document.getElementById(`panel-${p}`).style.display = p === btn.dataset.tab ? 'block' : 'none'; });
+    document.getElementById('sheet').classList.remove('collapsed'); // picking a tab means wanting its content, not the map — bring the sheet back if it was tucked away
     // Start acquiring a GPS fix as soon as Record is opened, not when Start
     // is tapped — so by the time someone's ready to go, "GPS ready" is
     // already showing instead of a surprise wait right at the start line.
@@ -652,7 +700,16 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 /* ---------------- Explore / Mine lists ---------------- */
-function trailRowHTML(t) {
+// Straight-line distance from the last known GPS fix to a trail's start
+// point — enough to sort/label "nearest first" without needing a routed
+// distance. Returns null (rather than a wrong number) when there's no fix
+// yet, and callers fall back to the trail's own created-at order.
+function trailDistanceFromMe(t) {
+  if (!lastFix || !t.coords || !t.coords.length) return null;
+  const [lng, lat] = t.coords[0];
+  return turf.distance([lastFix.lng, lastFix.lat], [lng, lat], { units: 'kilometers' });
+}
+function trailRowHTML(t, distKm) {
   const e = enrichTrail(t);
   return `
     <div class="trail-row" data-open="${t.id}">
@@ -660,6 +717,7 @@ function trailRowHTML(t) {
       <div class="trail-row-body">
         <h3>${escapeHTML(t.name)}</h3>
         <div class="trail-row-meta">
+          ${distKm != null ? `<span class="distance">${distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)}km`} away</span>` : ''}
           <span class="num">${e.distanceLabel}</span>
           <span class="num dim">${e.elevLabel}</span>
           <span class="diff" style="color:${e.textColor};">${e.bucket}</span>
@@ -671,10 +729,19 @@ function trailRowHTML(t) {
 }
 async function renderExplore() {
   const list = document.getElementById('explore-list');
-  const trails = await Store.getTrails();
-  list.innerHTML = trails.length
-    ? trails.map(trailRowHTML).join('')
-    : `<div class="empty-note"><svg class="icon" viewBox="0 0 24 24" style="width:26px;height:26px;"><use href="#ic-compass"/></svg><div>No trails yet. Record one or load a GPX file to get started.</div></div>`;
+  const searchInput = document.getElementById('explore-search');
+  const q = (searchInput?.value || '').trim().toLowerCase();
+  let trails = await Store.getTrails();
+  if (q) trails = trails.filter(t => t.name.toLowerCase().includes(q));
+
+  const withDist = trails.map(t => ({ t, d: trailDistanceFromMe(t) }));
+  if (lastFix) withDist.sort((a, b) => (a.d ?? Infinity) - (b.d ?? Infinity));
+
+  list.innerHTML = withDist.length
+    ? withDist.map(({ t, d }) => trailRowHTML(t, d)).join('')
+    : trails.length === 0 && !q
+      ? `<div class="empty-note"><svg class="icon" viewBox="0 0 24 24" style="width:26px;height:26px;"><use href="#ic-compass"/></svg><div>No trails yet. Record one or load a GPX file to get started.</div></div>`
+      : `<div class="empty-note">No trails match "${escapeHTML(q)}".</div>`;
   list.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', () => openDetail(el.dataset.open)));
 }
 async function renderMine() {
@@ -682,10 +749,16 @@ async function renderMine() {
   const trails = await Store.getTrails();
   const mine = trails.filter(t => t.author === savedName());
   list.innerHTML = mine.length
-    ? mine.map(trailRowHTML).join('')
+    ? mine.map(t => trailRowHTML(t)).join('')
     : `<div class="empty-note">Trails you record or load will show up here.</div>`;
   list.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', () => openDetail(el.dataset.open)));
 }
+document.getElementById('explore-search').addEventListener('input', debounce(renderExplore, 200));
+// The Explore list sorts "nearest first" as soon as a fix is known, but on
+// first load there usually isn't one yet — re-sort once the first fix
+// comes in (not on every fix after that; walking around shouldn't keep
+// reshuffling a list someone's mid-scroll on).
+let _exploreSortedByFix = false;
 
 /* ---------------- Plans (scheduler: propose a walk, RSVP, discuss) ---------------- */
 function formatPlanDate(ms) {
@@ -1684,6 +1757,59 @@ function sharePlan(plan) {
   const url = `${location.origin}${location.pathname}?plan=${encodeURIComponent(plan.id)}`;
   return shareLink({ title: `Walk Shillong — ${plan.title}`, text: `${plan.title} — ${formatPlanDate(plan.walkDate)}. RSVP on Walk Shillong:`, url });
 }
+
+/* ---------------- Collapsible bottom sheet ----------------
+   The trail list used to permanently cover the bottom ~62vh of the map
+   with no way to get it out of the way. Drag the handle down (or just
+   tap it) to slide the sheet to a peek — only the handle bar showing —
+   so the map is fully visible; drag/tap again to bring it back. Uses
+   translateY rather than animating height/max-height, which would fight
+   the sheet's own content-driven height and jank on cheaper phones. */
+(function setupSheetDrag() {
+  const sheet = document.getElementById('sheet');
+  const handle = document.querySelector('.sheet-handle');
+  if (!sheet || !handle) return;
+  const PEEK = 34; // px of the sheet left visible when collapsed
+  let startY = 0, startTranslate = 0, dragging = false, sheetHeight = 0;
+
+  function setCollapsed(collapsed) {
+    sheet.classList.toggle('collapsed', collapsed);
+    sheet.style.transform = '';
+  }
+  function isCollapsed() { return sheet.classList.contains('collapsed'); }
+
+  handle.addEventListener('click', () => {
+    if (dragging) return; // a drag's pointerup already decided the state; don't let the synthetic click after it re-toggle
+    setCollapsed(!isCollapsed());
+  });
+  handle.addEventListener('pointerdown', (e) => {
+    dragging = false;
+    startY = e.clientY;
+    sheetHeight = sheet.offsetHeight;
+    startTranslate = isCollapsed() ? (sheetHeight - PEEK) : 0;
+    sheet.style.transition = 'none';
+    handle.setPointerCapture(e.pointerId);
+  });
+  handle.addEventListener('pointermove', (e) => {
+    const dy = e.clientY - startY;
+    if (!dragging && Math.abs(dy) < 4) return;
+    dragging = true;
+    const next = Math.max(0, Math.min(sheetHeight - PEEK, startTranslate + dy));
+    sheet.style.transform = `translateY(${next}px)`;
+  });
+  function endDrag(e) {
+    sheet.style.transition = '';
+    if (!dragging) return;
+    const current = Math.max(0, Math.min(sheetHeight - PEEK, startTranslate + (e.clientY - startY)));
+    setCollapsed(current > (sheetHeight - PEEK) * 0.35);
+    // Swallow the click this pointerup is about to generate, then reset —
+    // without this, releasing a drag also fires the handle's click
+    // listener and immediately flips whatever state the drag just set.
+    setTimeout(() => { dragging = false; }, 0);
+  }
+  handle.addEventListener('pointerup', endDrag);
+  handle.addEventListener('pointercancel', endDrag);
+})();
 
 /* ---------------- "Add to Home Screen" prompt ----------------
    Opening the link doesn't trigger a browser install/permission prompt
