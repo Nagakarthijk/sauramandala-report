@@ -99,7 +99,7 @@
         <button id="share-btn" class="border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-4 py-2 rounded-xl text-sm transition-colors">Share campaign</button>
         ${joinAction.disabled
           ? `<span class="flex-1 text-center bg-stone-100 text-stone-500 font-semibold px-4 py-2 rounded-xl text-sm">${joinAction.label}</span>`
-          : `<a href="${joinAction.href}" class="flex-1 text-center bg-violet-600 hover:bg-violet-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors">${joinAction.label}</a>`}
+          : `<a href="${joinAction.href}" class="flex-1 text-center bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors">${joinAction.label}</a>`}
       </div>
     </header>
 
@@ -110,7 +110,7 @@
           ? `<img src="${JN.esc(leaderProfile.photo_url)}" class="w-14 h-14 rounded-full object-cover" alt="">`
           : `<div class="w-14 h-14 rounded-full bg-stone-300 flex items-center justify-center font-bold text-stone-600">${JN.initials(leaderProfile.name)}</div>`}
         <div class="min-w-0">
-          <div class="text-[10px] font-bold text-violet-600 uppercase tracking-wide">Campaign leader</div>
+          <div class="text-[10px] font-bold text-teal-600 uppercase tracking-wide">Campaign leader</div>
           <a href="profile.html?u=${encodeURIComponent(leaderProfile.slug)}" class="font-black text-stone-900 hover:underline">${JN.esc(leaderProfile.name)}</a>
           <div class="text-xs text-stone-400">${JN.esc(leaderProfile.location || '')}</div>
         </div>

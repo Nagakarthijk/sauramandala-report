@@ -66,6 +66,10 @@
   document.getElementById('disclaimer').innerHTML = JN.disclaimerHTML();
 
   const [profiles, orgs, campaigns] = await Promise.all([JN.getProfiles(), JN.getApprovedOrgs(), JN.getCampaigns()]);
+  // Direct lookup, not the filtered directory above — a campaign's leader
+  // should always be identifiable from their own campaign's card.
+  const campaignLeaders = await Promise.all(campaigns.map(c => JN.getProfileById(c.leader_profile_id)));
+  const leaderByCampaignId = Object.fromEntries(campaigns.map((c, i) => [c.id, campaignLeaders[i]]));
 
   function workerCard(p) {
     return `
@@ -93,10 +97,18 @@
   }
 
   function campaignCard(c) {
+    const leader = leaderByCampaignId[c.id];
     return `
       <a href="campaign.html?c=${encodeURIComponent(c.slug)}" class="bg-white border border-stone-100 rounded-2xl p-4 hover:shadow-md transition-shadow block">
-        <div class="text-[10px] font-semibold text-violet-600 uppercase tracking-wide">Campaign</div>
+        <div class="text-[10px] font-semibold text-teal-600 uppercase tracking-wide">Campaign</div>
         <div class="font-bold text-stone-900 mt-0.5">${JN.esc(c.name)}</div>
+        ${leader ? `
+        <div class="flex items-center gap-2 mt-2">
+          ${leader.photo_url
+            ? `<img src="${JN.esc(leader.photo_url)}" class="w-6 h-6 rounded-full object-cover" alt="">`
+            : `<div class="w-6 h-6 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-500 text-[9px]">${JN.initials(leader.name)}</div>`}
+          <span class="text-xs text-stone-500">Led by ${JN.esc(leader.name)}</span>
+        </div>` : ''}
         <p class="mt-2 text-xs text-stone-500 line-clamp-2 leading-relaxed">${JN.esc(c.description || '')}</p>
       </a>`;
   }

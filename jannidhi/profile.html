@@ -186,7 +186,7 @@
           ${profile.id_attested ? badge('ID self-attested', 'bg-blue-50 text-blue-700', 'The owner states an ID document is on file. Not checked by the platform.') : ''}
           ${vouches.map(m => badge('Vouched by ' + JN.esc(orgById[m.org_id]?.name || 'org'), 'bg-violet-50 text-violet-700', 'This organisation vouches for this changemaker. Not a platform verification.')).join('')}
           ${campaignAffiliations.map(a => `
-            <a href="campaign.html?c=${encodeURIComponent(a.campaign.slug)}" class="text-[10px] font-bold px-2 py-1 rounded-full bg-violet-50 text-violet-700 hover:bg-violet-100 transition-colors" title="${JN.esc(a.role === 'leader' ? 'This person leads this campaign — money for it goes to their own UPI below.' : 'An approved team member of this campaign.')}">
+            <a href="campaign.html?c=${encodeURIComponent(a.campaign.slug)}" class="text-[10px] font-bold px-2 py-1 rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors" title="${JN.esc(a.role === 'leader' ? 'This person leads this campaign — money for it goes to their own UPI below.' : 'An approved team member of this campaign.')}">
               ${a.role === 'leader' ? 'Leads' : 'Part of'} ${JN.esc(a.campaign.name)} ↗
             </a>`).join('')}
         </div>
@@ -203,7 +203,7 @@
 
         <div class="hidden sm:flex gap-2 mt-4">
           <button id="share-btn" class="border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-4 py-2 rounded-xl text-sm transition-colors">Share page</button>
-          <a href="#pay" class="flex-1 text-center bg-orange-600 hover:bg-orange-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors">Support directly</a>
+          <a href="#pay" class="flex-1 text-center bg-orange-600 hover:bg-orange-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors">${paysViaCampaign ? 'Support the campaign' : 'Support directly'}</a>
         </div>
 
         <div class="flex flex-wrap gap-2 text-xs mt-4">
@@ -244,12 +244,12 @@
 
     <!-- Payment -->
     <section id="pay" class="bg-white border border-stone-100 rounded-2xl p-5 mt-4 scroll-mt-20">
-      <h2 class="font-bold text-stone-900 text-sm mb-1">Support ${JN.esc(profile.name.split(' ')[0])} directly</h2>
-      <p class="text-xs text-stone-400 mb-3">Pay with your own UPI app. Money goes straight to them — JanNidhi never touches it and cannot reverse it.</p>
+      <h2 class="font-bold text-stone-900 text-sm mb-1">${paysViaCampaign ? `Support ${JN.esc(profile.name.split(' ')[0])}'s campaign` : `Support ${JN.esc(profile.name.split(' ')[0])} directly`}</h2>
+      <p class="text-xs text-stone-400 mb-3">${paysViaCampaign ? 'Pay with your own UPI app. Money goes straight to the campaign leader — JanNidhi never touches it and cannot reverse it.' : 'Pay with your own UPI app. Money goes straight to them — JanNidhi never touches it and cannot reverse it.'}</p>
       ${paysViaCampaign ? `
-      <div class="bg-violet-50 border border-violet-100 rounded-xl p-4 text-sm text-violet-800">
+      <div class="bg-teal-50 border border-teal-100 rounded-xl p-4 text-sm text-teal-800">
         ${JN.esc(profile.name.split(' ')[0])} doesn't take support directly — they're part of <strong>${JN.esc(memberCampaign.campaign.name)}</strong>, led by ${JN.esc(memberCampaign.leader?.name || 'their campaign leader')}. Support the campaign instead:
-        <a href="campaign.html?c=${encodeURIComponent(memberCampaign.campaign.slug)}" class="mt-3 block text-center bg-violet-600 hover:bg-violet-700 text-white font-semibold py-3 rounded-xl text-sm transition-colors">Go to ${JN.esc(memberCampaign.campaign.name)}</a>
+        <a href="campaign.html?c=${encodeURIComponent(memberCampaign.campaign.slug)}" class="mt-3 block text-center bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 rounded-xl text-sm transition-colors">Go to ${JN.esc(memberCampaign.campaign.name)}</a>
       </div>` : `
       <div class="flex flex-col sm:flex-row gap-4 items-start">
         ${profile.upi_qr_url
@@ -262,7 +262,7 @@
              </div>`
           : `<div class="w-full sm:w-72 aspect-square shrink-0 border border-dashed border-stone-200 rounded-xl flex items-center justify-center text-xs text-stone-300 text-center px-2">No QR uploaded yet</div>`}
         <div class="text-sm space-y-2 min-w-0 w-full">
-          ${memberCampaign ? `<div><span class="text-xs text-stone-400 block">Fundraising for</span><span class="font-bold text-violet-700">${JN.esc(memberCampaign.campaign.name)}</span></div>` : ''}
+          ${memberCampaign ? `<div><span class="text-xs text-stone-400 block">Fundraising for</span><span class="font-bold text-teal-700">${JN.esc(memberCampaign.campaign.name)}</span></div>` : ''}
           ${profile.upi_vpa ? `<div><span class="text-xs text-stone-400 block">UPI ID</span><span class="font-mono font-bold text-base select-all break-all">${JN.esc(profile.upi_vpa)}</span></div>` : ''}
           ${profile.upi_payee_name ? `<div><span class="text-xs text-stone-400 block">Payments should show the name</span><span class="font-bold">${JN.esc(profile.upi_payee_name)}</span><p class="text-[10px] text-amber-600 mt-0.5">If your UPI app shows a different name, stop — this page may be impersonating someone.</p></div>` : ''}
           ${profile.bank_details ? `<div><span class="text-xs text-stone-400 block">Bank transfer</span><span class="whitespace-pre-line text-xs">${JN.esc(profile.bank_details)}</span></div>` : ''}
@@ -432,6 +432,7 @@
   $('share-btn')?.addEventListener('click', openShare);
   $('mbar-share').onclick = openShare;
   $('share-copy').onclick = () => { JN.copyLink(profile); $('share-modal').classList.add('hidden'); };
+  if (paysViaCampaign) $('mbar-support').textContent = 'Support the campaign';
   $('mbar-support').onclick = () => document.getElementById('pay').scrollIntoView({ behavior: 'smooth' });
 
   // Show the sticky mobile bar once the header has scrolled past, so it doesn't duplicate the inline buttons immediately
