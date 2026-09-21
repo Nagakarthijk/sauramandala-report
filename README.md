@@ -189,6 +189,36 @@ A follow-up round focused on the map itself feeling cramped and static:
   call resolves — a way to tell "still loading" apart from "frozen"
   without a modal or spinner blocking anything underneath it.
 
+A second, smaller round on the same area:
+
+- **Trail name labels on the map.** Each trail's line now carries a small
+  permanent text label (no pill/background, just a shadowed name) so it's
+  identifiable at a glance instead of only on tap.
+- **Search stays visible when the sheet is collapsed.** The search box
+  used to live inside the Explore panel, so collapsing the sheet hid it
+  along with everything else. It's now its own row directly under the
+  drag handle — only the trail list underneath collapses away, and how
+  much of the sheet stays "peeked" open is computed to fit exactly the
+  handle plus that search row (see `updateSheetPeek()` in `app.js`).
+- **Walking time on a trail.** A recorded trail now shows how long the
+  walk took (and how much of that was paused, if any) alongside its
+  distance and elevation gain — on the Explore/Mine rows and the trail
+  detail page. Timed from the actual Start/Stop of the recording that
+  created the trail; a GPX/KML import or a trail saved before this
+  existed just won't have one, same as it wouldn't have a real elevation
+  profile yet. **Needs `ws-schema.sql` re-run** — adds `duration_sec` and
+  `pause_sec` columns to `ws_trails` (nullable, safe to re-run as always).
+- **Fixed a bogus "observed N min ago" on the weather panel.** The IMD
+  station lookup matches its "last observed" field by name pattern
+  (`/date|time|observed|updated/i`) since the live endpoint isn't
+  reachable from where this was built to hardcode exact column names —
+  occasionally that matched a field holding something other than a clean
+  recent timestamp (wrong units, a stale value) and produced a nonsense
+  figure like "104566 min ago". `_imdDate()` now discards any parsed
+  timestamp that isn't within a day of now (or up to 5 minutes in the
+  future) instead of displaying it, and durations over an hour are shown
+  as "Xh Ym ago" rather than a big minute count either way.
+
 ## Backend: Supabase
 Everything reads/writes through the `Store` object at the top of `app.js` —
 `Store` is dual-mode: it uses Supabase when `ws-config.js` has real

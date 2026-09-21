@@ -29,11 +29,15 @@ CREATE TABLE IF NOT EXISTS ws_trails (
   photos       JSONB NOT NULL DEFAULT '[]', -- [{url,author,ts,lat?,lng?}, ...]
   walk_count   INTEGER NOT NULL DEFAULT 1,  -- times this route has been walked/recorded
   walkers      JSONB NOT NULL DEFAULT '[]', -- [{author,ts}, ...] — one entry per logged walk
-  elevation_profile JSONB                   -- [meters, ...], real DEM ground elevation sampled along the route via Open-Meteo's elevation API — null until refineElevation() backfills it, app falls back to GPS altitude or an estimate until then
+  elevation_profile JSONB,                  -- [meters, ...], real DEM ground elevation sampled along the route via Open-Meteo's elevation API — null until refineElevation() backfills it, app falls back to GPS altitude or an estimate until then
+  duration_sec INTEGER,                     -- wall-clock time from Start to Stop while recording this trail, including any paused time — null for a GPX/KML import (no recording session to time) or a trail saved before this existed
+  pause_sec    INTEGER                      -- time spent paused within duration_sec above — null/0 means never paused (or not recorded)
 );
 ALTER TABLE ws_trails ADD COLUMN IF NOT EXISTS walk_count INTEGER NOT NULL DEFAULT 1;
 ALTER TABLE ws_trails ADD COLUMN IF NOT EXISTS walkers JSONB NOT NULL DEFAULT '[]';
 ALTER TABLE ws_trails ADD COLUMN IF NOT EXISTS elevation_profile JSONB;
+ALTER TABLE ws_trails ADD COLUMN IF NOT EXISTS duration_sec INTEGER;
+ALTER TABLE ws_trails ADD COLUMN IF NOT EXISTS pause_sec INTEGER;
 
 CREATE TABLE IF NOT EXISTS ws_plans (
   id             TEXT PRIMARY KEY,

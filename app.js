@@ -55,7 +55,8 @@ function _trailToRow(t) {
     coords: t.coords, distance_km: t.distanceKm, elev_gain: t.elevGain,
     votes: t.votes, comments: t.comments, photos: t.photos,
     walk_count: t.walkCount || 1, walkers: t.walkers || [],
-    elevation_profile: t.elevationProfile || null
+    elevation_profile: t.elevationProfile || null,
+    duration_sec: t.durationSec ?? null, pause_sec: t.pauseSec ?? null
   };
 }
 function _rowToTrail(r) {
@@ -64,7 +65,8 @@ function _rowToTrail(r) {
     coords: r.coords, distanceKm: Number(r.distance_km), elevGain: Number(r.elev_gain),
     votes: r.votes || { easier: 0, expected: 0, harder: 0 }, comments: r.comments || [], photos: r.photos || [],
     walkCount: r.walk_count || 1, walkers: r.walkers || [],
-    elevationProfile: r.elevation_profile || null
+    elevationProfile: r.elevation_profile || null,
+    durationSec: r.duration_sec ?? null, pauseSec: r.pause_sec ?? null
   };
 }
 function _planToRow(p) {
@@ -412,12 +414,23 @@ async function refineElevation(trail) {
   renderTrailLayers(); renderExplore(); renderMine();
 }
 
+// "45m" / "1h 20m" — undefined/null (a GPX import, or a trail saved before
+// this existed) means there's nothing honest to show, so callers just
+// leave the duration out rather than printing "0m".
+function formatDuration(sec) {
+  if (sec == null) return null;
+  const totalMin = Math.round(sec / 60);
+  const h = Math.floor(totalMin / 60), m = totalMin % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
 function enrichTrail(t) {
   const { bucket, community } = communityAdjustedLabel(t);
   const walkers = t.walkers || [];
   return {
     id: t.id, name: t.name,
     distanceLabel: `${t.distanceKm.toFixed(1)} km`, elevLabel: `${t.elevGain} m`,
+    durationLabel: formatDuration(t.durationSec),
+    pauseLabel: t.pauseSec ? formatDuration(t.pauseSec) : null,
     bucket, community, dotColor: dotColorFor(bucket), textColor: textColorFor(bucket),
     sparkPath: sparklinePath(t), photos: t.photos || [], comments: t.comments || [],
     votes: t.votes || { easier: 0, expected: 0, harder: 0 },
@@ -496,6 +509,10 @@ async function renderTrailLayers() {
   trails.forEach(trail => {
     const layer = drawTrailOnMap(trail).addTo(map);
     layer.bindPopup(trailPreviewHTML(trail), { maxWidth: 240, className: 'trail-popup-wrap' });
+    // A small always-on label so a trail is identifiable on the map at a
+    // glance, without needing to tap it first — interactive: false keeps
+    // it from stealing the click that opens the preview popup above.
+    layer.bindTooltip(trail.name, { permanent: true, direction: 'center', className: 'trail-map-label', opacity: 0.95, interactive: false });
     trailLayers[trail.id] = layer;
   });
 }
@@ -614,12 +631,23 @@ function _pickField(attrs, patterns) {
   }
   return null;
 }
+// Parses whatever the matched "date/time/observed/updated" field turns
+// out to hold, then throws the result away unless it lands within a sane
+// window around now — a wrongly-picked field (wrong unit, a station id
+// that happens to match /time/i, an odd date format) previously produced
+// nonsense like "observed 104566 min ago" instead of just omitting the
+// clause. Better no timestamp than a visibly wrong one.
 function _imdDate(val) {
   if (val == null) return null;
   const n = Number(val);
-  if (!isNaN(n) && n > 1e11) return new Date(n); // ArcGIS date fields come back as epoch ms
-  const d = new Date(val);
-  return isNaN(d.getTime()) ? null : d;
+  let d = null;
+  if (!isNaN(n) && n > 1e11) d = new Date(n);        // ArcGIS date fields: epoch ms
+  else if (!isNaN(n) && n > 1e9) d = new Date(n * 1000); // occasionally epoch seconds instead
+  else { const parsed = new Date(val); if (!isNaN(parsed.getTime())) d = parsed; }
+  if (!d) return null;
+  const ageMs = Date.now() - d.getTime();
+  if (ageMs < -5 * 60 * 1000 || ageMs > 24 * 60 * 60 * 1000) return null; // more than 5min in the future, or over a day old — treat as an unreliable field rather than show it
+  return d;
 }
 async function _imdLayerId_() {
   if (_imdLayerId != null) return _imdLayerId;
@@ -691,7 +719,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     panels.forEach(p => { document.getElementById(`panel-${p}`).style.display = p === btn.dataset.tab ? 'block' : 'none'; });
+    document.getElementById('sheet-search-row').style.display = btn.dataset.tab === 'explore' ? 'block' : 'none'; // search only makes sense for Explore's list
     document.getElementById('sheet').classList.remove('collapsed'); // picking a tab means wanting its content, not the map — bring the sheet back if it was tucked away
+    updateSheetPeek();
     // Start acquiring a GPS fix as soon as Record is opened, not when Start
     // is tapped — so by the time someone's ready to go, "GPS ready" is
     // already showing instead of a surprise wait right at the start line.
@@ -720,6 +750,7 @@ function trailRowHTML(t, distKm) {
           ${distKm != null ? `<span class="distance">${distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)}km`} away</span>` : ''}
           <span class="num">${e.distanceLabel}</span>
           <span class="num dim">${e.elevLabel}</span>
+          ${e.durationLabel ? `<span class="num dim">${e.durationLabel}</span>` : ''}
           <span class="diff" style="color:${e.textColor};">${e.bucket}</span>
           ${e.community ? `<span class="community">${e.community}</span>` : ''}
           ${e.walkCount > 1 ? `<span class="walk-count">walked ${e.walkCount}&times;${e.walkerCount > 1 ? ` by ${e.walkerCount}` : ''}</span>` : ''}
@@ -1374,7 +1405,9 @@ async function stopRecording() {
   if (coords.length < 2) { showToast('Recording too short to save.'); clearRecDraft(); recState = null; return; }
   const distanceKm = turf.length(turf.lineString(coords.map(c => [c[0], c[1]])), { units: 'kilometers' });
   const elevGain = estimateGainFromCoords(coords);
-  await saveOrLogWalk({ name: recState.name, coords, distanceKm, elevGain, photos: recState.photos, comments: recState.comments });
+  const durationSec = Math.floor((Date.now() - recState.startTime) / 1000);
+  const pauseSec = Math.floor(recState.pauseMs / 1000);
+  await saveOrLogWalk({ name: recState.name, coords, distanceKm, elevGain, photos: recState.photos, comments: recState.comments, durationSec, pauseSec });
   clearRecDraft();
   recNameInput.value = '';
   recState = null;
@@ -1433,15 +1466,16 @@ function reportSaveResult(trail, syncResult, verb, detail) {
   }
 }
 
-async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos, comments }) {
+async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos, comments, durationSec, pauseSec }) {
   const existing = await Store.getTrails();
   const match = findMatchingTrail(existing, coords, distanceKm);
   if (match && confirm(`This looks like an existing trail — "${match.name}" (${match.distanceKm.toFixed(1)} km). Log your walk under it instead of saving a new trail?`)) {
     match.walkCount = (match.walkCount || 1) + 1;
     match.walkers = match.walkers || [];
-    match.walkers.unshift({ author: myName(), ts: Date.now() });
+    match.walkers.unshift({ author: myName(), ts: Date.now(), durationSec: durationSec ?? null, pauseSec: pauseSec ?? null });
     match.photos = [...(match.photos || []), ...photos];
     match.comments = [...(match.comments || []), ...comments];
+    if (match.durationSec == null && durationSec != null) { match.durationSec = durationSec; match.pauseSec = pauseSec ?? null; } // the trail itself had no timed recording yet (e.g. it started life as a GPX import) — back-fill from this walk
     const result = await Store.saveTrail(match);
     renderTrailLayers(); renderExplore(); renderMine();
     reportSaveResult(match, result, `Logged as walk #${match.walkCount} of`);
@@ -1451,11 +1485,12 @@ async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos, comme
   const trail = {
     id: uid(), name, author: myName(), createdAt: Date.now(), coords, distanceKm, elevGain,
     votes: { easier: 0, expected: 0, harder: 0 }, comments, photos,
-    walkCount: 1, walkers: [{ author: myName(), ts: Date.now() }]
+    walkCount: 1, walkers: [{ author: myName(), ts: Date.now(), durationSec: durationSec ?? null, pauseSec: pauseSec ?? null }],
+    durationSec: durationSec ?? null, pauseSec: pauseSec ?? null
   };
   const result = await Store.saveTrail(trail);
   renderTrailLayers(); renderExplore(); renderMine();
-  reportSaveResult(trail, result, 'Saved', `${distanceKm.toFixed(1)} km, ${elevGain} m gain`);
+  reportSaveResult(trail, result, 'Saved', `${distanceKm.toFixed(1)} km, ${elevGain} m gain${durationSec != null ? `, ${formatDuration(durationSec)}` : ''}`);
   refineElevation(trail); // background — real DEM elevation replaces the GPS-altitude estimate once it lands
   return trail;
 }
@@ -1506,6 +1541,7 @@ async function openDetail(id) {
         <div class="detail-hero-meta">
           <span class="num">${e.distanceLabel}</span>
           <span class="num">${e.elevLabel}</span>
+          ${e.durationLabel ? `<span class="num">${e.durationLabel}${e.pauseLabel ? ` (${e.pauseLabel} paused)` : ''}</span>` : ''}
           <span>${e.bucket}</span>
           ${e.community ? `<span>&middot; ${e.community}</span>` : ''}
         </div>
@@ -1570,10 +1606,14 @@ async function openDetail(id) {
     if (hi != null && lo != null) text += `, ${Math.round(lo)}\u2013${Math.round(hi)}\u00b0C today`;
     text += `, ${rainProb}% chance of rain, wind ${Math.round(om.current.wind_speed_10m)} km/h.`;
     if (imd && imd.temp != null) {
+      // imd.observed is already sanity-checked in _imdDate (never more than a
+      // day old or in the future) \u2014 no need to re-guard against a
+      // nonsense figure here, just format whatever's left.
       const minsAgo = imd.observed ? Math.max(0, Math.round((Date.now() - imd.observed.getTime()) / 60000)) : null;
+      const agoLabel = minsAgo == null ? null : minsAgo < 1 ? 'just now' : minsAgo < 60 ? `${minsAgo} min ago` : `${formatDuration(minsAgo * 60)} ago`;
       text += ` Nearest IMD station${imd.station ? ` (${imd.station})` : ''}, ${imd.distanceKm.toFixed(1)} km away: ${Number(imd.temp).toFixed(1)}\u00b0C` +
         (imd.humidity != null ? `, ${imd.humidity}% humidity` : '') +
-        (minsAgo != null ? ` (observed ${minsAgo} min ago)` : '') + '.';
+        (agoLabel ? ` (observed ${agoLabel})` : '') + '.';
     }
     el.textContent = text;
   });
@@ -1765,12 +1805,29 @@ function sharePlan(plan) {
    so the map is fully visible; drag/tap again to bring it back. Uses
    translateY rather than animating height/max-height, which would fight
    the sheet's own content-driven height and jank on cheaper phones. */
+// How much of the sheet stays visible when it's dragged/tapped down to
+// "collapsed" — the handle, plus the search row when Explore's search is
+// actually showing, so collapsing the sheet to see the map full-screen
+// never hides the search box along with the trail list. Recomputed on
+// every tab switch (the search row only shows on Explore) and on resize,
+// and applied as a CSS var so the .collapsed rule in style.css can use it.
+function updateSheetPeek() {
+  const sheet = document.getElementById('sheet');
+  const handle = document.querySelector('.sheet-handle');
+  const searchRow = document.getElementById('sheet-search-row');
+  if (!sheet || !handle) return;
+  const searchVisible = searchRow && searchRow.style.display !== 'none';
+  const peek = handle.offsetHeight + (searchVisible ? searchRow.offsetHeight : 0);
+  sheet.style.setProperty('--sheet-peek', `${peek}px`);
+}
+window.addEventListener('resize', debounce(updateSheetPeek, 150));
+
 (function setupSheetDrag() {
   const sheet = document.getElementById('sheet');
   const handle = document.querySelector('.sheet-handle');
   if (!sheet || !handle) return;
-  const PEEK = 34; // px of the sheet left visible when collapsed
-  let startY = 0, startTranslate = 0, dragging = false, sheetHeight = 0;
+  updateSheetPeek();
+  let startY = 0, startTranslate = 0, dragging = false, sheetHeight = 0, peek = 34;
 
   function setCollapsed(collapsed) {
     sheet.classList.toggle('collapsed', collapsed);
@@ -1786,7 +1843,8 @@ function sharePlan(plan) {
     dragging = false;
     startY = e.clientY;
     sheetHeight = sheet.offsetHeight;
-    startTranslate = isCollapsed() ? (sheetHeight - PEEK) : 0;
+    peek = parseFloat(getComputedStyle(sheet).getPropertyValue('--sheet-peek')) || 34;
+    startTranslate = isCollapsed() ? (sheetHeight - peek) : 0;
     sheet.style.transition = 'none';
     handle.setPointerCapture(e.pointerId);
   });
@@ -1794,14 +1852,14 @@ function sharePlan(plan) {
     const dy = e.clientY - startY;
     if (!dragging && Math.abs(dy) < 4) return;
     dragging = true;
-    const next = Math.max(0, Math.min(sheetHeight - PEEK, startTranslate + dy));
+    const next = Math.max(0, Math.min(sheetHeight - peek, startTranslate + dy));
     sheet.style.transform = `translateY(${next}px)`;
   });
   function endDrag(e) {
     sheet.style.transition = '';
     if (!dragging) return;
-    const current = Math.max(0, Math.min(sheetHeight - PEEK, startTranslate + (e.clientY - startY)));
-    setCollapsed(current > (sheetHeight - PEEK) * 0.35);
+    const current = Math.max(0, Math.min(sheetHeight - peek, startTranslate + (e.clientY - startY)));
+    setCollapsed(current > (sheetHeight - peek) * 0.35);
     // Swallow the click this pointerup is about to generate, then reset —
     // without this, releasing a drag also fires the handle's click
     // listener and immediately flips whatever state the drag just set.
