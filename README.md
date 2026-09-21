@@ -48,6 +48,17 @@ Any static host works — no build step:
 Once live, open the URL on your phone → browser menu → "Add to Home Screen".
 
 ## Try it
+- **A banner offers to install the app on first visit** (dismissible,
+  stays dismissed via `localStorage`) — on iPhone that's static Share →
+  "Add to Home Screen" instructions, since iOS Safari has no install
+  prompt of its own to fall back on; on Android/Chrome it's a real
+  Install button wired to the browser's own `beforeinstallprompt`. This
+  is also the answer to "why doesn't opening the link ask to install, or
+  for location/camera" — it never will automatically: iOS has no
+  auto-prompt at all (Apple platform restriction, not fixable from the
+  page), and every browser only asks for location/camera lazily, when
+  Locate/Record/a photo button is actually tapped, by design (browser
+  privacy policy, and this app's own choice — see `startLocationWatch`)
 - **Explore** (compass icon) — three seeded Meghalaya trails so the difficulty
   rubric and weather pill work immediately. Each trail gets its own color
   (`trailColor()` in `app.js`, hashed from the trail's id — stable across

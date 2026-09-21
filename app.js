@@ -1685,6 +1685,60 @@ function sharePlan(plan) {
   return shareLink({ title: `Walk Shillong — ${plan.title}`, text: `${plan.title} — ${formatPlanDate(plan.walkDate)}. RSVP on Walk Shillong:`, url });
 }
 
+/* ---------------- "Add to Home Screen" prompt ----------------
+   Opening the link doesn't trigger a browser install/permission prompt
+   on its own — that's normal, not broken: iOS Safari has no automatic
+   install prompt at all (Apple platform restriction, no workaround from
+   the page), and geolocation/camera are only ever requested lazily, when
+   Locate/Record/a photo button is actually tapped, on every browser, by
+   design (both browser privacy policy and this app's own choice — see
+   startLocationWatch). What was actually missing: the app never told
+   anyone it *could* be installed, which matters most on iPhone since
+   there's no native nudge to fall back on. */
+(function setupInstallPrompt() {
+  const alreadyInstalled = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (alreadyInstalled) return;
+  if (localStorage.getItem('ws_install_dismissed') === '1') return;
+
+  const banner = document.getElementById('install-banner');
+  if (!banner) return;
+  const text = document.getElementById('install-text');
+  const installBtn = document.getElementById('btn-install');
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  let deferredPrompt = null;
+  // Android/Chrome: capture the browser's own install prompt so a plain
+  // "Install" button can trigger it, instead of waiting on Chrome's own
+  // mini-infobar timing (which needs repeat engagement first).
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    text.textContent = 'Install Walk Shillong for a home-screen icon and offline maps.';
+    installBtn.style.display = 'inline-block';
+    banner.style.display = 'flex';
+  });
+
+  if (isIOS) {
+    // No installability event exists on iOS — Safari never offers one —
+    // so this is the only way anyone on iPhone finds out Add to Home
+    // Screen is possible at all.
+    text.textContent = 'Add Walk Shillong to your Home Screen: tap Share, then "Add to Home Screen".';
+    banner.style.display = 'flex';
+  }
+
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    try { await deferredPrompt.userChoice; } catch (e) {}
+    deferredPrompt = null;
+    banner.style.display = 'none';
+  });
+  document.getElementById('btn-dismiss-install').addEventListener('click', () => {
+    banner.style.display = 'none';
+    localStorage.setItem('ws_install_dismissed', '1');
+  });
+})();
+
 /* ---------------- Init ---------------- */
 refreshAll();
 updatePendingBanner();
