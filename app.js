@@ -84,22 +84,105 @@ function _rowToPlan(r) {
   };
 }
 
+/* ---------------- Local durable storage (IndexedDB) ----------------
+   Everything Store manages (trails, plans, the recording draft, the
+   pending-sync id lists) now lives in IndexedDB instead of localStorage.
+   Two reasons, both from the same real incident: localStorage caps out
+   around 5-10MB per origin — easy to hit once photos are involved — and
+   it fails *silently* (setItem just throws; easy to swallow without
+   noticing, which is part of how a trail's photos got lost). IndexedDB's
+   quota is a large share of the device's free disk space, which is what
+   "durable" actually needs here, and it's a completely separate storage
+   bucket from the Cache API that the Force-update button clears — that
+   button was never able to touch this data, and still can't.
+   Small preference values (your name, a vote/RSVP choice) stay on plain
+   localStorage — a few bytes each, no quota risk, and synchronous is
+   convenient for those. */
+const IDB_NAME = 'walkshillong', IDB_STORE = 'kv';
+let _idbPromise = null;
+function openIDB() {
+  if (_idbPromise) return _idbPromise;
+  _idbPromise = new Promise((resolve) => {
+    if (!('indexedDB' in window)) return resolve(null);
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => resolve(null);
+  });
+  return _idbPromise;
+}
+async function idbGet(key) {
+  const db = await openIDB();
+  if (!db) return undefined;
+  return new Promise((resolve) => {
+    try {
+      const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(undefined);
+    } catch (e) { resolve(undefined); }
+  });
+}
+async function idbSet(key, val) {
+  const db = await openIDB();
+  if (!db) return false;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).put(val, key);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    } catch (e) { resolve(false); }
+  });
+}
+async function idbDelete(key) {
+  const db = await openIDB();
+  if (!db) return false;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).delete(key);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    } catch (e) { resolve(false); }
+  });
+}
+
 const PENDING_TRAILS_KEY = 'ws_pending_trails'; // ids not yet confirmed synced to Supabase
 const PENDING_PLANS_KEY = 'ws_pending_plans';
 
 const Store = {
-  _read(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } },
-  _write(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.warn('[WS] localStorage write failed', e.message); } },
-  _pendingAdd(key, id) { const list = this._read(key, []); if (!list.includes(id)) { list.push(id); this._write(key, list); } },
-  _pendingRemove(key, id) { this._write(key, this._read(key, []).filter(x => x !== id)); },
+  // Reads IndexedDB first; if a key isn't there yet, checks localStorage
+  // for anything left over from before this moved off it and migrates it
+  // in — so upgrading doesn't orphan whatever was already saved.
+  async _read(key, fallback) {
+    const idbVal = await idbGet(key);
+    if (idbVal !== undefined) return idbVal;
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw != null) {
+        const parsed = JSON.parse(raw);
+        await idbSet(key, parsed);
+        return parsed;
+      }
+    } catch (e) {}
+    return fallback;
+  },
+  async _write(key, val) {
+    const ok = await idbSet(key, val);
+    if (!ok) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.warn('[WS] storage write failed', e.message); } }
+  },
+  async _delete(key) { await idbDelete(key); try { localStorage.removeItem(key); } catch (e) {} },
+  async _pendingAdd(key, id) { const list = await this._read(key, []); if (!list.includes(id)) { list.push(id); await this._write(key, list); } },
+  async _pendingRemove(key, id) { await this._write(key, (await this._read(key, [])).filter(x => x !== id)); },
 
-  // Always update the local mirror first — a save is durable the instant
-  // this line runs, whether or not the network cooperates afterward.
-  _cacheUpsert(key, fallbackList, item) {
-    const all = this._read(key, fallbackList);
+  // Always update the local mirror first, and wait for it to land —
+  // a save is durable the moment this resolves, whether or not the
+  // network cooperates afterward.
+  async _cacheUpsert(key, fallbackList, item) {
+    const all = await this._read(key, fallbackList);
     const i = all.findIndex(x => x.id === item.id);
     if (i >= 0) all[i] = item; else all.unshift(item);
-    this._write(key, all);
+    await this._write(key, all);
   },
 
   async getTrails() {
@@ -118,11 +201,11 @@ const Store = {
     return this._mergePending('ws_trails', PENDING_TRAILS_KEY, trails);
   },
   async saveTrail(trail) {
-    this._cacheUpsert('ws_trails', seedTrails(), trail);
-    if (!trySupabaseInit()) { this._pendingAdd(PENDING_TRAILS_KEY, trail.id); return; }
+    await this._cacheUpsert('ws_trails', seedTrails(), trail);
+    if (!trySupabaseInit()) { await this._pendingAdd(PENDING_TRAILS_KEY, trail.id); return; }
     const { error } = await _sb.from('ws_trails').upsert(_trailToRow(trail), { onConflict: 'id' });
-    if (error) { console.warn('[WS] saveTrail — queued for retry:', error.message); this._pendingAdd(PENDING_TRAILS_KEY, trail.id); }
-    else this._pendingRemove(PENDING_TRAILS_KEY, trail.id);
+    if (error) { console.warn('[WS] saveTrail — queued for retry:', error.message); await this._pendingAdd(PENDING_TRAILS_KEY, trail.id); }
+    else await this._pendingRemove(PENDING_TRAILS_KEY, trail.id);
   },
 
   async getPlans() {
@@ -132,11 +215,11 @@ const Store = {
     return this._mergePending('ws_plans', PENDING_PLANS_KEY, data.map(_rowToPlan));
   },
   async savePlan(plan) {
-    this._cacheUpsert('ws_plans', [], plan);
-    if (!trySupabaseInit()) { this._pendingAdd(PENDING_PLANS_KEY, plan.id); return; }
+    await this._cacheUpsert('ws_plans', [], plan);
+    if (!trySupabaseInit()) { await this._pendingAdd(PENDING_PLANS_KEY, plan.id); return; }
     const { error } = await _sb.from('ws_plans').upsert(_planToRow(plan), { onConflict: 'id' });
-    if (error) { console.warn('[WS] savePlan — queued for retry:', error.message); this._pendingAdd(PENDING_PLANS_KEY, plan.id); }
-    else this._pendingRemove(PENDING_PLANS_KEY, plan.id);
+    if (error) { console.warn('[WS] savePlan — queued for retry:', error.message); await this._pendingAdd(PENDING_PLANS_KEY, plan.id); }
+    else await this._pendingRemove(PENDING_PLANS_KEY, plan.id);
   },
 
   // A trail/plan saved moments ago on a bad connection might not have
@@ -145,10 +228,10 @@ const Store = {
   // disappear on the very next refresh, which is worse than never
   // showing it. Folds in anything still queued that the server copy
   // doesn't have yet.
-  _mergePending(localKey, pendingKey, serverList) {
-    const pendingIds = this._read(pendingKey, []);
+  async _mergePending(localKey, pendingKey, serverList) {
+    const pendingIds = await this._read(pendingKey, []);
     if (!pendingIds.length) return serverList;
-    const localAll = this._read(localKey, []);
+    const localAll = await this._read(localKey, []);
     const known = new Set(serverList.map(x => x.id));
     pendingIds.forEach(id => {
       const local = localAll.find(x => x.id === id);
@@ -162,29 +245,29 @@ const Store = {
 // event, and periodically — see the bottom of this file.
 async function flushPendingSync() {
   if (!trySupabaseInit()) { await retryLoadSupabaseLib(); if (!trySupabaseInit()) return; }
-  const pendingTrailIds = Store._read(PENDING_TRAILS_KEY, []);
-  const pendingPlanIds = Store._read(PENDING_PLANS_KEY, []);
+  const pendingTrailIds = await Store._read(PENDING_TRAILS_KEY, []);
+  const pendingPlanIds = await Store._read(PENDING_PLANS_KEY, []);
   if (!pendingTrailIds.length && !pendingPlanIds.length) return;
-  const localTrails = Store._read('ws_trails', []);
-  const localPlans = Store._read('ws_plans', []);
+  const localTrails = await Store._read('ws_trails', []);
+  const localPlans = await Store._read('ws_plans', []);
   let synced = 0;
   for (const id of pendingTrailIds) {
     const t = localTrails.find(x => x.id === id);
-    if (!t) { Store._pendingRemove(PENDING_TRAILS_KEY, id); continue; }
+    if (!t) { await Store._pendingRemove(PENDING_TRAILS_KEY, id); continue; }
     const { error } = await _sb.from('ws_trails').upsert(_trailToRow(t), { onConflict: 'id' });
-    if (!error) { Store._pendingRemove(PENDING_TRAILS_KEY, id); synced++; }
+    if (!error) { await Store._pendingRemove(PENDING_TRAILS_KEY, id); synced++; }
   }
   for (const id of pendingPlanIds) {
     const p = localPlans.find(x => x.id === id);
-    if (!p) { Store._pendingRemove(PENDING_PLANS_KEY, id); continue; }
+    if (!p) { await Store._pendingRemove(PENDING_PLANS_KEY, id); continue; }
     const { error } = await _sb.from('ws_plans').upsert(_planToRow(p), { onConflict: 'id' });
-    if (!error) { Store._pendingRemove(PENDING_PLANS_KEY, id); synced++; }
+    if (!error) { await Store._pendingRemove(PENDING_PLANS_KEY, id); synced++; }
   }
   if (synced) { showToast(`Synced ${synced} offline save${synced === 1 ? '' : 's'}.`); refreshAll(); }
   updatePendingBanner();
 }
-function pendingSyncCount() {
-  return Store._read(PENDING_TRAILS_KEY, []).length + Store._read(PENDING_PLANS_KEY, []).length;
+async function pendingSyncCount() {
+  return (await Store._read(PENDING_TRAILS_KEY, [])).length + (await Store._read(PENDING_PLANS_KEY, [])).length;
 }
 
 function savedName() { return (localStorage.getItem('ws_name') || '').trim(); }
@@ -998,22 +1081,22 @@ document.getElementById('btn-pause-rec').addEventListener('click', () => {
 // killed by the OS, accidental close, the background-suspend limits
 // documented elsewhere in here) and previously that meant losing the
 // whole in-progress track with no way back. The draft is written to
-// localStorage periodically and checked for on load (see
+// IndexedDB (via Store — same durable path as a finished trail, not
+// plain localStorage, since a long walk with several photos can be big
+// enough to matter) periodically and checked for on load (see
 // checkRecordingDraft, called from Init) — reopening the app after a
 // crash offers to pick the walk back up instead of starting over.
 const REC_DRAFT_KEY = 'ws_rec_draft';
 let recDraftInt = null;
-function persistRecDraft() {
+async function persistRecDraft() {
   if (!recState) return;
-  try {
-    localStorage.setItem(REC_DRAFT_KEY, JSON.stringify({
-      name: recState.name, points: recState.points, photos: recState.photos,
-      comments: recState.comments, startTime: recState.startTime,
-      pauseMs: recState.pauseMs, paused: recState.paused
-    }));
-  } catch (e) {}
+  await Store._write(REC_DRAFT_KEY, {
+    name: recState.name, points: recState.points, photos: recState.photos,
+    comments: recState.comments, startTime: recState.startTime,
+    pauseMs: recState.pauseMs, paused: recState.paused
+  });
 }
-function clearRecDraft() { try { localStorage.removeItem(REC_DRAFT_KEY); } catch (e) {} }
+async function clearRecDraft() { await Store._delete(REC_DRAFT_KEY); }
 
 // A gentle nudge, not an automatic pause — recording apps that silently
 // auto-pause you tend to produce confusingly-gappy tracks. This just
@@ -1114,16 +1197,12 @@ async function cancelRecording() {
 // Checked once on load (see Init) — a leftover draft means the app closed
 // or crashed mid-recording last time. Never resumes automatically.
 async function checkRecordingDraft() {
-  let raw;
-  try { raw = localStorage.getItem(REC_DRAFT_KEY); } catch (e) { return; }
-  if (!raw) return;
-  let draft;
-  try { draft = JSON.parse(raw); } catch (e) { clearRecDraft(); return; }
-  if (!draft || !draft.points || draft.points.length < 2) { clearRecDraft(); return; }
+  const draft = await Store._read(REC_DRAFT_KEY, null);
+  if (!draft || !draft.points || draft.points.length < 2) { if (draft) await clearRecDraft(); return; }
   const distKm = turf.length(turf.lineString(draft.points.map(p => [p[0], p[1]])), { units: 'kilometers' });
   const when = new Date(draft.startTime).toLocaleString();
   if (!confirm(`Found an unfinished recording from ${when} — "${draft.name}", ${distKm.toFixed(1)} km so far. Resume it? (Cancel discards it.)`)) {
-    clearRecDraft();
+    await clearRecDraft();
     return;
   }
   resumeRecordingDraft(draft);
@@ -1474,18 +1553,25 @@ document.getElementById('btn-refresh').addEventListener('click', async () => {
 // A soft data refresh (above) can't fix a stale app SHELL — an old
 // service-worker cache serving yesterday's app.js/index.html/style.css
 // even though the code on GitHub/Netlify has moved on. This is the
-// escape hatch: unregister every service worker, wipe every cache this
-// origin owns, then hard-reload so everything is re-fetched from
-// scratch. A saved trail is never at risk (it's already in Supabase or
-// localStorage, not the app-shell cache); an in-progress recording is
-// safe too, since it's on the same draft-recovery path as a crash (see
+// escape hatch: unregister every service worker, wipe every Cache-API
+// cache this origin owns, then hard-reload so everything is re-fetched
+// from scratch.
+//
+// This is deliberately the ONLY storage it touches. Cache Storage (the
+// `caches` global below) is a separate bucket from IndexedDB — where
+// every trail/plan/photo/recording draft actually lives (see Store,
+// near the top of this file) — and from localStorage, where small
+// preferences live. Clearing one can never clear the other; that's a
+// browser-level guarantee, not something this code has to get right.
+// A saved trail is never at risk here; an in-progress recording is safe
+// too, via the same draft-recovery path as a crash (see
 // checkRecordingDraft) — the confirm below says as much.
 document.getElementById('btn-force-update').addEventListener('click', async () => {
   const msg = recState
-    ? 'Force-update the app? It will reload — your in-progress recording is saved as a draft and this app will offer to resume it right after.'
-    : 'Force-update the app? This clears cached files and reloads with the latest version.';
+    ? 'Force-update the app? It will reload — your in-progress recording is saved as a draft and this app will offer to resume it right after. This never touches your saved trails/photos, only cached app files.'
+    : 'Force-update the app? This clears cached app files and reloads with the latest version. Your saved trails/photos are untouched — they live in a separate storage this never clears.';
   if (!confirm(msg)) return;
-  if (recState) persistRecDraft();
+  if (recState) await persistRecDraft();
   showToast('Updating…');
   try {
     if ('serviceWorker' in navigator) {
@@ -1506,11 +1592,11 @@ document.getElementById('btn-force-update').addEventListener('click', async () =
    reached the server at all) are worse than an honest banner. One banner,
    two possible messages: fully offline, or online but still working
    through queued saves from when it wasn't. */
-function updatePendingBanner() {
+async function updatePendingBanner() {
   const banner = document.getElementById('offline-banner');
   if (!banner) return;
   const label = banner.querySelector('span');
-  const pending = pendingSyncCount();
+  const pending = await pendingSyncCount();
   if (!navigator.onLine) {
     label.textContent = "Offline — showing what's already saved on this device";
     banner.style.display = 'flex';

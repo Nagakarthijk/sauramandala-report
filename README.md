@@ -183,7 +183,7 @@ try Supabase and nothing else — if that request failed (or supabase-js
 itself never finished loading over a bad signal), the trail wasn't
 written anywhere durable, so it could vanish from Explore on the very
 next refresh, even on the same phone that recorded it. Every
-`Store.saveTrail`/`savePlan` now writes to `localStorage` first,
+`Store.saveTrail`/`savePlan` now writes to local storage first,
 unconditionally, before attempting to sync — that write is what makes a
 save durable, not the network call. A failed sync queues the id in
 `ws_pending_trails`/`ws_pending_plans`; `flushPendingSync()` retries it on
@@ -196,6 +196,26 @@ GPX/KML now saves through this same path too (previously it only
 navigated the route transiently and never persisted it at all — no good
 as a recovery route for a lost recording, which is exactly when someone
 would want to re-import one).
+
+**Why IndexedDB, not "a local Postgres."** `Store`'s local copy (trails,
+plans, the in-progress recording draft, the pending-sync id lists) lives
+in IndexedDB, not `localStorage` — see `openIDB`/`idbGet`/`idbSet` near
+the top of `app.js`. Two reasons, from the same incident: `localStorage`
+caps out around 5-10MB per origin, easy to hit once several photos are
+involved, and it fails *silently* (`setItem` just throws — easy to
+swallow without ever noticing, which is part of how this happened in the
+first place). IndexedDB's quota is a large share of the device's free
+disk space, which is what "durable" actually needs here. Running an
+actual Postgres in the browser is a real thing (WASM builds like PGlite
+exist) — but it buys nothing extra for this problem: you'd still have to
+write the same write-local-first-then-sync logic against it that
+`Store` already does against IndexedDB, for a multi-MB dependency that
+doesn't fit a no-build-step CDN-script-tag app. IndexedDB is also a
+completely separate storage bucket from the Cache API that the
+Force-update button clears (browser-guaranteed, not something the code
+has to get right) — that button was never able to touch trail data, and
+still can't; small preferences (your name, a vote/RSVP choice) stay on
+plain `localStorage`, since they're a few bytes with no quota risk.
 
 ## Known limitations (by design, for v1)
 - Recording only works reliably with the app open and screen on — there is
