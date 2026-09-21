@@ -200,12 +200,17 @@ const Store = {
     }
     return this._mergePending('ws_trails', PENDING_TRAILS_KEY, trails);
   },
+  // Returns {synced}: false means it's durable on this device (IndexedDB,
+  // queued for retry) but NOT yet confirmed on the shared backend — callers
+  // that tell the user "saved" need to know which one actually happened,
+  // since those are very different guarantees.
   async saveTrail(trail) {
     await this._cacheUpsert('ws_trails', seedTrails(), trail);
-    if (!trySupabaseInit()) { await this._pendingAdd(PENDING_TRAILS_KEY, trail.id); return; }
+    if (!trySupabaseInit()) { await this._pendingAdd(PENDING_TRAILS_KEY, trail.id); return { synced: false }; }
     const { error } = await _sb.from('ws_trails').upsert(_trailToRow(trail), { onConflict: 'id' });
-    if (error) { console.warn('[WS] saveTrail — queued for retry:', error.message); await this._pendingAdd(PENDING_TRAILS_KEY, trail.id); }
-    else await this._pendingRemove(PENDING_TRAILS_KEY, trail.id);
+    if (error) { console.warn('[WS] saveTrail — queued for retry:', error.message); await this._pendingAdd(PENDING_TRAILS_KEY, trail.id); return { synced: false }; }
+    await this._pendingRemove(PENDING_TRAILS_KEY, trail.id);
+    return { synced: true };
   },
 
   async getPlans() {
@@ -216,10 +221,11 @@ const Store = {
   },
   async savePlan(plan) {
     await this._cacheUpsert('ws_plans', [], plan);
-    if (!trySupabaseInit()) { await this._pendingAdd(PENDING_PLANS_KEY, plan.id); return; }
+    if (!trySupabaseInit()) { await this._pendingAdd(PENDING_PLANS_KEY, plan.id); return { synced: false }; }
     const { error } = await _sb.from('ws_plans').upsert(_planToRow(plan), { onConflict: 'id' });
-    if (error) { console.warn('[WS] savePlan — queued for retry:', error.message); await this._pendingAdd(PENDING_PLANS_KEY, plan.id); }
-    else await this._pendingRemove(PENDING_PLANS_KEY, plan.id);
+    if (error) { console.warn('[WS] savePlan — queued for retry:', error.message); await this._pendingAdd(PENDING_PLANS_KEY, plan.id); return { synced: false }; }
+    await this._pendingRemove(PENDING_PLANS_KEY, plan.id);
+    return { synced: true };
   },
 
   // A trail/plan saved moments ago on a bad connection might not have
@@ -1322,6 +1328,38 @@ function findMatchingTrail(trails, coords, distanceKm) {
   return best;
 }
 
+// A trail backup as one self-contained JSON file — the route, every
+// photo (already base64 in trail.photos, so it travels with the file,
+// unlike a GPX which has no field for images at all), comments, votes,
+// the lot. Meant as a "just in case" copy someone can keep, re-send, or
+// hand back for a SQL re-import (see recover_langshiang_trail.sql for
+// what that looks like) if a save never reaches the shared backend.
+function downloadTrailBackup(trail) {
+  const blob = new Blob([JSON.stringify(trail, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${trail.name.replace(/\s+/g, '_')}_backup.json`;
+  a.click();
+}
+
+// Saving "succeeding" and saving "reaching Supabase" are different
+// guarantees, and the old flat "Saved ..." toast didn't distinguish them
+// — exactly how a save that only landed on-device read as if it were
+// shared. When it's not synced, this says so plainly and offers an
+// immediate backup download (route + photos + everything) rather than
+// leaving that only-local copy as the sole record of the walk.
+function reportSaveResult(trail, syncResult, verb, detail) {
+  const detailStr = detail ? ` — ${detail}` : '';
+  if (syncResult.synced) {
+    showToast(`${verb} "${trail.name}"${detailStr}. Synced.`);
+    return;
+  }
+  showToast(`${verb} "${trail.name}" on this device${detailStr} — not yet synced.`);
+  if (confirm(`"${trail.name}" saved on this device, but hasn't reached the shared backend yet (offline or a weak connection). It'll keep retrying automatically — but download a backup file now too, just in case?`)) {
+    downloadTrailBackup(trail);
+  }
+}
+
 async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos, comments }) {
   const existing = await Store.getTrails();
   const match = findMatchingTrail(existing, coords, distanceKm);
@@ -1331,9 +1369,9 @@ async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos, comme
     match.walkers.unshift({ author: myName(), ts: Date.now() });
     match.photos = [...(match.photos || []), ...photos];
     match.comments = [...(match.comments || []), ...comments];
-    await Store.saveTrail(match);
+    const result = await Store.saveTrail(match);
     renderTrailLayers(); renderExplore(); renderMine();
-    showToast(`Logged as walk #${match.walkCount} of "${match.name}".`);
+    reportSaveResult(match, result, `Logged as walk #${match.walkCount} of`);
     if (!match.elevationProfile) refineElevation(match); // backfill for a trail saved before this existed — uses match's own canonical route, not this walk's trace
     return match;
   }
@@ -1342,9 +1380,9 @@ async function saveOrLogWalk({ name, coords, distanceKm, elevGain, photos, comme
     votes: { easier: 0, expected: 0, harder: 0 }, comments, photos,
     walkCount: 1, walkers: [{ author: myName(), ts: Date.now() }]
   };
-  await Store.saveTrail(trail);
+  const result = await Store.saveTrail(trail);
   renderTrailLayers(); renderExplore(); renderMine();
-  showToast(`Saved "${trail.name}" — ${distanceKm.toFixed(1)} km, ${elevGain} m gain.`);
+  reportSaveResult(trail, result, 'Saved', `${distanceKm.toFixed(1)} km, ${elevGain} m gain`);
   refineElevation(trail); // background — real DEM elevation replaces the GPS-altitude estimate once it lands
   return trail;
 }

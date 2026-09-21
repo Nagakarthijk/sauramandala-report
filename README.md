@@ -197,6 +197,19 @@ navigated the route transiently and never persisted it at all — no good
 as a recovery route for a lost recording, which is exactly when someone
 would want to re-import one).
 
+**Honest save feedback.** "Saved on this device" and "saved and synced to
+everyone" are different guarantees, and the old toast said "Saved..." for
+both — exactly how a save that only landed locally read as if it had gone
+out to the shared backend. `Store.saveTrail`/`savePlan` now return
+`{synced}`, and `reportSaveResult()` (used by `saveOrLogWalk`, the
+recording/GPX-import save path) shows a plainly different message when
+it isn't synced, plus an immediate offer to download a self-contained
+JSON backup of that trail — the full route, every photo (already base64
+in `trail.photos`, so it travels with the file; a `.gpx` has no field for
+images at all), comments, votes. That backup is also exactly the shape
+`recover_langshiang_trail.sql` was generated from, so it's a real
+recovery path, not just a copy for its own sake.
+
 **Why IndexedDB, not "a local Postgres."** `Store`'s local copy (trails,
 plans, the in-progress recording draft, the pending-sync id lists) lives
 in IndexedDB, not `localStorage` — see `openIDB`/`idbGet`/`idbSet` near
