@@ -113,6 +113,16 @@
     </div>
   </section>
 
+  <section id="campaign-section" class="hidden bg-white border border-stone-100 rounded-2xl p-5 mt-6 space-y-3">
+    <h2 class="font-bold text-stone-900 text-sm">Campaign membership</h2>
+    <p class="text-xs text-stone-400 leading-relaxed">Optional. Request to join a campaign; if its leader approves you, you're shown as part of their team. Money for the campaign still goes to the leader's own UPI — you can also start your own campaign from the <a href="campaign-admin.html" class="underline">Campaigns</a> page.</p>
+    <div id="campaign-memberships" class="space-y-2 text-sm"></div>
+    <div class="flex gap-2">
+      <select id="campaign-pick" class="flex-1 border border-stone-200 rounded-xl px-3 py-2.5 text-sm"></select>
+      <button id="campaign-join" class="border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-4 rounded-xl text-sm shrink-0">Request</button>
+    </div>
+  </section>
+
   <div id="mypage-link" class="hidden mt-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-sm">
     <strong>Your public page:</strong>
     <a id="mypage-a" class="text-emerald-700 underline break-all" href="#"></a>
@@ -200,6 +210,7 @@
     $('heading').textContent = 'Edit your page';
     $('save').textContent = 'Save changes';
     $('org-section').classList.remove('hidden');
+    $('campaign-section').classList.remove('hidden');
     $('mypage-link').classList.remove('hidden');
     const url = new URL('profile.html?u=' + encodeURIComponent(profile.slug), location.href).href;
     $('mypage-a').textContent = url;
@@ -220,6 +231,7 @@
       statusEl.textContent = 'Your link works right now and you can share it — it\'s just waiting on a first community review before it appears in the public Explore directory.';
     }
     loadOrgs();
+    loadCampaigns();
   }
 
   if (profile) {
@@ -279,6 +291,29 @@
     const orgId = $('org-pick').value;
     if (!orgId) return;
     try { await JN.requestMembership(orgId, profile.id); loadOrgs(); }
+    catch (err) { msg(err.message); }
+  };
+
+  async function loadCampaigns() {
+    const [campaigns, memberships] = await Promise.all([JN.getCampaigns(), JN.getCampaignMembershipsFor(profile.id)]);
+    const campaignById = Object.fromEntries(campaigns.map(c => [c.id, c]));
+    $('campaign-memberships').innerHTML = memberships.length
+      ? memberships.map(m => `
+          <div class="flex items-center justify-between bg-stone-50 rounded-xl px-3 py-2">
+            <span>${JN.esc(campaignById[m.campaign_id]?.name || 'Campaign')}</span>
+            <span class="text-xs font-semibold ${m.status === 'approved' ? 'text-emerald-600' : m.status === 'pending' ? 'text-amber-600' : 'text-stone-400'}">${m.status}</span>
+          </div>`).join('')
+      : '<p class="text-xs text-stone-400">Not part of any campaign yet.</p>';
+    const memberOf = new Set(memberships.map(m => m.campaign_id));
+    const notMine = campaigns.filter(c => !memberOf.has(c.id) && c.leader_profile_id !== profile.id);
+    $('campaign-pick').innerHTML = notMine
+      .map(c => `<option value="${c.id}">${JN.esc(c.name)}</option>`).join('') || '<option value="">No campaigns available</option>';
+  }
+
+  $('campaign-join').onclick = async () => {
+    const campaignId = $('campaign-pick').value;
+    if (!campaignId) return;
+    try { await JN.requestCampaignMembership(campaignId, profile.id); loadCampaigns(); }
     catch (err) { msg(err.message); }
   };
 })();

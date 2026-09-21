@@ -44,12 +44,9 @@
   const profiles = await JN.getProfiles();
   const profById = Object.fromEntries(profiles.map(p => [p.id, p]));
 
-  const cards = await Promise.all(members.map(async m => {
+  const cards = members.map(m => {
     const p = profById[m.profile_id];
     if (!p) return '';
-    const [don, exp, upd] = await Promise.all([JN.getDonationsFor(p.id), JN.getExpensesFor(p.id), JN.getUpdatesFor(p.id)]);
-    const score = JN.computeScore(p, don, exp, upd).total;
-    const band = JN.scoreBand(score);
     return `
       <a href="profile.html?u=${encodeURIComponent(p.slug)}" class="bg-white border border-stone-100 rounded-2xl p-4 hover:shadow-md transition-shadow block">
         <div class="flex items-start gap-3">
@@ -61,11 +58,10 @@
             <div class="text-[10px] text-violet-600 font-semibold">${JN.esc(m.role_label || 'Worker')}</div>
             <div class="text-xs text-stone-400 truncate">${JN.esc(p.location || '')}</div>
           </div>
-          <span class="text-[10px] font-bold px-2 py-1 rounded-full ${band.cls} shrink-0" title="Transparency score ${score}/100">${score}</span>
         </div>
         <p class="mt-2 text-xs text-stone-500 line-clamp-2 leading-relaxed">${JN.esc(p.bio || '')}</p>
       </a>`;
-  }));
+  });
 
   document.getElementById('page').innerHTML = `
     <header class="bg-white border border-stone-100 rounded-2xl p-6">

@@ -26,7 +26,6 @@
     <p class="mt-4 text-stone-500 max-w-xl leading-relaxed">
       Grassroots political workers publish their work, expenses and their own UPI details here.
       You pay them <strong class="text-stone-700">directly</strong> — JanNidhi never holds, routes or verifies money.
-      Their transparency score reflects how much they disclose.
     </p>
     <div class="mt-6 flex flex-wrap gap-3">
       <a href="create.html" class="bg-stone-900 hover:bg-stone-800 text-white font-semibold px-5 py-2.5 rounded-xl text-sm">Create your page</a>
@@ -52,6 +51,9 @@
   <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-10 mb-3">Parties &amp; groups</h2>
   <div id="orgs" class="grid sm:grid-cols-2 gap-3"><p class="text-sm text-stone-400">Loading…</p></div>
 
+  <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-10 mb-3">Campaigns</h2>
+  <div id="campaigns" class="grid sm:grid-cols-2 gap-3"><p class="text-sm text-stone-400">Loading…</p></div>
+
   <div id="disclaimer"></div>
 </main>
 
@@ -62,15 +64,9 @@
   document.getElementById('nav').innerHTML = JN.navHTML('explore', user);
   document.getElementById('disclaimer').innerHTML = JN.disclaimerHTML();
 
-  const [profiles, orgs] = await Promise.all([JN.getProfiles(), JN.getApprovedOrgs()]);
-  // Load each worker's score inputs in parallel (fine at MVP scale)
-  const scored = await Promise.all(profiles.map(async p => {
-    const [don, exp, upd] = await Promise.all([JN.getDonationsFor(p.id), JN.getExpensesFor(p.id), JN.getUpdatesFor(p.id)]);
-    return { p, score: JN.computeScore(p, don, exp, upd).total };
-  }));
+  const [profiles, orgs, campaigns] = await Promise.all([JN.getProfiles(), JN.getApprovedOrgs(), JN.getCampaigns()]);
 
-  function workerCard({ p, score }) {
-    const band = JN.scoreBand(score);
+  function workerCard(p) {
     return `
       <a href="profile.html?u=${encodeURIComponent(p.slug)}" class="bg-white border border-stone-100 rounded-2xl p-4 hover:shadow-md transition-shadow block">
         <div class="flex items-start gap-3">
@@ -81,7 +77,6 @@
             <div class="font-bold text-stone-900 truncate">${JN.esc(p.name)}</div>
             <div class="text-xs text-stone-400 truncate">${JN.esc(p.location || '')}</div>
           </div>
-          <span class="text-[10px] font-bold px-2 py-1 rounded-full ${band.cls} shrink-0" title="Transparency score ${score}/100">${score}</span>
         </div>
         <p class="mt-2 text-xs text-stone-500 line-clamp-2 leading-relaxed">${JN.esc(p.bio || '')}</p>
       </a>`;
@@ -96,12 +91,23 @@
       </a>`;
   }
 
+  function campaignCard(c) {
+    return `
+      <a href="campaign.html?c=${encodeURIComponent(c.slug)}" class="bg-white border border-stone-100 rounded-2xl p-4 hover:shadow-md transition-shadow block">
+        <div class="text-[10px] font-semibold text-violet-600 uppercase tracking-wide">Campaign</div>
+        <div class="font-bold text-stone-900 mt-0.5">${JN.esc(c.name)}</div>
+        <p class="mt-2 text-xs text-stone-500 line-clamp-2 leading-relaxed">${JN.esc(c.description || '')}</p>
+      </a>`;
+  }
+
   function render(q) {
     q = (q || '').toLowerCase();
-    const ws = scored.filter(({ p }) => !q || [p.name, p.location, p.bio].join(' ').toLowerCase().includes(q));
+    const ws = profiles.filter(p => !q || [p.name, p.location, p.bio].join(' ').toLowerCase().includes(q));
     const os = orgs.filter(o => !q || [o.name, o.description].join(' ').toLowerCase().includes(q));
+    const cs = campaigns.filter(c => !q || [c.name, c.description].join(' ').toLowerCase().includes(q));
     document.getElementById('workers').innerHTML = ws.length ? ws.map(workerCard).join('') : '<p class="text-sm text-stone-400">No workers found.</p>';
     document.getElementById('orgs').innerHTML = os.length ? os.map(orgCard).join('') : '<p class="text-sm text-stone-400">No organisations found.</p>';
+    document.getElementById('campaigns').innerHTML = cs.length ? cs.map(campaignCard).join('') : '<p class="text-sm text-stone-400">No campaigns found.</p>';
   }
   render('');
   document.getElementById('search').addEventListener('input', e => render(e.target.value));

@@ -28,7 +28,10 @@ only enables discovery and public record-keeping.
 
 ## Transparency score (0–100)
 
-Measures **disclosure practice, not truth**. Computed client-side in `app.js` (`computeScore`):
+**Not shown on public pages** — the number invited exactly the wrong read ("verified" at a
+glance) for something that only measures disclosure habit. It's kept computed and available
+for the admin view only. Measures **disclosure practice, not truth**. Computed client-side in
+`app.js` (`computeScore`):
 
 | Points | Component | Why |
 |---|---|---|
@@ -113,6 +116,30 @@ are future work, not implemented.
   Supabase's "Confirm email" setting, which is currently off (see the CAPTCHA/SMTP notes
   above for why). Turn confirm-email back on once custom SMTP is set up to make this
   signal meaningfully stronger.
+
+## Campaigns
+
+A lighter-weight alternative to orgs for one-off pushes: any profile owner can start a
+campaign from `campaign-admin.html` and becomes its **leader**. Other profile owners request
+to join; the leader approves who's actually on the team from the same page. Each member keeps
+their own individual profile as a changemaker in their own right — a campaign is not a
+substitute for a profile, just a shared banner a few of them rally under.
+
+- **Money always flows through the leader's own UPI/QR** — the same one already on their
+  profile. A campaign has no payment fields of its own, so there is nothing new for JanNidhi
+  to ever touch. `campaign.html` shows the leader's payment section and a "Declare a donation
+  on [leader]'s page" link, since donations are tracked against the leader's `profile_id`.
+- A member can join with **no QR/UPI of their own at all** — a valid "team" state for
+  someone doing the work without personally fundraising. Their own `profile.html` then shows
+  a banner pointing supporters to the campaign/leader instead of an empty "no QR" box.
+- **Deliberately no admin/volunteer review gate**, unlike orgs — the whole point is any
+  changemaker can rally a few others with zero friction, and a campaign has no vouching power
+  over anyone (it can't make a member look "verified"; it just points to the leader's already
+  self-declared payment details). Revisit if this gets abused at scale.
+- Campaign membership uses the same lookup pattern as org membership: leader and member
+  profiles are fetched by direct ID (`getProfileById`), not the filtered public directory —
+  a team member doesn't need to be independently "discoverable" in Explore to still show up
+  correctly on their own campaign's page.
 
 ## Moderation: platform admins and volunteer reviewers
 

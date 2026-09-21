@@ -87,6 +87,7 @@
     $('profiles-list').innerHTML = rows.length ? rows.map(p => `
       <div class="flex items-center gap-2 px-3 py-2 text-xs bg-stone-50 rounded-xl flex-wrap" data-profile="${p.id}">
         <a href="profile.html?u=${encodeURIComponent(p.slug)}" target="_blank" rel="noopener" class="flex-1 min-w-0 truncate font-semibold text-stone-700 hover:underline">${JN.esc(p.name)}</a>
+        <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-stone-200 text-stone-600" title="Transparency score (admin-only, not shown publicly)">${p._score ?? '…'}/100</span>
         ${statusBadge(p._reviewStatus)}
         ${p._blocked ? '<span class="text-[10px] font-bold px-2 py-1 rounded-full bg-stone-800 text-white">BLOCKED</span>' : ''}
         ${p._reviewStatus !== 'approved' ? `<button data-approve class="text-[10px] bg-emerald-600 text-white font-semibold px-2 py-1 rounded-lg">Approve</button>` : ''}
@@ -113,7 +114,16 @@
       </div>`).join('') : '<p class="text-xs text-stone-400">No organisations.</p>';
   }
 
-  async function loadProfiles() { allProfiles = await JN.getAllProfilesForAdmin(); renderProfiles($('p-filter').value); }
+  async function loadProfiles() {
+    allProfiles = await JN.getAllProfilesForAdmin();
+    renderProfiles($('p-filter').value);
+    // Scores are admin-only — computed lazily per profile, not shown on any public page.
+    await Promise.all(allProfiles.map(async p => {
+      const [don, exp, upd] = await Promise.all([JN.getDonationsFor(p.id), JN.getExpensesFor(p.id), JN.getUpdatesFor(p.id)]);
+      p._score = JN.computeScore(p, don, exp, upd).total;
+    }));
+    renderProfiles($('p-filter').value);
+  }
   async function loadOrgsList() { allOrgs = await JN.getAllOrgsForAdmin(); renderOrgs($('o-filter').value); }
 
   $('p-filter').addEventListener('input', () => renderProfiles($('p-filter').value));

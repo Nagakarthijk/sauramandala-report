@@ -462,3 +462,59 @@ create policy "admins manage org blocks" on org_blocks for all
   with check (exists (select 1 from platform_admins pa where pa.user_id = auth.uid()));
 create view org_block_status as select org_id from org_blocks;
 grant select on org_block_status to anon, authenticated;
+
+-- ============================================================
+-- Campaigns — lighter-weight than orgs. Any profile owner can start one
+-- and becomes its leader; other profile owners request to join and the
+-- leader approves. Money for the campaign flows through the LEADER's
+-- own UPI/QR (already on their profile) — a campaign has no payment
+-- fields of its own. A member with no QR of their own is a valid state
+-- (a "team" member doing the work, not personally fundraising) — their
+-- own page then points supporters to the campaign/leader instead.
+-- Deliberately no admin/volunteer review gate, unlike orgs: the whole
+-- point is any changemaker can rally a few others around a cause with
+-- zero friction. Revisit if this gets abused at scale.
+-- ============================================================
+create table campaigns (
+  id                 uuid primary key default gen_random_uuid(),
+  leader_profile_id  uuid not null references profiles(id) on delete cascade,
+  slug               text not null unique,
+  name               text not null,
+  description        text default '',
+  cover_url          text,
+  created_at         timestamptz default now()
+);
+alter table campaigns enable row level security;
+create policy "public read campaigns" on campaigns for select using (true);
+create policy "leader creates campaign" on campaigns for insert
+  with check (exists (select 1 from profiles p where p.id = leader_profile_id and p.user_id = auth.uid()));
+create policy "leader updates campaign" on campaigns for update
+  using (exists (select 1 from profiles p where p.id = leader_profile_id and p.user_id = auth.uid()));
+create policy "leader deletes campaign" on campaigns for delete
+  using (exists (select 1 from profiles p where p.id = leader_profile_id and p.user_id = auth.uid()));
+
+create table campaign_members (
+  id           uuid primary key default gen_random_uuid(),
+  campaign_id  uuid not null references campaigns(id) on delete cascade,
+  profile_id   uuid not null references profiles(id) on delete cascade,
+  status       text not null default 'pending', -- pending | approved | removed
+  created_at   timestamptz default now(),
+  unique (campaign_id, profile_id)
+);
+alter table campaign_members enable row level security;
+create policy "public read campaign_members" on campaign_members for select using (true);
+create policy "profile requests campaign membership" on campaign_members for insert
+  with check (
+    status = 'pending' and
+    exists (select 1 from profiles p where p.id = profile_id and p.user_id = auth.uid())
+  );
+create policy "leader updates campaign membership" on campaign_members for update
+  using (exists (
+    select 1 from campaigns c join profiles p on p.id = c.leader_profile_id
+    where c.id = campaign_id and p.user_id = auth.uid()
+  ));
+create policy "either side removes campaign membership" on campaign_members for delete
+  using (
+    exists (select 1 from campaigns c join profiles p on p.id = c.leader_profile_id where c.id = campaign_id and p.user_id = auth.uid())
+    or exists (select 1 from profiles p where p.id = profile_id and p.user_id = auth.uid())
+  );

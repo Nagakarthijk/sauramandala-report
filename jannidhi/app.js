@@ -42,6 +42,10 @@ const JN = (() => {
     return {
       profiles:[p1,p2], orgs:[o1],
       org_members:[{ id:'d-m1', org_id:'d-o1', profile_id:'d-p1', status:'vouched', role_label:'Booth-level worker', created_at:new Date(now-60*day).toISOString() }],
+      campaigns:[{ id:'d-c1', leader_profile_id:'d-p1', slug:'clean-water-ri-bhoi', name:'Clean Water for Ri-Bhoi',
+        description:'A push across three wards to fix broken hand-pumps and file the paperwork residents need for piped connections.',
+        cover_url:null, created_at:new Date(now-30*day).toISOString() }],
+      campaign_members:[{ id:'d-cm1', campaign_id:'d-c1', profile_id:'d-p2', status:'approved', created_at:new Date(now-25*day).toISOString() }],
       work_updates:[
         { id:'d-w1', profile_id:'d-p1', title:'Pension camp for 32 elders', body:'Helped 32 senior citizens file pension applications at the block office. 4 pending Aadhaar corrections.', media_urls:[], created_at:new Date(now-2*day).toISOString() },
         { id:'d-w2', profile_id:'d-p1', title:'Road-repair petition submitted', body:'Collected 214 signatures for the Umsning stretch and submitted to the BDO.', media_urls:[], created_at:new Date(now-12*day).toISOString() },
@@ -186,6 +190,13 @@ const JN = (() => {
     const { data } = await _sb.from('profiles').select('*').eq('slug', slug).maybeSingle();
     return data || null;
   }
+  // Direct lookup by id — for cases like a campaign leader, who must be
+  // shown regardless of whether they're in the filtered public directory.
+  async function getProfileById(id) {
+    if (DEMO) return D.profiles.find(p => p.id === id) || null;
+    const { data } = await _sb.from('profiles').select('*').eq('id', id).maybeSingle();
+    return data || null;
+  }
   async function getMyProfile() {
     if (DEMO) return null;
     const user = await getUser();
@@ -245,6 +256,51 @@ const JN = (() => {
   const requestMembership    = (orgId, profileId) => _insert('org_members', { org_id: orgId, profile_id: profileId, status: 'pending' });
   const setMembershipStatus  = (id, status, roleLabel) => _update('org_members', id, roleLabel !== undefined ? { status, role_label: roleLabel } : { status });
   const removeMembership     = (id) => _delete('org_members', id);
+
+  // ── Campaigns ──────────────────────────────────────────────────────────
+  // Lighter than orgs: any profile owner can start one (becomes leader) and
+  // approve who joins. Money flows through the LEADER's own UPI/QR — a
+  // campaign has no payment fields of its own.
+  const getCampaigns = () => _list('campaigns');
+  async function getCampaignBySlug(slug) {
+    if (DEMO) return D.campaigns.find(c => c.slug === slug) || null;
+    const { data } = await _sb.from('campaigns').select('*').eq('slug', slug).maybeSingle();
+    return data || null;
+  }
+  async function getMyCampaigns() {
+    if (DEMO) return [];
+    const profile = await getMyProfile();
+    if (!profile) return [];
+    return _list('campaigns', { leader_profile_id: profile.id });
+  }
+  async function addCampaign(campaign) {
+    const user = await requireAuth();
+    if (!user) return null;
+    const myProfile = await getMyProfile();
+    if (!myProfile) throw new Error('Create your own profile first — a campaign needs a leader profile.');
+    return _insert('campaigns', { ...campaign, leader_profile_id: myProfile.id });
+  }
+  const getCampaignMembers       = (campaignId) => _list('campaign_members', { campaign_id: campaignId });
+  const getCampaignMembershipsFor = (profileId) => _list('campaign_members', { profile_id: profileId });
+  const requestCampaignMembership = (campaignId, profileId) => _insert('campaign_members', { campaign_id: campaignId, profile_id: profileId, status: 'pending' });
+  const setCampaignMembershipStatus = (id, status) => _update('campaign_members', id, { status });
+  const removeCampaignMembership  = (id) => _delete('campaign_members', id);
+  // For a member's own profile page: which campaigns (if any) they're an
+  // approved part of, with the leader's profile attached for display.
+  async function getApprovedCampaignsForProfile(profileId) {
+    const memberships = (await getCampaignMembershipsFor(profileId)).filter(m => m.status === 'approved');
+    if (!memberships.length) return [];
+    if (DEMO) {
+      return memberships.map(m => {
+        const campaign = D.campaigns.find(c => c.id === m.campaign_id);
+        const leader = campaign ? D.profiles.find(p => p.id === campaign.leader_profile_id) : null;
+        return campaign ? { campaign, leader } : null;
+      }).filter(Boolean);
+    }
+    const campaigns = await Promise.all(memberships.map(m => _sb.from('campaigns').select('*').eq('id', m.campaign_id).maybeSingle().then(r => r.data)));
+    const leaders = await Promise.all(campaigns.filter(Boolean).map(c => _sb.from('profiles').select('*').eq('id', c.leader_profile_id).maybeSingle().then(r => r.data)));
+    return campaigns.filter(Boolean).map((c, i) => ({ campaign: c, leader: leaders[i] }));
+  }
 
   // ── Portfolio: updates & expenses ────────────────────────────────────
   const getUpdatesFor  = (pid) => _list('work_updates', { profile_id: pid });
@@ -669,6 +725,7 @@ const JN = (() => {
           <div class="flex items-center gap-0.5 sm:gap-1 ml-auto">
             ${link('index.html', 'explore', 'Explore')}
             ${link('org-admin.html', 'orgs', 'Orgs')}
+            ${link('campaign-admin.html', 'campaigns', 'Campaigns')}
             <span id="jn-admin-slot"></span>
             ${authEl}
             <a href="create.html" class="bg-stone-900 hover:bg-stone-800 active:scale-95 text-white text-sm font-semibold px-3.5 sm:px-4 py-2 rounded-xl shrink-0 transition-all">My page</a>
@@ -712,9 +769,12 @@ const JN = (() => {
     DEMO, CAPTCHA_ENABLED, init, getUser, requireAuth,
     signInWithPassword, signUpWithPassword, sendPasswordReset, updatePassword, signOut, isOwner,
     uploadPublicImage, uploadPrivateDoc,
-    getProfiles, getProfileBySlug, getMyProfile, addProfile, updateProfile,
+    getProfiles, getProfileBySlug, getProfileById, getMyProfile, addProfile, updateProfile,
     getOrgs, getApprovedOrgs, getOrgBySlug, getMyOrgs, addOrg,
     getOrgMembers, getMembershipsFor, requestMembership, setMembershipStatus, removeMembership,
+    getCampaigns, getCampaignBySlug, getMyCampaigns, addCampaign,
+    getCampaignMembers, getCampaignMembershipsFor, requestCampaignMembership, setCampaignMembershipStatus, removeCampaignMembership,
+    getApprovedCampaignsForProfile,
     getUpdatesFor, addUpdate, deleteUpdate, getExpensesFor, addExpense, deleteExpense,
     getDonationsFor, declareDonation, resolveDonation, fileReport, getAllReportsForAdmin,
     isPlatformAdmin, getVolunteerStatus, acceptVolunteerAgreement, appointVolunteerByEmail, getAllVolunteers,

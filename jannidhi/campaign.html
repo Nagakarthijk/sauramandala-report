@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Campaign — JanNidhi</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @media (min-width: 900px)  { html { font-size: 17px; } }
+  @media (min-width: 1280px) { html { font-size: 18px; } }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</head>
+<body class="bg-stone-50 text-stone-800 min-h-screen">
+<div id="nav"></div>
+<main class="max-w-3xl mx-auto px-4 py-8" id="page">
+  <p class="text-sm text-stone-400">Loading…</p>
+</main>
+
+<!-- QR zoom lightbox -->
+<div id="qr-lightbox" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-6" onclick="this.classList.add('hidden')">
+  <img id="qr-lightbox-img" src="" class="max-w-full max-h-full bg-white rounded-2xl p-4" alt="UPI QR code, enlarged">
+</div>
+
+<script>
+(async () => {
+  JN.init();
+  const user = await JN.getUser();
+  document.getElementById('nav').innerHTML = JN.navHTML('', user);
+  const $ = id => document.getElementById(id);
+  const slug = new URLSearchParams(location.search).get('c');
+
+  const campaign = slug ? await JN.getCampaignBySlug(slug) : null;
+  if (!campaign) { $('page').innerHTML = '<p class="text-sm text-stone-400">Campaign not found.</p>'; return; }
+  document.title = campaign.name + ' — JanNidhi';
+
+  const [members, leaderProfile] = await Promise.all([
+    JN.getCampaignMembers(campaign.id),
+    JN.getProfileById(campaign.leader_profile_id)
+  ]);
+  const approvedMembers = members.filter(m => m.status === 'approved');
+  // Direct lookups, not the filtered public directory — a team member may
+  // not be discoverable/approved for Explore but is still a real team member here.
+  const memberProfiles = await Promise.all(approvedMembers.map(m => JN.getProfileById(m.profile_id)));
+  const profById = Object.fromEntries(memberProfiles.filter(Boolean).map(p => [p.id, p]));
+
+  function badge(text, cls) { return `<span class="text-[10px] font-bold px-2 py-1 rounded-full ${cls}">${text}</span>`; }
+
+  const memberCards = approvedMembers.map(m => {
+    const p = profById[m.profile_id];
+    if (!p) return '';
+    return `
+      <a href="profile.html?u=${encodeURIComponent(p.slug)}" class="bg-white border border-stone-100 rounded-2xl p-4 hover:shadow-md transition-shadow block">
+        <div class="flex items-center gap-3">
+          ${p.photo_url
+            ? `<img src="${JN.esc(p.photo_url)}" class="w-11 h-11 rounded-full object-cover" alt="">`
+            : `<div class="w-11 h-11 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-500 text-sm">${JN.initials(p.name)}</div>`}
+          <div class="min-w-0 flex-1">
+            <div class="font-bold text-stone-900 truncate">${JN.esc(p.name)}</div>
+            <div class="text-xs text-stone-400 truncate">${JN.esc(p.location || '')}</div>
+          </div>
+          ${p.upi_qr_url || p.upi_vpa ? badge('Own QR', 'bg-emerald-50 text-emerald-700') : badge('Team member', 'bg-stone-100 text-stone-500')}
+        </div>
+        <p class="mt-2 text-xs text-stone-500 line-clamp-2 leading-relaxed">${JN.esc(p.bio || '')}</p>
+      </a>`;
+  }).join('');
+
+  $('page').innerHTML = `
+    <header class="bg-white border border-stone-100 rounded-2xl p-6">
+      <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">Campaign</span>
+      <h1 class="text-2xl font-black text-stone-900 mt-1">${JN.esc(campaign.name)}</h1>
+      <p class="mt-2 text-sm text-stone-600 leading-relaxed whitespace-pre-line">${JN.esc(campaign.description || '')}</p>
+      <p class="mt-3 text-[11px] text-stone-400">Money for this campaign goes to its <strong>leader's own UPI</strong> below. Each team member also runs their own individual page — some accept their own support too, some don't.</p>
+    </header>
+
+    ${leaderProfile ? `
+    <section class="bg-white border border-stone-100 rounded-2xl p-5 mt-4">
+      <div class="flex items-center gap-3">
+        ${leaderProfile.photo_url
+          ? `<img src="${JN.esc(leaderProfile.photo_url)}" class="w-14 h-14 rounded-full object-cover" alt="">`
+          : `<div class="w-14 h-14 rounded-full bg-stone-300 flex items-center justify-center font-bold text-stone-600">${JN.initials(leaderProfile.name)}</div>`}
+        <div class="min-w-0">
+          <div class="text-[10px] font-bold text-violet-600 uppercase tracking-wide">Campaign leader</div>
+          <a href="profile.html?u=${encodeURIComponent(leaderProfile.slug)}" class="font-black text-stone-900 hover:underline">${JN.esc(leaderProfile.name)}</a>
+          <div class="text-xs text-stone-400">${JN.esc(leaderProfile.location || '')}</div>
+        </div>
+      </div>
+
+      <h2 class="font-bold text-stone-900 text-sm mt-5 mb-1">Support this campaign</h2>
+      <p class="text-xs text-stone-400 mb-3">Pay with your own UPI app. Money goes straight to the leader — JanNidhi never touches it.</p>
+      <div class="flex flex-col sm:flex-row gap-4 items-start">
+        ${leaderProfile.upi_qr_url
+          ? `<button type="button" id="qr-zoom" class="w-full sm:w-56 shrink-0">
+               <img src="${JN.esc(leaderProfile.upi_qr_url)}" class="w-full aspect-square object-contain border border-stone-200 rounded-xl bg-white" alt="UPI QR uploaded by ${JN.esc(leaderProfile.name)}">
+               <span class="text-[10px] text-stone-400 block mt-1">Tap to enlarge for scanning</span>
+             </button>`
+          : `<div class="w-full sm:w-56 aspect-square shrink-0 border border-dashed border-stone-200 rounded-xl flex items-center justify-center text-xs text-stone-300 text-center px-2">No QR uploaded yet</div>`}
+        <div class="text-sm space-y-2 min-w-0 w-full">
+          ${leaderProfile.upi_vpa ? `<div><span class="text-xs text-stone-400 block">UPI ID</span><span class="font-mono font-semibold select-all break-all">${JN.esc(leaderProfile.upi_vpa)}</span></div>` : ''}
+          ${leaderProfile.upi_payee_name ? `<div><span class="text-xs text-stone-400 block">Payments should show the name</span><span class="font-bold">${JN.esc(leaderProfile.upi_payee_name)}</span></div>` : ''}
+        </div>
+      </div>
+      <a href="profile.html?u=${encodeURIComponent(leaderProfile.slug)}" class="mt-4 block text-center bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-xl text-sm transition-colors">Declare a donation on ${JN.esc(leaderProfile.name.split(' ')[0])}'s page</a>
+    </section>` : `
+    <section class="bg-white border border-stone-100 rounded-2xl p-5 mt-4">
+      <p class="text-sm text-stone-400">This campaign's leader profile isn't publicly listed right now.</p>
+    </section>`}
+
+    <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-8 mb-3">Team (${approvedMembers.length})</h2>
+    <div class="grid sm:grid-cols-2 gap-3">${memberCards || '<p class="text-sm text-stone-400">No team members yet.</p>'}</div>
+    ${JN.disclaimerHTML()}`;
+
+  $('qr-zoom')?.addEventListener('click', () => {
+    $('qr-lightbox-img').src = leaderProfile.upi_qr_url;
+    $('qr-lightbox').classList.remove('hidden');
+  });
+})();
+</script>
+</body>
+</html>
