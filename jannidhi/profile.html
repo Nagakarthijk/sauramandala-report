@@ -115,11 +115,11 @@
     return;
   }
 
-  const [donations, expenses, updates, memberships, orgs, voteCounts, myVote, voteReasons, myCampaigns] = await Promise.all([
+  const [donations, expenses, updates, memberships, orgs, voteCounts, myVote, voteReasons, campaignAffiliations] = await Promise.all([
     JN.getDonationsFor(profile.id), JN.getExpensesFor(profile.id),
     JN.getUpdatesFor(profile.id), JN.getMembershipsFor(profile.id), JN.getOrgs(),
     JN.getVoteCounts(profile.id), JN.getMyVote(profile.id), JN.getVoteReasonCounts(profile.id),
-    JN.getApprovedCampaignsForProfile(profile.id)
+    JN.getCampaignAffiliationsForProfile(profile.id)
   ]);
   const owner = JN.isOwner(profile);
   const orgById = Object.fromEntries(orgs.map(o => [o.id, o]));
@@ -127,8 +127,13 @@
   const links = JN.normalizeLinks(profile.links);
   // Score is computed for the admin view only — never surfaced on the public page.
   const { total, parts } = JN.computeScore(profile, donations, expenses, updates);
-  const myCampaign = myCampaigns[0] || null; // a profile fundraises for at most one campaign at a time
-  const paysViaCampaign = !profile.upi_qr_url && !profile.upi_vpa && myCampaign;
+  // A leader is affiliated with their own campaign just as much as a member —
+  // both show up here, and someone could plausibly be affiliated with more
+  // than one. Only a plain "member" with no QR of their own gets routed to
+  // the campaign's payment instead of showing an empty "no QR" box — a
+  // leader always pays through their own QR since it *is* the campaign's.
+  const memberCampaign = campaignAffiliations.find(a => a.role === 'member') || null;
+  const paysViaCampaign = !profile.upi_qr_url && !profile.upi_vpa && memberCampaign;
 
   const ackTotal = donations.filter(d => d.status === 'acknowledged').reduce((s, d) => s + Number(d.amount), 0);
   const donorCount = new Set(donations.filter(d => d.status === 'acknowledged').map(d => d.anonymous ? d.id : (d.donor_contact || d.donor_name || d.id))).size;
@@ -180,7 +185,10 @@
         <div class="flex flex-wrap gap-1.5 mt-2">
           ${profile.id_attested ? badge('ID self-attested', 'bg-blue-50 text-blue-700', 'The owner states an ID document is on file. Not checked by the platform.') : ''}
           ${vouches.map(m => badge('Vouched by ' + JN.esc(orgById[m.org_id]?.name || 'org'), 'bg-violet-50 text-violet-700', 'This organisation vouches for this changemaker. Not a platform verification.')).join('')}
-          ${myCampaign ? badge('Part of campaign: ' + JN.esc(myCampaign.campaign.name), 'bg-violet-50 text-violet-700') : ''}
+          ${campaignAffiliations.map(a => `
+            <a href="campaign.html?c=${encodeURIComponent(a.campaign.slug)}" class="text-[10px] font-bold px-2 py-1 rounded-full bg-violet-50 text-violet-700 hover:bg-violet-100 transition-colors" title="${JN.esc(a.role === 'leader' ? 'This person leads this campaign — money for it goes to their own UPI below.' : 'An approved team member of this campaign.')}">
+              ${a.role === 'leader' ? 'Leads' : 'Part of'} ${JN.esc(a.campaign.name)} ↗
+            </a>`).join('')}
         </div>
         <p class="mt-3 text-sm text-stone-600 leading-relaxed whitespace-pre-line">${JN.esc(profile.bio || '')}</p>
 
@@ -240,8 +248,8 @@
       <p class="text-xs text-stone-400 mb-3">Pay with your own UPI app. Money goes straight to them — JanNidhi never touches it and cannot reverse it.</p>
       ${paysViaCampaign ? `
       <div class="bg-violet-50 border border-violet-100 rounded-xl p-4 text-sm text-violet-800">
-        ${JN.esc(profile.name.split(' ')[0])} doesn't take support directly — they're part of <strong>${JN.esc(myCampaign.campaign.name)}</strong>, led by ${JN.esc(myCampaign.leader?.name || 'their campaign leader')}. Support the campaign instead:
-        <a href="campaign.html?c=${encodeURIComponent(myCampaign.campaign.slug)}" class="mt-3 block text-center bg-violet-600 hover:bg-violet-700 text-white font-semibold py-3 rounded-xl text-sm transition-colors">Go to ${JN.esc(myCampaign.campaign.name)}</a>
+        ${JN.esc(profile.name.split(' ')[0])} doesn't take support directly — they're part of <strong>${JN.esc(memberCampaign.campaign.name)}</strong>, led by ${JN.esc(memberCampaign.leader?.name || 'their campaign leader')}. Support the campaign instead:
+        <a href="campaign.html?c=${encodeURIComponent(memberCampaign.campaign.slug)}" class="mt-3 block text-center bg-violet-600 hover:bg-violet-700 text-white font-semibold py-3 rounded-xl text-sm transition-colors">Go to ${JN.esc(memberCampaign.campaign.name)}</a>
       </div>` : `
       <div class="flex flex-col sm:flex-row gap-4 items-start">
         ${profile.upi_qr_url
@@ -254,7 +262,7 @@
              </div>`
           : `<div class="w-full sm:w-72 aspect-square shrink-0 border border-dashed border-stone-200 rounded-xl flex items-center justify-center text-xs text-stone-300 text-center px-2">No QR uploaded yet</div>`}
         <div class="text-sm space-y-2 min-w-0 w-full">
-          ${myCampaign ? `<div><span class="text-xs text-stone-400 block">Fundraising for</span><span class="font-bold text-violet-700">${JN.esc(myCampaign.campaign.name)}</span></div>` : ''}
+          ${memberCampaign ? `<div><span class="text-xs text-stone-400 block">Fundraising for</span><span class="font-bold text-violet-700">${JN.esc(memberCampaign.campaign.name)}</span></div>` : ''}
           ${profile.upi_vpa ? `<div><span class="text-xs text-stone-400 block">UPI ID</span><span class="font-mono font-bold text-base select-all break-all">${JN.esc(profile.upi_vpa)}</span></div>` : ''}
           ${profile.upi_payee_name ? `<div><span class="text-xs text-stone-400 block">Payments should show the name</span><span class="font-bold">${JN.esc(profile.upi_payee_name)}</span><p class="text-[10px] text-amber-600 mt-0.5">If your UPI app shows a different name, stop — this page may be impersonating someone.</p></div>` : ''}
           ${profile.bank_details ? `<div><span class="text-xs text-stone-400 block">Bank transfer</span><span class="whitespace-pre-line text-xs">${JN.esc(profile.bank_details)}</span></div>` : ''}

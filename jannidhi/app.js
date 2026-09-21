@@ -285,21 +285,31 @@ const JN = (() => {
   const requestCampaignMembership = (campaignId, profileId) => _insert('campaign_members', { campaign_id: campaignId, profile_id: profileId, status: 'pending' });
   const setCampaignMembershipStatus = (id, status) => _update('campaign_members', id, { status });
   const removeCampaignMembership  = (id) => _delete('campaign_members', id);
-  // For a member's own profile page: which campaigns (if any) they're an
-  // approved part of, with the leader's profile attached for display.
-  async function getApprovedCampaignsForProfile(profileId) {
-    const memberships = (await getCampaignMembershipsFor(profileId)).filter(m => m.status === 'approved');
-    if (!memberships.length) return [];
+  // For a profile's own page: every campaign it's actively part of, whether
+  // as leader or as an approved team member — a leader is affiliated with
+  // their own campaign just as much as a member is, so both count here.
+  async function getCampaignAffiliationsForProfile(profileId) {
     if (DEMO) {
-      return memberships.map(m => {
-        const campaign = D.campaigns.find(c => c.id === m.campaign_id);
-        const leader = campaign ? D.profiles.find(p => p.id === campaign.leader_profile_id) : null;
-        return campaign ? { campaign, leader } : null;
-      }).filter(Boolean);
+      const led = D.campaigns.filter(c => c.leader_profile_id === profileId)
+        .map(c => ({ campaign: c, leader: D.profiles.find(p => p.id === c.leader_profile_id) || null, role: 'leader' }));
+      const member = D.campaign_members.filter(m => m.profile_id === profileId && m.status === 'approved')
+        .map(m => {
+          const campaign = D.campaigns.find(c => c.id === m.campaign_id);
+          return campaign ? { campaign, leader: D.profiles.find(p => p.id === campaign.leader_profile_id) || null, role: 'member' } : null;
+        }).filter(Boolean);
+      return [...led, ...member];
     }
-    const campaigns = await Promise.all(memberships.map(m => _sb.from('campaigns').select('*').eq('id', m.campaign_id).maybeSingle().then(r => r.data)));
-    const leaders = await Promise.all(campaigns.filter(Boolean).map(c => _sb.from('profiles').select('*').eq('id', c.leader_profile_id).maybeSingle().then(r => r.data)));
-    return campaigns.filter(Boolean).map((c, i) => ({ campaign: c, leader: leaders[i] }));
+    const [{ data: ledCampaigns }, memberships] = await Promise.all([
+      _sb.from('campaigns').select('*').eq('leader_profile_id', profileId),
+      getCampaignMembershipsFor(profileId)
+    ]);
+    const led = (ledCampaigns || []).map(c => ({ campaign: c, role: 'leader' }));
+    const approvedMemberships = memberships.filter(m => m.status === 'approved');
+    const memberCampaigns = await Promise.all(approvedMemberships.map(m => _sb.from('campaigns').select('*').eq('id', m.campaign_id).maybeSingle().then(r => r.data)));
+    const member = memberCampaigns.filter(Boolean).map(c => ({ campaign: c, role: 'member' }));
+    const all = [...led, ...member];
+    const leaders = await Promise.all(all.map(a => _sb.from('profiles').select('*').eq('id', a.campaign.leader_profile_id).maybeSingle().then(r => r.data)));
+    return all.map((a, i) => ({ ...a, leader: leaders[i] }));
   }
 
   // ── Portfolio: updates & expenses ────────────────────────────────────
@@ -799,7 +809,7 @@ const JN = (() => {
     getOrgMembers, getMembershipsFor, requestMembership, setMembershipStatus, removeMembership,
     getCampaigns, getCampaignBySlug, getMyCampaigns, addCampaign,
     getCampaignMembers, getCampaignMembershipsFor, requestCampaignMembership, setCampaignMembershipStatus, removeCampaignMembership,
-    getApprovedCampaignsForProfile,
+    getCampaignAffiliationsForProfile,
     getUpdatesFor, addUpdate, deleteUpdate, getExpensesFor, addExpense, deleteExpense,
     getDonationsFor, declareDonation, resolveDonation, fileReport, getAllReportsForAdmin,
     isPlatformAdmin, getVolunteerStatus, acceptVolunteerAgreement, appointVolunteerByEmail, getAllVolunteers,
