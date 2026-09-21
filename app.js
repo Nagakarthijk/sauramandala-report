@@ -4,16 +4,50 @@
    (shared across everyone), localStorage otherwise (this device only).
    Every screen calls only Store.getTrails()/saveTrail()/getPlans()/savePlan()
    — all four are async now, awaited at every call site.
+
+   Write-through + pending-sync queue: a save on a weak/intermittent
+   connection used to try Supabase only — if that upsert failed (or the
+   supabase-js library itself never finished loading over a bad signal),
+   the trail wasn't written anywhere durable, so it could vanish on the
+   next Explore refresh even on the same phone. Every save now writes to
+   localStorage FIRST, unconditionally, then attempts to sync; a failed
+   sync just queues the id in ws_pending_trails/ws_pending_plans for
+   flushPendingSync() to retry — on load, on the browser's 'online' event,
+   and every couple of minutes while the tab is open, in case the network
+   is technically "online" but still too flaky for a clean signal.
    ============================================================ */
 const _WS_CFG = (typeof WS_CONFIG !== 'undefined') ? WS_CONFIG : {};
 const _sbUrl = (_WS_CFG.supabaseUrl || '').trim();
 const _sbKey = (_WS_CFG.supabaseKey || '').trim();
-const WS_SUPABASE = !!(
-  _sbUrl && !/YOUR-/i.test(_sbUrl) &&
-  _sbKey && !/YOUR_/i.test(_sbKey) &&
-  typeof supabase !== 'undefined'
-);
-const _sb = WS_SUPABASE ? supabase.createClient(_sbUrl, _sbKey) : null;
+const _sbConfigured = !!(_sbUrl && !/YOUR-/i.test(_sbUrl) && _sbKey && !/YOUR_/i.test(_sbKey));
+let _sb = null;
+let _sbReady = false;
+
+// A regular <script src> tag that fails to load on a bad connection never
+// gets a second try from the browser on its own. This does get a second
+// try, from the 'online' event and the periodic flush below — a fresh
+// script element is a fresh network request even when the original tag
+// in index.html already gave up.
+function trySupabaseInit() {
+  if (_sbReady) return true;
+  if (!_sbConfigured) return false;
+  if (typeof supabase === 'undefined') return false;
+  _sb = supabase.createClient(_sbUrl, _sbKey);
+  _sbReady = true;
+  return true;
+}
+function retryLoadSupabaseLib() {
+  return new Promise((resolve) => {
+    if (typeof supabase !== 'undefined') return resolve(true);
+    if (!_sbConfigured) return resolve(false);
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js';
+    s.onload = () => resolve(typeof supabase !== 'undefined');
+    s.onerror = () => resolve(false);
+    document.head.appendChild(s);
+  });
+}
+trySupabaseInit();
 
 function _trailToRow(t) {
   return {
@@ -50,50 +84,108 @@ function _rowToPlan(r) {
   };
 }
 
+const PENDING_TRAILS_KEY = 'ws_pending_trails'; // ids not yet confirmed synced to Supabase
+const PENDING_PLANS_KEY = 'ws_pending_plans';
+
 const Store = {
   _read(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } },
-  _write(key, val) { localStorage.setItem(key, JSON.stringify(val)); },
+  _write(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.warn('[WS] localStorage write failed', e.message); } },
+  _pendingAdd(key, id) { const list = this._read(key, []); if (!list.includes(id)) { list.push(id); this._write(key, list); } },
+  _pendingRemove(key, id) { this._write(key, this._read(key, []).filter(x => x !== id)); },
+
+  // Always update the local mirror first — a save is durable the instant
+  // this line runs, whether or not the network cooperates afterward.
+  _cacheUpsert(key, fallbackList, item) {
+    const all = this._read(key, fallbackList);
+    const i = all.findIndex(x => x.id === item.id);
+    if (i >= 0) all[i] = item; else all.unshift(item);
+    this._write(key, all);
+  },
 
   async getTrails() {
-    if (!WS_SUPABASE) return this._read('ws_trails', seedTrails());
+    if (!trySupabaseInit()) return this._read('ws_trails', seedTrails());
     const { data, error } = await _sb.from('ws_trails').select('*').order('created_at', { ascending: false });
     if (error) { console.warn('[WS] getTrails', error.message); return this._read('ws_trails', seedTrails()); }
-    if (data.length) return data.map(_rowToTrail);
-    // First run against an empty shared table — seed it so Explore isn't blank.
-    await _sb.from('ws_trails').upsert(seedTrails().map(_trailToRow), { onConflict: 'id', ignoreDuplicates: true });
-    const seeded = await _sb.from('ws_trails').select('*').order('created_at', { ascending: false });
-    return (seeded.data || []).map(_rowToTrail);
+    let trails;
+    if (data.length) {
+      trails = data.map(_rowToTrail);
+    } else {
+      // First run against an empty shared table — seed it so Explore isn't blank.
+      await _sb.from('ws_trails').upsert(seedTrails().map(_trailToRow), { onConflict: 'id', ignoreDuplicates: true });
+      const seeded = await _sb.from('ws_trails').select('*').order('created_at', { ascending: false });
+      trails = (seeded.data || []).map(_rowToTrail);
+    }
+    return this._mergePending('ws_trails', PENDING_TRAILS_KEY, trails);
   },
   async saveTrail(trail) {
-    if (!WS_SUPABASE) {
-      const all = this._read('ws_trails', seedTrails());
-      const i = all.findIndex(t => t.id === trail.id);
-      if (i >= 0) all[i] = trail; else all.unshift(trail);
-      this._write('ws_trails', all);
-      return;
-    }
+    this._cacheUpsert('ws_trails', seedTrails(), trail);
+    if (!trySupabaseInit()) { this._pendingAdd(PENDING_TRAILS_KEY, trail.id); return; }
     const { error } = await _sb.from('ws_trails').upsert(_trailToRow(trail), { onConflict: 'id' });
-    if (error) console.warn('[WS] saveTrail', error.message);
+    if (error) { console.warn('[WS] saveTrail — queued for retry:', error.message); this._pendingAdd(PENDING_TRAILS_KEY, trail.id); }
+    else this._pendingRemove(PENDING_TRAILS_KEY, trail.id);
   },
 
   async getPlans() {
-    if (!WS_SUPABASE) return this._read('ws_plans', []);
+    if (!trySupabaseInit()) return this._read('ws_plans', []);
     const { data, error } = await _sb.from('ws_plans').select('*').order('created_at', { ascending: false });
     if (error) { console.warn('[WS] getPlans', error.message); return this._read('ws_plans', []); }
-    return data.map(_rowToPlan);
+    return this._mergePending('ws_plans', PENDING_PLANS_KEY, data.map(_rowToPlan));
   },
   async savePlan(plan) {
-    if (!WS_SUPABASE) {
-      const all = this._read('ws_plans', []);
-      const i = all.findIndex(p => p.id === plan.id);
-      if (i >= 0) all[i] = plan; else all.unshift(plan);
-      this._write('ws_plans', all);
-      return;
-    }
+    this._cacheUpsert('ws_plans', [], plan);
+    if (!trySupabaseInit()) { this._pendingAdd(PENDING_PLANS_KEY, plan.id); return; }
     const { error } = await _sb.from('ws_plans').upsert(_planToRow(plan), { onConflict: 'id' });
-    if (error) console.warn('[WS] savePlan', error.message);
+    if (error) { console.warn('[WS] savePlan — queued for retry:', error.message); this._pendingAdd(PENDING_PLANS_KEY, plan.id); }
+    else this._pendingRemove(PENDING_PLANS_KEY, plan.id);
+  },
+
+  // A trail/plan saved moments ago on a bad connection might not have
+  // reached the server yet even though Supabase reads are working right
+  // now — without this it would flash into view after saving and then
+  // disappear on the very next refresh, which is worse than never
+  // showing it. Folds in anything still queued that the server copy
+  // doesn't have yet.
+  _mergePending(localKey, pendingKey, serverList) {
+    const pendingIds = this._read(pendingKey, []);
+    if (!pendingIds.length) return serverList;
+    const localAll = this._read(localKey, []);
+    const known = new Set(serverList.map(x => x.id));
+    pendingIds.forEach(id => {
+      const local = localAll.find(x => x.id === id);
+      if (local && !known.has(id)) serverList.unshift(local);
+    });
+    return serverList;
   }
 };
+
+// Retries every queued save. Called on Init, on the browser's 'online'
+// event, and periodically — see the bottom of this file.
+async function flushPendingSync() {
+  if (!trySupabaseInit()) { await retryLoadSupabaseLib(); if (!trySupabaseInit()) return; }
+  const pendingTrailIds = Store._read(PENDING_TRAILS_KEY, []);
+  const pendingPlanIds = Store._read(PENDING_PLANS_KEY, []);
+  if (!pendingTrailIds.length && !pendingPlanIds.length) return;
+  const localTrails = Store._read('ws_trails', []);
+  const localPlans = Store._read('ws_plans', []);
+  let synced = 0;
+  for (const id of pendingTrailIds) {
+    const t = localTrails.find(x => x.id === id);
+    if (!t) { Store._pendingRemove(PENDING_TRAILS_KEY, id); continue; }
+    const { error } = await _sb.from('ws_trails').upsert(_trailToRow(t), { onConflict: 'id' });
+    if (!error) { Store._pendingRemove(PENDING_TRAILS_KEY, id); synced++; }
+  }
+  for (const id of pendingPlanIds) {
+    const p = localPlans.find(x => x.id === id);
+    if (!p) { Store._pendingRemove(PENDING_PLANS_KEY, id); continue; }
+    const { error } = await _sb.from('ws_plans').upsert(_planToRow(p), { onConflict: 'id' });
+    if (!error) { Store._pendingRemove(PENDING_PLANS_KEY, id); synced++; }
+  }
+  if (synced) { showToast(`Synced ${synced} offline save${synced === 1 ? '' : 's'}.`); refreshAll(); }
+  updatePendingBanner();
+}
+function pendingSyncCount() {
+  return Store._read(PENDING_TRAILS_KEY, []).length + Store._read(PENDING_PLANS_KEY, []).length;
+}
 
 function savedName() { return (localStorage.getItem('ws_name') || '').trim(); }
 function myName() {
@@ -726,6 +818,13 @@ document.getElementById('file-input').addEventListener('change', async (e) => {
   if (file) await loadRouteFile(file);
   e.target.value = '';
 });
+// Loading a GPX/KML used to only navigate it transiently — never saved,
+// so it existed nowhere once you left the screen. That made it useless
+// as a recovery path (re-importing a GPX you'd downloaded specifically
+// because a recording got lost still lost it again). Now it goes through
+// the same save-with-merge-check as a recording, so it's durable —
+// written to this device immediately and queued for sync if the network
+// doesn't cooperate, same as everything else Store.saveTrail touches.
 async function loadRouteFile(file) {
   const text = await file.text();
   let geojson;
@@ -738,8 +837,8 @@ async function loadRouteFile(file) {
   const coords = line.geometry.coordinates;
   const distanceKm = turf.length(line, { units: 'kilometers' });
   const elevGain = estimateGainFromCoords(coords);
-  const trail = { id: uid(), name: file.name.replace(/\.(gpx|kml|kmz)$/i, ''), author: myName(), createdAt: Date.now(), coords, distanceKm, elevGain, votes: { easier: 0, expected: 0, harder: 0 }, comments: [], photos: [] };
-  showToast(`Loaded "${trail.name}" — ready to navigate.`);
+  const name = file.name.replace(/\.(gpx|kml|kmz)$/i, '');
+  const trail = await saveOrLogWalk({ name, coords, distanceKm, elevGain, photos: [], comments: [] });
   navigateTrail(trail);
 }
 function estimateGainFromCoords(coords) {
@@ -1401,15 +1500,41 @@ document.getElementById('btn-force-update').addEventListener('click', async () =
   location.reload();
 });
 
-/* ---------------- Offline awareness ----------------
+/* ---------------- Offline + pending-sync awareness ----------------
    Trails here are mostly walked with patchy or no signal. Silent failures
-   ("why didn't my comment save?") are worse than an honest banner. */
-function updateOnlineStatus() {
+   ("why didn't my comment save?", or worse, a save that quietly never
+   reached the server at all) are worse than an honest banner. One banner,
+   two possible messages: fully offline, or online but still working
+   through queued saves from when it wasn't. */
+function updatePendingBanner() {
   const banner = document.getElementById('offline-banner');
-  if (banner) banner.style.display = navigator.onLine ? 'none' : 'flex';
+  if (!banner) return;
+  const label = banner.querySelector('span');
+  const pending = pendingSyncCount();
+  if (!navigator.onLine) {
+    label.textContent = "Offline — showing what's already saved on this device";
+    banner.style.display = 'flex';
+  } else if (pending > 0) {
+    label.textContent = `Syncing ${pending} save${pending === 1 ? '' : 's'} made while offline…`;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
 }
-window.addEventListener('online', () => { updateOnlineStatus(); showToast('Back online.'); refreshAll(); });
-window.addEventListener('offline', () => { updateOnlineStatus(); showToast("Offline — showing what's already saved on this device."); });
+window.addEventListener('online', () => {
+  updatePendingBanner();
+  showToast('Back online.');
+  flushPendingSync();
+  refreshAll();
+});
+window.addEventListener('offline', () => {
+  updatePendingBanner();
+  showToast("Offline — showing what's already saved on this device.");
+});
+// Belt-and-suspenders: 'online' doesn't always fire cleanly on a flaky
+// mobile connection that's technically "up" but too weak for requests to
+// land. This catches that case without needing a real disconnect/reconnect.
+setInterval(() => { if (navigator.onLine) flushPendingSync(); }, 120000);
 
 /* ---------------- Share a trail or a proposed walk ----------------
    Native share sheet where available (which on Android/iOS means
@@ -1438,7 +1563,8 @@ function sharePlan(plan) {
 
 /* ---------------- Init ---------------- */
 refreshAll();
-updateOnlineStatus();
+updatePendingBanner();
+flushPendingSync();
 checkRecordingDraft();
 
 if ('serviceWorker' in navigator) {

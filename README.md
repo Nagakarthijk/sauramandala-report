@@ -178,6 +178,25 @@ the whole trail row, so two people voting/commenting on the same trail at
 the exact same instant can race — acceptable for v1, worth normalizing
 votes/comments into their own tables if that becomes a real problem.
 
+**Offline durability.** A save on a weak/intermittent connection used to
+try Supabase and nothing else — if that request failed (or supabase-js
+itself never finished loading over a bad signal), the trail wasn't
+written anywhere durable, so it could vanish from Explore on the very
+next refresh, even on the same phone that recorded it. Every
+`Store.saveTrail`/`savePlan` now writes to `localStorage` first,
+unconditionally, before attempting to sync — that write is what makes a
+save durable, not the network call. A failed sync queues the id in
+`ws_pending_trails`/`ws_pending_plans`; `flushPendingSync()` retries it on
+load, on the browser's `online` event, and every two minutes while the
+tab is open (a mobile connection can be technically "up" but still too
+flaky for a clean request, so `online` alone isn't trusted). The
+topbar banner doubles up: offline, or "Syncing N saves made while
+offline…" once back online with something still queued. Loading a
+GPX/KML now saves through this same path too (previously it only
+navigated the route transiently and never persisted it at all — no good
+as a recovery route for a lost recording, which is exactly when someone
+would want to re-import one).
+
 ## Known limitations (by design, for v1)
 - Recording only works reliably with the app open and screen on — there is
   no web permission that keeps GPS running with the tab backgrounded; iOS
@@ -226,3 +245,15 @@ votes/comments into their own tables if that becomes a real problem.
   call fails, the trail just keeps its GPS-altitude-or-estimated profile
   (see `elevationProfilePoints` in `app.js`) until it's walked/logged
   again with a connection
+- Fixed now (see "Offline durability" above), but a real gap before this:
+  a trail recorded on a bad connection could silently fail to sync and
+  then vanish even from the recording device, because `stopRecording`
+  cleared its crash-safe local draft the moment the save call *returned*,
+  not the moment it actually succeeded — and the old `saveTrail` had no
+  local fallback of its own, so a failed sync meant the data existed
+  nowhere. Anything already lost that way can't be recovered from the
+  app or its storage; a GPX downloaded from it beforehand still has the
+  route, but never carried photos (GPX has no field for them) — the one
+  real recovery path for those is the phone's own Camera/Gallery app,
+  since "add a photo" opens the native camera, and most phones save what
+  it captures there independently of what any web page does with it
