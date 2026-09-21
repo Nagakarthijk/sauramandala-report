@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JanNidhi — support grassroots political workers, directly</title>
-<meta name="description" content="An open-source directory where grassroots political workers publish their work, expenses and UPI details. Money goes directly to them — the platform never touches it.">
+<title>JanNidhi — support grassroots changemakers, directly</title>
+<meta name="description" content="An open-source directory where grassroots changemakers publish their work, expenses and UPI details. Money goes directly to them — the platform never touches it.">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   /* Tailwind sizes are rem-based; scale the root so text reads comfortably on larger/high-DPI screens (e.g. Mac laptops) without touching every class. */
@@ -24,7 +24,8 @@
       Support the people who do the<br class="hidden sm:block"> ground work of democracy.
     </h1>
     <p class="mt-4 text-stone-500 max-w-xl leading-relaxed">
-      Grassroots political workers publish their work, expenses and their own UPI details here.
+      Grassroots changemakers — karyakartas, community organisers, local leaders — publish their work,
+      expenses and their own UPI details here.
       You pay them <strong class="text-stone-700">directly</strong> — JanNidhi never holds, routes or verifies money.
     </p>
     <div class="mt-6 flex flex-wrap gap-3">
@@ -32,20 +33,20 @@
       <a href="org-admin.html" class="border border-stone-300 hover:bg-stone-100 text-stone-700 font-semibold px-5 py-2.5 rounded-xl text-sm">Register a party / org</a>
     </div>
     <div class="mt-8 grid sm:grid-cols-3 gap-3 text-xs text-stone-500">
-      <div class="bg-stone-50 rounded-xl p-3 border border-stone-100"><strong class="text-stone-700 block mb-0.5">No payment gateway</strong>Workers show their own UPI QR and bank details. Payment is between you and them.</div>
-      <div class="bg-stone-50 rounded-xl p-3 border border-stone-100"><strong class="text-stone-700 block mb-0.5">Self-declared, both sides</strong>Donors declare gifts, workers acknowledge them and publish expenses with bills.</div>
-      <div class="bg-stone-50 rounded-xl p-3 border border-stone-100"><strong class="text-stone-700 block mb-0.5">Orgs can vouch</strong>Parties and residents groups host their workers on one page and vouch for them.</div>
+      <div class="bg-stone-50 rounded-xl p-3 border border-stone-100"><strong class="text-stone-700 block mb-0.5">No payment gateway</strong>Changemakers show their own UPI QR and bank details. Payment is between you and them.</div>
+      <div class="bg-stone-50 rounded-xl p-3 border border-stone-100"><strong class="text-stone-700 block mb-0.5">Self-declared, both sides</strong>Supporters declare gifts, changemakers acknowledge them and publish expenses with bills.</div>
+      <div class="bg-stone-50 rounded-xl p-3 border border-stone-100"><strong class="text-stone-700 block mb-0.5">Orgs can vouch</strong>Parties and residents groups host their changemakers on one page and vouch for them.</div>
     </div>
   </div>
 </header>
 
 <main class="max-w-3xl mx-auto px-4 py-8">
   <div class="flex items-center gap-3 mb-4">
-    <input id="search" type="search" placeholder="Search workers by name, place, work…"
+    <input id="search" type="search" placeholder="Search changemakers by name, place, work…"
       class="flex-1 border border-stone-200 rounded-xl px-4 py-3 text-base bg-white focus:outline-none focus:ring-2 focus:ring-stone-300">
   </div>
 
-  <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-6 mb-3">Workers</h2>
+  <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-6 mb-3">Changemakers</h2>
   <div id="workers" class="grid sm:grid-cols-2 gap-3"><p class="text-sm text-stone-400">Loading…</p></div>
 
   <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-10 mb-3">Parties &amp; groups</h2>
@@ -75,7 +76,7 @@
             : `<div class="w-11 h-11 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-500 text-sm">${JN.initials(p.name)}</div>`}
           <div class="min-w-0 flex-1">
             <div class="font-bold text-stone-900 truncate">${JN.esc(p.name)}</div>
-            <div class="text-xs text-stone-400 truncate">${JN.esc(p.location || '')}</div>
+            <div class="text-xs text-stone-400 truncate">${JN.esc(p.headline || p.location || '')}</div>
           </div>
         </div>
         <p class="mt-2 text-xs text-stone-500 line-clamp-2 leading-relaxed">${JN.esc(p.bio || '')}</p>
@@ -105,7 +106,7 @@
     const ws = profiles.filter(p => !q || [p.name, p.location, p.bio].join(' ').toLowerCase().includes(q));
     const os = orgs.filter(o => !q || [o.name, o.description].join(' ').toLowerCase().includes(q));
     const cs = campaigns.filter(c => !q || [c.name, c.description].join(' ').toLowerCase().includes(q));
-    document.getElementById('workers').innerHTML = ws.length ? ws.map(workerCard).join('') : '<p class="text-sm text-stone-400">No workers found.</p>';
+    document.getElementById('workers').innerHTML = ws.length ? ws.map(workerCard).join('') : '<p class="text-sm text-stone-400">No changemakers found.</p>';
     document.getElementById('orgs').innerHTML = os.length ? os.map(orgCard).join('') : '<p class="text-sm text-stone-400">No organisations found.</p>';
     document.getElementById('campaigns').innerHTML = cs.length ? cs.map(campaignCard).join('') : '<p class="text-sm text-stone-400">No campaigns found.</p>';
   }

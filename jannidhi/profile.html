@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Worker page — JanNidhi</title>
+<title>Changemaker page — JanNidhi</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   /* Tailwind sizes are rem-based; scale the root so text reads comfortably on larger/high-DPI screens (e.g. Mac laptops) without touching every class. */
@@ -34,7 +34,7 @@
       <h2 class="font-black text-stone-900">Declare your support</h2>
       <button onclick="document.getElementById('declare-modal').classList.add('hidden')" class="text-stone-400 hover:text-stone-700 text-xl leading-none">&times;</button>
     </div>
-    <p class="text-xs text-stone-500 leading-relaxed">You already sent the money directly — this just puts it on the public record so the worker can acknowledge it. Declaring is voluntary but helps keep their disclosure record honest.</p>
+    <p class="text-xs text-stone-500 leading-relaxed">You already sent the money directly — this just puts it on the public record so they can acknowledge it. Declaring is voluntary but helps keep their disclosure record honest.</p>
     <label class="block text-xs font-semibold text-stone-500">Amount (₹) *
       <input id="d-amount" type="number" min="1" required class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
     </label>
@@ -44,7 +44,7 @@
     <label class="block text-xs font-semibold text-stone-500">Your name <span id="d-name-req">*</span>
       <input id="d-name" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
     </label>
-    <label class="block text-xs font-semibold text-stone-500">Contact (optional — shared with the worker only, for a thank-you)
+    <label class="block text-xs font-semibold text-stone-500">Contact (optional — shared with them only, for a thank-you)
       <input id="d-contact" placeholder="Phone or email" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
     </label>
     <label class="block text-xs font-semibold text-stone-500">Message (optional, public)
@@ -147,6 +147,10 @@
     'twitter.com': '<svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M18.9 2H22l-7.6 8.7L23.3 22h-7l-5.5-7.2L4.5 22H1.4l8.1-9.3L1 2h7.2l5 6.6L18.9 2m-1.2 18h1.7L7.4 4h-1.8l12.1 16Z"/></svg>',
     'youtube.com': '<svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M23 12s0-3.6-.46-5.3a2.9 2.9 0 0 0-2-2C18.9 4.2 12 4.2 12 4.2s-6.9 0-8.54.5a2.9 2.9 0 0 0-2 2C1 8.4 1 12 1 12s0 3.6.46 5.3a2.9 2.9 0 0 0 2 2c1.64.5 8.54.5 8.54.5s6.9 0 8.54-.5a2.9 2.9 0 0 0 2-2C23 15.6 23 12 23 12M9.7 15.5V8.5l6.3 3.5-6.3 3.5Z"/></svg>',
     'youtu.be': '<svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M23 12s0-3.6-.46-5.3a2.9 2.9 0 0 0-2-2C18.9 4.2 12 4.2 12 4.2s-6.9 0-8.54.5a2.9 2.9 0 0 0-2 2C1 8.4 1 12 1 12s0 3.6.46 5.3a2.9 2.9 0 0 0 2 2c1.64.5 8.54.5 8.54.5s6.9 0 8.54-.5a2.9 2.9 0 0 0 2-2C23 15.6 23 12 23 12M9.7 15.5V8.5l6.3 3.5-6.3 3.5Z"/></svg>',
+    'linkedin.com': '<svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 0 0 2 3.5v17A1.5 1.5 0 0 0 3.5 22h17a1.5 1.5 0 0 0 1.5-1.5v-17A1.5 1.5 0 0 0 20.5 2M8.3 18.3H5.7V9.7h2.6ZM7 8.6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m11.3 9.7h-2.6v-4.2c0-1-.02-2.3-1.4-2.3-1.4 0-1.6 1.1-1.6 2.2v4.3H10V9.7h2.5v1.2h.04c.35-.66 1.2-1.4 2.5-1.4 2.7 0 3.2 1.8 3.2 4.1Z"/></svg>',
+    'wa.me': '<svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2m0 18.2a8.1 8.1 0 0 1-4.2-1.15l-.3-.18-3.1.82.83-3-.2-.3A8.2 8.2 0 1 1 12 20.2m4.5-6.13c-.25-.12-1.45-.7-1.68-.79-.22-.08-.4-.12-.55.12-.16.25-.63.79-.78.95-.14.16-.29.18-.53.06-.25-.12-1.06-.39-2-1.24-.75-.66-1.24-1.48-1.39-1.73-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.16.04-.31-.02-.43-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.43.06-.65.31-.22.25-.86.84-.86 2.04 0 1.2.88 2.36 1 2.52.12.16 1.74 2.66 4.22 3.73.59.25 1.05.4 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.45-.59 1.65-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.47-.28"/></svg>',
+    'telegram.org': '<svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M22 4.5 2.7 12.1c-1 .4-1 1.5.06 1.85l4.6 1.5 1.8 5.6c.28.87 1.3 1.05 1.9.35l2.6-3 4.9 3.6c.87.63 1.86.2 2.1-.84L23.9 5.6c.28-1.2-.75-2-1.9-1.1M7.4 14.7l9.5-6-7.6 7-.3 3.3Z"/></svg>',
+    't.me': '<svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M22 4.5 2.7 12.1c-1 .4-1 1.5.06 1.85l4.6 1.5 1.8 5.6c.28.87 1.3 1.05 1.9.35l2.6-3 4.9 3.6c.87.63 1.86.2 2.1-.84L23.9 5.6c.28-1.2-.75-2-1.9-1.1M7.4 14.7l9.5-6-7.6 7-.3 3.3Z"/></svg>',
   };
   function socialIcon(url) {
     const host = JN.hostname(url).replace(/^www\./, '');
@@ -171,10 +175,11 @@
           <h1 class="text-xl font-black text-stone-900 mt-2">${JN.esc(profile.name)}</h1>
           ${owner ? `<a href="create.html" class="mt-2 shrink-0 border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-3 py-1.5 rounded-xl text-xs transition-colors">Edit profile</a>` : ''}
         </div>
+        ${profile.headline ? `<p class="text-sm font-semibold text-stone-600 mt-0.5">${JN.esc(profile.headline)}</p>` : ''}
         <div class="text-xs text-stone-400">${JN.esc(profile.location || '')}</div>
         <div class="flex flex-wrap gap-1.5 mt-2">
           ${profile.id_attested ? badge('ID self-attested', 'bg-blue-50 text-blue-700', 'The owner states an ID document is on file. Not checked by the platform.') : ''}
-          ${vouches.map(m => badge('Vouched by ' + JN.esc(orgById[m.org_id]?.name || 'org'), 'bg-violet-50 text-violet-700', 'This organisation vouches for this worker. Not a platform verification.')).join('')}
+          ${vouches.map(m => badge('Vouched by ' + JN.esc(orgById[m.org_id]?.name || 'org'), 'bg-violet-50 text-violet-700', 'This organisation vouches for this changemaker. Not a platform verification.')).join('')}
           ${myCampaign ? badge('Part of campaign: ' + JN.esc(myCampaign.campaign.name), 'bg-violet-50 text-violet-700') : ''}
         </div>
         <p class="mt-3 text-sm text-stone-600 leading-relaxed whitespace-pre-line">${JN.esc(profile.bio || '')}</p>
@@ -200,8 +205,8 @@
         <div class="flex items-center gap-3 mt-4 pt-4 border-t border-stone-100">
           <span class="text-[10px] text-stone-400 font-semibold uppercase tracking-wide">Community sentiment</span>
           <div class="flex items-center gap-1 ml-auto">
-            <button id="vote-up" class="flex items-center gap-1 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${myVote?.value === 1 ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'border-stone-200 hover:bg-stone-50'}">${ICON_HEART} Endorse <span id="vote-up-count">${voteCounts.upvotes}</span></button>
-            <button id="vote-down" class="flex items-center gap-1 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${myVote?.value === -1 ? 'bg-red-50 border-red-300 text-red-700' : 'border-stone-200 hover:bg-stone-50'}">${ICON_THUMBSDOWN} Concern <span id="vote-down-count">${voteCounts.downvotes}</span></button>
+            <button id="vote-up" title="Endorse" aria-label="Endorse" class="flex items-center gap-1.5 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${myVote?.value === 1 ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'border-stone-200 hover:bg-stone-50'}">${ICON_HEART} <span id="vote-up-count">${voteCounts.upvotes}</span></button>
+            <button id="vote-down" title="Raise a concern" aria-label="Raise a concern" class="flex items-center gap-1.5 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ${myVote?.value === -1 ? 'bg-red-50 border-red-300 text-red-700' : 'border-stone-200 hover:bg-stone-50'}">${ICON_THUMBSDOWN} <span id="vote-down-count">${voteCounts.downvotes}</span></button>
           </div>
         </div>
         <div id="vote-reason-picker" class="hidden mt-2 flex flex-wrap gap-1.5"></div>
@@ -225,7 +230,7 @@
     </section>
     <p class="text-[11px] text-stone-400 mt-2">
       ${netBalance < 0
-        ? `A negative balance means declared expenses are running ahead of declared income here — often because a worker is covering the gap from their own pocket. It isn't proof of anything wrong on its own, but it's a real, useful signal if you're deciding whether to help close it.`
+        ? `A negative balance means declared expenses are running ahead of declared income here — often because they're covering the gap from their own pocket. It isn't proof of anything wrong on its own, but it's a real, useful signal if you're deciding whether to help close it.`
         : `Declared income currently covers declared expenses here.`}
     </p>
 
@@ -374,10 +379,10 @@
       const counts = await JN.getVoteCounts(profile.id);
       $('vote-up-count').textContent = counts.upvotes;
       $('vote-down-count').textContent = counts.downvotes;
-      $('vote-up').className = 'flex items-center gap-1 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ' + (currentVote?.value === 1 ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'border-stone-200 hover:bg-stone-50');
-      $('vote-up').innerHTML = `${ICON_HEART} Endorse <span id="vote-up-count">${counts.upvotes}</span>`;
-      $('vote-down').className = 'flex items-center gap-1 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ' + (currentVote?.value === -1 ? 'bg-red-50 border-red-300 text-red-700' : 'border-stone-200 hover:bg-stone-50');
-      $('vote-down').innerHTML = `${ICON_THUMBSDOWN} Concern <span id="vote-down-count">${counts.downvotes}</span>`;
+      $('vote-up').className = 'flex items-center gap-1.5 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ' + (currentVote?.value === 1 ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'border-stone-200 hover:bg-stone-50');
+      $('vote-up').innerHTML = `${ICON_HEART} <span id="vote-up-count">${counts.upvotes}</span>`;
+      $('vote-down').className = 'flex items-center gap-1.5 border rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors ' + (currentVote?.value === -1 ? 'bg-red-50 border-red-300 text-red-700' : 'border-stone-200 hover:bg-stone-50');
+      $('vote-down').innerHTML = `${ICON_THUMBSDOWN} <span id="vote-down-count">${counts.downvotes}</span>`;
     } catch (err) { JN.toast(err.message); }
   }
   $('vote-up').onclick = () => handleVote(1);
@@ -442,7 +447,7 @@
         donor_contact: $('d-contact').value.trim(),
         message: $('d-message').value.trim(), proof_url
       });
-      dmsg('Declared. The worker will acknowledge it — thank you for supporting them and keeping the record public.', true);
+      dmsg('Declared. They will acknowledge it — thank you for supporting them and keeping the record public.', true);
       setTimeout(() => location.reload(), 1500);
     } catch (err) { dmsg(err.message); $('d-submit').disabled = false; }
   };

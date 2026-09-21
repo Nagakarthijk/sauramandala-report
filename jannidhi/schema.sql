@@ -13,6 +13,7 @@ create table profiles (
   user_id       uuid not null references auth.users(id) unique,
   slug          text not null unique,
   name          text not null,
+  headline      text default '',  -- one-line tagline shown right under the name, e.g. "Booth-level organiser, Ri-Bhoi"
   bio           text default '',
   location      text default '',
   photo_url     text,

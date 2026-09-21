@@ -653,6 +653,32 @@ const JN = (() => {
     return 'https://wa.me/?text=' + encodeURIComponent(`Support ${profile.name}'s work directly: ${url}`);
   }
 
+  // Same pattern as profile share, for campaigns.
+  function campaignUrl(campaign) {
+    return new URL('campaign.html?c=' + encodeURIComponent(campaign.slug), window.location.href).href;
+  }
+  async function shareCampaign(campaign) {
+    const url = campaignUrl(campaign);
+    const data = { title: campaign.name + ' — JanNidhi', text: `Support ${campaign.name} — join the team or contribute directly.`, url };
+    if (navigator.share) {
+      try { await navigator.share(data); } catch { /* user cancelled — no-op */ }
+      return;
+    }
+    await copyCampaignLink(campaign);
+  }
+  async function copyCampaignLink(campaign) {
+    try { await navigator.clipboard.writeText(campaignUrl(campaign)); toast('Link copied'); }
+    catch { toast(campaignUrl(campaign)); }
+  }
+  function whatsappCampaignShareUrl(campaign) {
+    return 'https://wa.me/?text=' + encodeURIComponent(`Join/support ${campaign.name}: ${campaignUrl(campaign)}`);
+  }
+  // Where the "Join as team member" button sends people — create.html reads
+  // ?join=<slug> and handles both a brand-new profile and an existing one.
+  function campaignJoinUrl(campaign) {
+    return new URL('create.html?join=' + encodeURIComponent(campaign.slug), window.location.href).href;
+  }
+
   // ── QR self-consistency check ───────────────────────────────────────
   // Reads whatever text is encoded in a UPI QR image and parses the pa
   // (VPA) / pn (payee name) fields. This does NOT verify anyone's real
@@ -755,8 +781,7 @@ const JN = (() => {
         uploaded by the profile owner. Payments go directly from you to them — like handing over cash. The platform
         cannot refund, reverse, or verify any transfer.</p>
         <p>All work, expense and donation entries are <strong class="text-stone-500">self-declared</strong> and unverified.
-        The transparency score measures disclosure practice, not truthfulness. "ID attested" and "vouched" badges are
-        statements by the profile owner or their organisation — never by the platform.</p>
+        "ID attested" and "vouched" badges are statements by the profile owner or their organisation — never by the platform.</p>
         <p>Money given to an individual is a <strong class="text-stone-500">personal gift</strong> — no tax benefit for you,
         and it may be taxable for the recipient. Foreign-sourced funds for political activity are prohibited under FCRA.
         Only contribute your own, Indian-sourced funds.</p>
@@ -786,6 +811,7 @@ const JN = (() => {
     computeScore, scoreBand,
     slugify, formatINR, formatINRFull, relativeTime, initials, esc, orgTypeLabel,
     hostname, normalizeLinks, toast, shareProfile, copyLink, whatsappShareUrl,
+    shareCampaign, copyCampaignLink, whatsappCampaignShareUrl, campaignJoinUrl,
     decodeQrFromFile, decodeQrFromUrl,
     navHTML, disclaimerHTML
   };

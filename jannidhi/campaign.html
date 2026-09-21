@@ -24,6 +24,18 @@
   <img id="qr-lightbox-img" src="" class="max-w-full max-h-full bg-white rounded-2xl p-4" alt="UPI QR code, enlarged">
 </div>
 
+<!-- Share modal (desktop / non-native-share fallback) -->
+<div id="share-modal" class="hidden fixed inset-0 bg-black/40 z-50 overflow-y-auto">
+  <div class="max-w-sm mx-auto my-16 bg-white rounded-2xl p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="font-black text-stone-900">Share this campaign</h2>
+      <button onclick="document.getElementById('share-modal').classList.add('hidden')" class="text-stone-400 hover:text-stone-700 text-xl leading-none">&times;</button>
+    </div>
+    <a id="share-whatsapp" target="_blank" rel="noopener" class="block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl text-sm transition-colors">Share on WhatsApp</a>
+    <button id="share-copy" class="w-full border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold py-3 rounded-xl text-sm transition-colors">Copy link</button>
+  </div>
+</div>
+
 <script>
 (async () => {
   JN.init();
@@ -36,15 +48,25 @@
   if (!campaign) { $('page').innerHTML = '<p class="text-sm text-stone-400">Campaign not found.</p>'; return; }
   document.title = campaign.name + ' — JanNidhi';
 
-  const [members, leaderProfile] = await Promise.all([
+  const [members, leaderProfile, myProfile] = await Promise.all([
     JN.getCampaignMembers(campaign.id),
-    JN.getProfileById(campaign.leader_profile_id)
+    JN.getProfileById(campaign.leader_profile_id),
+    JN.getMyProfile()
   ]);
   const approvedMembers = members.filter(m => m.status === 'approved');
   // Direct lookups, not the filtered public directory — a team member may
   // not be discoverable/approved for Explore but is still a real team member here.
   const memberProfiles = await Promise.all(approvedMembers.map(m => JN.getProfileById(m.profile_id)));
   const profById = Object.fromEntries(memberProfiles.filter(Boolean).map(p => [p.id, p]));
+
+  // Figure out what the "join" action should say/do for whoever is looking at this page.
+  const isLeader = myProfile && myProfile.id === campaign.leader_profile_id;
+  const myMembership = myProfile ? members.find(m => m.profile_id === myProfile.id) : null;
+  let joinAction;
+  if (isLeader) joinAction = { label: "You lead this campaign", disabled: true };
+  else if (myMembership?.status === 'approved') joinAction = { label: 'You’re on the team', disabled: true };
+  else if (myMembership?.status === 'pending') joinAction = { label: 'Request pending', disabled: true };
+  else joinAction = { label: 'Join as team member', href: JN.campaignJoinUrl(campaign) };
 
   function badge(text, cls) { return `<span class="text-[10px] font-bold px-2 py-1 rounded-full ${cls}">${text}</span>`; }
 
@@ -73,6 +95,12 @@
       <h1 class="text-2xl font-black text-stone-900 mt-1">${JN.esc(campaign.name)}</h1>
       <p class="mt-2 text-sm text-stone-600 leading-relaxed whitespace-pre-line">${JN.esc(campaign.description || '')}</p>
       <p class="mt-3 text-[11px] text-stone-400">Money for this campaign goes to its <strong>leader's own UPI</strong> below. Each team member also runs their own individual page — some accept their own support too, some don't.</p>
+      <div class="flex flex-wrap gap-2 mt-4">
+        <button id="share-btn" class="border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-4 py-2 rounded-xl text-sm transition-colors">Share campaign</button>
+        ${joinAction.disabled
+          ? `<span class="flex-1 text-center bg-stone-100 text-stone-500 font-semibold px-4 py-2 rounded-xl text-sm">${joinAction.label}</span>`
+          : `<a href="${joinAction.href}" class="flex-1 text-center bg-violet-600 hover:bg-violet-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors">${joinAction.label}</a>`}
+      </div>
     </header>
 
     ${leaderProfile ? `
@@ -116,6 +144,13 @@
     $('qr-lightbox-img').src = leaderProfile.upi_qr_url;
     $('qr-lightbox').classList.remove('hidden');
   });
+
+  $('share-btn').onclick = () => {
+    if (navigator.share) { JN.shareCampaign(campaign); return; }
+    $('share-whatsapp').href = JN.whatsappCampaignShareUrl(campaign);
+    $('share-modal').classList.remove('hidden');
+  };
+  $('share-copy').onclick = () => { JN.copyCampaignLink(campaign); $('share-modal').classList.add('hidden'); };
 })();
 </script>
 </body>
