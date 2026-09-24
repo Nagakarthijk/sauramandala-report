@@ -304,6 +304,39 @@ their club's contact group).
   Glific's built-in hook for the "AI-generated contextual content" idea —
   worth testing directly instead of building a custom webhook service first.
 
+### call_webhook → Supabase (NOTF flow, 2026-09-24)
+Used for the NOTF event flow to push ground reports straight into a Supabase
+table, since Google Sheets WRITE mode is still unconfirmed. Standard RapidPro
+`call_webhook` shape (method/url/headers/body are plain REST — no Glific-
+specific quirks expected here, unlike the other actions in this doc):
+```json
+{
+  "uuid": "<action-uuid>",
+  "type": "call_webhook",
+  "url": "https://YOUR-PROJECT.supabase.co/rest/v1/notf_reports",
+  "method": "POST",
+  "result_name": "notf_push",
+  "headers": {
+    "apikey": "YOUR-ANON-OR-SERVICE-KEY",
+    "Authorization": "Bearer YOUR-ANON-OR-SERVICE-KEY",
+    "Content-Type": "application/json",
+    "Prefer": "return=minimal"
+  },
+  "body": "{\"contact_name\":\"@contact.name\",\"phone\":\"@contact.phone\",\"report_text\":\"@results.notf_report_text\",\"reported_at\":\"@(NOW())\"}"
+}
+```
+Check success the same confirmed way as any webhook (`@webhook.status` switch,
+`has_number_between` 200-299 — from `test_wait.json`). **Not yet tested against
+a real Supabase project** — first real send should be watched closely; if it
+fails, check Supabase's row-level-security policy (the anon key needs an
+INSERT policy on the table, or use the service key instead).
+
+### Keyword case sensitivity — UNCONFIRMED (2026-09-24)
+Could not confirm whether Glific normalizes keyword matching to lowercase.
+Safe workaround used for NOTF: register **both casings** in the flow's
+`keywords` array, e.g. `["notf", "NOTF"]` — Glific flows accept a list, so this
+costs nothing and removes the risk.
+
 ### Debugging Checklist When a Keyword Doesn't Start a Flow
 1. Validate all UUIDs in the JSON (see above) — malformed UUIDs fail silently.
 2. Flow published? Drafts respond in simulator only, never in live chat.

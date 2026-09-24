@@ -1,0 +1,424 @@
+{
+  "interactive_templates": [
+    {
+      "source_id": 9200002,
+      "type": "quick_reply",
+      "label": "NOTF Updates Optin",
+      "language_id": 1,
+      "send_with_title": false,
+      "interactive_content": {
+        "type": "quick_reply",
+        "content": {
+          "type": "text",
+          "header": "Stay updated?",
+          "text": "Want future event updates sent here on WhatsApp?"
+        },
+        "options": [
+          {
+            "type": "text",
+            "title": "Yes, keep me posted"
+          },
+          {
+            "type": "text",
+            "title": "No thanks"
+          }
+        ]
+      },
+      "translations": {
+        "1": {
+          "type": "quick_reply",
+          "content": {
+            "type": "text",
+            "header": "Stay updated?",
+            "text": "Want future event updates sent here on WhatsApp?"
+          },
+          "options": [
+            {
+              "type": "text",
+              "title": "Yes, keep me posted"
+            },
+            {
+              "type": "text",
+              "title": "No thanks"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "contact_field": [
+    "notf_optin"
+  ],
+  "collections": [],
+  "flows": [
+    {
+      "keywords": [
+        "notf",
+        "NOTF"
+      ],
+      "definition": {
+        "uuid": "90909090-9090-4909-8909-909090909090",
+        "name": "NOTF Event Updates & Reporting",
+        "type": "messaging",
+        "spec_version": "14.3.0",
+        "language": "base",
+        "expire_after_minutes": 10080,
+        "localization": {},
+        "_ui": {
+          "nodes": {},
+          "stickies": {}
+        },
+        "vars": [],
+        "nodes": [
+          {
+            "uuid": "90000100-0000-4000-8000-900001000000",
+            "actions": [
+              {
+                "uuid": "90000100-aaaa-4000-8000-90000100aaaa",
+                "type": "send_msg",
+                "text": "👋 Thanks for reaching out about the event!\n\n*NOTF* is your line to Sauramandala for this event — you can:\n📢 Get updates about what's happening\n📝 Report something from the ground any time (an issue, a photo, feedback)\n\nFirst — want future event updates sent to you here on WhatsApp?",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "90000100-eeee-4000-8000-90000100eeee",
+                "destination_uuid": "90000200-0000-4000-8000-900002000000"
+              }
+            ]
+          },
+          {
+            "uuid": "90000200-0000-4000-8000-900002000000",
+            "actions": [
+              {
+                "uuid": "90000200-aaaa-4000-8000-90000200aaaa",
+                "type": "send_interactive_msg",
+                "id": 9200002,
+                "name": "NOTF Updates Optin",
+                "text": "{\"type\": \"quick_reply\", \"content\": {\"type\": \"text\", \"header\": \"Stay updated?\", \"text\": \"Want future event updates sent here on WhatsApp?\"}, \"options\": [{\"type\": \"text\", \"title\": \"Yes, keep me posted\"}, {\"type\": \"text\", \"title\": \"No thanks\"}]}",
+                "labels": [],
+                "attachment_url": "",
+                "attachment_type": ""
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "90000200-eeee-4000-8000-90000200eeee",
+                "destination_uuid": "90000300-0000-4000-8000-900003000000"
+              }
+            ]
+          },
+          {
+            "uuid": "90000300-0000-4000-8000-900003000000",
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "notf_optin_choice",
+              "operand": "@input.text",
+              "default_category_uuid": "90000303-cccc-4000-8000-90000303cccc",
+              "categories": [
+                {
+                  "uuid": "90000301-cccc-4000-8000-90000301cccc",
+                  "name": "Yes, keep me posted",
+                  "exit_uuid": "90000301-eeee-4000-8000-90000301eeee"
+                },
+                {
+                  "uuid": "90000302-cccc-4000-8000-90000302cccc",
+                  "name": "No thanks",
+                  "exit_uuid": "90000302-eeee-4000-8000-90000302eeee"
+                },
+                {
+                  "uuid": "90000303-cccc-4000-8000-90000303cccc",
+                  "name": "Other",
+                  "exit_uuid": "90000303-eeee-4000-8000-90000303eeee"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "90000301-ca00-4000-8000-90000301ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "90000301-cccc-4000-8000-90000301cccc",
+                  "arguments": [
+                    "Yes, keep me posted"
+                  ]
+                },
+                {
+                  "uuid": "90000302-ca00-4000-8000-90000302ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "90000302-cccc-4000-8000-90000302cccc",
+                  "arguments": [
+                    "No thanks"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "90000301-eeee-4000-8000-90000301eeee",
+                "destination_uuid": "90000400-0000-4000-8000-900004000000"
+              },
+              {
+                "uuid": "90000302-eeee-4000-8000-90000302eeee",
+                "destination_uuid": "90000400-0000-4000-8000-900004000000"
+              },
+              {
+                "uuid": "90000303-eeee-4000-8000-90000303eeee",
+                "destination_uuid": "90000200-0000-4000-8000-900002000000"
+              }
+            ],
+            "actions": []
+          },
+          {
+            "uuid": "90000400-0000-4000-8000-900004000000",
+            "actions": [
+              {
+                "uuid": "90000400-aaaa-4000-8000-90000400aaaa",
+                "type": "set_contact_field",
+                "field": {
+                  "key": "notf_optin",
+                  "name": "notf_optin"
+                },
+                "value": "@results.notf_optin_choice"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "90000400-eeee-4000-8000-90000400eeee",
+                "destination_uuid": "90000500-0000-4000-8000-900005000000"
+              }
+            ]
+          },
+          {
+            "uuid": "90000500-0000-4000-8000-900005000000",
+            "actions": [
+              {
+                "uuid": "90000500-aaaa-4000-8000-90000500aaaa",
+                "type": "send_msg",
+                "text": "Got it ✅\n\nNow — do you have something to report? Type it out below (an issue, a moment, feedback — anything). Or type *skip* if you just wanted updates for now.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "90000500-eeee-4000-8000-90000500eeee",
+                "destination_uuid": "90000600-0000-4000-8000-900006000000"
+              }
+            ]
+          },
+          {
+            "uuid": "90000600-0000-4000-8000-900006000000",
+            "actions": [],
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "notf_report_text",
+              "operand": "@input.text",
+              "default_category_uuid": "90000601-cccc-4000-8000-90000601cccc",
+              "categories": [
+                {
+                  "uuid": "90000601-cccc-4000-8000-90000601cccc",
+                  "name": "Any",
+                  "exit_uuid": "90000601-eeee-4000-8000-90000601eeee"
+                }
+              ],
+              "cases": []
+            },
+            "exits": [
+              {
+                "uuid": "90000601-eeee-4000-8000-90000601eeee",
+                "destination_uuid": "90000700-0000-4000-8000-900007000000"
+              }
+            ]
+          },
+          {
+            "uuid": "90000700-0000-4000-8000-900007000000",
+            "actions": [],
+            "router": {
+              "wait": {
+                "type": "msg"
+              },
+              "type": "switch",
+              "result_name": "",
+              "operand": "@results.notf_report_text",
+              "default_category_uuid": "90000702-cccc-4000-8000-90000702cccc",
+              "categories": [
+                {
+                  "uuid": "90000701-cccc-4000-8000-90000701cccc",
+                  "name": "Skip",
+                  "exit_uuid": "90000701-eeee-4000-8000-90000701eeee"
+                },
+                {
+                  "uuid": "90000702-cccc-4000-8000-90000702cccc",
+                  "name": "Report",
+                  "exit_uuid": "90000702-eeee-4000-8000-90000702eeee"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "90000701-ca00-4000-8000-90000701ca00",
+                  "type": "has_only_phrase",
+                  "category_uuid": "90000701-cccc-4000-8000-90000701cccc",
+                  "arguments": [
+                    "skip"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "90000701-eeee-4000-8000-90000701eeee",
+                "destination_uuid": "90002000-0000-4000-8000-900020000000"
+              },
+              {
+                "uuid": "90000702-eeee-4000-8000-90000702eeee",
+                "destination_uuid": "90000800-0000-4000-8000-900008000000"
+              }
+            ]
+          },
+          {
+            "uuid": "90000800-0000-4000-8000-900008000000",
+            "actions": [
+              {
+                "uuid": "90000800-aaaa-4000-8000-90000800aaaa",
+                "type": "call_webhook",
+                "url": "https://YOUR-PROJECT.supabase.co/rest/v1/notf_reports",
+                "method": "POST",
+                "result_name": "notf_push",
+                "headers": {
+                  "apikey": "YOUR-ANON-OR-SERVICE-KEY",
+                  "Authorization": "Bearer YOUR-ANON-OR-SERVICE-KEY",
+                  "Content-Type": "application/json",
+                  "Prefer": "return=minimal"
+                },
+                "body": "{\"contact_name\": \"@contact.name\", \"phone\": \"@contact.phone\", \"report_text\": \"@results.notf_report_text\", \"reported_at\": \"@(NOW())\"}"
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "90000800-eeee-4000-8000-90000800eeee",
+                "destination_uuid": "90000900-0000-4000-8000-900009000000"
+              }
+            ]
+          },
+          {
+            "uuid": "90000900-0000-4000-8000-900009000000",
+            "actions": [],
+            "router": {
+              "type": "switch",
+              "result_name": "",
+              "operand": "@webhook.status",
+              "default_category_uuid": "90000902-cccc-4000-8000-90000902cccc",
+              "categories": [
+                {
+                  "uuid": "90000901-cccc-4000-8000-90000901cccc",
+                  "name": "Success",
+                  "exit_uuid": "90000901-eeee-4000-8000-90000901eeee"
+                },
+                {
+                  "uuid": "90000902-cccc-4000-8000-90000902cccc",
+                  "name": "Failure",
+                  "exit_uuid": "90000902-eeee-4000-8000-90000902eeee"
+                }
+              ],
+              "cases": [
+                {
+                  "uuid": "90000901-ca00-4000-8000-90000901ca00",
+                  "type": "has_number_between",
+                  "category_uuid": "90000901-cccc-4000-8000-90000901cccc",
+                  "arguments": [
+                    "200",
+                    "299"
+                  ]
+                }
+              ]
+            },
+            "exits": [
+              {
+                "uuid": "90000901-eeee-4000-8000-90000901eeee",
+                "destination_uuid": "90001000-0000-4000-8000-900010000000"
+              },
+              {
+                "uuid": "90000902-eeee-4000-8000-90000902eeee",
+                "destination_uuid": "90001100-0000-4000-8000-900011000000"
+              }
+            ]
+          },
+          {
+            "uuid": "90001000-0000-4000-8000-900010000000",
+            "actions": [
+              {
+                "uuid": "90001000-aaaa-4000-8000-90001000aaaa",
+                "type": "send_msg",
+                "text": "✅ *Got it — thank you!*\n\nYour report has been logged with the Sauramandala team. Send *NOTF* any time to report something else or ask for updates.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "90001000-eeee-4000-8000-90001000eeee",
+                "destination_uuid": null
+              }
+            ]
+          },
+          {
+            "uuid": "90001100-0000-4000-8000-900011000000",
+            "actions": [
+              {
+                "uuid": "90001100-aaaa-4000-8000-90001100aaaa",
+                "type": "add_input_labels",
+                "labels": [
+                  {
+                    "name": "notf_webhook_failed"
+                  }
+                ]
+              },
+              {
+                "uuid": "90001101-aaaa-4000-8000-90001101aaaa",
+                "type": "send_msg",
+                "text": "✅ *Thanks — noted!*\n\nWe've recorded that you reached out. If you don't hear back and it's urgent, please follow up directly with your Sauramandala contact.\n\nSend *NOTF* any time to reach us again.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "90001100-eeee-4000-8000-90001100eeee",
+                "destination_uuid": null
+              }
+            ]
+          },
+          {
+            "uuid": "90002000-0000-4000-8000-900020000000",
+            "actions": [
+              {
+                "uuid": "90002000-aaaa-4000-8000-90002000aaaa",
+                "type": "send_msg",
+                "text": "👍 No worries — you're set for updates.\n\nSend *NOTF* any time you want to report something or check in.",
+                "quick_replies": [],
+                "labels": [],
+                "attachments": []
+              }
+            ],
+            "exits": [
+              {
+                "uuid": "90002000-eeee-4000-8000-90002000eeee",
+                "destination_uuid": null
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
