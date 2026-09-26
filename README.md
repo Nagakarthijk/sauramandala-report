@@ -289,6 +289,30 @@ One more small round:
   the kind of thing worth deciding on deliberately rather than patching
   around.
 
+- **The GPS-jump straight-line fix now applies retroactively too.**
+  `isLikelyGpsGlitch` (added earlier) only guards a trail while it's
+  being recorded — it couldn't do anything for a trail that was already
+  saved with a jump baked into it, since the accuracy/timestamp info that
+  check needs is dropped from a point the moment recording stops (a
+  saved trail's `coords` are just `[lng,lat,ele]`, nothing else). Added
+  `cleanTrailCoords()`, which instead looks at the *shape* of the route:
+  a point whose two neighbors would be far closer going straight to each
+  other than via it is almost certainly a glitch, not a real sharp
+  corner (a real corner still roughly obeys the triangle inequality; a
+  GPS jump blows way past it) — same idea extended to the first/last
+  point, which can't be checked that way but can be checked against
+  their one neighbor, for a cold-fix jump right at the start or a
+  lost-signal jump right at the end.
+  This is applied only where a trail's coordinates get drawn, exported,
+  or measured (the map line, GPX download, the "off route" check while
+  navigating, and the distance figure/difficulty label everywhere a
+  trail is shown) — it never rewrites what's actually in the database,
+  so it self-heals every trail, old and new, the moment this ships, with
+  nothing to lose if a borderline case isn't caught and no separate
+  migration to run. The one thing it doesn't touch is elevation gain —
+  a trail's real elevation profile (see below) isn't recomputed
+  retroactively, since that needs a fresh Open-Meteo lookup per trail.
+
 ## Backend: Supabase
 Everything reads/writes through the `Store` object at the top of `app.js` —
 `Store` is dual-mode: it uses Supabase when `ws-config.js` has real

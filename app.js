@@ -415,8 +415,8 @@ function computeDifficulty(distanceKm, elevGainM) {
   if (score < 16) return 'Hard';
   return 'Strenuous';
 }
-function communityAdjustedLabel(trail) {
-  const bucket = computeDifficulty(trail.distanceKm, trail.elevGain);
+function communityAdjustedLabel(trail, distanceKmOverride) {
+  const bucket = computeDifficulty(distanceKmOverride ?? trail.distanceKm, trail.elevGain);
   const v = trail.votes || { easier: 0, expected: 0, harder: 0 };
   const total = v.easier + v.expected + v.harder;
   if (total < 3) return { bucket, community: null };
@@ -501,11 +501,12 @@ function formatDuration(sec) {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 function enrichTrail(t) {
-  const { bucket, community } = communityAdjustedLabel(t);
+  const distanceKm = trailDistanceKm(t);
+  const { bucket, community } = communityAdjustedLabel(t, distanceKm);
   const walkers = t.walkers || [];
   return {
     id: t.id, name: t.name,
-    distanceLabel: `${t.distanceKm.toFixed(1)} km`, elevLabel: `${t.elevGain} m`,
+    distanceLabel: `${distanceKm.toFixed(1)} km`, elevLabel: `${t.elevGain} m`,
     durationLabel: formatDuration(t.durationSec),
     pauseLabel: t.pauseSec ? formatDuration(t.pauseSec) : null,
     bucket, community, dotColor: dotColorFor(bucket), textColor: textColorFor(bucket),
@@ -554,8 +555,62 @@ function darkenHex(hex, factor) {
 // whichever color that trail was assigned.
 const WAYPOINT_COLOR = '#292524';
 
+// Retroactive cleanup for a trail that was already saved with a GPS-jump
+// straight line in it (isLikelyGpsGlitch only guards *new* recordings —
+// it can't help a trail saved before that existed). A saved trail's
+// coords are just [lng,lat,ele] triples with no per-point timestamp or
+// accuracy left to check (that's dropped once recording stops — see
+// stopRecording), so this looks for the *shape* of a glitch instead: a
+// point that makes the path detour way out and back, when its two
+// neighbors would be far closer going straight to each other. A real
+// sharp corner still roughly obeys the triangle inequality; a GPS jump
+// blows way past it. Applied only where a trail's coords get drawn or
+// exported (never rewrites what's actually stored), so it self-heals
+// every trail — old or new — with nothing to lose if a borderline case
+// isn't caught, and no separate migration/cleanup step for anyone to run.
+function cleanTrailCoords(coords) {
+  if (!coords || coords.length < 4) return coords || [];
+  const pts = coords.slice();
+  const distM = (a, b) => turf.distance([a[0], a[1]], [b[0], b[1]], { units: 'kilometers' }) * 1000;
+  let changed = true, guard = 0;
+  while (changed && guard < 20 && pts.length > 3) {
+    changed = false;
+    guard++;
+    for (let i = 1; i < pts.length - 1; i++) {
+      const viaDetour = distM(pts[i - 1], pts[i]) + distM(pts[i], pts[i + 1]);
+      const direct = distM(pts[i - 1], pts[i + 1]);
+      if (viaDetour > 80 && viaDetour > direct * 3) {
+        pts.splice(i, 1);
+        changed = true;
+        break;
+      }
+    }
+  }
+  // The interior-spike loop above can't touch index 0 or the last index
+  // (each only has one neighbor, so there's no "detour" to measure) —
+  // but a cold GPS fix jumping in before the signal settles, or one
+  // lost right as recording stopped, lands exactly there. Trim a leading
+  // or trailing point using the same idea: is it wildly farther from its
+  // one neighbor than that neighbor is from the point after it.
+  for (let end = 0; end < 2; end++) {
+    let trimGuard = 0;
+    while (pts.length > 4 && trimGuard < 5) {
+      const n = pts.length;
+      const d1 = end === 0 ? distM(pts[0], pts[1]) : distM(pts[n - 1], pts[n - 2]);
+      const d2 = end === 0 ? distM(pts[1], pts[2]) : distM(pts[n - 2], pts[n - 3]);
+      if (d1 > 80 && d1 > d2 * 3) { end === 0 ? pts.shift() : pts.pop(); trimGuard++; continue; }
+      break;
+    }
+  }
+  return pts;
+}
+function trailDistanceKm(t) {
+  if (!t.coords || t.coords.length < 4) return t.distanceKm;
+  const cleaned = cleanTrailCoords(t.coords);
+  return turf.length(turf.lineString(cleaned.map(c => [c[0], c[1]])), { units: 'kilometers' });
+}
 function drawTrailOnMap(trail, opts = {}) {
-  const latlngs = trail.coords.map(([lng, lat]) => [lat, lng]);
+  const latlngs = cleanTrailCoords(trail.coords).map(([lng, lat]) => [lat, lng]);
   return L.polyline(latlngs, { color: opts.color || trailColor(trail.id), weight: opts.weight || 4, opacity: opts.opacity ?? 0.9 });
 }
 // Tapping a trail's line on the map used to jump straight to the full
@@ -1128,7 +1183,7 @@ function toGPX(name, coords) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="WalkShillong" xmlns="http://www.topografix.com/GPX/1/1">\n  <trk><name>${escapeHTML(name)}</name><trkseg>\n      ${pts}\n  </trkseg></trk>\n</gpx>`;
 }
 function downloadGPX(trail) {
-  const blob = new Blob([toGPX(trail.name, trail.coords)], { type: 'application/gpx+xml' });
+  const blob = new Blob([toGPX(trail.name, cleanTrailCoords(trail.coords))], { type: 'application/gpx+xml' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `${trail.name.replace(/\s+/g, '_')}.gpx`;
@@ -1280,7 +1335,7 @@ function navigateTrail(trail) {
   if (activeRouteLayer) map.removeLayer(activeRouteLayer);
   activeRouteLayer = drawTrailOnMap(trail, { color: trailColor(trail.id), weight: 5 }).addTo(map);
   map.fitBounds(activeRouteLayer.getBounds(), { padding: [30, 30] });
-  navRouteLine = turf.lineString(trail.coords.map(c => [c[0], c[1]]));
+  navRouteLine = turf.lineString(cleanTrailCoords(trail.coords).map(c => [c[0], c[1]])); // a glitch point in the reference line would otherwise throw off "off route by ~Nm"
   navTrail = trail;
   drawWaypointMarkers(trail);
   startLocationWatch();
