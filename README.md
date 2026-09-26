@@ -219,6 +219,50 @@ A second, smaller round on the same area:
   future) instead of displaying it, and durations over an hour are shown
   as "Xh Ym ago" rather than a big minute count either way.
 
+A third round, from real multi-person usage:
+
+- **No more straight "teleport" lines through a recorded route.** A
+  single noisy GPS fix (weak signal under tree cover, multipath off a
+  building) used to get recorded as-is, showing up as a dead-straight
+  line jammed into an otherwise-wiggly trail. Recording now rejects a fix
+  as a route point (the blue dot/GPS status still update — only what gets
+  added to the saved track is affected) if it's reported with worse than
+  ~60m accuracy, or if it implies a speed over ~25 km/h from the last
+  accepted point (see `isLikelyGpsGlitch()`). This only prevents *new*
+  recordings from getting a glitch like this — it can't retroactively
+  clean up a trail that already has one.
+- **Camera not opening from a floating/minimized Chrome window.** The
+  photo inputs used `capture="environment"` to jump straight to the
+  camera app, which can silently fail to launch from a non-fullscreen
+  window (floating window, split-screen) with no error JS can catch —
+  entirely up to the OS. Dropped `capture`, so these now open the
+  system's own picker (Camera/Files/Gallery) instead — camera is still
+  one tap away, just not force-launched, which is markedly more reliable
+  across window states.
+- **Rename your own trails.** A pencil icon next to a trail's name — on
+  its row in "Your trails" and on its detail page — lets you rename it.
+  Only shown on trails this device's saved name matches (see "whose
+  trail is it" below), not on everyone else's.
+- **Whose trail is it, and a data-loss guard for concurrent edits.**
+  There's still no login (see "Known limitations" below) — a trail's
+  `author` is just whatever name you typed in when first prompted
+  (`myName()`/`savedName()`, kept in this device's `localStorage`), and
+  "Your trails" / the Rename button both just check whether that saved
+  name matches. The trail detail page now shows "by &lt;author&gt;" so
+  this is visible, not just implicit in what shows up under "Mine".
+  Separately — and more importantly with several people using this at
+  once — every `Store.saveTrail()`/`savePlan()` used to upsert a whole
+  row from a possibly-stale local snapshot, so if two people added a
+  photo/comment/RSVP to the same trail/plan around the same time,
+  whichever save landed second could silently erase the first person's
+  addition (a read-modify-write race, not a sync-timing bug). Both saves
+  now re-fetch the current server row immediately before writing and
+  merge into it — comments/photos/walkers are unioned rather than
+  replaced, RSVPs merge one entry per author (newest wins), and
+  votes/walk-count never drop below whatever's already on the server.
+  Doesn't need a schema change — this is a change to how the client
+  writes, not to what's stored.
+
 ## Backend: Supabase
 Everything reads/writes through the `Store` object at the top of `app.js` —
 `Store` is dual-mode: it uses Supabase when `ws-config.js` has real

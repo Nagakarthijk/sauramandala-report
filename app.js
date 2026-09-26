@@ -165,6 +165,39 @@ function stopLoading() {
   if (_loadingCount === 0) document.getElementById('load-bar')?.classList.remove('active');
 }
 
+// Every save here works from a snapshot of a trail/plan fetched earlier —
+// with several people using the app around the same time (exactly what's
+// happening today), a straight upsert of that whole snapshot can silently
+// erase whatever someone else added to the same trail/plan in between,
+// since the read-modify-write isn't atomic and there's no per-field
+// patch, only a whole-row upsert. These two helpers merge collaborative
+// fields (comments/photos/walkers/rsvps/votes) against a fresh server
+// read taken right before the write, so two people adding a photo or
+// RSVPing around the same moment both keep their addition instead of
+// whichever save happens to land second wiping out the first.
+function _unionByKey(a, b, keyFn) {
+  const out = [], seen = new Set();
+  [...(a || []), ...(b || [])].forEach(item => {
+    const k = keyFn(item);
+    if (seen.has(k)) return;
+    seen.add(k);
+    out.push(item);
+  });
+  return out;
+}
+// One entry per author, keeping whichever side has the newer `ts` for
+// that author — right for RSVPs, which are meant to replace in place
+// when someone changes their answer (unlike comments/photos, where the
+// same author posting twice is two separate, both-wanted entries).
+function _mergeByAuthorLatest(a, b) {
+  const map = new Map();
+  [...(a || []), ...(b || [])].forEach(r => {
+    const existing = map.get(r.author);
+    if (!existing || (r.ts || 0) >= (existing.ts || 0)) map.set(r.author, r);
+  });
+  return Array.from(map.values());
+}
+
 const Store = {
   // Reads IndexedDB first; if a key isn't there yet, checks localStorage
   // for anything left over from before this moved off it and migrates it
@@ -218,6 +251,31 @@ const Store = {
       return this._mergePending('ws_trails', PENDING_TRAILS_KEY, trails);
     } finally { stopLoading(); }
   },
+  // Folds whatever's currently on the server for this trail into the
+  // local copy before it gets overwritten — comments/photos/walkers are
+  // unioned (not replaced), votes/walkCount never regress below the
+  // server's own count. Falls back to the trail as given if the fetch
+  // fails (offline, etc.) — that's the pre-existing behavior, not a new
+  // risk. See the comment above _unionByKey for why this exists.
+  async _mergeTrailBeforeWrite(trail) {
+    try {
+      const { data, error } = await _sb.from('ws_trails').select('*').eq('id', trail.id).maybeSingle();
+      if (error || !data) return trail;
+      const server = _rowToTrail(data);
+      return {
+        ...trail,
+        photos: _unionByKey(server.photos, trail.photos, p => typeof p === 'string' ? p : `${p.url}|${p.ts}|${p.author}`),
+        comments: _unionByKey(server.comments, trail.comments, c => `${c.text}|${c.ts}|${c.author}`),
+        walkers: _unionByKey(server.walkers, trail.walkers, w => `${w.ts}|${w.author}`),
+        walkCount: Math.max(server.walkCount || 1, trail.walkCount || 1),
+        votes: {
+          easier: Math.max(server.votes?.easier || 0, trail.votes?.easier || 0),
+          expected: Math.max(server.votes?.expected || 0, trail.votes?.expected || 0),
+          harder: Math.max(server.votes?.harder || 0, trail.votes?.harder || 0)
+        }
+      };
+    } catch (e) { return trail; }
+  },
   // Returns {synced}: false means it's durable on this device (IndexedDB,
   // queued for retry) but NOT yet confirmed on the shared backend — callers
   // that tell the user "saved" need to know which one actually happened,
@@ -227,9 +285,11 @@ const Store = {
     try {
       await this._cacheUpsert('ws_trails', seedTrails(), trail);
       if (!trySupabaseInit()) { await this._pendingAdd(PENDING_TRAILS_KEY, trail.id); return { synced: false }; }
-      const { error } = await _sb.from('ws_trails').upsert(_trailToRow(trail), { onConflict: 'id' });
+      const merged = await this._mergeTrailBeforeWrite(trail);
+      const { error } = await _sb.from('ws_trails').upsert(_trailToRow(merged), { onConflict: 'id' });
       if (error) { console.warn('[WS] saveTrail — queued for retry:', error.message); await this._pendingAdd(PENDING_TRAILS_KEY, trail.id); return { synced: false }; }
       await this._pendingRemove(PENDING_TRAILS_KEY, trail.id);
+      await this._cacheUpsert('ws_trails', seedTrails(), merged); // reflect everyone's additions locally too, not just this device's own
       return { synced: true };
     } finally { stopLoading(); }
   },
@@ -243,14 +303,31 @@ const Store = {
       return this._mergePending('ws_plans', PENDING_PLANS_KEY, data.map(_rowToPlan));
     } finally { stopLoading(); }
   },
+  // Same idea as _mergeTrailBeforeWrite: comments union, rsvps merge one
+  // entry per author (latest `ts` wins), instead of a stale local rsvps
+  // list silently dropping someone else's just-added RSVP.
+  async _mergePlanBeforeWrite(plan) {
+    try {
+      const { data, error } = await _sb.from('ws_plans').select('*').eq('id', plan.id).maybeSingle();
+      if (error || !data) return plan;
+      const server = _rowToPlan(data);
+      return {
+        ...plan,
+        comments: _unionByKey(server.comments, plan.comments, c => `${c.text}|${c.ts}|${c.author}`),
+        rsvps: _mergeByAuthorLatest(server.rsvps, plan.rsvps)
+      };
+    } catch (e) { return plan; }
+  },
   async savePlan(plan) {
     startLoading();
     try {
       await this._cacheUpsert('ws_plans', [], plan);
       if (!trySupabaseInit()) { await this._pendingAdd(PENDING_PLANS_KEY, plan.id); return { synced: false }; }
-      const { error } = await _sb.from('ws_plans').upsert(_planToRow(plan), { onConflict: 'id' });
+      const merged = await this._mergePlanBeforeWrite(plan);
+      const { error } = await _sb.from('ws_plans').upsert(_planToRow(merged), { onConflict: 'id' });
       if (error) { console.warn('[WS] savePlan — queued for retry:', error.message); await this._pendingAdd(PENDING_PLANS_KEY, plan.id); return { synced: false }; }
       await this._pendingRemove(PENDING_PLANS_KEY, plan.id);
+      await this._cacheUpsert('ws_plans', [], merged); // reflect everyone's additions locally too, not just this device's own
       return { synced: true };
     } finally { stopLoading(); }
   },
@@ -531,6 +608,32 @@ let _centerOnNextFix = false;  // set by the locate button so the next fix pans 
 let lastFix = null;            // last known {lat,lng} — used to geotag a note dropped while navigating
 let lastAccuracy = null;       // meters — drives the GPS-quality chip on the Record tab and in the recording card
 
+// A recorded route used to accept every fix as-is, including the odd bad
+// one — a single noisy reading (weak signal under tree cover, GPS
+// multipath off a building) gets recorded as a straight "teleport" line
+// jammed into the middle of an otherwise-wiggly trail, exactly the kind
+// of dead-straight segment that doesn't belong there. These two checks
+// reject a fix as a route point (the blue dot/GPS status still update —
+// only what gets added to the recorded track is affected) without
+// touching the trail's real shape:
+//   - MAX_RECORD_ACCURACY_M: a fix reported as this imprecise or worse
+//     isn't trustworthy enough to be a route point at all.
+//   - MAX_RECORD_SPEED_KMH: implied speed from the last accepted point —
+//     generous enough for a fast downhill jog, but a GPS jump covering
+//     100+ meters in a couple of seconds implies a car-speed jump that
+//     can't be an actual step of the walk.
+const MAX_RECORD_ACCURACY_M = 60;
+const MAX_RECORD_SPEED_KMH = 25;
+function isLikelyGpsGlitch(points, longitude, latitude, accuracy, tsNow) {
+  if (accuracy != null && accuracy > MAX_RECORD_ACCURACY_M) return true;
+  if (!points.length) return false;
+  const prev = points[points.length - 1];
+  const dtHr = (tsNow - prev[3]) / 3600000;
+  if (dtHr <= 0) return false;
+  const distKm = turf.distance([prev[0], prev[1]], [longitude, latitude], { units: 'kilometers' });
+  return (distKm / dtHr) > MAX_RECORD_SPEED_KMH;
+}
+
 function startLocationWatch() {
   if (!('geolocation' in navigator)) { showToast('GPS not available on this device/browser.'); return; }
   if (locationWatchId != null) return;
@@ -556,9 +659,12 @@ function onLocationFix(pos) {
     if (nearest.properties.dist > 40) showToast(`Off route by ~${Math.round(nearest.properties.dist)}m`);
   }
   if (recState && !recState.paused) {
-    recState.points.push([longitude, latitude, altitude || 0, Date.now()]);
-    if (activeRouteLayer) activeRouteLayer.addLatLng([latitude, longitude]);
-    map.panTo([latitude, longitude], { animate: true });
+    const now = Date.now();
+    if (!isLikelyGpsGlitch(recState.points, longitude, latitude, accuracy, now)) {
+      recState.points.push([longitude, latitude, altitude || 0, now]);
+      if (activeRouteLayer) activeRouteLayer.addLatLng([latitude, longitude]);
+      map.panTo([latitude, longitude], { animate: true });
+    }
     updateRecordingStats();
   }
 }
@@ -739,13 +845,16 @@ function trailDistanceFromMe(t) {
   const [lng, lat] = t.coords[0];
   return turf.distance([lastFix.lng, lastFix.lat], [lng, lat], { units: 'kilometers' });
 }
-function trailRowHTML(t, distKm) {
+function trailRowHTML(t, distKm, opts = {}) {
   const e = enrichTrail(t);
   return `
     <div class="trail-row" data-open="${t.id}">
       <div class="trail-row-bar" style="background:${e.dotColor};"></div>
       <div class="trail-row-body">
-        <h3>${escapeHTML(t.name)}</h3>
+        <div class="trail-row-title">
+          <h3>${escapeHTML(t.name)}</h3>
+          ${opts.rename ? `<button class="row-rename-btn" data-rename="${t.id}" aria-label="Rename trail" title="Rename"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-edit"/></svg></button>` : ''}
+        </div>
         <div class="trail-row-meta">
           ${distKm != null ? `<span class="distance">${distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)}km`} away</span>` : ''}
           <span class="num">${e.distanceLabel}</span>
@@ -780,9 +889,29 @@ async function renderMine() {
   const trails = await Store.getTrails();
   const mine = trails.filter(t => t.author === savedName());
   list.innerHTML = mine.length
-    ? mine.map(t => trailRowHTML(t)).join('')
+    ? mine.map(t => trailRowHTML(t, null, { rename: true })).join('')
     : `<div class="empty-note">Trails you record or load will show up here.</div>`;
   list.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', () => openDetail(el.dataset.open)));
+  list.querySelectorAll('[data-rename]').forEach(btn => btn.addEventListener('click', async (ev) => {
+    ev.stopPropagation(); // don't also trigger the row's data-open
+    const trail = mine.find(t => t.id === btn.dataset.rename);
+    if (trail) await renameTrail(trail);
+  }));
+}
+// Anyone can technically write to any trail (there's no login — see
+// README's "no identity system" note), but the UI only offers Rename on
+// trails this device's own saved name matches (the same soft-identity
+// check "Mine" itself filters by), so it isn't casually offered on
+// something someone else recorded.
+async function renameTrail(trail) {
+  const input = (prompt('Rename this trail:', trail.name) || '').trim();
+  if (!input || input === trail.name) return;
+  const oldName = trail.name;
+  trail.name = input;
+  const result = await Store.saveTrail(trail);
+  renderTrailLayers(); renderExplore(); renderMine();
+  showToast(result.synced ? `Renamed "${oldName}" to "${input}". Synced.` : `Renamed on this device — not yet synced.`);
+  if (document.getElementById('detail-overlay').classList.contains('active')) openDetail(trail.id);
 }
 document.getElementById('explore-search').addEventListener('input', debounce(renderExplore, 200));
 // The Explore list sorts "nearest first" as soon as a fix is known, but on
@@ -1104,6 +1233,16 @@ document.getElementById('photo-lightbox').addEventListener('click', (e) => {
 });
 function drawWaypointMarkers(trail) { drawWaypointPins(trail.comments, trail.photos); }
 
+// The photo inputs used to carry capture="environment", which tells the
+// browser to skip straight to the camera app instead of showing a
+// picker. That's fine with Chrome as a normal full-screen tab, but in a
+// floating/split-screen/minimized window it can fail to launch the
+// camera at all — silently, with no error JS can catch, since launching
+// it is entirely up to the OS. Leaving capture off falls back to the
+// system's own picker (Camera/Files/Gallery), which still offers the
+// camera as one tap but doesn't try to force a full-screen camera
+// activity out of a window that isn't one — more reliable across window
+// states at the cost of one extra tap in the common full-screen case.
 // Opening the camera/file picker MUST be the very first synchronous thing
 // that happens in response to the tap — no prompt()/confirm() before it.
 // Showing any blocking dialog first breaks the ability to open the native
@@ -1535,6 +1674,7 @@ async function openDetail(id) {
   overlay.innerHTML = `
     <div class="detail-hero" style="background:linear-gradient(155deg, ${heroColor} 0%, ${darkenHex(heroColor, 0.72)} 100%);">
       <button class="round-btn" id="btn-close-detail" aria-label="Close"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-back"/></svg></button>
+      ${trail.author === savedName() ? `<button class="round-btn" id="btn-rename-trail" style="position:absolute;top:18px;right:18px;" aria-label="Rename trail" title="Rename"><svg class="icon" viewBox="0 0 24 24"><use href="#ic-edit"/></svg></button>` : ''}
       <svg class="detail-spark" viewBox="0 0 64 34" preserveAspectRatio="none"><path d="${e.sparkPath}"/></svg>
       <div>
         <h2>${escapeHTML(trail.name)}</h2>
@@ -1545,6 +1685,7 @@ async function openDetail(id) {
           <span>${e.bucket}</span>
           ${e.community ? `<span>&middot; ${e.community}</span>` : ''}
         </div>
+        <div class="detail-hero-author">by ${escapeHTML(trail.author || 'A walker')}</div>
         ${e.walkCount > 1 ? `<div class="walk-badge">Walked ${e.walkCount}&times;${e.walkerCount > 1 ? ` by ${e.walkerCount} people` : ''}</div>` : ''}
       </div>
     </div>
@@ -1581,7 +1722,7 @@ async function openDetail(id) {
       ${e.photos.length ? `<div class="detail-photos">${e.photos.map(p => `<img src="${typeof p === 'string' ? p : p.url}" loading="lazy" class="tappable-photo">`).join('')}</div>` : ''}
       <div class="photo-drop">
         <svg class="icon" viewBox="0 0 24 24"><use href="#ic-camera"/></svg>Add a photo
-        <input type="file" accept="image/*" capture="environment" id="detail-photo-input">
+        <input type="file" accept="image/*" id="detail-photo-input">
       </div>
 
       <div class="section-label" style="margin-bottom:8px;">Comments</div>
@@ -1619,6 +1760,7 @@ async function openDetail(id) {
   });
 
   document.getElementById('btn-close-detail').onclick = closeDetail;
+  document.getElementById('btn-rename-trail')?.addEventListener('click', () => renameTrail(trail));
   document.getElementById('btn-share-trail').onclick = () => shareTrail(trail, e.distanceLabel, e.bucket);
   document.getElementById('btn-download-gpx').onclick = () => downloadGPX(trail);
   document.getElementById('btn-nav-trail').onclick = () => { closeDetail(); navigateTrail(trail); };

@@ -253,7 +253,11 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .trail-row:active { background: var(--surface-2); }
 .trail-row-bar { width: 4px; border-radius: 4px; flex-shrink: 0; }
 .trail-row-body { flex: 1; min-width: 0; }
-.trail-row h3 { font-family: 'Space Grotesk', sans-serif; font-weight: 600; margin: 0 0 4px; font-size: 1.05rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trail-row-title { display: flex; align-items: center; gap: 4px; }
+.trail-row h3 { flex: 1; min-width: 0; font-family: 'Space Grotesk', sans-serif; font-weight: 600; margin: 0 0 4px; font-size: 1.05rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-rename-btn { flex-shrink: 0; width: 26px; height: 26px; border: none; background: transparent; color: var(--ink-dim); display: flex; align-items: center; justify-content: center; cursor: pointer; margin-bottom: 4px; }
+.row-rename-btn:active { color: var(--ink); }
+.row-rename-btn .icon { width: 15px; height: 15px; }
 .trail-row-meta { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .trail-row-meta .num { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.95rem; color: var(--ink); }
 .trail-row-meta .num.dim { color: var(--ink-dim); }
@@ -358,6 +362,7 @@ select.form-input { color: var(--ink); }
 .detail-hero h2 { font-family: 'Space Grotesk', sans-serif; font-weight: 700; margin: 0 0 8px; font-size: 1.7rem; line-height: 1.15; color: #fff; }
 .detail-hero-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.82rem; color: rgba(255,255,255,0.85); }
 .detail-hero-meta .num { font-family: 'Space Grotesk', sans-serif; font-weight: 600; color: #fff; }
+.detail-hero-author { margin-top: 4px; font-size: 0.76rem; color: rgba(255,255,255,0.7); }
 .walk-badge { margin-top: 6px; font-size: 0.78rem; color: rgba(255,255,255,0.85); }
 
 .detail-body { padding: 20px; }
