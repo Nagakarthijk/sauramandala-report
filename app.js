@@ -611,7 +611,19 @@ function trailDistanceKm(t) {
 }
 function drawTrailOnMap(trail, opts = {}) {
   const latlngs = cleanTrailCoords(trail.coords).map(([lng, lat]) => [lat, lng]);
-  return L.polyline(latlngs, { color: opts.color || trailColor(trail.id), weight: opts.weight || 4, opacity: opts.opacity ?? 0.9 });
+  return L.polyline(latlngs, { color: opts.color || trailColor(trail.id), weight: opts.weight || 4, opacity: opts.opacity ?? 0.9, interactive: opts.interactive ?? true });
+}
+// Leaflet only registers clicks within the rendered stroke itself — a
+// 4px-wide line is a tiny, easy-to-miss target for a finger, which is
+// exactly why tapping a trail to see its preview popup felt so
+// unpredictable. This draws a second, much fatter line in the same
+// place, fully transparent, that actually catches the tap — the visible
+// colored line on top is drawn non-interactive so it never competes
+// with it for the click.
+const TRAIL_HIT_WEIGHT = 22;
+function drawTrailHitLine(trail) {
+  const latlngs = cleanTrailCoords(trail.coords).map(([lng, lat]) => [lat, lng]);
+  return L.polyline(latlngs, { color: '#000', weight: TRAIL_HIT_WEIGHT, opacity: 0 });
 }
 // Tapping a trail's line on the map used to jump straight to the full
 // detail page — a big context switch just to see if a walk has any
@@ -635,17 +647,25 @@ function trailPreviewHTML(trail) {
     </div>`;
 }
 async function renderTrailLayers() {
-  Object.values(trailLayers).forEach(l => map.removeLayer(l));
+  Object.values(trailLayers).forEach(l => map.removeLayer(l)); // each entry is a layer group — removing it takes every child (hit line, visible line, pins) with it
   trailLayers = {};
   const trails = await Store.getTrails();
   trails.forEach(trail => {
-    const layer = drawTrailOnMap(trail).addTo(map);
-    layer.bindPopup(trailPreviewHTML(trail), { maxWidth: 240, className: 'trail-popup-wrap' });
+    const group = L.layerGroup();
+    const hitLine = drawTrailHitLine(trail);
+    hitLine.bindPopup(trailPreviewHTML(trail), { maxWidth: 240, className: 'trail-popup-wrap' });
     // A small always-on label so a trail is identifiable on the map at a
     // glance, without needing to tap it first — interactive: false keeps
-    // it from stealing the click that opens the preview popup above.
-    layer.bindTooltip(trail.name, { permanent: true, direction: 'center', className: 'trail-map-label', opacity: 0.95, interactive: false });
-    trailLayers[trail.id] = layer;
+    // it from stealing the tap that opens the preview popup above.
+    hitLine.bindTooltip(trail.name, { permanent: true, direction: 'center', className: 'trail-map-label', opacity: 0.95, interactive: false });
+    group.addLayer(hitLine);
+    group.addLayer(drawTrailOnMap(trail, { interactive: false })); // the visible colored line — purely decorative now, the hit line above catches the tap
+    // Photo/comment pins for this trail, always shown (not only while
+    // actively navigating it) — this is what makes "there's a photo/note
+    // here" visible just from browsing the map.
+    notesFromTrailData(trail.comments, trail.photos).forEach(n => group.addLayer(makeWaypointMarker(n)));
+    group.addTo(map);
+    trailLayers[trail.id] = group;
   });
 }
 
@@ -1248,25 +1268,37 @@ function photoMarkerIcon() {
     iconSize: [28, 28], iconAnchor: [14, 14]
   });
 }
-function drawWaypointPins(comments, photos) {
-  clearWaypointMarkers();
-  const notes = [
+// Geotagged comments/photos as a flat list of {..., kind}, shared by the
+// live-recording pin drawer below and the always-on per-trail pins in
+// renderTrailLayers, so both draw identical markers/popups from one
+// definition instead of two copies drifting apart.
+function notesFromTrailData(comments, photos) {
+  return [
     ...(comments || []).filter(c => c.lat != null).map(c => ({ ...c, kind: 'comment' })),
     ...(photos || []).filter(p => typeof p === 'object' && p.lat != null).map(p => ({ ...p, kind: 'photo' }))
   ];
-  notes.forEach(n => {
-    const marker = n.kind === 'photo'
-      ? L.marker([n.lat, n.lng], { icon: photoMarkerIcon() }).addTo(map)
-      : L.circleMarker([n.lat, n.lng], { radius: 7, color: '#fff', weight: 2, fillColor: WAYPOINT_COLOR, fillOpacity: 1 }).addTo(map);
-    if (n.kind === 'photo' && !n.text) {
-      marker.on('click', () => openLightbox(n.url));
-    } else {
-      const body = n.kind === 'photo'
-        ? `<img src="${n.url}" onclick="openLightbox(this.src)" style="width:120px;height:90px;object-fit:cover;border-radius:8px;display:block;margin-bottom:4px;cursor:pointer;">${escapeHTML(n.text)}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`
-        : `${escapeHTML(n.text)}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`;
-      marker.bindPopup(body);
-    }
-    waypointLayers.push(marker);
+}
+// Builds (but doesn't add to the map) one pin for a single geotagged
+// note — callers decide whether it goes straight on the map (recording)
+// or into a trail's own layer group (always-on, per saved trail).
+function makeWaypointMarker(n) {
+  const marker = n.kind === 'photo'
+    ? L.marker([n.lat, n.lng], { icon: photoMarkerIcon() })
+    : L.circleMarker([n.lat, n.lng], { radius: 7, color: '#fff', weight: 2, fillColor: WAYPOINT_COLOR, fillOpacity: 1 });
+  if (n.kind === 'photo' && !n.text) {
+    marker.on('click', () => openLightbox(n.url));
+  } else {
+    const body = n.kind === 'photo'
+      ? `<img src="${n.url}" onclick="openLightbox(this.src)" style="width:120px;height:90px;object-fit:cover;border-radius:8px;display:block;margin-bottom:4px;cursor:pointer;">${escapeHTML(n.text)}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`
+      : `${escapeHTML(n.text)}<div style="font-size:11px;color:#888;margin-top:2px;">${escapeHTML(n.author)}</div>`;
+    marker.bindPopup(body);
+  }
+  return marker;
+}
+function drawWaypointPins(comments, photos) {
+  clearWaypointMarkers();
+  notesFromTrailData(comments, photos).forEach(n => {
+    waypointLayers.push(makeWaypointMarker(n).addTo(map));
   });
 }
 
@@ -1286,7 +1318,6 @@ document.getElementById('btn-close-lightbox').addEventListener('click', closeLig
 document.getElementById('photo-lightbox').addEventListener('click', (e) => {
   if (e.target.id === 'photo-lightbox') closeLightbox();
 });
-function drawWaypointMarkers(trail) { drawWaypointPins(trail.comments, trail.photos); }
 
 // The photo inputs used to carry capture="environment", which tells the
 // browser to skip straight to the camera app instead of showing a
@@ -1337,7 +1368,10 @@ function navigateTrail(trail) {
   map.fitBounds(activeRouteLayer.getBounds(), { padding: [30, 30] });
   navRouteLine = turf.lineString(cleanTrailCoords(trail.coords).map(c => [c[0], c[1]])); // a glitch point in the reference line would otherwise throw off "off route by ~Nm"
   navTrail = trail;
-  drawWaypointMarkers(trail);
+  // No separate waypoint-pin drawing here anymore — renderTrailLayers
+  // already keeps every trail's photo/comment pins on the map all the
+  // time (not just while navigating it), so this trail's pins are
+  // already showing.
   startLocationWatch();
   document.getElementById('nav-trail-name').textContent = `Navigating — ${trail.name}`;
   document.getElementById('nav-banner').style.display = 'block';
@@ -1346,7 +1380,6 @@ function navigateTrail(trail) {
 function stopNavigating() {
   navTrail = null;
   navRouteLine = null;
-  clearWaypointMarkers();
   if (activeRouteLayer) { map.removeLayer(activeRouteLayer); activeRouteLayer = null; }
   document.getElementById('nav-banner').style.display = 'none';
 }
@@ -1362,7 +1395,7 @@ document.getElementById('btn-nav-note').addEventListener('click', () => {
     if (text) navTrail.comments.push({ ...point, text });
     if (photoUrl) navTrail.photos.push({ ...point, url: photoUrl });
     await Store.saveTrail(navTrail);
-    drawWaypointMarkers(navTrail);
+    renderTrailLayers(); // redraws every trail's pins, including the one just added to navTrail
     showToast('Added to the trail.');
   });
 });

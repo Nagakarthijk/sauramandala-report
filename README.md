@@ -313,6 +313,22 @@ One more small round:
   a trail's real elevation profile (see below) isn't recomputed
   retroactively, since that needs a fresh Open-Meteo lookup per trail.
 
+- **Photo/comment pins now always show on the map, not only while
+  navigating.** They used to only appear for whichever single trail
+  someone had tapped "Navigate" on — just browsing the map, a trail with
+  photos along it looked like a plain line. Every saved trail's pins
+  (camera icon for a photo, small dot for a text-only note) now draw
+  alongside its route the moment the map loads, the same "mural map"
+  effect the photo pins were originally meant to have.
+- **Tapping a trail's line to open its preview popup was unpredictable.**
+  Leaflet only registers a click within the line's own rendered stroke —
+  a 4px-wide line is a tiny target for a finger. Each trail now also gets
+  a second, much fatter (22px) fully-transparent line drawn in the same
+  place that actually catches the tap; the visible colored line on top
+  is purely decorative now (`interactive: false`) so it never competes
+  with it. Tapping anywhere near a trail's line should now reliably open
+  its popup.
+
 ## Backend: Supabase
 Everything reads/writes through the `Store` object at the top of `app.js` —
 `Store` is dual-mode: it uses Supabase when `ws-config.js` has real
