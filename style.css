@@ -401,13 +401,19 @@ select.form-input { color: var(--ink); }
 }
 
 .detail-photos { display: flex; gap: 8px; overflow-x: auto; margin: 18px 0 0; }
-.detail-photos img { width: 80px; height: 80px; object-fit: cover; border-radius: 12px; cursor: pointer; }
+.photo-tile { flex-shrink: 0; width: 80px; }
+.detail-photos img { width: 80px; height: 80px; object-fit: cover; border-radius: 12px; cursor: pointer; display: block; }
+.photo-author {
+  margin-top: 3px; font-size: 0.68rem; color: var(--ink-dim); text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .photo-drop {
   border: 1.5px dashed var(--line-strong); border-radius: 14px; padding: 20px 12px; margin-top: 16px;
   text-align: center; color: var(--ink-dim); font-size: 0.83rem; position: relative;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
 .photo-drop .icon { width: 24px; height: 24px; color: var(--ink-dim); }
+.photo-drop-hint { font-size: 0.72rem; color: var(--ink-dim); opacity: 0.75; margin-top: 2px; font-weight: 400; }
 .photo-drop input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 
 .comment-row { border-top: 1px solid var(--line); padding: 10px 0; font-size: 0.85rem; color: var(--ink); }

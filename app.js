@@ -1719,9 +1719,14 @@ async function openDetail(id) {
       </div>
       ${e.community ? `<div class="consensus-badge">Community consensus: ${e.community}</div>` : ''}
 
-      ${e.photos.length ? `<div class="detail-photos">${e.photos.map(p => `<img src="${typeof p === 'string' ? p : p.url}" loading="lazy" class="tappable-photo">`).join('')}</div>` : ''}
+      ${e.photos.length ? `<div class="detail-photos">${e.photos.map(p => {
+        const url = typeof p === 'string' ? p : p.url;
+        const author = (typeof p === 'object' && p.author) ? p.author : null;
+        return `<div class="photo-tile"><img src="${url}" loading="lazy" class="tappable-photo">${author ? `<div class="photo-author">${escapeHTML(author)}</div>` : ''}</div>`;
+      }).join('')}</div>` : ''}
       <div class="photo-drop">
-        <svg class="icon" viewBox="0 0 24 24"><use href="#ic-camera"/></svg>Add a photo
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ic-camera"/></svg>
+        <div>Add a photo<div class="photo-drop-hint">Camera or choose from your gallery</div></div>
         <input type="file" accept="image/*" id="detail-photo-input">
       </div>
 

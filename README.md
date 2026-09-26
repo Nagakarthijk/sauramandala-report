@@ -263,6 +263,32 @@ A third round, from real multi-person usage:
   Doesn't need a schema change — this is a change to how the client
   writes, not to what's stored.
 
+One more small round:
+
+- **Uploading a photo to a trail** (as opposed to dropping a geotagged one
+  mid-walk) was already possible — the "Add a photo" box on any trail's
+  detail page opens the system's photo/file picker (see the camera fix
+  above; it's not camera-only) — but it wasn't very discoverable and gave
+  no sense that gallery photos were an option, not just a live shot. The
+  box now says "Add a photo — Camera or choose from your gallery"
+  directly.
+- **A photo's uploader wasn't shown anywhere.** Comments have always
+  shown who wrote them; the photo strip on a trail's detail page didn't —
+  every photo looked anonymous even though anyone (no login — see below)
+  can add one. Each photo now gets a small caption underneath with
+  whoever added it, same as comments.
+- Worth restating since it came up again: there's still no real
+  login/accounts (see "Known limitations"). "Author" — on a trail, a
+  comment, or now a photo — is just whatever name that *device* has
+  saved locally (prompted once, kept in that browser's `localStorage`).
+  The same person on two different phones/browsers, or two different
+  people sharing one device, will show up as different/inconsistent
+  names — that's the actual identity model right now, not a bug in how
+  it's displayed. A real fix needs Supabase Auth (or similar) tying
+  contributions to an actual account; flagging it again here since it's
+  the kind of thing worth deciding on deliberately rather than patching
+  around.
+
 ## Backend: Supabase
 Everything reads/writes through the `Store` object at the top of `app.js` —
 `Store` is dual-mode: it uses Supabase when `ws-config.js` has real

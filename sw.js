@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'ws-shell-v17';
+const SHELL_CACHE = 'ws-shell-v18';
 const TILE_CACHE = 'ws-tiles-v1';
 const SHELL_FILES = ['./', './index.html', './style.css', './app.js', './ws-config.js', './manifest.json'];
 
