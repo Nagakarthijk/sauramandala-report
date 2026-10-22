@@ -6,7 +6,8 @@
   "engine": "InnoDB",
   "field_order": [
     "entrepreneur_name", "phone", "business_name", "col_break_1",
-    "sector", "entity_type", "location", "company",
+    "sector", "sub_sector", "entity_type", "location", "latitude", "longitude", "company",
+    "section_profile", "about", "products_made", "profile_public",
     "section_status", "stage", "last_contact", "assigned_to",
     "section_consent", "consent_given",
     "section_notes", "notes"
@@ -47,6 +48,12 @@
       "in_standard_filter": 1
     },
     {
+      "fieldname": "sub_sector",
+      "fieldtype": "Data",
+      "label": "Sub-sector / Specialisation",
+      "description": "e.g. Pickles, Dairy, Handloom, Tailoring"
+    },
+    {
       "fieldname": "entity_type",
       "fieldtype": "Select",
       "label": "Entity Type",
@@ -60,12 +67,47 @@
       "in_standard_filter": 1
     },
     {
+      "fieldname": "latitude",
+      "fieldtype": "Float",
+      "label": "Latitude",
+      "precision": "6"
+    },
+    {
+      "fieldname": "longitude",
+      "fieldtype": "Float",
+      "label": "Longitude",
+      "precision": "6"
+    },
+    {
       "fieldname": "company",
       "fieldtype": "Link",
       "label": "Organisation",
       "options": "Company",
       "reqd": 1,
       "in_standard_filter": 1
+    },
+    {
+      "fieldname": "section_profile",
+      "fieldtype": "Section Break",
+      "label": "Public Profile"
+    },
+    {
+      "fieldname": "about",
+      "fieldtype": "Small Text",
+      "label": "About the Enterprise",
+      "description": "2-3 sentences describing what they make or do"
+    },
+    {
+      "fieldname": "products_made",
+      "fieldtype": "Small Text",
+      "label": "Products / Services Offered",
+      "description": "What they actually sell — e.g. 'Mango pickle, papads, curry powder'"
+    },
+    {
+      "fieldname": "profile_public",
+      "fieldtype": "Check",
+      "label": "Consent to be discoverable on the network",
+      "description": "Entrepreneur has agreed their profile can be visible to buyers and service providers"
     },
     {
       "fieldname": "section_status",

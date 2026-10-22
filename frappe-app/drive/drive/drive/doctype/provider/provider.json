@@ -5,9 +5,11 @@
   "doctype": "DocType",
   "engine": "InnoDB",
   "field_order": [
-    "provider_name", "service", "col_break_1",
-    "phone", "email", "location", "company",
-    "section_config", "active", "commission_rate", "sla_days",
+    "provider_name", "provider_type", "about", "col_break_1",
+    "phone", "email", "website", "location", "state", "districts_served", "company",
+    "section_offerings", "service_offerings",
+    "section_reach", "sectors_served", "entity_types_served",
+    "section_config", "active", "verified", "commission_rate", "sla_days",
     "section_portal", "portal_user"
   ],
   "fields": [
@@ -20,12 +22,18 @@
       "search_index": 1
     },
     {
-      "fieldname": "service",
-      "fieldtype": "Data",
-      "label": "Service Offered",
+      "fieldname": "provider_type",
+      "fieldtype": "Select",
+      "label": "Provider Type",
+      "options": "\nGovernment Scheme Facilitator\nPrivate Consultant\nBuyer / Market Linkage\nRaw Material Supplier\nFinancial Institution / MFI\nNGO / FPO\nTraining Provider\nEnergy / Solar Provider\nOther",
       "reqd": 1,
       "in_list_view": 1,
       "in_standard_filter": 1
+    },
+    {
+      "fieldname": "about",
+      "fieldtype": "Small Text",
+      "label": "About"
     },
     {
       "fieldname": "col_break_1",
@@ -44,16 +52,62 @@
       "options": "Email"
     },
     {
+      "fieldname": "website",
+      "fieldtype": "Data",
+      "label": "Website",
+      "options": "URL"
+    },
+    {
       "fieldname": "location",
       "fieldtype": "Data",
-      "label": "Location"
+      "label": "City / Town"
+    },
+    {
+      "fieldname": "state",
+      "fieldtype": "Data",
+      "label": "State",
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "districts_served",
+      "fieldtype": "Small Text",
+      "label": "Districts Served",
+      "description": "Comma-separated list of districts this provider operates in"
     },
     {
       "fieldname": "company",
       "fieldtype": "Link",
-      "label": "Organisation",
+      "label": "Listed By (Organisation)",
       "options": "Company",
       "reqd": 1
+    },
+    {
+      "fieldname": "section_offerings",
+      "fieldtype": "Section Break",
+      "label": "Services & Offerings"
+    },
+    {
+      "fieldname": "service_offerings",
+      "fieldtype": "Table",
+      "label": "Service Offerings",
+      "options": "Service Offering"
+    },
+    {
+      "fieldname": "section_reach",
+      "fieldtype": "Section Break",
+      "label": "Who They Serve"
+    },
+    {
+      "fieldname": "sectors_served",
+      "fieldtype": "Small Text",
+      "label": "Sectors Served",
+      "description": "e.g. Food Processing, Handicrafts, Agriculture — leave blank for all sectors"
+    },
+    {
+      "fieldname": "entity_types_served",
+      "fieldtype": "Select",
+      "label": "Entity Types Served",
+      "options": "\nAll\nIndividual\nSHG / Cooperative\nPartnership\nCompany"
     },
     {
       "fieldname": "section_config",
@@ -68,9 +122,16 @@
       "in_list_view": 1
     },
     {
+      "fieldname": "verified",
+      "fieldtype": "Check",
+      "label": "Verified by Programme Officer",
+      "in_list_view": 1
+    },
+    {
       "fieldname": "commission_rate",
-      "fieldtype": "Currency",
-      "label": "Default Commission (₹)"
+      "fieldtype": "Percent",
+      "label": "Default Platform Commission (%)",
+      "default": "10"
     },
     {
       "fieldname": "sla_days",
@@ -88,7 +149,7 @@
       "fieldtype": "Link",
       "label": "ERPNext User Account",
       "options": "User",
-      "description": "Link to the ERPNext user for this provider — they log in here to see their referrals"
+      "description": "Link to the ERPNext user for this provider — they log in here to see their leads"
     }
   ],
   "modified": "2026-08-25 00:00:00.000000",

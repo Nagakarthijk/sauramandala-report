@@ -1,0 +1,64 @@
+{
+  "actions": [],
+  "creation": "2026-10-22 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "service_name", "description", "col_break_1",
+    "price_type", "price_from", "price_to",
+    "turnaround_days", "eligibility"
+  ],
+  "fields": [
+    {
+      "fieldname": "service_name",
+      "fieldtype": "Data",
+      "label": "Service Name",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Small Text",
+      "label": "Description"
+    },
+    {
+      "fieldname": "col_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "price_type",
+      "fieldtype": "Select",
+      "label": "Pricing",
+      "options": "\nFree\nFixed\nRange\nNegotiable",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "price_from",
+      "fieldtype": "Currency",
+      "label": "Price / From (₹)",
+      "depends_on": "eval:['Fixed','Range'].includes(doc.price_type)"
+    },
+    {
+      "fieldname": "price_to",
+      "fieldtype": "Currency",
+      "label": "Price To (₹)",
+      "depends_on": "eval:doc.price_type=='Range'"
+    },
+    {
+      "fieldname": "turnaround_days",
+      "fieldtype": "Int",
+      "label": "Typical Turnaround (days)"
+    },
+    {
+      "fieldname": "eligibility",
+      "fieldtype": "Small Text",
+      "label": "Who can access this"
+    }
+  ],
+  "modified": "2026-10-22 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Drive",
+  "name": "Service Offering",
+  "istable": 1,
+  "owner": "Administrator"
+}

@@ -6,10 +6,19 @@ class Referral(Document):
         if not self.company:
             ent = frappe.get_value("Entrepreneur", self.entrepreneur, "company")
             self.company = ent or frappe.defaults.get_user_default("Company")
+        self._recalc_fees()
+
+    def before_save(self):
+        self._recalc_fees()
 
     def on_update(self):
         if self.status == "COMPLETED" and self.commission_status == "pending":
             self.db_set("commission_status", "confirmed")
+
+    def _recalc_fees(self):
+        val = float(self.transaction_value or 0)
+        self.platform_fee = round(val * float(self.platform_commission_pct or 0) / 100, 2)
+        self.agent_fee    = round(val * float(self.agent_commission_pct or 0) / 100, 2)
 
 
 def has_permission(doc, ptype, user):

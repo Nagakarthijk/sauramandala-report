@@ -6,9 +6,12 @@
   "engine": "InnoDB",
   "field_order": [
     "entrepreneur", "provider", "service", "col_break_1",
-    "status", "commission", "deadline", "escalated",
+    "status", "deadline", "escalated", "payment_mode",
     "section_notes", "notes", "intake_notes",
-    "section_commission", "commission_status", "commission_paid_on"
+    "section_commission", "transaction_value",
+    "platform_commission_pct", "platform_fee",
+    "agent_commission_pct", "agent_fee",
+    "commission_status", "commission_paid_on"
   ],
   "fields": [
     {
@@ -49,11 +52,6 @@
       "in_standard_filter": 1
     },
     {
-      "fieldname": "commission",
-      "fieldtype": "Currency",
-      "label": "Commission (₹)"
-    },
-    {
       "fieldname": "deadline",
       "fieldtype": "Date",
       "label": "Deadline"
@@ -62,6 +60,12 @@
       "fieldname": "escalated",
       "fieldtype": "Check",
       "label": "Escalated"
+    },
+    {
+      "fieldname": "payment_mode",
+      "fieldtype": "Select",
+      "label": "Payment Mode",
+      "options": "\nCash\nUPI\nBank Transfer\nScheme Direct"
     },
     {
       "fieldname": "section_notes",
@@ -81,19 +85,52 @@
     {
       "fieldname": "section_commission",
       "fieldtype": "Section Break",
-      "label": "Commission Payment"
+      "label": "Transaction & Commission"
+    },
+    {
+      "fieldname": "transaction_value",
+      "fieldtype": "Currency",
+      "label": "Transaction Value (₹)",
+      "description": "Total value of the service transaction"
+    },
+    {
+      "fieldname": "platform_commission_pct",
+      "fieldtype": "Percent",
+      "label": "Platform Commission (%)",
+      "default": "10"
+    },
+    {
+      "fieldname": "platform_fee",
+      "fieldtype": "Currency",
+      "label": "Platform Fee (₹)",
+      "read_only": 1,
+      "description": "Auto-calculated: transaction_value × platform_commission_pct"
+    },
+    {
+      "fieldname": "agent_commission_pct",
+      "fieldtype": "Percent",
+      "label": "Agent Commission (%)",
+      "default": "5"
+    },
+    {
+      "fieldname": "agent_fee",
+      "fieldtype": "Currency",
+      "label": "Agent Earning (₹)",
+      "read_only": 1,
+      "description": "Auto-calculated: transaction_value × agent_commission_pct"
     },
     {
       "fieldname": "commission_status",
       "fieldtype": "Select",
       "label": "Commission Status",
       "options": "\npending\nconfirmed\nsettled",
-      "default": "pending"
+      "default": "pending",
+      "in_list_view": 1
     },
     {
       "fieldname": "commission_paid_on",
       "fieldtype": "Date",
-      "label": "Commission Paid On",
+      "label": "Commission Settled On",
       "depends_on": "eval:doc.commission_status=='settled'"
     }
   ],
