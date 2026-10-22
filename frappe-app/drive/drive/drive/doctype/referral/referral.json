@@ -8,6 +8,7 @@
     "entrepreneur", "provider", "service", "col_break_1",
     "status", "deadline", "escalated", "payment_mode",
     "section_notes", "notes", "intake_notes",
+    "section_funding", "funding_stack",
     "section_commission", "transaction_value",
     "platform_commission_pct", "platform_fee",
     "agent_commission_pct", "agent_fee",
@@ -81,6 +82,18 @@
       "fieldname": "intake_notes",
       "fieldtype": "Long Text",
       "label": "Intake Details"
+    },
+    {
+      "fieldname": "section_funding",
+      "fieldtype": "Section Break",
+      "label": "Funding Stack"
+    },
+    {
+      "fieldname": "funding_stack",
+      "fieldtype": "Table",
+      "label": "Funding Lines",
+      "options": "Funding Line",
+      "description": "How this transaction is funded — add one line per funder. Agent can adjust suggested lines."
     },
     {
       "fieldname": "section_commission",

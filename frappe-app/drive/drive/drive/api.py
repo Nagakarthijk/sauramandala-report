@@ -190,16 +190,70 @@ def update_referral(name, updates):
 # ── Providers ─────────────────────────────────────────────────────────────────
 
 @frappe.whitelist()
-def get_providers(service=None):
+def get_providers(service=None, sector=None):
     filters = {"company": _company(), "active": 1}
-    if service:
-        filters["service"] = service
     return frappe.get_list("Provider",
-        fields=["name", "provider_name", "service", "phone",
-                "location", "commission_rate", "sla_days"],
+        fields=["name", "provider_name", "provider_type", "about",
+                "phone", "location", "state", "districts_served",
+                "sectors_served", "entity_types_served",
+                "commission_rate", "sla_days", "verified"],
         filters=filters,
-        order_by="provider_name asc"
+        order_by="verified desc, provider_name asc"
     )
+
+
+@frappe.whitelist()
+def get_funding_instruments(entrepreneur, need=None):
+    """
+    Return funding instruments available for a given entrepreneur.
+    Filters by company, active=1, and eligibility fields (district, sector, entity type, need).
+    Result is ordered: grants first, then loans, then direct payment.
+    """
+    ent = frappe.get_doc("Entrepreneur", entrepreneur)
+    frappe.has_permission("Entrepreneur", doc=ent, throw=True)
+
+    instruments = frappe.get_list("Funding Instrument",
+        fields=["name", "instrument_name", "funding_type", "funder_name",
+                "min_amount", "max_amount", "covers_pct",
+                "eligible_districts", "eligible_sectors",
+                "eligible_entity_types", "eligible_needs",
+                "interest_rate", "tenure_months", "notes"],
+        filters={"company": _company(), "active": 1},
+        order_by="funding_type asc"
+    )
+
+    eligible = []
+    for inst in instruments:
+        # District check
+        if inst.eligible_districts:
+            districts = [d.strip().lower() for d in inst.eligible_districts.split(",")]
+            if ent.location and not any(d in ent.location.lower() for d in districts):
+                continue
+
+        # Sector check
+        if inst.eligible_sectors:
+            sectors = [s.strip().lower() for s in inst.eligible_sectors.split(",")]
+            if ent.sector and ent.sector.lower() not in sectors:
+                continue
+
+        # Entity type check
+        if inst.eligible_entity_types and inst.eligible_entity_types != "All":
+            if ent.entity_type != inst.eligible_entity_types:
+                continue
+
+        # Need check
+        if need and inst.eligible_needs:
+            needs = [n.strip().lower() for n in inst.eligible_needs.split(",")]
+            if need.lower() not in needs:
+                continue
+
+        eligible.append(inst)
+
+    # Sort: grants/schemes first, loans next, direct payment last
+    order = {"CSR Grant": 0, "Government Scheme": 0, "Donor Grant": 0,
+             "MFI Loan": 1, "Direct Payment": 2}
+    eligible.sort(key=lambda x: order.get(x.funding_type, 9))
+    return eligible
 
 
 # ── Conversation Notes ─────────────────────────────────────────────────────────

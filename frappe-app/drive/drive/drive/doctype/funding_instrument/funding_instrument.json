@@ -1,0 +1,152 @@
+{
+  "actions": [],
+  "autoname": "field:instrument_name",
+  "creation": "2026-10-22 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "instrument_name", "funding_type", "funder_name", "col_break_1",
+    "max_amount", "min_amount", "covers_pct",
+    "section_eligibility", "eligible_districts", "eligible_sectors",
+    "eligible_entity_types", "eligible_needs",
+    "section_loan", "interest_rate", "tenure_months",
+    "section_config", "active", "company", "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "instrument_name",
+      "fieldtype": "Data",
+      "label": "Instrument Name",
+      "reqd": 1,
+      "in_list_view": 1,
+      "search_index": 1
+    },
+    {
+      "fieldname": "funding_type",
+      "fieldtype": "Select",
+      "label": "Type",
+      "options": "\nCSR Grant\nGovernment Scheme\nMFI Loan\nDonor Grant\nDirect Payment",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "funder_name",
+      "fieldtype": "Data",
+      "label": "Funder / Scheme Name",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "col_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "max_amount",
+      "fieldtype": "Currency",
+      "label": "Max Amount per Transaction (₹)"
+    },
+    {
+      "fieldname": "min_amount",
+      "fieldtype": "Currency",
+      "label": "Min Amount (₹)"
+    },
+    {
+      "fieldname": "covers_pct",
+      "fieldtype": "Percent",
+      "label": "Covers up to (% of transaction)",
+      "description": "e.g. 50 means this instrument covers at most 50% of the service cost"
+    },
+    {
+      "fieldname": "section_eligibility",
+      "fieldtype": "Section Break",
+      "label": "Eligibility — leave blank for no restriction"
+    },
+    {
+      "fieldname": "eligible_districts",
+      "fieldtype": "Small Text",
+      "label": "Districts (comma-separated)",
+      "description": "Blank = all districts"
+    },
+    {
+      "fieldname": "eligible_sectors",
+      "fieldtype": "Small Text",
+      "label": "Sectors (comma-separated)",
+      "description": "Blank = all sectors"
+    },
+    {
+      "fieldname": "eligible_entity_types",
+      "fieldtype": "Select",
+      "label": "Entity Type",
+      "options": "\nAll\nIndividual\nSHG / Cooperative\nPartnership\nCompany"
+    },
+    {
+      "fieldname": "eligible_needs",
+      "fieldtype": "Small Text",
+      "label": "Applicable Needs (comma-separated)",
+      "description": "e.g. registration,solar,finance — blank = all needs"
+    },
+    {
+      "fieldname": "section_loan",
+      "fieldtype": "Section Break",
+      "label": "Loan Terms",
+      "depends_on": "eval:doc.funding_type=='MFI Loan'"
+    },
+    {
+      "fieldname": "interest_rate",
+      "fieldtype": "Percent",
+      "label": "Interest Rate (% per annum)",
+      "depends_on": "eval:doc.funding_type=='MFI Loan'"
+    },
+    {
+      "fieldname": "tenure_months",
+      "fieldtype": "Int",
+      "label": "Repayment Tenure (months)",
+      "depends_on": "eval:doc.funding_type=='MFI Loan'"
+    },
+    {
+      "fieldname": "section_config",
+      "fieldtype": "Section Break",
+      "label": "Configuration"
+    },
+    {
+      "fieldname": "active",
+      "fieldtype": "Check",
+      "label": "Active",
+      "default": "1",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Programme (Organisation)",
+      "options": "Company",
+      "reqd": 1,
+      "in_standard_filter": 1,
+      "description": "Which NGO programme this instrument belongs to"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Notes / Application Process"
+    }
+  ],
+  "modified": "2026-10-22 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Drive",
+  "name": "Funding Instrument",
+  "naming_rule": "By fieldname",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 0, "delete": 0, "permlevel": 0,
+      "read": 1, "report": 1, "role": "DRIVE Agent", "write": 0
+    },
+    {
+      "create": 1, "delete": 1, "permlevel": 0,
+      "read": 1, "report": 1, "role": "DRIVE Programme Officer", "write": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "track_changes": 1
+}

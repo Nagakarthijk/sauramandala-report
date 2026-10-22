@@ -1,0 +1,70 @@
+{
+  "actions": [],
+  "creation": "2026-10-22 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "instrument", "funding_type", "funder_name", "col_break_1",
+    "amount", "status", "disbursed_on", "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "instrument",
+      "fieldtype": "Link",
+      "label": "Funding Instrument",
+      "options": "Funding Instrument",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "funding_type",
+      "fieldtype": "Select",
+      "label": "Type",
+      "options": "\nCSR Grant\nGovernment Scheme\nMFI Loan\nDonor Grant\nDirect Payment",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "funder_name",
+      "fieldtype": "Data",
+      "label": "Funder",
+      "in_list_view": 1,
+      "description": "Auto-filled from instrument, or enter manually"
+    },
+    {
+      "fieldname": "col_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "amount",
+      "fieldtype": "Currency",
+      "label": "Amount (₹)",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "pending\napproved\ndisbursed\nrejected",
+      "default": "pending",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "disbursed_on",
+      "fieldtype": "Date",
+      "label": "Disbursed On",
+      "depends_on": "eval:doc.status=='disbursed'"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Notes"
+    }
+  ],
+  "modified": "2026-10-22 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Drive",
+  "name": "Funding Line",
+  "istable": 1,
+  "owner": "Administrator"
+}
