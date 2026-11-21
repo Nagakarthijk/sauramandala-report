@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Page — JanNidhi Light</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @media (min-width: 900px)  { html { font-size: 17px; } }
+  @media (min-width: 1280px) { html { font-size: 18px; } }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</head>
+<body class="bg-stone-50 text-stone-800 min-h-screen pb-20 sm:pb-0">
+<div id="nav"></div>
+<main class="max-w-2xl mx-auto sm:px-4 sm:py-8" id="page">
+  <p class="text-sm text-stone-400 px-4 py-8">Loading…</p>
+</main>
+
+<div id="mobile-bar" class="hidden sm:hidden fixed bottom-0 inset-x-0 bg-white border-t border-stone-200 px-4 py-3 flex gap-2 z-40" style="padding-bottom:max(0.75rem,env(safe-area-inset-bottom))">
+  <button id="mbar-support" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-xl py-2.5 text-sm active:scale-[0.99] transition-transform">Support directly</button>
+</div>
+
+<!-- Donation declaration modal -->
+<div id="declare-modal" class="hidden fixed inset-0 bg-black/40 z-50 overflow-y-auto">
+  <div class="max-w-md mx-auto my-8 bg-white rounded-2xl p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="font-black text-stone-900">Declare your support</h2>
+      <button onclick="document.getElementById('declare-modal').classList.add('hidden')" class="text-stone-400 hover:text-stone-700 text-xl leading-none">&times;</button>
+    </div>
+    <p class="text-xs text-stone-500 leading-relaxed">You already sent the money directly — this just puts it on the public record so they can acknowledge it.</p>
+    <label class="block text-xs font-semibold text-stone-500">Amount (₹) *
+      <input id="d-amount" type="number" min="1" required class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
+    </label>
+    <label class="flex items-center gap-2 text-xs text-stone-600">
+      <input id="d-anon" type="checkbox" class="rounded w-4 h-4"> Keep my name hidden from the public page
+    </label>
+    <label class="block text-xs font-semibold text-stone-500">Your name <span id="d-name-req">*</span>
+      <input id="d-name" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
+    </label>
+    <label class="block text-xs font-semibold text-stone-500">Message (optional, public)
+      <input id="d-message" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
+    </label>
+    <label class="flex items-start gap-2 text-xs text-stone-600 bg-amber-50 border border-amber-200 rounded-xl p-3">
+      <input id="d-citizen" type="checkbox" class="rounded mt-0.5 w-4 h-4" required>
+      <span>I am an Indian citizen and these are my own, Indian-sourced funds. I understand this is a <strong>personal gift with no tax benefit</strong>, that foreign-sourced contributions to political activity are prohibited under FCRA, and that JanNidhi Light never handles or can reverse this payment. *</span>
+    </label>
+    <button id="d-submit" class="w-full bg-stone-900 hover:bg-stone-800 active:scale-[0.99] text-white font-semibold py-3 rounded-xl text-sm transition-all">Declare donation</button>
+    <p id="d-msg" class="text-xs min-h-[1rem]"></p>
+  </div>
+</div>
+
+<!-- Report modal -->
+<div id="report-modal" class="hidden fixed inset-0 bg-black/40 z-50 overflow-y-auto">
+  <div class="max-w-md mx-auto my-16 bg-white rounded-2xl p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="font-black text-stone-900">Report this page</h2>
+      <button onclick="document.getElementById('report-modal').classList.add('hidden')" class="text-stone-400 hover:text-stone-700 text-xl leading-none">&times;</button>
+    </div>
+    <textarea id="r-reason" rows="3" placeholder="What's wrong?" class="w-full border border-stone-200 rounded-xl px-3 py-3 text-base"></textarea>
+    <input id="r-contact" placeholder="Your contact (optional)" class="w-full border border-stone-200 rounded-xl px-3 py-3 text-base">
+    <button id="r-submit" class="w-full bg-stone-900 text-white font-semibold py-3 rounded-xl text-sm transition-all">Send report</button>
+    <p id="r-msg" class="text-xs min-h-[1rem]"></p>
+  </div>
+</div>
+
+<div id="qr-lightbox" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-6" onclick="this.classList.add('hidden')">
+  <img id="qr-lightbox-img" src="" class="max-w-full max-h-full bg-white rounded-2xl p-4" alt="UPI QR code, enlarged">
+</div>
+
+<script>
+(async () => {
+  JNL.init();
+  const user = await JNL.getUser();
+  document.getElementById('nav').innerHTML = JNL.navHTML('', user);
+  const $ = id => document.getElementById(id);
+  const slug = new URLSearchParams(location.search).get('u');
+
+  const lightProfile = slug ? await JNL.getLightProfileBySlug(slug) : null;
+  if (!lightProfile) { $('page').innerHTML = '<p class="text-sm text-stone-400 px-4 py-8">Page not found.</p>'; return; }
+  document.title = lightProfile.name + ' — JanNidhi Light';
+
+  if (await JNL.isLightProfileBlocked(lightProfile.id)) {
+    $('page').innerHTML = `
+      <div class="bg-white border border-stone-100 rounded-2xl p-6 text-center">
+        <h1 class="font-black text-stone-900 text-lg">This page has been taken down</h1>
+        <p class="text-sm text-stone-500 mt-2">A platform admin removed this page. If you believe this is a mistake, contact the platform.</p>
+      </div>`;
+    return;
+  }
+
+  const owner = !!(user && lightProfile.user_id === user.id);
+  const tenant = JNL.connectTenant(lightProfile);
+  const profile = await JNL.getTenantProfile(tenant);
+  if (!profile) {
+    $('page').innerHTML = `<p class="text-sm text-stone-400 px-4 py-8">${owner ? 'Finish setting up your page.' : "This page's backend isn't reachable right now."}</p>`;
+    return;
+  }
+
+  const [donations, expenses, updates] = await Promise.all([
+    JNL.getTenantDonations(tenant, profile.id), JNL.getTenantExpenses(tenant, profile.id), JNL.getTenantUpdates(tenant, profile.id)
+  ]);
+  const links = JNL.normalizeLinks(profile.links);
+
+  const ackTotal = donations.filter(d => d.status === 'acknowledged').reduce((s, d) => s + Number(d.amount), 0);
+  const donorCount = new Set(donations.filter(d => d.status === 'acknowledged').map(d => d.anonymous ? d.id : (d.donor_name || d.id))).size;
+  const expTotal = expenses.reduce((s, e) => s + Number(e.amount), 0);
+  const otherInflow = Number(profile.undeclared_inflow_total || 0);
+  const netBalance = ackTotal + otherInflow - expTotal;
+
+  function badge(text, cls, title) { return `<span class="text-[10px] font-bold px-2 py-1 rounded-full ${cls}" title="${JNL.esc(title || '')}">${text}</span>`; }
+
+  $('page').innerHTML = `
+    <header class="bg-white sm:border sm:border-stone-100 sm:rounded-2xl">
+      <div class="h-28 sm:h-36 rounded-t-2xl overflow-hidden ${profile.cover_url ? '' : 'bg-gradient-to-br from-orange-100 via-stone-100 to-stone-200'}">
+        ${profile.cover_url ? `<img src="${JNL.esc(profile.cover_url)}" class="w-full h-full object-cover" alt="">` : ''}
+      </div>
+      <div class="px-4 sm:px-5 pb-5">
+        <div class="-mt-8 sm:-mt-10 relative z-10">
+          ${profile.photo_url
+            ? `<img src="${JNL.esc(profile.photo_url)}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover ring-4 ring-white bg-white" alt="">`
+            : `<div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-stone-300 ring-4 ring-white flex items-center justify-center font-bold text-stone-600 text-lg">${JNL.initials(profile.name)}</div>`}
+        </div>
+        <div class="flex items-start justify-between gap-2">
+          <h1 class="text-xl font-black text-stone-900 mt-2">${JNL.esc(profile.name)}</h1>
+          ${owner ? `<a href="create.html" class="mt-2 shrink-0 border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-3 py-1.5 rounded-xl text-xs transition-colors">Edit page</a>` : ''}
+        </div>
+        ${profile.headline ? `<p class="text-sm font-semibold text-stone-600 mt-0.5">${JNL.esc(profile.headline)}</p>` : ''}
+        <div class="text-xs text-stone-400">${JNL.esc(profile.location || '')}</div>
+        <p class="mt-3 text-sm text-stone-600 leading-relaxed whitespace-pre-line">${JNL.esc(profile.bio || '')}</p>
+
+        ${links.length ? `
+        <div class="mt-4 space-y-2">
+          ${links.map(l => `
+            <a href="${JNL.esc(l.url)}" target="_blank" rel="noopener" class="flex items-center justify-between bg-stone-50 hover:bg-stone-100 border border-stone-100 rounded-xl px-4 py-3 transition-colors">
+              <span class="text-sm font-semibold text-stone-700">${JNL.esc(l.label)}</span>
+              <span class="text-[10px] text-stone-400 truncate ml-2">${JNL.esc(JNL.hostname(l.url))} ↗</span>
+            </a>`).join('')}
+        </div>` : ''}
+
+        <div class="flex items-center gap-2 mt-4">
+          <a href="#pay" class="flex-1 text-center bg-orange-600 hover:bg-orange-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors">Support directly</a>
+          <button id="report-btn" class="text-stone-300 hover:text-red-500 underline text-xs">report</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="px-4 sm:px-0">
+    <p class="text-[11px] text-stone-400 mt-4">This page's data lives on its owner's own backend — JanNidhi Light only ran the one-time human check and the directory listing.</p>
+
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-2 text-center">
+      <div class="bg-white border border-stone-100 rounded-2xl p-3"><div class="font-black text-stone-900 text-sm sm:text-base">${JNL.formatINR(ackTotal)}</div><div class="text-[10px] text-stone-400">Money raised</div></div>
+      <div class="bg-white border border-stone-100 rounded-2xl p-3"><div class="font-black text-stone-900 text-sm sm:text-base">${donorCount}</div><div class="text-[10px] text-stone-400">No. of people donated</div></div>
+      <div class="bg-white border border-stone-100 rounded-2xl p-3"><div class="font-black text-stone-900 text-sm sm:text-base">${JNL.formatINR(expTotal)}</div><div class="text-[10px] text-stone-400">declared expenses</div></div>
+      <div class="bg-white border border-stone-100 rounded-2xl p-3" title="Declared inflows minus declared expenses">
+        <div class="font-black text-sm sm:text-base ${netBalance < 0 ? 'text-red-600' : 'text-emerald-600'}">${netBalance < 0 ? '−' : ''}${JNL.formatINR(Math.abs(netBalance))}</div>
+        <div class="text-[10px] text-stone-400">declared balance</div>
+      </div>
+    </section>
+
+    <section id="pay" class="bg-white border border-stone-100 rounded-2xl p-5 mt-4 scroll-mt-20">
+      <h2 class="font-bold text-stone-900 text-sm mb-1">Support ${JNL.esc(profile.name.split(' ')[0])} directly</h2>
+      <p class="text-xs text-stone-400 mb-3">Pay with your own UPI app. Money goes straight to them — JanNidhi Light never touches it and cannot reverse it.</p>
+      <div class="flex flex-col sm:flex-row gap-4 items-start">
+        ${profile.upi_qr_url
+          ? `<div class="w-full sm:w-72 shrink-0">
+               <button type="button" id="qr-zoom" class="block w-full">
+                 <img src="${JNL.esc(profile.upi_qr_url)}" class="w-full aspect-square object-contain border-2 border-stone-200 rounded-xl bg-white" alt="UPI QR code uploaded by ${JNL.esc(profile.name)}">
+               </button>
+               <span class="text-[10px] text-stone-400 block mt-1">Tap to enlarge for scanning</span>
+             </div>`
+          : `<div class="w-full sm:w-72 aspect-square shrink-0 border border-dashed border-stone-200 rounded-xl flex items-center justify-center text-xs text-stone-300 text-center px-2">No QR uploaded yet</div>`}
+        <div class="text-sm space-y-2 min-w-0 w-full">
+          ${profile.upi_vpa ? `<div><span class="text-xs text-stone-400 block">UPI ID</span><span class="font-mono font-bold text-base select-all break-all">${JNL.esc(profile.upi_vpa)}</span></div>` : ''}
+          ${profile.upi_payee_name ? `<div><span class="text-xs text-stone-400 block">Payments should show the name</span><span class="font-bold">${JNL.esc(profile.upi_payee_name)}</span><p class="text-[10px] text-amber-600 mt-0.5">If your UPI app shows a different name, stop — this page may be impersonating someone.</p></div>` : ''}
+          ${profile.bank_details ? `<div><span class="text-xs text-stone-400 block">Bank transfer</span><span class="whitespace-pre-line text-xs">${JNL.esc(profile.bank_details)}</span></div>` : ''}
+        </div>
+      </div>
+      <button id="declare-btn" class="mt-4 w-full bg-orange-600 hover:bg-orange-700 active:scale-[0.99] text-white font-semibold py-3 rounded-xl text-sm transition-all">I sent money — declare it publicly</button>
+    </section>
+
+    ${owner ? `
+    <section class="bg-stone-900 text-stone-100 rounded-2xl p-5 mt-4 space-y-4">
+      <h2 class="font-bold text-sm">Your console <span class="font-normal text-stone-400">(only you see this)</span></h2>
+      <div id="pending-donations" class="space-y-2"></div>
+      <details class="bg-stone-800 rounded-xl p-3">
+        <summary class="text-xs font-semibold cursor-pointer py-1">+ Post a work update</summary>
+        <div class="mt-2 space-y-2">
+          <input id="u-title" placeholder="Title" class="w-full rounded-lg px-3 py-2.5 text-base text-stone-900">
+          <textarea id="u-body" rows="3" placeholder="What did you do?" class="w-full rounded-lg px-3 py-2.5 text-base text-stone-900"></textarea>
+          <input id="u-media" placeholder="Photo link (optional)" class="w-full rounded-lg px-3 py-2.5 text-base text-stone-900">
+          <button id="u-add" class="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg w-full sm:w-auto">Publish update</button>
+        </div>
+      </details>
+      <details class="bg-stone-800 rounded-xl p-3">
+        <summary class="text-xs font-semibold cursor-pointer py-1">+ Declare an expense</summary>
+        <div class="mt-2 space-y-2">
+          <input id="e-amount" type="number" min="1" placeholder="Amount (₹)" class="w-full rounded-lg px-3 py-2.5 text-base text-stone-900">
+          <input id="e-desc" placeholder="What was it for?" class="w-full rounded-lg px-3 py-2.5 text-base text-stone-900">
+          <input id="e-proof" placeholder="Bill photo link (optional)" class="w-full rounded-lg px-3 py-2.5 text-base text-stone-900">
+          <button id="e-add" class="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg w-full sm:w-auto">Publish expense</button>
+        </div>
+      </details>
+      <p id="owner-msg" class="text-xs text-stone-400 min-h-[1rem]"></p>
+    </section>` : ''}
+
+    <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-8 mb-3">Work updates</h2>
+    <div class="space-y-3">${updates.length ? updates.map(u => `
+      <article class="bg-white border border-stone-100 rounded-2xl p-4">
+        <div class="flex items-baseline justify-between gap-2">
+          <h3 class="font-bold text-stone-900 text-sm">${JNL.esc(u.title)}</h3>
+          <span class="text-[10px] text-stone-400 shrink-0">${JNL.relativeTime(u.created_at)}</span>
+        </div>
+        <p class="mt-1 text-xs text-stone-600 leading-relaxed whitespace-pre-line">${JNL.esc(u.body || '')}</p>
+        ${(u.media_urls || []).map(m => `<img src="${JNL.esc(m)}" class="mt-2 rounded-xl max-h-64 object-cover" alt="">`).join('')}
+      </article>`).join('') : '<p class="text-xs text-stone-400">No work updates yet.</p>'}</div>
+
+    <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-8 mb-3">Declared expenses</h2>
+    <div class="bg-white border border-stone-100 rounded-2xl divide-y divide-stone-100">${expenses.length ? expenses.map(e => `
+      <div class="flex items-center gap-3 px-4 py-3 text-sm">
+        <div class="min-w-0 flex-1">
+          <div class="text-stone-700">${JNL.esc(e.description)}</div>
+          <div class="text-[10px] text-stone-400">${JNL.esc(e.spent_on || '')}</div>
+        </div>
+        ${e.proof_url ? `<a href="${JNL.esc(e.proof_url)}" target="_blank" rel="noopener" class="text-[10px] text-blue-600 underline shrink-0">bill</a>` : '<span class="text-[10px] text-stone-300 shrink-0">no bill</span>'}
+        <div class="font-bold text-stone-900 shrink-0">${JNL.formatINRFull(e.amount)}</div>
+      </div>`).join('') : '<p class="text-xs text-stone-400 p-4">No expenses declared yet.</p>'}</div>
+
+    <h2 class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-8 mb-3">Supporters</h2>
+    <div class="bg-white border border-stone-100 rounded-2xl divide-y divide-stone-100">${donations.length ? donations.map(d => `
+      <div class="flex items-center gap-3 px-4 py-3 text-sm">
+        <div class="min-w-0 flex-1">
+          <div class="text-stone-700">${d.anonymous ? '<em class="text-stone-400">Anonymous supporter</em>' : JNL.esc(d.donor_name || 'Unnamed supporter')}</div>
+          ${d.message ? `<div class="text-[10px] text-stone-400 italic">"${JNL.esc(d.message)}"</div>` : ''}
+          <div class="text-[10px] text-stone-400">${JNL.relativeTime(d.declared_at)}</div>
+        </div>
+        <span class="text-[10px] font-bold px-2 py-1 rounded-full shrink-0 ${d.status === 'acknowledged' ? 'bg-emerald-100 text-emerald-700' : d.status === 'disputed' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}">${d.status}</span>
+        <div class="font-bold text-stone-900 shrink-0">${JNL.formatINRFull(d.amount)}</div>
+      </div>`).join('') : '<p class="text-xs text-stone-400 p-4">No supporters declared yet.</p>'}</div>
+
+    <div id="disclaimer">${JNL.disclaimerHTML()}</div>
+    </div>`;
+
+  $('qr-zoom')?.addEventListener('click', () => { $('qr-lightbox-img').src = profile.upi_qr_url; $('qr-lightbox').classList.remove('hidden'); });
+  $('report-btn').onclick = () => $('report-modal').classList.remove('hidden');
+  $('declare-btn').onclick = () => $('declare-modal').classList.remove('hidden');
+  $('d-anon').onchange = () => { $('d-name-req').textContent = $('d-anon').checked ? '(kept private)' : '*'; };
+  $('mbar-support').onclick = () => document.getElementById('pay').scrollIntoView({ behavior: 'smooth' });
+  const bar = $('mobile-bar');
+  window.addEventListener('scroll', () => { bar.classList.toggle('hidden', window.scrollY < 200); }, { passive: true });
+
+  $('d-submit').onclick = async () => {
+    const dmsg = (t, ok) => { $('d-msg').textContent = t; $('d-msg').className = 'text-xs min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
+    const amount = Number($('d-amount').value);
+    if (!amount || amount <= 0) return dmsg('Enter the amount you sent.');
+    if (!$('d-anon').checked && !$('d-name').value.trim()) return dmsg('Enter your name, or tick anonymous.');
+    if (!$('d-citizen').checked) return dmsg('You must confirm the citizenship / own-funds declaration.');
+    $('d-submit').disabled = true;
+    try {
+      await JNL.declareTenantDonation(tenant, {
+        profile_id: profile.id, amount, anonymous: $('d-anon').checked,
+        donor_name: $('d-anon').checked ? null : $('d-name').value.trim(),
+        message: $('d-message').value.trim()
+      });
+      dmsg('Declared. They will acknowledge it — thank you for supporting them.', true);
+      setTimeout(() => location.reload(), 1500);
+    } catch (err) { dmsg(err.message); $('d-submit').disabled = false; }
+  };
+
+  $('r-submit').onclick = async () => {
+    const rmsg = (t, ok) => { $('r-msg').textContent = t; $('r-msg').className = 'text-xs min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
+    if (!$('r-reason').value.trim()) return rmsg('Describe the problem.');
+    try {
+      await JNL.fileLightReport({ light_profile_id: lightProfile.id, reason: $('r-reason').value.trim(), contact: $('r-contact').value.trim() });
+      rmsg('Report filed. Thank you.', true);
+    } catch (err) { rmsg(err.message); }
+  };
+
+  if (owner) {
+    const omsg = (t, ok) => { $('owner-msg').textContent = t; $('owner-msg').className = 'text-xs min-h-[1rem] ' + (ok ? 'text-emerald-400' : 'text-red-400'); };
+    const pending = donations.filter(d => d.status === 'declared');
+    $('pending-donations').innerHTML = pending.length
+      ? `<p class="text-xs font-semibold text-amber-400">${pending.length} supporter contribution(s) awaiting your acknowledgment:</p>` + pending.map(d => `
+        <div class="bg-stone-800 rounded-xl px-3 py-2 flex items-center gap-2 text-xs flex-wrap">
+          <div class="flex-1 min-w-0"><span class="font-bold">${JNL.formatINRFull(d.amount)}</span> from ${d.anonymous ? 'anonymous' : JNL.esc(d.donor_name || '?')}</div>
+          <button data-ack="${d.id}" class="bg-emerald-600 hover:bg-emerald-500 px-2.5 py-1.5 rounded-lg font-semibold">Acknowledge</button>
+          <button data-dispute="${d.id}" class="bg-stone-700 hover:bg-red-600 px-2.5 py-1.5 rounded-lg">Didn't receive</button>
+        </div>`).join('')
+      : '<p class="text-xs text-stone-500">No donations awaiting acknowledgment.</p>';
+
+    $('pending-donations').addEventListener('click', async (e) => {
+      const ack = e.target.dataset.ack, dis = e.target.dataset.dispute;
+      if (!ack && !dis) return;
+      try { await JNL.resolveTenantDonation(tenant, ack || dis, ack ? 'acknowledged' : 'disputed'); location.reload(); }
+      catch (err) { omsg(err.message); }
+    });
+
+    $('u-add').onclick = async () => {
+      if (!$('u-title').value.trim()) return omsg('Update needs a title.');
+      try {
+        const media = $('u-media').value.trim();
+        await JNL.addTenantUpdate(tenant, { profile_id: profile.id, title: $('u-title').value.trim(), body: $('u-body').value.trim(), media_urls: media ? [media] : [] });
+        location.reload();
+      } catch (err) { omsg(err.message); }
+    };
+
+    $('e-add').onclick = async () => {
+      const amount = Number($('e-amount').value);
+      if (!amount || !$('e-desc').value.trim()) return omsg('Expense needs an amount and description.');
+      try {
+        await JNL.addTenantExpense(tenant, { profile_id: profile.id, amount, description: $('e-desc').value.trim(), proof_url: $('e-proof').value.trim() || null });
+        location.reload();
+      } catch (err) { omsg(err.message); }
+    };
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JanNidhi Light — your own page, your own backend</title>
+<meta name="description" content="Create a public fundraising page in minutes. Your data lives on your own backend — JanNidhi Light only runs the directory and a one-time human check.">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @media (min-width: 900px)  { html { font-size: 17px; } }
+  @media (min-width: 1280px) { html { font-size: 18px; } }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</head>
+<body class="bg-stone-50 text-stone-800 min-h-screen">
+<div id="nav"></div>
+
+<header class="bg-white border-b border-stone-100">
+  <div class="max-w-3xl mx-auto px-4 py-12">
+    <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-stone-900 leading-tight">
+      A link-in-bio page for your work<br class="hidden sm:block"> and your own fundraising.
+    </h1>
+    <p class="mt-4 text-stone-500 max-w-xl leading-relaxed">
+      Create your public page, add your UPI details, post updates and expenses, and let people
+      declare support — same as JanNidhi, except <strong class="text-stone-700">your data lives on your
+      own backend</strong> (your own free Supabase project), not ours. We just run the directory and a
+      quick human check before your page goes live.
+    </p>
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a href="create.html" class="bg-stone-900 hover:bg-stone-800 text-white font-semibold px-5 py-2.5 rounded-xl text-sm">Create your page</a>
+    </div>
+    <div class="mt-8 grid sm:grid-cols-3 gap-3 text-xs text-stone-500">
+      <div class="bg-stone-50 rounded-xl p-3 border border-stone-100"><strong class="text-stone-700 block mb-0.5">Bring your own backend</strong>Your profile, ledger and updates live in your own Supabase project.</div>
+      <div class="bg-stone-50 rounded-xl p-3 border border-stone-100"><strong class="text-stone-700 block mb-0.5">One quick human check</strong>A volunteer verifies you're real before your page goes public.</div>
+      <div class="bg-stone-50 rounded-xl p-3 border border-stone-100"><strong class="text-stone-700 block mb-0.5">No payment gateway</strong>Your own UPI QR, shown like a poster. Money goes straight to you.</div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-3xl mx-auto px-4 py-8">
+  <div class="flex items-center gap-3 mb-4">
+    <input id="search" type="search" placeholder="Search pages by name, place, work…"
+      class="flex-1 border border-stone-200 rounded-xl px-4 py-3 text-base bg-white focus:outline-none focus:ring-2 focus:ring-stone-300">
+  </div>
+  <div id="pages" class="grid sm:grid-cols-2 gap-3"><p class="text-sm text-stone-400">Loading…</p></div>
+  <div id="disclaimer"></div>
+</main>
+
+<script>
+(async () => {
+  JNL.init();
+  const user = await JNL.getUser();
+  document.getElementById('nav').innerHTML = JNL.navHTML('explore', user);
+  document.getElementById('disclaimer').innerHTML = JNL.disclaimerHTML();
+
+  const profiles = await JNL.getApprovedLightProfiles();
+
+  function pageCard(p) {
+    return `
+      <a href="profile.html?u=${encodeURIComponent(p.slug)}" class="bg-white border border-stone-100 rounded-2xl p-4 hover:shadow-md transition-shadow block">
+        <div class="flex items-center gap-3">
+          ${p.photo_url
+            ? `<img src="${JNL.esc(p.photo_url)}" class="w-11 h-11 rounded-full object-cover" alt="">`
+            : `<div class="w-11 h-11 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-500 text-sm">${JNL.initials(p.name)}</div>`}
+          <div class="min-w-0 flex-1">
+            <div class="font-bold text-stone-900 truncate">${JNL.esc(p.name)}</div>
+            <div class="text-xs text-stone-400 truncate">${JNL.esc(p.headline || '')}</div>
+          </div>
+        </div>
+      </a>`;
+  }
+
+  function render(q) {
+    q = (q || '').toLowerCase();
+    const ps = profiles.filter(p => !q || [p.name, p.headline].join(' ').toLowerCase().includes(q));
+    document.getElementById('pages').innerHTML = ps.length ? ps.map(pageCard).join('') : '<p class="text-sm text-stone-400">No pages found.</p>';
+  }
+  render('');
+  document.getElementById('search').addEventListener('input', e => render(e.target.value));
+})();
+</script>
+</body>
+</html>
