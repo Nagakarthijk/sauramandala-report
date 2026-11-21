@@ -11,7 +11,6 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 </head>
@@ -59,28 +58,41 @@
       </section>
     </section>
 
-    <!-- Google Sheet option: zero code, but no OAuth write access for
-         strangers — the owner's own writes go through Google sign-in
-         (below, on the manage page), and donor declarations route through
-         an optional linked Form instead of a button on this page. -->
+    <!-- Google Sheet option: no code to run, but a Sheet alone can only be
+         read, not written to, without opening it up to anyone. The fix is a
+         tiny Apps Script bound to the sheet, deployed as a "Web App" — it
+         runs under the SHEET OWNER'S authority no matter who calls it, so
+         both the owner's own actions and a donor's declaration go through
+         this one URL, straight from this page's normal buttons. -->
     <section id="backend-sheets" class="hidden space-y-5">
       <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed">
         <strong class="block mb-1">Make a Google Sheet with 4 tabs, named exactly as below.</strong>
         Share it as "Anyone with the link can view." Paste the header row into row 1 of each tab:
       </div>
       <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-2" id="sheet-templates"></section>
+
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed">
+        <strong class="block mb-1">Then connect a tiny script so this page can write to it.</strong>
+        In your Sheet: Extensions → Apps Script. Delete whatever's there and paste this in:
+      </div>
+      <div class="bg-white border border-stone-100 rounded-2xl p-4">
+        <div class="flex items-center gap-2">
+          <code id="script-template" class="flex-1 min-w-0 block bg-stone-50 border border-stone-200 rounded-lg px-2 py-2 text-[10px] overflow-x-auto whitespace-pre max-h-40"></code>
+          <button type="button" id="script-copy" class="shrink-0 self-start border border-stone-300 rounded-lg px-2.5 py-2 text-[11px] hover:bg-stone-50">Copy</button>
+        </div>
+        <p class="text-[11px] text-stone-500 mt-2 leading-relaxed">Then: Deploy → New deployment → type "Web app" → Execute as <strong>Me</strong>, Who has access <strong>Anyone</strong> → Deploy → copy the Web app URL it gives you (not the script's editor URL) and paste it below.</p>
+      </div>
+
       <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-3">
         <h2 class="font-bold text-stone-900 text-sm">Your Sheet</h2>
         <label class="block text-xs font-semibold text-stone-500">Google Sheet link
           <input id="gs-url" placeholder="https://docs.google.com/spreadsheets/d/…" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
         </label>
-        <label class="block text-xs font-semibold text-stone-500">Google Form link (optional — lets people declare support without an interactive button)
-          <input id="gs-form" placeholder="https://docs.google.com/forms/d/…" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
-          <span class="text-[10px] text-stone-400">Make a Form with Date/Amount/Name/Message fields whose responses go to this same Sheet's "Donations" tab.</span>
+        <label class="block text-xs font-semibold text-stone-500">Apps Script Web App URL
+          <input id="gs-script" placeholder="https://script.google.com/macros/s/…/exec" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
         </label>
         <button type="button" id="gs-test" class="border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-4 py-2 rounded-xl text-sm">Test connection</button>
         <p id="gs-check" class="text-xs min-h-[1rem]"></p>
-        <p class="text-[11px] text-stone-400">You'll sign in with Google on the next page so JanNidhi Light can write updates/expenses straight to your own Sheet — only you can do this, since it's your own Google account's permission.</p>
       </section>
     </section>
 
@@ -173,7 +185,6 @@
 <script>
 (async () => {
   JNL.init();
-  JNL.initGoogleAuth();
   const user = await JNL.requireAuth();
   if (!user) return;
   document.getElementById('nav').innerHTML = JNL.navHTML('create', user);
@@ -201,6 +212,10 @@
       if (!text) return;
       try { await navigator.clipboard.writeText(text); JNL.toast('Copied'); } catch { JNL.toast(text); }
     });
+    $('script-template').textContent = JNL.SHEETS_APPS_SCRIPT;
+    $('script-copy').onclick = async () => {
+      try { await navigator.clipboard.writeText(JNL.SHEETS_APPS_SCRIPT); JNL.toast('Copied'); } catch { JNL.toast('Could not copy — select the text manually.'); }
+    };
 
     let backendType = 'supabase', backendVerified = false;
     function setBackendType(t) {
@@ -221,10 +236,10 @@
       catch (err) { backendVerified = false; sbmsg(err.message); }
     };
     $('gs-test').onclick = async () => {
-      const url = $('gs-url').value.trim();
+      const url = $('gs-url').value.trim(), scriptUrl = $('gs-script').value.trim();
       if (!url) return gsmsg('Paste your Sheet link first.');
       gsmsg('Checking…');
-      try { await JNL.testTenantConnection('sheets', url); backendVerified = true; gsmsg('✓ Connected — found your "Profile" tab.', true); }
+      try { await JNL.testTenantConnection('sheets', url, scriptUrl); backendVerified = true; gsmsg('✓ Connected — found your "Profile" tab.', true); }
       catch (err) { backendVerified = false; gsmsg(err.message); }
     };
 
@@ -242,14 +257,20 @@
         const url = $('gs-url').value.trim();
         if (!url) return cmsg('Paste your Google Sheet link first.');
         if (!backendVerified) return cmsg('Click "Test connection" first, so we know your sheet is reachable.');
-        base.backend_url = url; base.backend_form_url = $('gs-form').value.trim() || null;
+        base.backend_url = url; base.backend_script_url = $('gs-script').value.trim() || null;
       }
       $('connect-submit').disabled = true;
       cmsg('Creating…', true);
       try {
         lightProfile = await JNL.addLightProfile(base);
         const tenant = JNL.connectTenant(lightProfile);
-        await JNL.upsertTenantProfile(tenant, { slug: lightProfile.slug, name, headline: patch.headline, photo_url: patch.photo_url });
+        try {
+          await JNL.upsertTenantProfile(tenant, { slug: lightProfile.slug, name, headline: patch.headline, photo_url: patch.photo_url });
+        } catch (err) {
+          // A Sheets page with no script URL yet can still exist — it just can't
+          // save profile fields until the script is added on the next page.
+          if (backendType !== 'sheets') throw err;
+        }
         cmsg('Created — now add the rest of your details below.', true);
         location.reload();
       } catch (err) { cmsg(err.message); $('connect-submit').disabled = false; }

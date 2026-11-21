@@ -214,19 +214,24 @@ const JNL = (() => {
       return { type: 'supabase', client: supabase.createClient(lightProfile.backend_url, lightProfile.backend_anon_key) };
     }
     if (lightProfile.backend_type === 'sheets') {
-      return { type: 'sheets', sheetUrl: lightProfile.backend_url, formUrl: lightProfile.backend_form_url || null };
+      return { type: 'sheets', sheetUrl: lightProfile.backend_url, scriptUrl: lightProfile.backend_script_url || null };
     }
     throw new Error('Unsupported backend type.');
   }
-  async function testTenantConnection(backendType, url, anonKey) {
+  async function testTenantConnection(backendType, url, scriptUrl) {
     if (backendType === 'supabase') {
-      const client = supabase.createClient(url, anonKey);
+      const client = supabase.createClient(url, scriptUrl);
       const { error } = await client.from('profiles').select('id').limit(1);
       if (error) throw new Error("Couldn't reach that project's \"profiles\" table — did you run schema-tenant.sql there? (" + error.message + ")");
       return;
     }
-    // sheets: just confirm the Profile tab is reachable and has the right shape.
+    // sheets: confirm the Profile tab is reachable. The script URL (if any)
+    // isn't test-written here — the first real write will surface a clear
+    // error instead of leaving a throwaway row in a brand-new sheet.
     await fetchSheetTab(url, 'Profile');
+    if (scriptUrl && !/^https:\/\/script\.google\.com\/macros\//.test(scriptUrl)) {
+      throw new Error('That doesn’t look like an Apps Script Web App URL — it should start with https://script.google.com/macros/...');
+    }
   }
 
   // ── Google Sheets reader ──────────────────────────────────────────────
@@ -292,63 +297,41 @@ const JNL = (() => {
   }
 
   // ── Google Sheets writer ──────────────────────────────────────────────
-  // Writing needs a real authorization, unlike reading — so this only ever
-  // runs in the PAGE OWNER's own browser, after they sign in with Google
-  // and grant access to just the Sheets scope. The resulting token lives
-  // only in memory, for this tab, for this session — never stored, never
-  // sent anywhere but Google's own API. A donor's browser never touches
-  // this path at all (their declaration goes through a Google Form instead).
-  let _sheetsAccessToken = null, _tokenClient = null;
-  function initGoogleAuth() {
-    if (!isGoogleSheetsAuthConfigured()) return;
-    // The GIS script tag loads async — poll briefly until it's ready.
-    const wait = setInterval(() => {
-      if (typeof google !== 'undefined' && google.accounts) {
-        clearInterval(wait);
-        _tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: JNL_CONFIG.googleClientId,
-          scope: 'https://www.googleapis.com/auth/spreadsheets',
-          callback: () => {}
-        });
-      }
-    }, 100);
-    setTimeout(() => clearInterval(wait), 5000);
+  // Writing needs real authorization, unlike reading — Google gives no safe
+  // way for a stranger's browser to write into someone else's private sheet.
+  // The fix that needs no sign-in from anyone, ever: a tiny Google Apps
+  // Script, bound to the owner's own sheet, deployed as a "Web App." It runs
+  // under the SHEET OWNER'S authority regardless of who calls it, so both
+  // the owner's own actions (posting an update, acknowledging a donation)
+  // and a donor's declaration go through this one URL, straight from our
+  // page's normal buttons — no redirect to a separate Form, no OAuth popup.
+  // See SHEETS_APPS_SCRIPT below for the exact script we ask them to paste in.
+  async function sheetScriptCall(scriptUrl, payload) {
+    if (!scriptUrl) throw new Error("This page hasn't set up a way to write to its sheet yet.");
+    // text/plain avoids a CORS preflight that Apps Script Web Apps don't
+    // handle — Apps Script reads the raw body as JSON regardless of the
+    // declared content type, so this is just a browser-compatibility trick.
+    const res = await fetch(scriptUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+    const data = await res.json().catch(() => ({ ok: false, error: 'Unexpected response from the script — check it’s deployed with access "Anyone".' }));
+    if (!data.ok) throw new Error(data.error || "Couldn't write to the sheet.");
+    return data;
   }
-  function isGoogleSheetsAuthConfigured() { return !!(JNL_CONFIG.googleClientId && !JNL_CONFIG.googleClientId.includes('YOUR_')); }
-  function isGoogleSheetsConnected() { return !!_sheetsAccessToken; }
-  function connectGoogleSheets() {
-    return new Promise((resolve, reject) => {
-      if (!_tokenClient) return reject(new Error("Google sign-in isn't configured for this site yet."));
-      _tokenClient.callback = (resp) => {
-        if (resp.error) return reject(new Error(resp.error));
-        _sheetsAccessToken = resp.access_token;
-        resolve(resp.access_token);
-      };
-      _tokenClient.requestAccessToken({ prompt: _sheetsAccessToken ? '' : 'consent' });
-    });
+  const SHEETS_APPS_SCRIPT = `function doPost(e) {
+  var data = JSON.parse(e.postData.contents);
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(data.tab);
+  if (!sheet) return respond({ ok: false, error: 'No tab named "' + data.tab + '"' });
+  try {
+    if (data.action === 'append') sheet.appendRow(data.row);
+    else if (data.action === 'set_range') sheet.getRange(data.range).setValues(data.values);
+    else return respond({ ok: false, error: 'Unknown action' });
+    return respond({ ok: true });
+  } catch (err) {
+    return respond({ ok: false, error: String(err) });
   }
-  function spreadsheetIdFromUrl(sheetUrl) {
-    const m = String(sheetUrl || '').match(/\/d\/([a-zA-Z0-9-_]+)/);
-    return m ? m[1] : null;
-  }
-  async function sheetsApiCall(sheetUrl, path, method, body) {
-    if (!_sheetsAccessToken) await connectGoogleSheets();
-    const id = spreadsheetIdFromUrl(sheetUrl);
-    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}/${path}`, {
-      method, headers: { Authorization: `Bearer ${_sheetsAccessToken}`, 'Content-Type': 'application/json' },
-      body: body ? JSON.stringify(body) : undefined
-    });
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      throw new Error(e.error?.message || "Couldn't write to the sheet — make sure you're signed in with the Google account that owns it.");
-    }
-    return res.json();
-  }
-  const sheetsApiAppend = (sheetUrl, tab, rowValues) =>
-    sheetsApiCall(sheetUrl, `values/${encodeURIComponent(tab)}!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, 'POST', { values: [rowValues] });
-  const sheetsApiUpdateRange = (sheetUrl, tab, a1Range, values2D) =>
-    sheetsApiCall(sheetUrl, `values/${encodeURIComponent(tab)}!${a1Range}?valueInputOption=USER_ENTERED`, 'PUT', { values: values2D });
-
+}
+function respond(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}`;
 
   // ── Tenant data — a Light profile page only ever talks to ONE tenant
   // at a time, so every call below takes that tenant object explicitly
@@ -374,7 +357,7 @@ const JNL = (() => {
       const current = await getTenantProfile(tenant);
       const merged = { ...current, ...patch };
       const values = PROFILE_FIELD_ORDER.map(f => [f === 'links' ? linksArrayToString(merged.links) : (merged[f] ?? '')]);
-      await sheetsApiUpdateRange(tenant.sheetUrl, 'Profile', `B2:B${1 + PROFILE_FIELD_ORDER.length}`, values);
+      await sheetScriptCall(tenant.scriptUrl, { action: 'set_range', tab: 'Profile', range: `B2:B${1 + PROFILE_FIELD_ORDER.length}`, values });
       return merged;
     }
     const existing = await getTenantProfile(tenant);
@@ -401,7 +384,7 @@ const JNL = (() => {
   async function addTenantUpdate(tenant, row) {
     if (tenant === 'demo') throw new Error('Demo mode.');
     if (tenant.type === 'sheets') {
-      return sheetsApiAppend(tenant.sheetUrl, 'Updates', [new Date().toISOString().slice(0, 10), row.title, row.body || '', (row.media_urls || [])[0] || '']);
+      return sheetScriptCall(tenant.scriptUrl, { action: 'append', tab: 'Updates', row: [new Date().toISOString().slice(0, 10), row.title, row.body || '', (row.media_urls || [])[0] || ''] });
     }
     const { error } = await tenant.client.from('work_updates').insert(row);
     if (error) throw new Error(error.message);
@@ -420,7 +403,7 @@ const JNL = (() => {
   async function addTenantExpense(tenant, row) {
     if (tenant === 'demo') throw new Error('Demo mode.');
     if (tenant.type === 'sheets') {
-      return sheetsApiAppend(tenant.sheetUrl, 'Expenses', [row.spent_on || new Date().toISOString().slice(0, 10), row.amount, row.description, row.proof_url || '']);
+      return sheetScriptCall(tenant.scriptUrl, { action: 'append', tab: 'Expenses', row: [row.spent_on || new Date().toISOString().slice(0, 10), row.amount, row.description, row.proof_url || ''] });
     }
     const { error } = await tenant.client.from('expenses').insert(row);
     if (error) throw new Error(error.message);
@@ -441,7 +424,12 @@ const JNL = (() => {
   }
   async function declareTenantDonation(tenant, row) {
     if (tenant === 'demo') throw new Error('Demo mode.');
-    if (tenant.type === 'sheets') throw new Error('This page declares support through its own Google Form, not here.');
+    if (tenant.type === 'sheets') {
+      return sheetScriptCall(tenant.scriptUrl, {
+        action: 'append', tab: 'Donations',
+        row: [new Date().toISOString().slice(0, 10), row.amount, row.anonymous ? '' : (row.donor_name || ''), row.anonymous ? 'yes' : 'no', row.message || '', 'declared', '']
+      });
+    }
     const { error } = await tenant.client.from('donations').insert({ ...row, status: 'declared', citizen_declared: true });
     if (error) throw new Error(error.message);
   }
@@ -449,7 +437,7 @@ const JNL = (() => {
     if (tenant === 'demo') throw new Error('Demo mode.');
     if (tenant.type === 'sheets') {
       const sheetRow = Number(String(id).slice(1)) + 2; // header is row 1, data starts at row 2
-      return sheetsApiUpdateRange(tenant.sheetUrl, 'Donations', `F${sheetRow}:F${sheetRow}`, [[status]]);
+      return sheetScriptCall(tenant.scriptUrl, { action: 'set_range', tab: 'Donations', range: `F${sheetRow}:F${sheetRow}`, values: [[status]] });
     }
     const { error } = await tenant.client.from('donations').update({ status, resolved_at: new Date().toISOString() }).eq('id', id);
     if (error) throw new Error(error.message);
@@ -536,10 +524,9 @@ const JNL = (() => {
     submitLightProfileReview, getAllLightProfilesForAdmin, blockLightProfile, unblockLightProfile, getAllLightReportsForAdmin,
     getAllLightVolunteers, getPendingLightProfilesForReview, findLightProfileForReview,
     connectTenant, testTenantConnection,
-    initGoogleAuth, isGoogleSheetsAuthConfigured, isGoogleSheetsConnected, connectGoogleSheets,
     getTenantProfile, upsertTenantProfile, getTenantUpdates, addTenantUpdate, getTenantExpenses, addTenantExpense,
     getTenantDonations, declareTenantDonation, resolveTenantDonation,
-    googleSheetTabCsvUrl, SHEETS_TEMPLATE,
+    googleSheetTabCsvUrl, SHEETS_TEMPLATE, SHEETS_APPS_SCRIPT,
     slugify, esc, initials, formatINR, formatINRFull, relativeTime, hostname, normalizeLinks, toast,
     disclaimerHTML, navHTML,
     get DEMO() { return DEMO; }
