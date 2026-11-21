@@ -52,11 +52,34 @@
 // Leave this as the placeholder and create.html falls back to walking
 // people through building their own Sheet and script from scratch.
 //
+// ── supabaseOAuthClientId (optional, but this is THE one-click option —
+// click "Connect with Supabase", sign in, approve, and your project and
+// tables get created for you automatically) ─────────────────────────────
+// 1. https://supabase.com/dashboard/org/_/apps → Create OAuth App
+// 2. Redirect URL: your site's create.html, e.g.
+//    https://your-site.netlify.app/create.html
+// 3. Copy the Client ID below (this one's fine to ship publicly, like a
+//    Supabase anon key — it only identifies the app, it isn't the secret).
+// 4. The Client Secret from the same screen does NOT go here — it's a
+//    secret for the server-side piece only:
+//      supabase functions deploy supabase-connect --project-ref <your-central-project-ref>
+//      supabase secrets set --project-ref <ref> \
+//        SUPABASE_OAUTH_CLIENT_ID=<client id> \
+//        SUPABASE_OAUTH_CLIENT_SECRET=<client secret> \
+//        SUPABASE_OAUTH_REDIRECT_URI=<the same redirect URL as step 2>
+//    (see supabase/functions/supabase-connect/index.ts for what it does —
+//    the only server-side code in this whole product, and it never
+//    touches anyone's actual page data, only the one-time project setup.)
+//
+// Leave this as the placeholder and create.html falls back to the manual
+// "paste your own project's URL and anon key" flow for Supabase.
+//
 // While the placeholder centralUrl is untouched, the site runs in DEMO MODE
 // with one sample page so you can preview it without a backend.
 
 const JNL_CONFIG = {
   centralUrl: 'https://YOUR-PROJECT-REF.supabase.co',
   centralAnonKey: 'YOUR_ANON_KEY',
-  sheetsTemplateUrl: 'YOUR_TEMPLATE_SHEET_SHARE_URL'
+  sheetsTemplateUrl: 'YOUR_TEMPLATE_SHEET_SHARE_URL',
+  supabaseOAuthClientId: 'YOUR_SUPABASE_OAUTH_CLIENT_ID'
 };

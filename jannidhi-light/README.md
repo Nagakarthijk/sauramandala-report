@@ -10,31 +10,34 @@ donation declarations.
 
 Every changemaker picks one when they create their page:
 
-- **Supabase** — a free Supabase project running `schema-tenant.sql`. Fully
-  interactive: donors declare support and the owner acknowledges/disputes,
-  logs expenses, and posts updates, all from buttons right on the page,
-  because a Supabase project's anon key can safely be trusted to write.
+- **Supabase** — fully interactive: donors declare support and the owner
+  acknowledges/disputes, logs expenses, and posts updates, all from buttons
+  right on the page, because a Supabase project's anon key can safely be
+  trusted to write. If the operator has registered a Supabase OAuth App
+  (see Setup below), this is **one click** — sign in, approve, and the
+  project and its tables get created automatically, nothing to copy or
+  paste. Without that, it falls back to pasting in an existing project's
+  URL and anon key (after running `schema-tenant.sql` there by hand).
 - **Google Sheet** — a plain spreadsheet with four tabs, no SQL and barely
   any code. Reading is a plain public CSV fetch (no key, no auth). Writing
   goes through a small Apps Script, bound to the sheet and deployed as a
   "Web App" — it runs under the *sheet owner's* authority no matter who
   calls it, so both the owner's own actions (updates, expenses, acknowledging
   a donation) and a stranger's donation declaration go through the same one
-  URL, straight from buttons on the page — no OAuth, no sign-in, no redirect
-  to a separate Form.
+  URL, straight from buttons on the page. If the operator has set up a
+  template Sheet (see Setup below), getting one is a single "Make a copy"
+  click instead of building the tabs and script from scratch.
 
 Both are real, supported choices — pick whichever trade-off between "fully
 interactive out of the box" and "nothing to run but a spreadsheet" fits.
 
 ## How it works
 
-1. **Set up your own backend** — either a free Supabase project (run
-   `schema-tenant.sql` there) or a Google Sheet with the four tabs the app
-   templates for you, plus a small Apps Script (also templated, copy-paste)
-   deployed as a Web App.
+1. **Connect a backend** — click "Connect with Supabase" (if available) or
+   "Make my copy" of the Sheet template (if available), or set either one
+   up manually.
 2. **Come to JanNidhi Light, sign up** (email or Google), and create your
-   page: paste in your backend's details, fill in your name and a photo
-   link, and submit.
+   page: fill in your name and a photo link, connect your backend, submit.
 3. **A volunteer reviews it** — a quick human check that you're a real
    person, maybe a short conversation. Your page's own link already works
    the moment you create it; review only decides whether it's listed in the
@@ -50,15 +53,16 @@ interactive out of the box" and "nothing to run but a spreadsheet" fits.
   *pointer* to each changemaker's backend (type, URL, and — for Supabase —
   the anon key, or — for Sheets — the Apps Script URL). This is the only
   database JanNidhi Light's own Supabase project needs.
-- **`schema-tenant.sql`** — run by *every individual changemaker who picks
-  Supabase*, in their own separate, free project. Holds their real profile,
-  work updates, expenses, and donations. JanNidhi Light connects to it live,
-  in each visitor's own browser, using the project's public anon key — the
+- **`schema-tenant.sql`** — the schema every Supabase-backed changemaker's
+  project ends up running — either by hand, in their own project's SQL
+  editor, or automatically by the `supabase-connect` Edge Function if the
+  operator has set up one-click connect. Holds their real profile, work
+  updates, expenses, and donations. JanNidhi Light connects to it live, in
+  each visitor's own browser, using the project's public anon key — the
   same way any Supabase frontend talks to its own backend. Nothing is
-  proxied, cached, or copied into JanNidhi Light's own database. (A changemaker
-  who picks Google Sheets skips this file entirely — they just need the
-  four-tab spreadsheet and Apps Script the app's create flow templates for
-  them.)
+  proxied, cached, or copied into JanNidhi Light's own database. (A
+  changemaker who picks Google Sheets skips this file entirely — they just
+  need the four-tab spreadsheet and Apps Script.)
 
 ## What's deliberately simplified vs. JanNidhi proper
 
@@ -81,6 +85,12 @@ the full JanNidhi:
   runs under your authority regardless of who calls it. JanNidhi Light never
   displays your own script URL to anyone but you, but treat it like a
   password too.
+- **The one-click Supabase connect needs the operator to run one small
+  server-side function** (`supabase/functions/supabase-connect`) — the only
+  server anywhere in this product, and it only ever brokers the few-seconds
+  OAuth handshake + one-time project setup. It never sees, stores, or
+  forwards anyone's actual profile/ledger data; nothing it touches is kept
+  anywhere after it returns a project's URL and anon key.
 
 All of this is additive-only relative to JanNidhi proper, which is untouched
 and lives alongside this as a separate, fuller-featured product for anyone
@@ -95,19 +105,32 @@ who'd rather have JanNidhi host their ledger directly.
 2. **Bootstrap the first admin**: in the Supabase SQL editor of *that same*
    central project, `insert into light_platform_admins (user_id) values
    ('<your-auth-user-id>');` after signing up once through the site.
-3. **Each changemaker's own backend**: Supabase users create their project
-   and run `schema-tenant.sql` themselves; Sheets users make the four-tab
-   spreadsheet and paste the provided Apps Script into it, following the
-   in-app instructions and copyable templates on `create.html` — nothing
-   extra to configure on the operator's side for this option.
+3. **One-click "Connect with Supabase" (optional, but the whole point of
+   doing this)**: register an OAuth App at
+   supabase.com/dashboard/org/_/apps, pointing its redirect URL at your
+   `create.html`. Put the Client ID in `config.js`. Deploy the Edge
+   Function with the Client ID, Client Secret, and redirect URL as secrets
+   — full commands are in the comment at the top of
+   `supabase/functions/supabase-connect/index.ts`. Without this, Supabase
+   signup falls back to the manual paste-your-project-in flow.
+4. **One-click Google Sheets template (optional)**: build one master Sheet
+   with the 4 tabs + the Apps Script already pasted in (but not deployed),
+   share it as viewable, and put its link in `config.js`'s
+   `sheetsTemplateUrl` — full steps are in `config.js`'s comments. Without
+   this, Sheets signup falls back to building the tabs and script from
+   scratch.
 
 ## Files
 
 - `config.js` / `app.js` — central registry client, both tenant-connection
   adapters (Supabase client + Google Sheets CSV reader / Apps Script
-  writer), and shared UI helpers.
+  writer), the Supabase OAuth helpers, and shared UI helpers.
+- `supabase/functions/supabase-connect/` — the one server-side piece: an
+  Edge Function that exchanges a Supabase OAuth code and provisions a new
+  tenant project (creates it, runs the schema, returns its anon key).
 - `schema-central.sql` — run once, by the JanNidhi Light operator.
-- `schema-tenant.sql` — run by changemakers who pick the Supabase backend.
+- `schema-tenant.sql` — the schema a Supabase-backed tenant project runs
+  (by hand, or automatically via the Edge Function).
 - `index.html` — public directory of approved pages.
 - `create.html` — two-step signup: pick and connect a backend, then manage
   your page.

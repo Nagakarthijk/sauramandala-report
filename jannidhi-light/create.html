@@ -38,24 +38,37 @@
          acknowledges/logs expenses, all from buttons on the page), because
          a Supabase project's anon key can safely be trusted to write. -->
     <section id="backend-supabase" class="space-y-5">
-      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed">
-        <strong class="block mb-1">You'll need a free Supabase project of your own.</strong>
-        1. Go to <a href="https://supabase.com" target="_blank" rel="noopener" class="underline">supabase.com</a> → New project (free tier).
-        2. SQL editor → paste and run <a href="schema-tenant.sql" target="_blank" class="underline">schema-tenant.sql</a>.
-        3. Project Settings → API → copy the Project URL and anon public key below.
-        Treat that anon key like a password to your page's data — don't share it anywhere public except here.
+      <!-- Shown when the operator has registered a Supabase OAuth app
+           (config.js supabaseOAuthClientId) — sign in, approve, and the
+           project + tables get created automatically. -->
+      <div id="supabase-oauth" class="hidden space-y-3">
+        <p class="text-sm text-stone-500 leading-relaxed">Sign in with your Supabase account and approve access — your project and its tables get created for you automatically, nothing to copy or paste.</p>
+        <button type="button" id="sb-oauth-connect" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-semibold py-3 rounded-xl text-sm transition-all">Connect with Supabase →</button>
+        <p id="sb-oauth-msg" class="text-xs text-center min-h-[1rem]"></p>
+        <p class="text-xs text-stone-400 text-center"><button type="button" id="sb-manual-toggle" class="underline hover:text-stone-600">Already have a Supabase project? Enter it manually.</button></p>
       </div>
-      <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-3">
-        <h2 class="font-bold text-stone-900 text-sm">Your Supabase project</h2>
-        <label class="block text-xs font-semibold text-stone-500">Project URL
-          <input id="sb-url" placeholder="https://xxxxx.supabase.co" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
-        </label>
-        <label class="block text-xs font-semibold text-stone-500">Anon public key
-          <input id="sb-key" placeholder="eyJhbGciOi…" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
-        </label>
-        <button type="button" id="sb-test" class="border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-4 py-2 rounded-xl text-sm">Test connection</button>
-        <p id="sb-check" class="text-xs min-h-[1rem]"></p>
-      </section>
+
+      <!-- Fallback: paste in an existing project's own URL/key. -->
+      <div id="supabase-manual" class="space-y-5">
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed">
+          <strong class="block mb-1">You'll need a free Supabase project of your own.</strong>
+          1. Go to <a href="https://supabase.com" target="_blank" rel="noopener" class="underline">supabase.com</a> → New project (free tier).
+          2. SQL editor → paste and run <a href="schema-tenant.sql" target="_blank" class="underline">schema-tenant.sql</a>.
+          3. Project Settings → API → copy the Project URL and anon public key below.
+          Treat that anon key like a password to your page's data — don't share it anywhere public except here.
+        </div>
+        <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-3">
+          <h2 class="font-bold text-stone-900 text-sm">Your Supabase project</h2>
+          <label class="block text-xs font-semibold text-stone-500">Project URL
+            <input id="sb-url" placeholder="https://xxxxx.supabase.co" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
+          </label>
+          <label class="block text-xs font-semibold text-stone-500">Anon public key
+            <input id="sb-key" placeholder="eyJhbGciOi…" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
+          </label>
+          <button type="button" id="sb-test" class="border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-4 py-2 rounded-xl text-sm">Test connection</button>
+          <p id="sb-check" class="text-xs min-h-[1rem]"></p>
+        </section>
+      </div>
     </section>
 
     <!-- Google Sheet option: no code to run, but a Sheet alone can only be
@@ -216,9 +229,54 @@
   const msg  = (t, ok) => { $('msg').textContent = t; $('msg').className = 'text-xs text-center min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
   const cmsg = (t, ok) => { $('connect-msg').textContent = t; $('connect-msg').className = 'text-xs text-center min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
   const sbmsg = (t, ok) => { $('sb-check').textContent = t; $('sb-check').className = 'text-xs min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-amber-600'); };
+  const sboauthmsg = (t, ok) => { $('sb-oauth-msg').textContent = t; $('sb-oauth-msg').className = 'text-xs text-center min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
   const gsmsg = (t, ok) => { $('gs-check').textContent = t; $('gs-check').className = 'text-xs min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-amber-600'); };
 
   let lightProfile = await JNL.getMyLightProfile();
+
+  // Finishes signup for any backend type: create the central directory
+  // entry, then write the basics into the tenant's own Profile. Shared by
+  // the manual-submit button and the Supabase OAuth return below, since
+  // both end up with the same {base, patch} shape.
+  async function finishSignup(base, patch) {
+    lightProfile = await JNL.addLightProfile(base);
+    const tenant = JNL.connectTenant(lightProfile);
+    try {
+      await JNL.upsertTenantProfile(tenant, { slug: lightProfile.slug, name: patch.name, headline: patch.headline, photo_url: patch.photo_url });
+    } catch (err) {
+      // A Sheets page with no script URL yet can still exist — it just can't
+      // save profile fields until the script is added on the next page.
+      if (base.backend_type !== 'sheets') throw err;
+    }
+    location.reload();
+  }
+
+  // ── Returning from Supabase's OAuth consent screen ───────────────────
+  // Handled before anything else renders: if we're back with a code, finish
+  // the signup using the name/headline/photo stashed before we navigated
+  // away (a full-page redirect loses in-memory form state).
+  const returnParams = new URLSearchParams(location.search);
+  const oauthCode = returnParams.get('code'), oauthState = returnParams.get('state');
+  if (oauthCode && !lightProfile) {
+    history.replaceState(null, '', location.pathname);
+    const pending = JSON.parse(sessionStorage.getItem('jnl_pending_signup') || 'null');
+    if (!pending || pending.state !== oauthState) {
+      $('step-connect').classList.remove('hidden');
+      cmsg("That sign-in link looks like it expired — please try \"Connect with Supabase\" again.");
+    } else {
+      $('step-connect').classList.remove('hidden');
+      cmsg('Setting up your Supabase project — this can take about a minute…', true);
+      try {
+        const { backend_url, backend_anon_key } = await JNL.connectSupabaseViaOAuth(oauthCode, JNL.slugify(pending.patch.name));
+        sessionStorage.removeItem('jnl_pending_signup');
+        await finishSignup(
+          { ...pending.patch, slug: JNL.slugify(pending.patch.name), backend_type: 'supabase', backend_url, backend_anon_key },
+          pending.patch
+        );
+      } catch (err) { cmsg(err.message); }
+    }
+    return;
+  }
 
   if (!lightProfile) {
     $('step-connect').classList.remove('hidden');
@@ -258,6 +316,20 @@
       showSheetsManual(true);
     }
 
+    // Lead with one-click "Connect with Supabase" when the operator has
+    // registered an OAuth app (config.js supabaseOAuthClientId) — falls
+    // back to pasting in an existing project otherwise.
+    function showSupabaseManual(manual) {
+      $('supabase-oauth').classList.toggle('hidden', manual);
+      $('supabase-manual').classList.toggle('hidden', !manual);
+    }
+    if (JNL.isSupabaseOAuthConfigured()) {
+      showSupabaseManual(false);
+      $('sb-manual-toggle').onclick = () => showSupabaseManual(true);
+    } else {
+      showSupabaseManual(true);
+    }
+
     let backendType = 'supabase', backendVerified = false;
     function setBackendType(t) {
       backendType = t; backendVerified = false;
@@ -284,6 +356,16 @@
       catch (err) { backendVerified = false; gsmsg(err.message); }
     };
 
+    $('sb-oauth-connect').onclick = () => {
+      const name = $('c-name').value.trim();
+      if (!name) return cmsg('Fill in your name below first.');
+      const state = crypto.randomUUID();
+      const patch = { name, headline: $('c-headline').value.trim(), photo_url: $('c-photo').value.trim() || null };
+      sessionStorage.setItem('jnl_pending_signup', JSON.stringify({ state, patch }));
+      const redirectUri = location.origin + location.pathname;
+      location.href = JNL.supabaseOAuthAuthorizeUrl(redirectUri, state);
+    };
+
     $('connect-submit').onclick = async () => {
       const name = $('c-name').value.trim();
       if (!name) return cmsg('Name is required.');
@@ -303,17 +385,7 @@
       $('connect-submit').disabled = true;
       cmsg('Creating…', true);
       try {
-        lightProfile = await JNL.addLightProfile(base);
-        const tenant = JNL.connectTenant(lightProfile);
-        try {
-          await JNL.upsertTenantProfile(tenant, { slug: lightProfile.slug, name, headline: patch.headline, photo_url: patch.photo_url });
-        } catch (err) {
-          // A Sheets page with no script URL yet can still exist — it just can't
-          // save profile fields until the script is added on the next page.
-          if (backendType !== 'sheets') throw err;
-        }
-        cmsg('Created — now add the rest of your details below.', true);
-        location.reload();
+        await finishSignup(base, patch);
       } catch (err) { cmsg(err.message); $('connect-submit').disabled = false; }
     };
     return;

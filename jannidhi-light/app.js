@@ -234,6 +234,31 @@ const JNL = (() => {
     }
   }
 
+  // ── One-click "Connect with Supabase" ────────────────────────────────
+  // The only server-side piece in this whole product: exchanging an OAuth
+  // code for an access token needs a secret that can never sit in a
+  // browser, so that one step (and the few Management API calls right
+  // after it — create a project, run the schema, fetch the anon key) run
+  // in a small Edge Function instead. It never sees or stores anyone's
+  // actual profile/ledger data — only brokers the one-time project setup.
+  // See supabase/functions/supabase-connect/index.ts.
+  function isSupabaseOAuthConfigured() {
+    return !!(JNL_CONFIG.supabaseOAuthClientId && !JNL_CONFIG.supabaseOAuthClientId.includes('YOUR_'));
+  }
+  function supabaseOAuthAuthorizeUrl(redirectUri, state) {
+    const params = new URLSearchParams({ client_id: JNL_CONFIG.supabaseOAuthClientId, redirect_uri: redirectUri, response_type: 'code', state });
+    return `https://api.supabase.com/v1/oauth/authorize?${params.toString()}`;
+  }
+  async function connectSupabaseViaOAuth(code, projectName) {
+    const res = await fetch(`${JNL_CONFIG.centralUrl}/functions/v1/supabase-connect`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${JNL_CONFIG.centralAnonKey}` },
+      body: JSON.stringify({ code, projectName })
+    });
+    const data = await res.json().catch(() => ({ error: 'Unexpected response setting up your project.' }));
+    if (!res.ok || data.error) throw new Error(data.error || "Couldn't connect your Supabase account.");
+    return data; // { backend_url, backend_anon_key }
+  }
+
   // ── Google Sheets reader ──────────────────────────────────────────────
   // Plain client-side fetch of Google's public CSV export for one named
   // tab — no API key, no auth, works for any sheet shared "Anyone with the
@@ -538,6 +563,7 @@ function respond(obj) {
     submitLightProfileReview, getAllLightProfilesForAdmin, blockLightProfile, unblockLightProfile, getAllLightReportsForAdmin,
     getAllLightVolunteers, getPendingLightProfilesForReview, findLightProfileForReview,
     connectTenant, testTenantConnection,
+    isSupabaseOAuthConfigured, supabaseOAuthAuthorizeUrl, connectSupabaseViaOAuth,
     getTenantProfile, upsertTenantProfile, getTenantUpdates, addTenantUpdate, getTenantExpenses, addTenantExpense,
     getTenantDonations, declareTenantDonation, resolveTenantDonation,
     googleSheetTabCsvUrl, SHEETS_TEMPLATE, SHEETS_APPS_SCRIPT, isSheetsTemplateConfigured, sheetsTemplateCopyUrl,
