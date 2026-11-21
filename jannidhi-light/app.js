@@ -333,6 +333,20 @@ function respond(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }`;
 
+  // Set once by the platform operator (see config.js) after building ONE
+  // master template Sheet with the 4 tabs + this script already in place.
+  // Every changemaker who picks Sheets then just copies it — no hand-built
+  // tabs, no pasting code — and only has to deploy their own copy, the one
+  // step Google requires a human to click no matter what.
+  function isSheetsTemplateConfigured() {
+    return !!(JNL_CONFIG.sheetsTemplateUrl && !JNL_CONFIG.sheetsTemplateUrl.includes('YOUR_'));
+  }
+  function sheetsTemplateCopyUrl() {
+    if (!isSheetsTemplateConfigured()) return null;
+    const m = String(JNL_CONFIG.sheetsTemplateUrl).match(/\/d\/([a-zA-Z0-9-_]+)/);
+    return m ? `https://docs.google.com/spreadsheets/d/${m[1]}/copy` : null;
+  }
+
   // ── Tenant data — a Light profile page only ever talks to ONE tenant
   // at a time, so every call below takes that tenant object explicitly
   // rather than threading a table name through a shared helper.
@@ -526,7 +540,7 @@ function respond(obj) {
     connectTenant, testTenantConnection,
     getTenantProfile, upsertTenantProfile, getTenantUpdates, addTenantUpdate, getTenantExpenses, addTenantExpense,
     getTenantDonations, declareTenantDonation, resolveTenantDonation,
-    googleSheetTabCsvUrl, SHEETS_TEMPLATE, SHEETS_APPS_SCRIPT,
+    googleSheetTabCsvUrl, SHEETS_TEMPLATE, SHEETS_APPS_SCRIPT, isSheetsTemplateConfigured, sheetsTemplateCopyUrl,
     slugify, esc, initials, formatINR, formatINRFull, relativeTime, hostname, normalizeLinks, toast,
     disclaimerHTML, navHTML,
     get DEMO() { return DEMO; }

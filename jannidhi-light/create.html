@@ -65,22 +65,46 @@
          both the owner's own actions and a donor's declaration go through
          this one URL, straight from this page's normal buttons. -->
     <section id="backend-sheets" class="hidden space-y-5">
-      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed">
-        <strong class="block mb-1">Make a Google Sheet with 4 tabs, named exactly as below.</strong>
-        Share it as "Anyone with the link can view." Paste the header row into row 1 of each tab:
+      <!-- Shown when the operator has set up a template Sheet (config.js
+           sheetsTemplateUrl) — by far the easiest path: a real Google Drive
+           feature duplicates the tabs AND the script's code in one click. -->
+      <div id="sheets-templated" class="hidden space-y-5">
+        <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-3">
+          <h2 class="font-bold text-stone-900 text-sm">Step 1 — get your Sheet</h2>
+          <p class="text-xs text-stone-500 leading-relaxed">This makes you a private copy of a ready-made template — the 4 tabs and the write-script are already set up, nothing to build.</p>
+          <a id="sheets-template-link" href="#" target="_blank" rel="noopener" class="block text-center bg-stone-900 hover:bg-stone-800 text-white font-semibold py-3 rounded-xl text-sm transition-all">Make my copy →</a>
+        </section>
+        <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-2">
+          <h2 class="font-bold text-stone-900 text-sm">Step 2 — share your copy</h2>
+          <p class="text-xs text-stone-500 leading-relaxed">In your new copy: Share → change "General access" to <strong>Anyone with the link, Viewer</strong>. Copy that link for the field below.</p>
+        </section>
+        <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-2">
+          <h2 class="font-bold text-stone-900 text-sm">Step 3 — deploy the script (one click)</h2>
+          <p class="text-xs text-stone-500 leading-relaxed">The script's already written in your copy. In your Sheet: Extensions → Apps Script → Deploy → New deployment → type "Web app" → Execute as <strong>Me</strong>, Who has access <strong>Anyone</strong> → Deploy. Copy the Web app URL it gives you (not the editor's URL) for the field below.</p>
+        </section>
+        <p class="text-xs text-stone-400 text-center"><button type="button" id="sheets-manual-toggle" class="underline hover:text-stone-600">Prefer to build it yourself from scratch instead?</button></p>
       </div>
-      <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-2" id="sheet-templates"></section>
 
-      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed">
-        <strong class="block mb-1">Then connect a tiny script so this page can write to it.</strong>
-        In your Sheet: Extensions → Apps Script. Delete whatever's there and paste this in:
-      </div>
-      <div class="bg-white border border-stone-100 rounded-2xl p-4">
-        <div class="flex items-center gap-2">
-          <code id="script-template" class="flex-1 min-w-0 block bg-stone-50 border border-stone-200 rounded-lg px-2 py-2 text-[10px] overflow-x-auto whitespace-pre max-h-40"></code>
-          <button type="button" id="script-copy" class="shrink-0 self-start border border-stone-300 rounded-lg px-2.5 py-2 text-[11px] hover:bg-stone-50">Copy</button>
+      <!-- Fallback when no template is configured (or the person opts into
+           building it from scratch): the same end result, more manual steps. -->
+      <div id="sheets-manual" class="space-y-5">
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed">
+          <strong class="block mb-1">Make a Google Sheet with 4 tabs, named exactly as below.</strong>
+          Share it as "Anyone with the link can view." Paste the header row into row 1 of each tab:
         </div>
-        <p class="text-[11px] text-stone-500 mt-2 leading-relaxed">Then: Deploy → New deployment → type "Web app" → Execute as <strong>Me</strong>, Who has access <strong>Anyone</strong> → Deploy → copy the Web app URL it gives you (not the script's editor URL) and paste it below.</p>
+        <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-2" id="sheet-templates"></section>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed">
+          <strong class="block mb-1">Then connect a tiny script so this page can write to it.</strong>
+          In your Sheet: Extensions → Apps Script. Delete whatever's there and paste this in:
+        </div>
+        <div class="bg-white border border-stone-100 rounded-2xl p-4">
+          <div class="flex items-center gap-2">
+            <code id="script-template" class="flex-1 min-w-0 block bg-stone-50 border border-stone-200 rounded-lg px-2 py-2 text-[10px] overflow-x-auto whitespace-pre max-h-40"></code>
+            <button type="button" id="script-copy" class="shrink-0 self-start border border-stone-300 rounded-lg px-2.5 py-2 text-[11px] hover:bg-stone-50">Copy</button>
+          </div>
+          <p class="text-[11px] text-stone-500 mt-2 leading-relaxed">Then: Deploy → New deployment → type "Web app" → Execute as <strong>Me</strong>, Who has access <strong>Anyone</strong> → Deploy → copy the Web app URL it gives you (not the script's editor URL) and paste it below.</p>
+        </div>
       </div>
 
       <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-3">
@@ -216,6 +240,23 @@
     $('script-copy').onclick = async () => {
       try { await navigator.clipboard.writeText(JNL.SHEETS_APPS_SCRIPT); JNL.toast('Copied'); } catch { JNL.toast('Could not copy — select the text manually.'); }
     };
+
+    // Lead with the one-click template-copy flow when the operator has set
+    // one up (config.js sheetsTemplateUrl) — it's the same end result with
+    // far less manual work. Anyone can still fall back to building it from
+    // scratch via the toggle below.
+    const templateUrl = JNL.sheetsTemplateCopyUrl();
+    function showSheetsManual(manual) {
+      $('sheets-templated').classList.toggle('hidden', manual);
+      $('sheets-manual').classList.toggle('hidden', !manual);
+    }
+    if (templateUrl) {
+      $('sheets-template-link').href = templateUrl;
+      showSheetsManual(false);
+      $('sheets-manual-toggle').onclick = () => showSheetsManual(true);
+    } else {
+      showSheetsManual(true);
+    }
 
     let backendType = 'supabase', backendVerified = false;
     function setBackendType(t) {
