@@ -11,6 +11,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 </head>
@@ -29,24 +30,58 @@
       </p>
     </div>
 
-    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed">
-      <strong class="block mb-1">You'll need a free Supabase project of your own.</strong>
-      1. Go to <a href="https://supabase.com" target="_blank" rel="noopener" class="underline">supabase.com</a> → New project (free tier).
-      2. SQL editor → paste and run <a href="schema-tenant.sql" target="_blank" class="underline">schema-tenant.sql</a>.
-      3. Project Settings → API → copy the Project URL and anon public key below.
-      Treat that anon key like a password to your page's data — don't share it anywhere public except here.
+    <div class="flex gap-1 bg-stone-100 rounded-xl p-1 text-sm font-semibold">
+      <button type="button" id="backend-tab-supabase" class="flex-1 py-2 rounded-lg bg-white shadow-sm transition-all">Supabase</button>
+      <button type="button" id="backend-tab-sheets" class="flex-1 py-2 rounded-lg text-stone-500 transition-all">Google Sheet</button>
     </div>
 
-    <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-3">
-      <h2 class="font-bold text-stone-900 text-sm">Your backend</h2>
-      <label class="block text-xs font-semibold text-stone-500">Supabase Project URL
-        <input id="backend-url" placeholder="https://xxxxx.supabase.co" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
-      </label>
-      <label class="block text-xs font-semibold text-stone-500">Anon public key
-        <input id="backend-key" placeholder="eyJhbGciOi…" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
-      </label>
-      <button type="button" id="backend-test" class="border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-4 py-2 rounded-xl text-sm">Test connection</button>
-      <p id="backend-check" class="text-xs min-h-[1rem]"></p>
+    <!-- Supabase option: full interactive console (donors declare, owner
+         acknowledges/logs expenses, all from buttons on the page), because
+         a Supabase project's anon key can safely be trusted to write. -->
+    <section id="backend-supabase" class="space-y-5">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed">
+        <strong class="block mb-1">You'll need a free Supabase project of your own.</strong>
+        1. Go to <a href="https://supabase.com" target="_blank" rel="noopener" class="underline">supabase.com</a> → New project (free tier).
+        2. SQL editor → paste and run <a href="schema-tenant.sql" target="_blank" class="underline">schema-tenant.sql</a>.
+        3. Project Settings → API → copy the Project URL and anon public key below.
+        Treat that anon key like a password to your page's data — don't share it anywhere public except here.
+      </div>
+      <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-3">
+        <h2 class="font-bold text-stone-900 text-sm">Your Supabase project</h2>
+        <label class="block text-xs font-semibold text-stone-500">Project URL
+          <input id="sb-url" placeholder="https://xxxxx.supabase.co" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
+        </label>
+        <label class="block text-xs font-semibold text-stone-500">Anon public key
+          <input id="sb-key" placeholder="eyJhbGciOi…" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
+        </label>
+        <button type="button" id="sb-test" class="border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-4 py-2 rounded-xl text-sm">Test connection</button>
+        <p id="sb-check" class="text-xs min-h-[1rem]"></p>
+      </section>
+    </section>
+
+    <!-- Google Sheet option: zero code, but no OAuth write access for
+         strangers — the owner's own writes go through Google sign-in
+         (below, on the manage page), and donor declarations route through
+         an optional linked Form instead of a button on this page. -->
+    <section id="backend-sheets" class="hidden space-y-5">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed">
+        <strong class="block mb-1">Make a Google Sheet with 4 tabs, named exactly as below.</strong>
+        Share it as "Anyone with the link can view." Paste the header row into row 1 of each tab:
+      </div>
+      <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-2" id="sheet-templates"></section>
+      <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-3">
+        <h2 class="font-bold text-stone-900 text-sm">Your Sheet</h2>
+        <label class="block text-xs font-semibold text-stone-500">Google Sheet link
+          <input id="gs-url" placeholder="https://docs.google.com/spreadsheets/d/…" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
+        </label>
+        <label class="block text-xs font-semibold text-stone-500">Google Form link (optional — lets people declare support without an interactive button)
+          <input id="gs-form" placeholder="https://docs.google.com/forms/d/…" class="mt-1 w-full border border-stone-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-stone-300">
+          <span class="text-[10px] text-stone-400">Make a Form with Date/Amount/Name/Message fields whose responses go to this same Sheet's "Donations" tab.</span>
+        </label>
+        <button type="button" id="gs-test" class="border border-stone-300 hover:bg-stone-50 text-stone-700 font-semibold px-4 py-2 rounded-xl text-sm">Test connection</button>
+        <p id="gs-check" class="text-xs min-h-[1rem]"></p>
+        <p class="text-[11px] text-stone-400">You'll sign in with Google on the next page so JanNidhi Light can write updates/expenses straight to your own Sheet — only you can do this, since it's your own Google account's permission.</p>
+      </section>
     </section>
 
     <section class="bg-white border border-stone-100 rounded-2xl p-5 space-y-3">
@@ -138,42 +173,81 @@
 <script>
 (async () => {
   JNL.init();
+  JNL.initGoogleAuth();
   const user = await JNL.requireAuth();
   if (!user) return;
   document.getElementById('nav').innerHTML = JNL.navHTML('create', user);
   const $ = id => document.getElementById(id);
   const msg  = (t, ok) => { $('msg').textContent = t; $('msg').className = 'text-xs text-center min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
   const cmsg = (t, ok) => { $('connect-msg').textContent = t; $('connect-msg').className = 'text-xs text-center min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-red-500'); };
-  const bmsg = (t, ok) => { $('backend-check').textContent = t; $('backend-check').className = 'text-xs min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-amber-600'); };
+  const sbmsg = (t, ok) => { $('sb-check').textContent = t; $('sb-check').className = 'text-xs min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-amber-600'); };
+  const gsmsg = (t, ok) => { $('gs-check').textContent = t; $('gs-check').className = 'text-xs min-h-[1rem] ' + (ok ? 'text-emerald-600' : 'text-amber-600'); };
 
   let lightProfile = await JNL.getMyLightProfile();
 
   if (!lightProfile) {
     $('step-connect').classList.remove('hidden');
 
-    let backendVerified = false;
-    $('backend-test').onclick = async () => {
-      const url = $('backend-url').value.trim(), key = $('backend-key').value.trim();
-      if (!url || !key) return bmsg('Paste both the Project URL and the anon key first.');
-      bmsg('Checking…');
-      try {
-        await JNL.testTenantConnection(url, key);
-        backendVerified = true;
-        bmsg('✓ Connected — found your profiles table.', true);
-      } catch (err) { backendVerified = false; bmsg(err.message); }
+    $('sheet-templates').innerHTML = Object.entries(JNL.SHEETS_TEMPLATE).map(([tab, header]) => `
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-stone-700 w-20 shrink-0">${tab}</span>
+          <code class="flex-1 min-w-0 block bg-stone-50 border border-stone-200 rounded-lg px-2 py-2 text-[10px] overflow-x-auto whitespace-pre">${JNL.esc(header.split('\n')[0])}</code>
+          <button type="button" data-copy="${JNL.esc(header)}" class="shrink-0 border border-stone-300 rounded-lg px-2 py-2 text-[10px] hover:bg-stone-50">Copy</button>
+        </div>
+      </div>`).join('');
+    $('sheet-templates').addEventListener('click', async (e) => {
+      const text = e.target.dataset.copy;
+      if (!text) return;
+      try { await navigator.clipboard.writeText(text); JNL.toast('Copied'); } catch { JNL.toast(text); }
+    });
+
+    let backendType = 'supabase', backendVerified = false;
+    function setBackendType(t) {
+      backendType = t; backendVerified = false;
+      $('backend-tab-supabase').className = 'flex-1 py-2 rounded-lg transition-all ' + (t === 'supabase' ? 'bg-white shadow-sm' : 'text-stone-500');
+      $('backend-tab-sheets').className = 'flex-1 py-2 rounded-lg transition-all ' + (t === 'sheets' ? 'bg-white shadow-sm' : 'text-stone-500');
+      $('backend-supabase').classList.toggle('hidden', t !== 'supabase');
+      $('backend-sheets').classList.toggle('hidden', t !== 'sheets');
+    }
+    $('backend-tab-supabase').onclick = () => setBackendType('supabase');
+    $('backend-tab-sheets').onclick = () => setBackendType('sheets');
+
+    $('sb-test').onclick = async () => {
+      const url = $('sb-url').value.trim(), key = $('sb-key').value.trim();
+      if (!url || !key) return sbmsg('Paste both the Project URL and the anon key first.');
+      sbmsg('Checking…');
+      try { await JNL.testTenantConnection('supabase', url, key); backendVerified = true; sbmsg('✓ Connected — found your profiles table.', true); }
+      catch (err) { backendVerified = false; sbmsg(err.message); }
+    };
+    $('gs-test').onclick = async () => {
+      const url = $('gs-url').value.trim();
+      if (!url) return gsmsg('Paste your Sheet link first.');
+      gsmsg('Checking…');
+      try { await JNL.testTenantConnection('sheets', url); backendVerified = true; gsmsg('✓ Connected — found your "Profile" tab.', true); }
+      catch (err) { backendVerified = false; gsmsg(err.message); }
     };
 
     $('connect-submit').onclick = async () => {
       const name = $('c-name').value.trim();
-      const url = $('backend-url').value.trim(), key = $('backend-key').value.trim();
       if (!name) return cmsg('Name is required.');
-      if (!url || !key) return cmsg('Connect your backend first.');
-      if (!backendVerified) return cmsg('Click "Test connection" first, so we know your backend is reachable.');
+      const patch = { name, headline: $('c-headline').value.trim(), photo_url: $('c-photo').value.trim() || null };
+      const base = { ...patch, slug: JNL.slugify(name), backend_type: backendType };
+      if (backendType === 'supabase') {
+        const url = $('sb-url').value.trim(), key = $('sb-key').value.trim();
+        if (!url || !key) return cmsg('Connect your Supabase project first.');
+        if (!backendVerified) return cmsg('Click "Test connection" first, so we know your project is reachable.');
+        base.backend_url = url; base.backend_anon_key = key;
+      } else {
+        const url = $('gs-url').value.trim();
+        if (!url) return cmsg('Paste your Google Sheet link first.');
+        if (!backendVerified) return cmsg('Click "Test connection" first, so we know your sheet is reachable.');
+        base.backend_url = url; base.backend_form_url = $('gs-form').value.trim() || null;
+      }
       $('connect-submit').disabled = true;
       cmsg('Creating…', true);
       try {
-        const patch = { name, headline: $('c-headline').value.trim(), photo_url: $('c-photo').value.trim() || null };
-        lightProfile = await JNL.addLightProfile({ ...patch, slug: JNL.slugify(name), backend_type: 'supabase', backend_url: url, backend_anon_key: key });
+        lightProfile = await JNL.addLightProfile(base);
         const tenant = JNL.connectTenant(lightProfile);
         await JNL.upsertTenantProfile(tenant, { slug: lightProfile.slug, name, headline: patch.headline, photo_url: patch.photo_url });
         cmsg('Created — now add the rest of your details below.', true);

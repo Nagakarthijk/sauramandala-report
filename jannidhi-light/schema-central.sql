@@ -22,11 +22,15 @@ create table light_profiles (
   name              text not null,
   headline          text default '',
   photo_url         text,
-  -- Only 'supabase' today — the door is open to other backend types later,
-  -- each would just need its own small adapter in app.js.
+  -- 'supabase' or 'sheets'. For 'sheets', backend_url is the spreadsheet's
+  -- share link and backend_anon_key is unused (sheets reads need no key —
+  -- it must be shared "Anyone with the link can view"). backend_form_url
+  -- is optional either way: a Google Form link donors use to declare
+  -- support, for pages that can't accept writes from strangers directly.
   backend_type      text not null default 'supabase',
   backend_url       text not null,
-  backend_anon_key  text not null,
+  backend_anon_key  text,
+  backend_form_url  text,
   created_at        timestamptz default now(),
   last_active_at    timestamptz default now()
 );

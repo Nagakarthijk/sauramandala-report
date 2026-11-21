@@ -10,6 +10,7 @@
   @media (min-width: 1280px) { html { font-size: 18px; } }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 </head>
@@ -73,6 +74,7 @@
 <script>
 (async () => {
   JNL.init();
+  JNL.initGoogleAuth();
   const user = await JNL.getUser();
   document.getElementById('nav').innerHTML = JNL.navHTML('', user);
   const $ = id => document.getElementById(id);
@@ -178,12 +180,17 @@
           ${profile.bank_details ? `<div><span class="text-xs text-stone-400 block">Bank transfer</span><span class="whitespace-pre-line text-xs">${JNL.esc(profile.bank_details)}</span></div>` : ''}
         </div>
       </div>
-      <button id="declare-btn" class="mt-4 w-full bg-orange-600 hover:bg-orange-700 active:scale-[0.99] text-white font-semibold py-3 rounded-xl text-sm transition-all">I sent money — declare it publicly</button>
+      ${lightProfile.backend_type === 'sheets'
+        ? (lightProfile.backend_form_url
+            ? `<a href="${JNL.esc(lightProfile.backend_form_url)}" target="_blank" rel="noopener" class="mt-4 block text-center bg-orange-600 hover:bg-orange-700 active:scale-[0.99] text-white font-semibold py-3 rounded-xl text-sm transition-all">I sent money — declare it publicly</a>`
+            : `<p class="mt-4 text-center text-xs text-stone-400">${JNL.esc(profile.name.split(' ')[0])} hasn't set up a way to declare support here yet.</p>`)
+        : `<button id="declare-btn" class="mt-4 w-full bg-orange-600 hover:bg-orange-700 active:scale-[0.99] text-white font-semibold py-3 rounded-xl text-sm transition-all">I sent money — declare it publicly</button>`}
     </section>
 
     ${owner ? `
     <section class="bg-stone-900 text-stone-100 rounded-2xl p-5 mt-4 space-y-4">
       <h2 class="font-bold text-sm">Your console <span class="font-normal text-stone-400">(only you see this)</span></h2>
+      ${lightProfile.backend_type === 'sheets' ? `<p class="text-[11px] text-stone-400 -mt-2">Actions here write straight to your Google Sheet — the first one will ask you to sign in and grant access, since only you can write to your own sheet.</p>` : ''}
       <div id="pending-donations" class="space-y-2"></div>
       <details class="bg-stone-800 rounded-xl p-3">
         <summary class="text-xs font-semibold cursor-pointer py-1">+ Post a work update</summary>
@@ -245,7 +252,7 @@
 
   $('qr-zoom')?.addEventListener('click', () => { $('qr-lightbox-img').src = profile.upi_qr_url; $('qr-lightbox').classList.remove('hidden'); });
   $('report-btn').onclick = () => $('report-modal').classList.remove('hidden');
-  $('declare-btn').onclick = () => $('declare-modal').classList.remove('hidden');
+  $('declare-btn')?.addEventListener('click', () => $('declare-modal').classList.remove('hidden'));
   $('d-anon').onchange = () => { $('d-name-req').textContent = $('d-anon').checked ? '(kept private)' : '*'; };
   $('mbar-support').onclick = () => document.getElementById('pay').scrollIntoView({ behavior: 'smooth' });
   const bar = $('mobile-bar');
